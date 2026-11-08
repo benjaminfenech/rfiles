@@ -166,10 +166,36 @@ pub fn drive_mask() -> u32 {
     h.finish() as u32
 }
 
-/// Whether the disk holding `path` spins (`/sys/block/<disk>/queue/rotational`).
-/// Phase 1; `None` for now.
+/// The mount holding `path` (the longest mount point it is under): (mount point, file
+/// system type, source device or share).
+pub(crate) fn mount_of(path: &Path) -> Option<(PathBuf, String, String)> {
+    mounts().into_iter().filter(|(point, _, _)| path.starts_with(point)).max_by_key(|(point, _, _)| point.as_os_str().len())
+}
+
+/// The disk under a block device (`/dev/nvme0n1p2` → `/sys/class/block/nvme0n1`): partitions
+/// sit inside their disk's sysfs folder.
+fn disk_sysfs(source: &str) -> Option<PathBuf> {
+    let dev = std::fs::canonicalize(source).ok()?;
+    let name = dev.file_name()?.to_owned();
+    let sys = std::fs::canonicalize(Path::new("/sys/class/block").join(name)).ok()?;
+    if sys.join("partition").exists() { sys.parent().map(Path::to_path_buf) } else { Some(sys) }
+}
+
+/// Whether the disk holding `path` spins (`queue/rotational` of its disk in sysfs). `None` for
+/// network shares, RAM disks and stacked devices (LVM, LUKS) that report nothing useful.
+/// Goes through the mount table rather than `st_dev`: btrfs gives every subvolume an anonymous
+/// device number.
 pub fn seek_penalty(path: &Path) -> Option<bool> {
-    None
+    let (_, _, source) = mount_of(path)?;
+    if !source.starts_with("/dev/") {
+        return None;
+    }
+    let rot = std::fs::read_to_string(disk_sysfs(&source)?.join("queue/rotational")).ok()?;
+    match rot.trim() {
+        "1" => Some(true),
+        "0" => Some(false),
+        _ => None,
+    }
 }
 
 #[cfg(test)]
@@ -182,6 +208,15 @@ mod tests {
         let root = d.iter().find(|d| d.root == Path::new("/")).expect("root mount");
         assert!(root.total > 0 && root.free <= root.total, "{root:?}");
         assert_eq!(root.display_name(), "Dosya Sistemi");
+    }
+
+    #[test]
+    fn root_has_a_mount_and_a_disk_answer() {
+        let (point, _, _) = mount_of(Path::new("/usr")).expect("a mount for /usr");
+        assert!(Path::new("/usr").starts_with(&point));
+        // a real disk answers; a container or tmpfs root may not
+        let _ = seek_penalty(Path::new("/"));
+        assert_eq!(seek_penalty(Path::new("/proc/self")), None);
     }
 
     #[test]

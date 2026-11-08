@@ -96,6 +96,11 @@ Windows still builds (CI job on `windows-latest`).
 
 ### Phase 1: a usable file manager (about 3–4 weeks)
 
+Progress: **file operations done** (2026-11-08). Copy, move, rename, delete and the Trash work,
+and copy/paste works inside rustyfiles. Next: file-type icons, "Open with", clipboard
+exchange with other apps, modifier keys from GPUI, the path audit.
+
+
 | Module | Linux implementation |
 |---|---|
 | listing, search, foldersize | `std::fs::read_dir` + `std::os::unix` metadata; hidden = leading dot; skip symlink loops (track dev+inode) instead of junctions |
@@ -104,9 +109,9 @@ Windows still builds (CI job on `windows-latest`).
 | watch | `notify` already uses inotify; just ungate |
 | thumbs | freedesktop icon theme lookup (`freedesktop-icons`), MIME type via `xdg-mime`/shared-mime-info DB; thumbnails from the shared `~/.cache/thumbnails` spec, generated with the existing image/resvg decoders |
 | shell::open, open_with, open_terminal | `xdg-open` / `gio launch`; `.desktop` files + `mimeapps.list` for "Open with"; `$TERMINAL` or `x-terminal-emulator` fallback |
-| fastcopy, fastdelete, fileops | the existing engine design, with `copy_file_range` (falls back to `std::io::copy`), keeping mode, mtime and xattrs; `rename(2)` for same-device moves |
-| recycle | freedesktop Trash spec (`trash` crate, or own `~/.local/share/Trash` + per-volume `.Trash-$UID`) |
-| clipboard | `text/uri-list` + `x-special/gnome-copied-files` (cut vs copy). Check what GPUI's Linux clipboard can carry; fall back to `wl-clipboard-rs` / `arboard` |
+| fastcopy, fastdelete, fileops | ✅ rf-win's engine and tests, ported: `copy_file_range` in 8 MB chunks (read/write fallback), modes and times kept, `renameat2(RENAME_NOREPLACE)`, same device = rename. `fileops` is the fallback engine (symlinks copied as links). Extended attributes and ACLs are not copied yet |
+| recycle | ✅ freedesktop Trash spec, our own: home trash + per-disk `.Trash/$uid` / `.Trash-$uid`, list / restore / empty, undo of a delete. The UI still says "Recycle Bin" (renaming needs new translations) |
+| clipboard | ◐ inside rustyfiles only (in-process). Still to do: `text/uri-list` + `x-special/gnome-copied-files` (cut vs copy) on the system clipboard; GPUI can only write text and images, so `wl-clipboard-rs` (Wayland data-control) and an X11 path |
 | git, hash, encoding, complete | mostly portable: remove `creation_flags(CREATE_NO_WINDOW)` and Windows-path handling |
 | single_instance | Unix socket in `$XDG_RUNTIME_DIR` (or a D-Bus name) |
 | accent, sysparams, window::set_dark_mode | xdg-desktop-portal Settings (`color-scheme`, `accent-color`) via `ashpd`; GPUI window appearance |
@@ -116,7 +121,7 @@ Windows still builds (CI job on `windows-latest`).
 | sta | not needed: a plain worker thread pool; keep `run()` so call sites compile |
 
 Names that aren't valid UTF-8 are shown lossily by `listing` today; keep the raw bytes so they
-still open and rename. Copy/move currently reports "not implemented" (the engine is `fastcopy`).
+still open and rename.
 
 rf-app path audit: drive letters, `\\server` UNC roots, backslash separators, case-insensitive
 comparisons, `Location::from_shell_name`. Linux paths are case-sensitive and `/` is the

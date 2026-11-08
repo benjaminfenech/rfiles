@@ -1,44 +1,62 @@
-//! Explorer-compatible file clipboard: CF_HDROP + "Preferred DropEffect".
-// Generated from rf-win's public API by a one-off stub generator, then edited by hand.
-// Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
+//! The file clipboard (copy / cut / paste of files).
+//!
+//! Linux, for now: held inside rustyfiles, so copy and paste work between its windows and
+//! tabs but not with other apps. Exchanging files with other file managers needs
+//! `text/uri-list` plus `x-special/gnome-copied-files` on the Wayland / X11 clipboard, which
+//! GPUI can't write yet; that is a follow-up (docs/LINUX_PORT.md, Phase 1).
+
 use std::path::PathBuf;
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicU32, Ordering};
+
 use crate::fileops::Transfer;
-use crate::wide::wide;
-const DROPEFFECT_COPY: u32 = 1;
-const DROPEFFECT_MOVE: u32 = 2;
-struct Guard;
-impl Drop for Guard {
-    fn drop(&mut self) {}
-}
-fn open(owner: crate::Opaque) -> anyhow::Result<Guard> {
-    Err(anyhow::anyhow!("rf-linux: `open` is not implemented on Linux yet").into())
-}
-unsafe fn alloc(bytes: &[u8]) -> anyhow::Result<crate::Opaque> {
-    Err(anyhow::anyhow!("rf-linux: `alloc` is not implemented on Linux yet").into())
-}
+
+static FILES: Mutex<Option<(Vec<PathBuf>, Transfer)>> = Mutex::new(None);
+static SEQUENCE: AtomicU32 = AtomicU32::new(1);
+
 /// Empties the clipboard (so a paste can't pick up what was there before).
 pub fn clear(owner: crate::Opaque) -> anyhow::Result<()> {
-    Err(anyhow::anyhow!("rf-linux: `clear` is not implemented on Linux yet").into())
+    let _ = owner;
+    *FILES.lock().unwrap() = None;
+    SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    Ok(())
 }
+
 /// Changes every time the clipboard's content changes.
 pub fn sequence() -> u32 {
-    Default::default()
+    SEQUENCE.load(Ordering::Relaxed)
 }
-/// Puts files on the clipboard for copy or cut. `owner` must be a real window (any thread).
-pub fn set_files(
-    owner: crate::Opaque,
-    paths: &[PathBuf],
-    kind: Transfer,
-) -> anyhow::Result<()> {
-    Err(anyhow::anyhow!("rf-linux: `set_files` is not implemented on Linux yet").into())
+
+/// Puts files on the clipboard for copy (`Copy`) or cut (`Move`).
+pub fn set_files(owner: crate::Opaque, paths: &[PathBuf], kind: Transfer) -> anyhow::Result<()> {
+    let _ = owner;
+    *FILES.lock().unwrap() = (!paths.is_empty()).then(|| (paths.to_vec(), kind));
+    SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    Ok(())
 }
+
 pub fn has_files() -> bool {
-    false
+    FILES.lock().unwrap().is_some()
 }
-/// Reads files + intended operation (cut → Move) from the clipboard.
-pub fn get_files(
-    owner: crate::Opaque,
-) -> anyhow::Result<Option<(Vec<PathBuf>, Transfer)>> {
-    Err(anyhow::anyhow!("rf-linux: `get_files` is not implemented on Linux yet").into())
+
+/// Files + intended operation (cut → Move).
+pub fn get_files(owner: crate::Opaque) -> anyhow::Result<Option<(Vec<PathBuf>, Transfer)>> {
+    let _ = owner;
+    Ok(FILES.lock().unwrap().clone())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn set_get_clear() {
+        let before = sequence();
+        set_files(0, &[PathBuf::from("/tmp/a")], Transfer::Move).unwrap();
+        assert!(has_files() && sequence() != before);
+        assert_eq!(get_files(0).unwrap(), Some((vec![PathBuf::from("/tmp/a")], Transfer::Move)));
+        clear(0).unwrap();
+        assert!(!has_files());
+        assert_eq!(get_files(0).unwrap(), None);
+    }
 }
