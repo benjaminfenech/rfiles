@@ -6,7 +6,64 @@ use gpui_kit::assets::IconName as L;
 use gpui_kit::*;
 use rf_win::{Drive, DriveKind, KnownFolder};
 
+/// Linux: the drive's name as Settings → Files and folders → "Show drives as" asks (there are
+/// no drive letters).
+#[cfg(unix)]
+pub fn drive_name(d: &Drive) -> String {
+    linux_drive_name(d, crate::settings::drive_names())
+}
+
+#[cfg(unix)]
+fn linux_drive_name(d: &Drive, style: crate::settings::DriveNames) -> String {
+    use crate::settings::DriveNames;
+    let mount = d.root.to_string_lossy().into_owned();
+    let folder = || d.root.file_name().map(|n| n.to_string_lossy().into_owned());
+    let root_name = || crate::t!("Dosya Sistemi").to_string();
+    match style {
+        DriveNames::MountPoint => mount,
+        DriveNames::Folder => folder().unwrap_or_else(root_name),
+        DriveNames::Device => match d.source.strip_prefix("/dev/") {
+            Some(dev) => dev.to_string(),
+            None if !d.source.is_empty() => d.source.clone(),
+            None => mount,
+        },
+        DriveNames::Auto => {
+            if !d.label.is_empty() {
+                d.label.clone()
+            } else if let Some(share) = share_name(&d.source) {
+                share
+            } else {
+                folder().unwrap_or_else(root_name)
+            }
+        }
+    }
+}
+
+/// A network share as "share (server)": `//10.0.0.9/media` (SMB), `nas:/export/media` (NFS),
+/// `me@host:/srv/files` (sshfs). Local devices: None.
+#[cfg(unix)]
+fn share_name(source: &str) -> Option<String> {
+    let last = |p: &str| p.trim_end_matches('/').rsplit('/').next().filter(|s| !s.is_empty()).map(str::to_string);
+    if let Some(rest) = source.strip_prefix("//") {
+        let (host, path) = rest.split_once('/')?;
+        return Some(format!("{} ({host})", last(path)?));
+    }
+    if source.starts_with('/') {
+        return None;
+    }
+    let (host, path) = source.split_once(':')?;
+    let host = host.rsplit('@').next().unwrap_or(host);
+    if host.is_empty() {
+        return None;
+    }
+    Some(match last(path) {
+        Some(name) => format!("{name} ({host})"),
+        None => host.to_string(),
+    })
+}
+
 /// Drive display name with the generic fallback labels translated ("Yerel Disk (C:)").
+#[cfg(not(unix))]
 pub fn drive_name(d: &Drive) -> String {
     if d.label.is_empty() {
         let kind = match d.kind {
@@ -213,5 +270,40 @@ pub fn drive_icon(d: &Drive) -> L {
         DriveKind::Network => L::Network,
         DriveKind::Optical => L::Disc3,
         _ => L::HardDrive,
+    }
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::linux_drive_name;
+    use crate::settings::DriveNames::*;
+    use rf_win::Drive;
+
+    fn drive(root: &str, source: &str, label: &str) -> Drive {
+        Drive {
+            root: root.into(),
+            letter: '\0',
+            label: label.into(),
+            source: source.into(),
+            kind: rf_win::DriveKind::Fixed,
+            total: 0,
+            free: 0,
+            fs: String::new(),
+        }
+    }
+
+    #[test]
+    fn linux_drive_names() {
+        let root = drive("/", "/dev/nvme0n1p2", "");
+        let usb = drive("/run/media/me/KINGSTON", "/dev/sdb1", "KINGSTON");
+        let smb = drive("/mnt/media", "//10.0.0.9/media", "");
+        let nfs = drive("/mnt/nas", "nas:/export/photos/", "");
+        let ssh = drive("/home/me/remote", "me@box:", "");
+        let root_name = crate::t!("Dosya Sistemi");
+        let names = |s| [&root, &usb, &smb, &nfs, &ssh].map(|d| linux_drive_name(d, s));
+        assert_eq!(names(Auto), [root_name, "KINGSTON", "media (10.0.0.9)", "photos (nas)", "box"]);
+        assert_eq!(names(MountPoint), ["/", "/run/media/me/KINGSTON", "/mnt/media", "/mnt/nas", "/home/me/remote"]);
+        assert_eq!(names(Folder), [root_name, "KINGSTON", "media", "nas", "remote"]);
+        assert_eq!(names(Device), ["nvme0n1p2", "sdb1", "//10.0.0.9/media", "nas:/export/photos/", "me@box:"]);
     }
 }

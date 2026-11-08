@@ -213,6 +213,22 @@ certificates for the info card.
 - Drag out to other apps: depends on GPUI's Linux drag-and-drop support; check first, it may
   need upstream work.
 
+### Linux polish
+
+- **Drive names** (2026-11-09): Linux has no drive letters, so "Local Disk (C:)" became
+  "Local Disk (:)". `rf-linux`'s `Drive` now carries the file system label
+  (`/dev/disk/by-label`) and `source` (device or share), and Settings → Files and folders →
+  "Show drives as" picks the name: Automatic (label, else "share (server)" for network
+  shares, else the mount point's folder; `/` is "File System"), mount point, last folder, or
+  device / share. `places::drive_name` has a Linux version; Windows' is unchanged.
+- **Next: hide Windows-only settings and links** on Linux: about 20 settings rows (Explorer
+  context menu and shell submenus, Mica, Windows Search index, desktop.ini, DirectLook over
+  Explorer, start with Windows, taskbar, Windows copy engine, default file manager, Open/Save
+  dialogs, default archive apps, updates), "Show more options", "Share", "Windows
+  properties…", Libraries, Windows attributes. A `cfg!(windows)` condition per row keeps
+  upstream merges easy; "Follow Windows" becomes "Follow system", "Recycle Bin" becomes
+  "Trash". Rows Phase 3 brings back stay hidden until then.
+
 ### Not ported
 
 The taskbar preview (`--bar-preview`, upstream 2026-11-08), jump lists, Windows Libraries, Windows Search index (maybe later: Baloo/Tracker/plocate),

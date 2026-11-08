@@ -19,7 +19,11 @@ pub struct Drive {
     pub root: PathBuf,
     /// Windows' drive letter; always '\0' on Linux.
     pub letter: char,
+    /// The file system's label (`/dev/disk/by-label`), empty without one.
     pub label: String,
+    /// Linux only: where it comes from: the device (`/dev/sdb1`) or the share
+    /// (`//server/share`, `server:/export`, `user@host:/path`).
+    pub source: String,
     pub kind: DriveKind,
     pub total: u64,
     pub free: u64,
@@ -127,6 +131,7 @@ fn space(p: &Path) -> Option<(u64, u64)> {
 /// the same device show once. `statvfs` can stall on a dead network mount: call off the UI
 /// thread.
 pub fn list_drives() -> Vec<Drive> {
+    let labels = labels();
     let mut seen = std::collections::HashSet::new();
     let mut out = Vec::new();
     for (point, fs, src) in mounts() {
@@ -139,9 +144,45 @@ pub fn list_drives() -> Vec<Drive> {
             continue;
         }
         let (total, free) = if kind == DriveKind::Network { (0, 0) } else { space(&point).unwrap_or((0, 0)) };
-        out.push(Drive { root: point, letter: '\0', label: String::new(), kind, total, free, fs });
+        let label = if src.starts_with("/dev/") { labels.get(&canonical(&src)).cloned().unwrap_or_default() } else { String::new() };
+        out.push(Drive { root: point, letter: '\0', label, source: src, kind, total, free, fs });
     }
     out
+}
+
+fn canonical(dev: &str) -> PathBuf {
+    std::fs::canonicalize(dev).unwrap_or_else(|_| PathBuf::from(dev))
+}
+
+/// File system labels by device (`/dev/sdb1` → "KINGSTON"), from udev's `/dev/disk/by-label`.
+fn labels() -> std::collections::HashMap<PathBuf, String> {
+    let Ok(dir) = std::fs::read_dir("/dev/disk/by-label") else { return Default::default() };
+    dir.flatten()
+        .filter_map(|e| {
+            let dev = std::fs::canonicalize(e.path()).ok()?;
+            Some((dev, unescape_udev(&e.file_name().to_string_lossy())))
+        })
+        .collect()
+}
+
+/// udev escapes characters in link names as `\xNN` (a space is `\x20`).
+fn unescape_udev(s: &str) -> String {
+    let b = s.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        if b[i] == b'\\'
+            && b.get(i + 1) == Some(&b'x')
+            && let Some(v) = s.get(i + 2..i + 4).and_then(|h| u8::from_str_radix(h, 16).ok())
+        {
+            out.push(v);
+            i += 4;
+            continue;
+        }
+        out.push(b[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
 }
 
 /// Whether `path` is on a removable drive (USB stick, SD card).
@@ -207,7 +248,17 @@ mod tests {
         let d = list_drives();
         let root = d.iter().find(|d| d.root == Path::new("/")).expect("root mount");
         assert!(root.total > 0 && root.free <= root.total, "{root:?}");
-        assert_eq!(root.display_name(), "Dosya Sistemi");
+        assert!(root.source.starts_with("/dev/"), "{root:?}");
+        // a labelled root (CI's is "cloudimg-rootfs") shows its label
+        let want = if root.label.is_empty() { "Dosya Sistemi" } else { root.label.as_str() };
+        assert_eq!(root.display_name(), want);
+    }
+
+    #[test]
+    fn udev_label_escapes() {
+        assert_eq!(unescape_udev(r"My\x20Disk"), "My Disk");
+        assert_eq!(unescape_udev(r"a\x2fb\xzz"), r"a/b\xzz");
+        assert_eq!(unescape_udev("KINGSTON"), "KINGSTON");
     }
 
     #[test]

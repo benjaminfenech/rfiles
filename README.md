@@ -251,6 +251,9 @@ files with other apps (Dolphin, Nautilus, Thunar, browsers…) on Wayland compos
 data-control (Hyprland, Sway, KDE) and on X11; on GNOME's Wayland session they work inside
 rustyfiles only.
 
+Drives are named by their label, network share or mount point; Settings → Files and folders →
+"Show drives as" switches to the mount point, its last folder, or the device.
+
 **DirectLook on tiling window managers.** DirectLook (<kbd>Space</kbd>) is its own window,
 like Quick Look. A Wayland app can't float or place its own window, so tiling compositors tile
 it unless a rule floats it. Windows have the app id `directlook` (the main window:

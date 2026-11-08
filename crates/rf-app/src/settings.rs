@@ -28,6 +28,21 @@ pub enum DefaultView {
     Adaptive,
 }
 
+/// How drives are named in the sidebar and on the home page (Linux: there are no drive letters).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum DriveNames {
+    /// The file system's label, else the share and server, else the mount point's folder.
+    #[default]
+    Auto,
+    /// The whole mount point: "/mnt/media".
+    MountPoint,
+    /// The mount point's last folder: "media".
+    Folder,
+    /// The device or share: "nvme0n1p2", "//10.0.0.9/media".
+    Device,
+}
+
 /// Checking copies after they are written (our engine).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -319,6 +334,8 @@ pub struct Settings {
     pub show_system_files: bool,
     /// Names starting with "." count as hidden when off.
     pub show_dot_files: bool,
+    /// Linux: how drives are named.
+    pub drive_names: DriveNames,
     pub show_thumbnails: bool,
     pub show_checkboxes: bool,
     pub single_click: ClickPref,
@@ -409,6 +426,7 @@ impl Default for Settings {
             columns: ColumnPrefs::default(),
             show_system_files: false,
             show_dot_files: true,
+            drive_names: DriveNames::Auto,
             show_thumbnails: true,
             show_checkboxes: false,
             single_click: ClickPref::Never,
@@ -440,6 +458,18 @@ static THEME: AtomicU8 = AtomicU8::new(0);
 static SOLID: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 static ANIM: AtomicU8 = AtomicU8::new(0);
+
+static DRIVE_NAMES: AtomicU8 = AtomicU8::new(0);
+
+/// How drives are named (Settings → Files and folders), readable without an `App`.
+pub fn drive_names() -> DriveNames {
+    match DRIVE_NAMES.load(Ordering::Relaxed) {
+        1 => DriveNames::MountPoint,
+        2 => DriveNames::Folder,
+        3 => DriveNames::Device,
+        _ => DriveNames::Auto,
+    }
+}
 
 /// Whether UI animations play (Settings → Appearance → Animations; "System" follows Windows'
 /// Animation effects, read each time: it's one cheap call and may change while we run).
@@ -540,6 +570,7 @@ impl Settings {
         rf_core::format::set_decimal_sizes(self.decimal_sizes);
         SOLID.store(self.backdrop == BackdropPref::Solid, Ordering::Relaxed);
         ANIM.store(self.animations as u8, Ordering::Relaxed);
+        DRIVE_NAMES.store(self.drive_names as u8, Ordering::Relaxed);
         gpui_windows::SMOOTH_SCROLL.store(self.smooth_scroll, Ordering::Relaxed);
         THEME.store(
             match self.theme {
