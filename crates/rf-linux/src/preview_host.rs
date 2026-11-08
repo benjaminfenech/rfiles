@@ -40,17 +40,12 @@ fn muted_for_tests() -> bool {
     std::env::var_os("RUSTYFILES_MUTE").is_some()
 }
 /// Whether `path` is audio / video our own player tries (Media Foundation decides in the end).
-pub fn is_playable(path: &Path) -> bool {
-    let ext = path
-        .extension()
-        .map(|e| e.to_string_lossy().to_lowercase())
-        .unwrap_or_default();
-    matches!(
-        ext.as_str(), "mp4" | "m4v" | "mov" | "mkv" | "webm" | "avi" | "wmv" | "mpg" |
-        "mpeg" | "ts" | "m2ts" | "3gp" | "mp3" | "wav" | "m4a" | "aac" | "flac" | "wma" |
-        "ogg" | "opus"
-    )
+/// Linux has no Media Foundation player: rf-player plays these itself (with FFmpeg for what
+/// FilmCraft can't), so the app never takes this path.
+pub fn is_playable(_path: &Path) -> bool {
+    false
 }
+
 type MfpCreate = unsafe extern "system" fn(
     crate::Opaque,
     crate::Opaque,

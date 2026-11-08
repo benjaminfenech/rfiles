@@ -3,6 +3,9 @@
 mod audio_out;
 mod clock;
 mod convert;
+/// Linux only: FFmpeg for what FilmCraft can't play.
+#[cfg(target_os = "linux")]
+pub mod ffmpeg;
 mod player;
 #[cfg(windows)]
 mod present;

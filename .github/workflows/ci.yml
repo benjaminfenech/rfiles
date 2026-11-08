@@ -26,7 +26,7 @@ jobs:
       - name: System libraries (GPUI on Wayland/X11, fontconfig)
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libxkbcommon-dev libxkbcommon-x11-dev libxcb1-dev libwayland-dev libfontconfig1-dev libfreetype-dev libasound2-dev poppler-utils libavif-bin libheif-examples libheif-plugin-x265 libheif-plugin-libde265
+          sudo apt-get install -y pkg-config libxkbcommon-dev libxkbcommon-x11-dev libxcb1-dev libwayland-dev libfontconfig1-dev libfreetype-dev libasound2-dev poppler-utils libavif-bin libheif-examples libheif-plugin-x265 libheif-plugin-libde265 ffmpeg
       - name: Test
         run: cargo test --workspace
       - name: Build
