@@ -831,6 +831,26 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     v.push(card(p, L::FileType, t!("Dosya uzantılarını göster"), None, sw("ext", p, s.show_extensions, |s, v| s.show_extensions = v)));
     v.push(card(p, L::Image, t!("Küçük resimleri göster"), None, sw("thumbs", p, s.show_thumbnails, |s, v| s.show_thumbnails = v)));
     v.push(card(p, L::SquareCheck, t!("Seçerken onay kutularını göster"), None, sw("checkboxes", p, s.show_checkboxes, |s, v| s.show_checkboxes = v)));
+    // Linux has no drive letters: people name drives differently
+    #[cfg(unix)]
+    v.push(card(
+        p,
+        L::HardDrive,
+        t!("Show drives as"),
+        Some(t!("Names in the sidebar and on the home page")),
+        dropdown(
+            "drivenames",
+            p,
+            s.drive_names,
+            vec![
+                (crate::settings::DriveNames::Auto, t!("Automatic: label, share or folder").into()),
+                (crate::settings::DriveNames::MountPoint, t!("Mount point: /mnt/media").into()),
+                (crate::settings::DriveNames::Folder, t!("Last folder: media").into()),
+                (crate::settings::DriveNames::Device, t!("Device or share: sda1, //server/share").into()),
+            ],
+            |s, v| s.drive_names = v,
+        ),
+    ));
 
     v.push(section(p, t!("Davranışlar")));
     v.push(card(

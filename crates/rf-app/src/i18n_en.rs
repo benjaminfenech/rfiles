@@ -124,6 +124,7 @@ pub const EN: &[(&str, &str)] = &[
     ("ZIP olarak sıkıştır", "Compress to ZIP"),
     ("7z olarak sıkıştır", "Compress to 7z"),
     ("Etiketle…", "Tag…"),
+    ("Dosya Sistemi", "File System"),
     ("USB Sürücü", "USB Drive"),
     ("Ağ Sürücüsü", "Network Drive"),
     ("DVD Sürücü", "DVD Drive"),
