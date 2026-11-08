@@ -171,8 +171,19 @@ sink: a 100 ms queue between the player and cpal's callback, and a clock that co
 frames the callback took minus what the device still holds (cpal's predicted playback
 time), moving smoothly between callbacks, frozen while paused. The stream lives on its own
 thread (cpal streams can't move between threads) and ends when DirectLook leaves the file.
-Building needs ALSA's headers (`alsa-lib` / `libasound2-dev`). Next: a fallback for video
-formats FilmCraft can't play.
+Building needs ALSA's headers (`alsa-lib` / `libasound2-dev`).
+
+Progress (2026-11-09): **FFmpeg fallback done** for what FilmCraft can't play (it covers
+H.264/HEVC/AV1/VP8/VP9/MPEG-2/MJPEG and the usual audio already). `rf-player/src/ffmpeg.rs`
+implements FilmCraft's `MediaSource`, so the player and the app are unchanged: `ffprobe`
+describes the file, one `ffmpeg` streams 8-bit 4:2:0 frames at a constant rate, another
+streams f32 audio at the player's rate; both read through jumps under 2 s and start again
+(`-ss`) for seeks. Extensions FilmCraft doesn't list (WMV/WMA, FLV, Theora, AC-3, …) go
+straight to FFmpeg; a file FilmCraft opens but can't decode (DivX/Xvid in AVI) switches on
+the first "unsupported" error. A 720p DivX file plays in real time. Linux's
+`preview_host::is_playable` now says no, so neither DirectLook nor the preview pane offers
+the Media Foundation player that doesn't exist here. Next: Phase 3, or PE version strings and
+certificates for the info card.
 
 - **Global Space key over other apps does not work on Wayland** (no global keyboard hooks,
   no foreground-window inspection). On Linux DirectLook works inside rustyfiles only;
@@ -213,8 +224,9 @@ the hybrid GPU/CPU renderer, critical-error-dialog suppression, `keep_gdiplus_al
 
 Start with a PKGBUILD in `packaging/arch/` (target machine is CachyOS) and a
 `rustyfiles.desktop` + icon. Runtime dependencies so far: `poppler` (DirectLook PDFs);
-optional `libavif`, `libheif` (full-size AVIF, HEIC). Flatpak later; it needs portal support
-for everything outside the sandbox, which Phase 3 already uses.
+optional `libavif`, `libheif` (full-size AVIF, HEIC), `ffmpeg` (video formats FilmCraft
+can't play). Flatpak later; it needs portal support for everything outside the sandbox,
+which Phase 3 already uses.
 
 ## Testing
 

@@ -21,3 +21,6 @@ windows.workspace = true
 # sound on Linux: ALSA (PipeWire and PulseAudio serve it through their ALSA plugins)
 [target.'cfg(target_os = "linux")'.dependencies]
 cpal = "0.18"
+# reads ffprobe's JSON (FFmpeg fallback)
+serde.workspace = true
+serde_json.workspace = true
