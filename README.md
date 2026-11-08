@@ -236,10 +236,12 @@ cargo run --release -p rf-app --bin rustyfiles
 ```
 
 What works on Linux today: browsing with live updates, the sidebar (your XDG folders and
-mounted drives), breadcrumbs and `~` in the address bar, tabs, folder sizes, Git status,
-hashes, image thumbnails, opening files with their default app, and "Open terminal here".
+mounted drives), breadcrumbs and `~` in the address bar, tabs, copy, move, rename and delete
+(with conflict answers, pause, speed limit and undo), the Trash (shared with other file
+managers), folder sizes, Git status, hashes, image thumbnails, opening files with their
+default app, and "Open terminal here". Copy and paste work inside rustyfiles.
 
-Not yet: copy, move and trash, file-type icons, "Open with", DirectLook outside the window
+Not yet: copy/paste with other apps, file-type icons, "Open with", DirectLook outside the window
 (Wayland has no global hotkeys), sound in video previews, and the tray icon. These show a
 "not implemented on Linux yet" message instead of doing nothing. Windows-only features
 (jump lists, the Open/Save dialog for other apps, the taskbar preview, auto-update) stay

@@ -6201,6 +6201,7 @@ name = "rf-linux"
 version = "0.2.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "crc32fast",
  "crossbeam-channel",
  "dirs 6.0.0",
