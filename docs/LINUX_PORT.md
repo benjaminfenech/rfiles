@@ -161,8 +161,18 @@ folder (both apply the container's rotation), so building needs no codec library
 0.1 s for 3000×2000. `look/heif.rs` reads the primary image's size (`ispe` + `irot`) from
 the header so the window opens at the right shape, and the Exif item (`iinf` + `iloc`) for
 the info card. With no decoder installed, DirectLook says what to install (the image viewer
-now drops its early icon placeholder when decoding fails, so the message shows). Next: media
-(audio, video fallback); RAW still shows its embedded JPEG.
+now drops its early icon placeholder when decoding fails, so the message shows). RAW still
+shows its embedded JPEG.
+
+Progress (2026-11-09): **sound in video and audio previews done** with `cpal` (ALSA; PipeWire
+and PulseAudio serve it through their ALSA plugins, so it shows up as "PipeWire ALSA
+[directlook]"). `rf-player`'s `wasapi_sink()` keeps its name on Linux and returns the cpal
+sink: a 100 ms queue between the player and cpal's callback, and a clock that counts the
+frames the callback took minus what the device still holds (cpal's predicted playback
+time), moving smoothly between callbacks, frozen while paused. The stream lives on its own
+thread (cpal streams can't move between threads) and ends when DirectLook leaves the file.
+Building needs ALSA's headers (`alsa-lib` / `libasound2-dev`). Next: a fallback for video
+formats FilmCraft can't play.
 
 - **Global Space key over other apps does not work on Wayland** (no global keyboard hooks,
   no foreground-window inspection). On Linux DirectLook works inside rustyfiles only;
@@ -177,7 +187,7 @@ now drops its early icon placeholder when decoding fails, so the message shows).
   read the version strings from the `VS_VERSIONINFO` resource ourselves. `cert` returns
   nothing on Linux; decode with an X.509 crate (`x509-parser`).
 - rf-player: present decoded frames as a GPUI image texture (simplest), and later a
-  wgpu/Vulkan presenter if it is too slow. Audio via `cpal` (PipeWire/ALSA).
+  wgpu/Vulkan presenter if it is too slow. ~~Audio via `cpal`~~ done (ALSA backend).
 
 ### Phase 3: desktop integration (about 2 weeks, can be split)
 
