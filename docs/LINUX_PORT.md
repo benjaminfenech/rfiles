@@ -152,14 +152,24 @@ Progress (2026-11-09): **PDF preview done** through poppler's command-line tools
 to link: `pdfinfo -box` reads every page's crop box and rotation once (575 pages in about
 40 ms), and `pdftoppm -scale-to` renders one page to PPM on stdout as it scrolls into view
 (`-scale-to-x/-y` would apply before the page's rotation). A missing poppler shows an
-install hint. Next: full-size HEIC/AVIF/JXL, then media (audio, video fallback).
+install hint.
+
+Progress (2026-11-09): **full-size JXL, AVIF and HEIC done** (they were thumbnails capped at
+1024 px). JPEG XL decodes in-process with `jxl-oxide` (pure Rust). AVIF and HEIC go through
+libavif's `avifdec` or libheif's `heif-dec` / `heif-convert` into a PNG in a private temp
+folder (both apply the container's rotation), so building needs no codec library; about
+0.1 s for 3000×2000. `look/heif.rs` reads the primary image's size (`ispe` + `irot`) from
+the header so the window opens at the right shape, and the Exif item (`iinf` + `iloc`) for
+the info card. With no decoder installed, DirectLook says what to install (the image viewer
+now drops its early icon placeholder when decoding fails, so the message shows). Next: media
+(audio, video fallback); RAW still shows its embedded JPEG.
 
 - **Global Space key over other apps does not work on Wayland** (no global keyboard hooks,
   no foreground-window inspection). On Linux DirectLook works inside rustyfiles only;
   `look/hook.rs` and `look/target.rs` stay Windows-only. Optional later: an X11-only hook
   or a desktop-portal GlobalShortcuts binding.
-- `look/decode.rs`: drop WIC; HEIC/AVIF via `libheif-rs`, JXL via `jxl-oxide`, RAW via
-  `rawler` or the embedded JPEG preview.
+- ~~`look/decode.rs`~~ JXL via `jxl-oxide`, AVIF/HEIC via `avifdec` / `heif-dec` (optional
+  runtime dependencies). RAW: still the embedded JPEG; `rawler` later if that's not enough.
 - ~~`look/pdf.rs`~~ done with poppler's `pdfinfo` / `pdftoppm` (runtime dependency for packaging).
   Password-protected PDFs show a message, as on Windows.
 - `preview_host` (Windows preview handlers): no equivalent; leave out.
@@ -192,8 +202,9 @@ the hybrid GPU/CPU renderer, critical-error-dialog suppression, `keep_gdiplus_al
 ## Packaging
 
 Start with a PKGBUILD in `packaging/arch/` (target machine is CachyOS) and a
-`rustyfiles.desktop` + icon. Runtime dependencies so far: `poppler` (DirectLook PDFs). Flatpak later; it needs portal support for everything outside
-the sandbox, which Phase 3 already uses.
+`rustyfiles.desktop` + icon. Runtime dependencies so far: `poppler` (DirectLook PDFs);
+optional `libavif`, `libheif` (full-size AVIF, HEIC). Flatpak later; it needs portal support
+for everything outside the sandbox, which Phase 3 already uses.
 
 ## Testing
 
