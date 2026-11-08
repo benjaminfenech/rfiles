@@ -97,9 +97,9 @@ Windows still builds (CI job on `windows-latest`).
 ### Phase 1: a usable file manager (about 3–4 weeks)
 
 Progress (2026-11-08): **file operations done** (copy, move, rename, delete, the Trash;
-copy/paste inside rustyfiles), **icons and thumbnails done**, **menus drawn in-window**.
-Next: "Open with", clipboard exchange with other apps, modifier keys from GPUI, the path
-audit.
+copy/paste inside rustyfiles), **icons and thumbnails done**, **menus drawn in-window**,
+**"Open with" done**. Next: clipboard exchange with other apps, modifier keys from GPUI, the
+path audit.
 
 
 | Module | Linux implementation |
@@ -109,7 +109,7 @@ audit.
 | drives, volume | `/proc/self/mountinfo` + `statvfs`; filter pseudo filesystems |
 | watch | `notify` already uses inotify; just ungate |
 | thumbs | ✅ `xdg_icons`: shared-mime-info (by extension) → the desktop's icon theme per the Icon Theme spec (theme from kdeglobals / GTK settings / gsettings, inherited themes, hicolor, pixmaps), SVGs drawn with resvg. `xdg_thumbs`: the shared `~/.cache/thumbnails` (read and written, `Thumb::MTime` checked, failures in `fail/rustyfiles`), images and SVGs decoded here, other types through the installed `.thumbnailer`s with a 15 s limit. `cargo run -p rf-linux --example icon_lookup` / `--example thumbnail` to check a system |
-| shell::open, open_with, open_terminal | `xdg-open` / `gio launch`; `.desktop` files + `mimeapps.list` for "Open with"; `$TERMINAL` or `x-terminal-emulator` fallback |
+| shell::open, open_with, open_terminal | ✅ `xdg-open`; `$TERMINAL` or the first common terminal. "Open with": `xdg_apps` reads the `.desktop` files and `mimeapps.list` (defaults, added / removed associations, parent types via `subclasses`) and launches per the Desktop Entry spec (`%f %F %u %U %i %c %k`, `Terminal=true`); the context menu's "Open with" lists them (default first), the standalone "Open with…" asks the desktop portal's app chooser. `cargo run -p rf-linux --example open_with -- <file>` shows what a system offers |
 | fastcopy, fastdelete, fileops | ✅ rf-win's engine and tests, ported: `copy_file_range` in 8 MB chunks (read/write fallback), modes and times kept, `renameat2(RENAME_NOREPLACE)`, same device = rename. `fileops` is the fallback engine (symlinks copied as links). Extended attributes and ACLs are not copied yet |
 | recycle | ✅ freedesktop Trash spec, our own: home trash + per-disk `.Trash/$uid` / `.Trash-$uid`, list / restore / empty, undo of a delete. The UI still says "Recycle Bin" (renaming needs new translations) |
 | clipboard | ◐ inside rustyfiles only (in-process). Still to do: `text/uri-list` + `x-special/gnome-copied-files` (cut vs copy) on the system clipboard; GPUI can only write text and images, so `wl-clipboard-rs` (Wayland data-control) and an X11 path |

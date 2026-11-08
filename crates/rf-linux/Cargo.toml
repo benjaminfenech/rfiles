@@ -26,6 +26,9 @@ rayon.workspace = true
 md-5.workspace = true
 # thumbnail cache files carry their source in PNG text chunks
 png = "0.18"
+# the desktop portal (app chooser); the same features GPUI already builds
+ashpd = { version = "0.13", default-features = false, features = ["async-io", "open_uri"] }
+futures.workspace = true
 sha1.workspace = true
 sha2.workspace = true
 crc32fast.workspace = true

@@ -240,10 +240,10 @@ mounted drives), breadcrumbs and `~` in the address bar, tabs, copy, move, renam
 (with conflict answers, pause, speed limit and undo), the Trash (shared with other file
 managers), file-type icons from your icon theme, thumbnails (shared with other file
 managers; videos, PDFs and documents through the installed thumbnailers), folder sizes, Git
-status, hashes, opening files with their
-default app, and "Open terminal here". Copy and paste work inside rustyfiles.
+status, hashes, opening files with their default app or any other ("Open with" lists the
+apps for the file's type, your default first), and "Open terminal here". Copy and paste work inside rustyfiles.
 
-Not yet: copy/paste with other apps, "Open with", DirectLook outside the window
+Not yet: copy/paste with other apps, DirectLook outside the window
 (Wayland has no global hotkeys), sound in video previews, and the tray icon. These show a
 "not implemented on Linux yet" message instead of doing nothing. Windows-only features
 (jump lists, the Open/Save dialog for other apps, the taskbar preview, auto-update) stay

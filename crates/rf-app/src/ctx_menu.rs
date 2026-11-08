@@ -829,10 +829,11 @@ fn to_items(me: &Me, session: u64, items: &[ShellItem], cx: &mut App) -> Vec<Ite
             }
             let icon = it.icon.as_ref().and_then(|i| fluent_menu::shell_icon(i, cx)).map(MenuIcon::Image).unwrap_or(MenuIcon::None);
             if !it.children.is_empty() {
-                return Item::Sub { label: it.label.clone().into(), icon, items: Sub::Items(Rc::new(to_items(me, session, &tidy(it.children.clone()), cx))) };
+                return Item::Sub { label: crate::i18n::td(&it.label).into(), icon, items: Sub::Items(Rc::new(to_items(me, session, &tidy(it.children.clone()), cx))) };
             }
             let (id, me) = (it.id, me.clone());
-            let mut item = Item::action(it.label.clone(), icon, move |_, cx| invoke_shell(&me, session, id, cx)).enabled(it.enabled);
+            // Windows hands labels over translated; Linux uses the app's source texts
+            let mut item = Item::action(crate::i18n::td(&it.label), icon, move |_, cx| invoke_shell(&me, session, id, cx)).enabled(it.enabled);
             if let Some(h) = &it.hint {
                 item = item.hint(h.clone());
             }

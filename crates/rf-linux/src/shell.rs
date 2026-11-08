@@ -8,7 +8,7 @@ use crate::wide::wide;
 /// Initializes an STA on the current thread (idempotent; errors ignored when already initialized).
 pub fn ensure_com() {}
 /// Runs a launcher detached; a waiter thread reaps it so no zombie is left behind.
-fn spawn_detached(cmd: &mut std::process::Command) -> std::io::Result<()> {
+pub(crate) fn spawn_detached(cmd: &mut std::process::Command) -> std::io::Result<()> {
     use std::process::Stdio;
     let mut child = cmd.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn()?;
     std::thread::spawn(move || {
@@ -33,8 +33,16 @@ pub fn open(path: &Path) -> anyhow::Result<()> {
     exec(path, None, None)
 }
 /// Shows the shell "Open with" dialog.
+///
+/// Linux: the desktop's own app chooser through the xdg-desktop-portal (`OpenURI` with
+/// `ask`), which GNOME, KDE and the GTK portal used on wlroots / Hyprland provide. Blocks
+/// until the portal has taken the request (not until the user has chosen).
 pub fn open_with(path: &Path) -> anyhow::Result<()> {
-    exec(path, Some("openas"), None)
+    use ashpd::desktop::open_uri::OpenFileRequest;
+    let file = std::fs::File::open(path)?;
+    futures::executor::block_on(async { OpenFileRequest::default().ask(true).send_file(&file).await })
+        .map(|_| ())
+        .map_err(|e| anyhow::anyhow!("the desktop's app chooser isn't available ({e})"))
 }
 /// Shows the Windows properties dialog for the item.
 pub fn properties(path: &Path) -> anyhow::Result<()> {
