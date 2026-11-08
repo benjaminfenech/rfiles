@@ -160,6 +160,18 @@ impl LookManager {
         }
     }
 
+    /// Shows `path` in a new window instead of the active one (Linux, when the size must change:
+    /// see `sys::reopen_for_size`). The new window opens before the old one goes, so rustyfiles
+    /// never hears "closed" and keeps sending the selection.
+    pub(crate) fn reopen(path: PathBuf, topmost: bool, cx: &mut App) {
+        let old = Self::global(cx).active.take();
+        Self::open(path, ShowOpts { topmost, pin: false }, cx);
+        if let Some(old) = old {
+            let _ = old.update(cx, |_, window, _| window.remove_window());
+        }
+        Self::report_windows(cx);
+    }
+
     pub fn close(cx: &mut App) {
         Self::with_active(cx, |_, w, _| w.remove_window());
         Self::global(cx).active = None;

@@ -271,6 +271,14 @@ pub fn set_window_rect(hwnd: isize, r: [f32; 4], window: &mut gpui_kit::Window) 
     }
 }
 
+/// Whether DirectLook should reopen instead of resizing to `new` (logical px): only off
+/// Windows (compositors keep a floating window's size), and only for a clear change (more than
+/// 12 % and 48 px on a side), so small differences never flicker.
+pub fn reopen_for_size(cur: (f32, f32), new: (f32, f32)) -> bool {
+    let differs = |a: f32, b: f32| (a - b).abs() > 48.0 && (a - b).abs() > a.max(b) * 0.12;
+    !cfg!(windows) && (differs(cur.0, new.0) || differs(cur.1, new.1))
+}
+
 #[cfg(not(windows))]
 fn bounds_array(b: gpui_kit::Bounds<gpui_kit::Pixels>) -> [f32; 4] {
     [f32::from(b.origin.x), f32::from(b.origin.y), f32::from(b.size.width), f32::from(b.size.height)]
@@ -279,6 +287,14 @@ fn bounds_array(b: gpui_kit::Bounds<gpui_kit::Pixels>) -> [f32; 4] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reopen_only_for_clear_size_changes() {
+        let linux = !cfg!(windows);
+        assert_eq!(reopen_for_size((1280., 760.), (1280., 360.)), linux);
+        assert!(!reopen_for_size((1280., 760.), (1270., 740.)), "small change: resize in place");
+        assert!(!reopen_for_size((200., 100.), (230., 100.)), "12 % but under 48 px");
+    }
 
     #[test]
     fn paths_wrap_after_separators() {

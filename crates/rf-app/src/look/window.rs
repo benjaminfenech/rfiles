@@ -169,6 +169,13 @@ impl LookWindow {
             let w = crate::sys::work_area_of(self.hwnd, window, cx);
             let work = Rect { x: w[0], y: w[1], w: w[2], h: w[3] };
             let size = geometry::fit(prepared.preferred, work, prepared.fit_ratio);
+            // Linux: compositors keep a floating window's size (Hyprland ignores the resize), so
+            // a clearly different size gets a fresh window at that size
+            if crate::sys::reopen_for_size(cur, size) {
+                let (path, topmost) = (self.path.clone(), self.topmost);
+                cx.defer(move |cx| super::LookManager::reopen(path, topmost, cx));
+                return;
+            }
             let old = Rect { x: f32::from(b.origin.x), y: f32::from(b.origin.y), w: cur.0, h: cur.1 };
             let r = geometry::relocate(old, size, work);
             self.resizing_until = Some(std::time::Instant::now() + Duration::from_millis(400));

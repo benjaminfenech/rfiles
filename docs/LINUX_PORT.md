@@ -143,7 +143,10 @@ still holds).
 Progress (2026-11-08): **DirectLook window done**: it stays its own window (decided with the
 user) with app id `directlook` for window rules (README has Hyprland / Sway / i3 rules),
 sized from GPUI's display info and resized with `window.resize` (`sys::work_area_*`,
-`sys::set_window_rect`). Next: previews (PDF, SVG, sizes, full-size HEIC/AVIF/JXL), then
+`sys::set_window_rect`). Hyprland ignores a floating window's own resize, so on Linux a
+clearly different size (more than 12 % and 48 px on a side) reopens DirectLook at that size
+(`sys::reopen_for_size`, `LookManager::reopen`: the new window opens first, so rustyfiles
+keeps following the selection). Next: previews (PDF, SVG, sizes, full-size HEIC/AVIF/JXL), then
 media (audio, video fallback).
 
 - **Global Space key over other apps does not work on Wayland** (no global keyboard hooks,
