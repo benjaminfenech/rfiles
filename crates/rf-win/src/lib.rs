@@ -5,6 +5,7 @@
 #![cfg(windows)]
 
 pub mod accent;
+pub mod cert;
 pub mod clipboard;
 pub mod complete;
 pub mod ctxmenu;
@@ -29,6 +30,7 @@ pub mod look;
 pub mod listing;
 pub mod localized;
 pub mod network;
+pub mod pe;
 pub mod fileactions;
 pub mod fileinfo;
 pub mod jumplist;
@@ -48,6 +50,7 @@ pub mod tray;
 pub mod watch;
 pub mod window;
 pub mod volume;
+pub mod tasklist;
 pub mod wide;
 
 pub use drives::{Drive, DriveKind, list_drives};

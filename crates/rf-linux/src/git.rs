@@ -863,3 +863,31 @@ fn rel_inside(root: &Path, dir: &Path) -> Option<String> {
     }
     rest.strip_prefix('/').map(str::to_string)
 }
+
+/// Points `origin` at `url` (adds it, or changes its address).
+pub fn connect_remote(root: &Path, url: &str) -> Result<()> {
+    let url = url.trim();
+    if url.is_empty() {
+        bail!("Depo adresi boş");
+    }
+    let verb = if remotes(root)?.iter().any(|r| r == "origin") { "set-url" } else { "add" };
+    git_text(root, &["remote", verb, "origin", url], "Uzak depo bağlanamadı").map(|_| ())
+}
+
+/// Whether there is anything to commit (changed, added, deleted or untracked files).
+pub fn has_changes(root: &Path) -> bool {
+    git_text(root, &["status", "--porcelain"], "").is_ok_and(|t| !t.trim().is_empty())
+}
+
+/// Stages everything and commits it with `message`.
+pub fn commit_all(root: &Path, message: &str) -> Result<()> {
+    let message = message.trim();
+    if message.is_empty() {
+        bail!("Kayıt açıklaması boş");
+    }
+    if !has_changes(root) {
+        bail!("Kaydedilecek değişiklik yok");
+    }
+    git_text(root, &["add", "-A"], "Değişiklikler eklenemedi")?;
+    git_text(root, &["commit", "-q", "-m", message], "Kaydedilemedi").map(|_| ())
+}
