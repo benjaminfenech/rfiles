@@ -1,6 +1,8 @@
 //! rf-win: Windows platform layer (fast enumeration, Shell COM, icons/thumbnails, file ops, watcher).
 //!
 //! Every function here may block (disk, network, shell extensions). Never call them on the UI thread.
+//! Windows only: on Linux rf-app uses rf-linux under this crate's name.
+#![cfg(windows)]
 
 pub mod accent;
 pub mod clipboard;

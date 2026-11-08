@@ -83,8 +83,17 @@ impl AudioSink for NullSink {
     }
 }
 
+#[cfg(windows)]
 pub use wasapi::wasapi_sink;
 
+/// No audio output on Linux yet (PipeWire/ALSA via cpal is Phase 2): callers fall back to
+/// [`NullSink`], so playback runs silently on the same clock.
+#[cfg(not(windows))]
+pub fn wasapi_sink() -> anyhow::Result<Box<dyn AudioSink>> {
+    anyhow::bail!("audio output is not implemented on this platform yet")
+}
+
+#[cfg(windows)]
 mod wasapi {
     use super::AudioSink;
     use anyhow::Context;

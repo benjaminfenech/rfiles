@@ -106,7 +106,12 @@ fn unc_share_root(p: &Path) -> Option<PathBuf> {
 pub fn display_name(p: &Path) -> String {
     match p.file_name() {
         Some(n) => redact_credentials(&n.to_string_lossy()),
-        None => redact_credentials(p.to_string_lossy().trim_end_matches(['\\', '/'])),
+        None => {
+            let s = p.to_string_lossy();
+            let trimmed = s.trim_end_matches(['\\', '/']);
+            // the Unix root is all separator: show it as "/"
+            if trimmed.is_empty() && s.starts_with('/') { "/".into() } else { redact_credentials(trimmed) }
+        }
     }
 }
 
@@ -216,6 +221,7 @@ mod tests {
         assert_eq!(Location::from_shell_name(r"C:\Windows"), None);
     }
 
+    #[cfg(windows)]
     #[test]
     fn non_ascii_paths_do_not_panic() {
         let up = |s: &str| Location::Path(PathBuf::from(s)).parent();
@@ -233,6 +239,7 @@ mod tests {
         assert_eq!(redact_credentials(r"C:\a@b:c"), r"C:\a@b:c");
     }
 
+    #[cfg(windows)]
     #[test]
     fn unc_up() {
         let up = |s: &str| Location::Path(PathBuf::from(s)).parent();
@@ -242,6 +249,7 @@ mod tests {
         assert_eq!(up(r"C:\x"), Some(Location::Path(PathBuf::from(r"C:\"))));
     }
 
+    #[cfg(windows)]
     #[test]
     fn back_forward() {
         let mut h = History::new(Location::Home);
@@ -256,6 +264,7 @@ mod tests {
         assert_eq!(h.back(), None);
     }
 
+    #[cfg(windows)]
     #[test]
     fn parent_of_root_is_home() {
         assert_eq!(Location::Path("C:\\".into()).parent(), Some(Location::Home));
@@ -267,11 +276,42 @@ mod tests {
     }
 }
 
+#[cfg(all(test, not(windows)))]
+mod unix_tests {
+    use super::*;
+
+    #[test]
+    fn up_and_root() {
+        let up = |s: &str| Location::Path(PathBuf::from(s)).parent();
+        assert_eq!(up("/home/öğrenci/x"), Some(Location::Path(PathBuf::from("/home/öğrenci"))));
+        assert_eq!(up("/home"), Some(Location::Path(PathBuf::from("/"))));
+        assert_eq!(up("/"), Some(Location::Home));
+        assert_eq!(up("ftp://host"), Some(Location::Home));
+        assert_eq!(display_name(Path::new("/")), "/");
+        assert_eq!(display_name(Path::new("/home/x")), "x");
+    }
+
+    #[test]
+    fn back_forward() {
+        let mut h = History::new(Location::Home);
+        h.navigate(Location::Path("/".into()));
+        h.navigate(Location::Path("/home".into()));
+        assert_eq!(h.back(), Some(&Location::Path("/".into())));
+        assert!(h.can_forward());
+        h.navigate(Location::Path("/mnt".into()));
+        assert!(!h.can_forward());
+        assert_eq!(h.back(), Some(&Location::Path("/".into())));
+        assert_eq!(h.back(), Some(&Location::Home));
+        assert_eq!(h.back(), None);
+    }
+}
+
 /// Tidies a path typed, pasted or passed in, the way Explorer reads it: `/` becomes a
 /// backslash, doubled separators collapse, `.` and `..` resolve lexically, the drive letter
 /// is upper case, and there's no trailing separator except on a root. URLs (`ftp://…`),
 /// shell names (`shell:…`, `::{…}`), device / verbatim paths and relative paths are left
 /// as they are.
+#[cfg(windows)]
 pub fn clean_path(p: &Path) -> PathBuf {
     const B: char = '\\';
     let Some(s) = p.to_str() else { return p.to_path_buf() };
@@ -319,10 +359,41 @@ pub fn clean_path(p: &Path) -> PathBuf {
     PathBuf::from(out)
 }
 
+/// Tidies a path typed, pasted or passed in: doubled `/` collapse, `.` and `..` resolve
+/// lexically (`..` never climbs above `/`), and there's no trailing `/` except on the root.
+/// URLs (`ftp://…`) and relative paths are left as they are. Backslashes are ordinary
+/// file-name characters on Unix and are kept.
+#[cfg(not(windows))]
+pub fn clean_path(p: &Path) -> PathBuf {
+    let Some(s) = p.to_str() else { return p.to_path_buf() };
+    if s.contains("://") || !s.starts_with('/') {
+        return p.to_path_buf();
+    }
+    let mut parts: Vec<&str> = Vec::new();
+    for c in s.split('/') {
+        match c {
+            "" | "." => {}
+            ".." => {
+                parts.pop();
+            }
+            c => parts.push(c),
+        }
+    }
+    if parts.is_empty() {
+        return PathBuf::from("/");
+    }
+    PathBuf::from(parts.iter().fold(String::new(), |mut out, c| {
+        out.push('/');
+        out.push_str(c);
+        out
+    }))
+}
+
 #[cfg(test)]
 mod clean_tests {
     use super::*;
 
+    #[cfg(windows)]
     #[test]
     fn clean_paths() {
         let c = |s: &str| clean_path(Path::new(s)).to_string_lossy().replace('\\', "|");
@@ -340,5 +411,19 @@ mod clean_tests {
         assert_eq!(c("||?|C:|a/b".replace('|', "\\").as_str()), "||?|C:|a/b");
         assert_eq!(c("C:/Fotoğraflar/Tatil"), "C:|Fotoğraflar|Tatil");
         assert_eq!(c("klasör/alt"), "klasör|alt");
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn clean_unix_paths() {
+        let c = |s: &str| clean_path(Path::new(s)).to_string_lossy().into_owned();
+        assert_eq!(c("/home/x/./y/../z/"), "/home/x/z");
+        assert_eq!(c("//usr///lib"), "/usr/lib");
+        assert_eq!(c("/"), "/");
+        assert_eq!(c("/.."), "/");
+        assert_eq!(c("/a/../.."), "/");
+        assert_eq!(c("ftp://host/a/b"), "ftp://host/a/b");
+        assert_eq!(c("klasör/alt"), "klasör/alt");
+        assert_eq!(c("/Fotoğraflar/a\\b"), "/Fotoğraflar/a\\b");
     }
 }

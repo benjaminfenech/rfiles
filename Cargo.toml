@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/rf-core", "crates/rf-win", "crates/rf-app", "crates/rf-archive", "crates/rf-dialog", "crates/rf-player", "tools/gpustress"]
+members = ["crates/rf-core", "crates/rf-win", "crates/rf-linux", "crates/gpui-windows-shim", "crates/rf-app", "crates/rf-archive", "crates/rf-dialog", "crates/rf-player", "tools/gpustress"]
 
 [workspace.package]
 version = "0.2.0"
@@ -11,6 +11,7 @@ publish = false
 [workspace.dependencies]
 rf-core = { path = "crates/rf-core" }
 rf-win = { path = "crates/rf-win" }
+rf-linux = { path = "crates/rf-linux" }
 rf-player = { path = "crates/rf-player" }
 # FilmCraft (MIT OR Apache-2.0): saf Rust kapsayıcı ve kodek çözücüleri, sabit commit.
 filmcraft-media = { git = "https://github.com/storytold/filmcraft", rev = "c2f65871e998cca4700a74dbcf9348cab51fb06b" }

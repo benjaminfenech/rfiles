@@ -9,9 +9,6 @@ use gpui_kit::component::input::{InputEvent, InputState};
 use gpui_kit::*;
 use rf_win::ctxmenu::MenuOutcome;
 use rf_win::fileops::{self, Transfer};
-use windows::Win32::Foundation::POINT;
-use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_SHIFT};
-use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
 
 use crate::folder_view::FolderView;
 use rf_win::ctxmenu::ExtraItem;
@@ -666,16 +663,13 @@ impl FolderView {
         let paste_dir_ui = dir.clone();
         let (tx, rx) = oneshot::channel::<(MenuOutcome, Option<(Vec<PathBuf>, Transfer)>)>();
         // Read Shift here: the shell thread has its own input state.
-        let extended = unsafe { GetKeyState(VK_SHIFT.0 as i32) < 0 };
+        let extended = crate::sys::shift_down();
         rf_win::sta::run(move |owner| {
-            let mut pt = POINT::default();
-            unsafe {
-                let _ = GetCursorPos(&mut pt);
-            }
+            let pt = crate::sys::cursor_pos();
             let r = if background {
-                rf_win::ctxmenu::show_for_background(owner, &dir, (pt.x, pt.y), extended, &extra)
+                rf_win::ctxmenu::show_for_background(owner, &dir, pt, extended, &extra)
             } else {
-                rf_win::ctxmenu::show_for_items(owner, &items, (pt.x, pt.y), extended, &extra)
+                rf_win::ctxmenu::show_for_items(owner, &items, pt, extended, &extra)
             };
             let r = r.unwrap_or_else(|e| {
                 log::warn!("context menu: {e:#}");
@@ -768,10 +762,8 @@ impl FolderView {
         if items.is_empty() {
             return;
         }
-        let ui_thread = unsafe { windows::Win32::System::Threading::GetCurrentThreadId() };
-        unsafe {
-            let _ = windows::Win32::UI::Input::KeyboardAndMouse::ReleaseCapture();
-        }
+        let ui_thread = crate::sys::current_thread_id();
+        crate::sys::release_capture();
         rf_win::sta::run(move |owner| {
             if let Err(e) = rf_win::dnd::drag_out(owner, ui_thread, &items) {
                 log::warn!("drag: {e:#}");
@@ -785,10 +777,7 @@ impl FolderView {
         if sources.is_empty() || rf_win::dnd::is_invalid_drop(&sources, &dest) {
             return;
         }
-        let (ctrl, shift) = unsafe {
-            use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL, VK_SHIFT};
-            (GetKeyState(VK_CONTROL.0 as i32) < 0, GetKeyState(VK_SHIFT.0 as i32) < 0)
-        };
+        let (ctrl, shift) = (crate::sys::ctrl_down(), crate::sys::shift_down());
         let kind = rf_win::dnd::default_transfer(&sources, &dest, ctrl, shift);
         crate::status_center::transfer(cx, kind, sources, dest);
     }
@@ -806,11 +795,8 @@ impl FolderView {
             .collect();
         let (tx, rx) = oneshot::channel::<Option<u32>>();
         rf_win::sta::run(move |owner| {
-            let mut pt = POINT::default();
-            unsafe {
-                let _ = GetCursorPos(&mut pt);
-            }
-            let _ = tx.send(rf_win::ctxmenu::show_simple(owner, (pt.x, pt.y), &items));
+            let pt = crate::sys::cursor_pos();
+            let _ = tx.send(rf_win::ctxmenu::show_simple(owner, pt, &items));
         });
         cx.spawn(async move |this, cx| {
             if let Ok(Some(id)) = rx.await {

@@ -17,12 +17,14 @@ log.workspace = true
 parking_lot.workspace = true
 smallvec.workspace = true
 crossbeam-channel.workspace = true
-windows.workspace = true
-windows-core.workspace = true
 notify.workspace = true
-windows-registry = "0.6"
 rayon.workspace = true
 md-5.workspace = true
 sha1.workspace = true
 sha2.workspace = true
 crc32fast.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows.workspace = true
+windows-core.workspace = true
+windows-registry = "0.6"

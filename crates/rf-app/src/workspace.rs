@@ -1666,18 +1666,13 @@ impl Workspace {
     /// plus open in new tab/window and pin/unpin.
     fn sidebar_menu(&mut self, path: PathBuf, window: &mut Window, cx: &mut Context<Self>) {
         use crate::fluent_menu::{Item, Menu, MenuIcon, Sub};
-        let shift = unsafe {
-            windows::Win32::UI::Input::KeyboardAndMouse::GetKeyState(windows::Win32::UI::Input::KeyboardAndMouse::VK_SHIFT.0 as i32) < 0
-        };
+        let shift = crate::sys::shift_down();
         if shift {
             // the classic Explorer menu, extended verbs included
             let p2 = path.clone();
             rf_win::sta::run(move |owner| {
-                let mut pt = windows::Win32::Foundation::POINT::default();
-                unsafe {
-                    let _ = windows::Win32::UI::WindowsAndMessaging::GetCursorPos(&mut pt);
-                }
-                if let Err(e) = rf_win::ctxmenu::show_for_one(owner, &p2, (pt.x, pt.y), true, &[]) {
+                let pt = crate::sys::cursor_pos();
+                if let Err(e) = rf_win::ctxmenu::show_for_one(owner, &p2, pt, true, &[]) {
                     log::warn!("sidebar menu: {e:#}");
                 }
             });
@@ -1723,11 +1718,8 @@ impl Workspace {
             })),
             Item::action(t!("Özellikler"), MenuIcon::Lucide(L::Wrench), with(|_, p, _, _| {
                 rf_win::sta::run(move |owner| {
-                    let mut pt = windows::Win32::Foundation::POINT::default();
-                    unsafe {
-                        let _ = windows::Win32::UI::WindowsAndMessaging::GetCursorPos(&mut pt);
-                    }
-                    if let Err(e) = rf_win::ctxmenu::invoke_verb(owner, &rf_win::ctxmenu::ShellTarget::One(p), "properties", (pt.x, pt.y)) {
+                    let pt = crate::sys::cursor_pos();
+                    if let Err(e) = rf_win::ctxmenu::invoke_verb(owner, &rf_win::ctxmenu::ShellTarget::One(p), "properties", pt) {
                         log::warn!("properties: {e:#}");
                     }
                 });
@@ -2698,11 +2690,18 @@ fn tooltip_text(id: &str) -> &'static str {
 /// Opens `dir` in the user's editor (`ide` path, else VS Code's `code` launcher).
 pub fn open_in_ide(dir: PathBuf, ide: String) {
     std::thread::spawn(move || {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
         let r = if ide.is_empty() {
-            // `code` is a .cmd launcher: run it through cmd without a console window
-            std::process::Command::new("cmd").args(["/c", "code", "."]).current_dir(&dir).creation_flags(CREATE_NO_WINDOW).spawn()
+            #[cfg(windows)]
+            {
+                use std::os::windows::process::CommandExt;
+                const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+                // `code` is a .cmd launcher: run it through cmd without a console window
+                std::process::Command::new("cmd").args(["/c", "code", "."]).current_dir(&dir).creation_flags(CREATE_NO_WINDOW).spawn()
+            }
+            #[cfg(not(windows))]
+            {
+                std::process::Command::new("code").arg(".").current_dir(&dir).spawn()
+            }
         } else {
             std::process::Command::new(&ide).arg(&dir).spawn()
         };
@@ -2717,10 +2716,7 @@ fn drop_files(paths: &ExternalPaths, dest: PathBuf, cx: &mut App) {
     if sources.is_empty() || rf_win::dnd::is_invalid_drop(&sources, &dest) {
         return;
     }
-    let (ctrl, shift) = unsafe {
-        use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL, VK_SHIFT};
-        (GetKeyState(VK_CONTROL.0 as i32) < 0, GetKeyState(VK_SHIFT.0 as i32) < 0)
-    };
+    let (ctrl, shift) = (crate::sys::ctrl_down(), crate::sys::shift_down());
     let kind = rf_win::dnd::default_transfer(&sources, &dest, ctrl, shift);
     crate::status_center::transfer(cx, kind, sources, dest);
 }
@@ -2766,6 +2762,11 @@ fn breadcrumbs(path: &Path) -> Vec<(String, Location)> {
     for comp in path.components() {
         acc.push(comp.as_os_str());
         if matches!(comp, std::path::Component::RootDir) {
+            // Unix: no drive before the root, so "/" is a crumb of its own
+            if out.is_empty() {
+                out.push(("/".to_string(), Location::Path(acc.clone())));
+                continue;
+            }
             // merge the root separator into the drive crumb
             if let Some(last) = out.last_mut() {
                 let (_, loc): &mut (String, Location) = last;
@@ -2793,6 +2794,14 @@ fn parse_location(text: &str) -> Option<Location> {
     }
     // Environment variables like %USERPROFILE%
     let expanded = expand_env(t);
+    // Unix: "~" and "~/sub" are the home folder
+    #[cfg(unix)]
+    let expanded = match expanded.strip_prefix('~') {
+        Some(rest) if rest.is_empty() || rest.starts_with('/') => {
+            dirs::home_dir().map_or(expanded.clone(), |h| format!("{}{rest}", h.display()))
+        }
+        _ => expanded,
+    };
     let mut p = PathBuf::from(&expanded);
     if expanded.starts_with(crate::aliases::PREFIX) {
         // "@name\sub": a folder alias; unknown names fall through as a plain path
@@ -3284,6 +3293,21 @@ mod tests {
     use rf_core::Location;
     use std::path::{Path, PathBuf};
 
+    #[cfg(unix)]
+    #[test]
+    fn unix_crumbs() {
+        let c = breadcrumbs(Path::new("/home/demo"));
+        let labels: Vec<_> = c.iter().map(|(l, _)| l.as_str()).collect();
+        assert_eq!(labels, vec!["/", "home", "demo"]);
+        assert_eq!(c[0].1, Location::Path(PathBuf::from("/")));
+        assert_eq!(c[2].1, Location::Path(PathBuf::from("/home/demo")));
+        let home = dirs::home_dir().unwrap();
+        assert_eq!(parse_location("~"), Some(Location::Path(home.clone())));
+        assert_eq!(parse_location("~/x"), Some(Location::Path(home.join("x"))));
+        assert_eq!(parse_location("~user"), Some(Location::Path(PathBuf::from("~user"))));
+    }
+
+    #[cfg(windows)]
     #[test]
     fn crumbs() {
         let c = breadcrumbs(Path::new(r"C:\Users\demo"));
@@ -3303,6 +3327,17 @@ mod launch_tests {
     use rf_core::Location;
     use std::path::PathBuf;
 
+    #[cfg(unix)]
+    #[test]
+    fn unix_select_messages() {
+        let (loc, sel) = parse_launch(&format!("{SELECT_PREFIX}/home/me/Klasör/rapor ü.txt"));
+        assert_eq!(loc, Location::Path(PathBuf::from("/home/me/Klasör")));
+        assert_eq!(sel.as_deref(), Some("rapor ü.txt"));
+        assert_eq!(parse_launch("/usr/share"), (Location::Path(PathBuf::from("/usr/share")), None));
+        assert_eq!(parse_launch("  "), (Location::Home, None));
+    }
+
+    #[cfg(windows)]
     #[test]
     fn select_messages() {
         let (loc, sel) = parse_launch(&format!(r"{SELECT_PREFIX}C:\Klasör\rapor ü.txt"));

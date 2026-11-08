@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+#[cfg(windows)]
 use std::time::{Duration, Instant};
 
 use rf_player::open;
@@ -41,6 +42,7 @@ fn can_open_by_extension() {
 }
 
 /// 4 GB'lık seyrek bir dosyanın başında h264.mp4 var; açma 1 s içinde döner ve bellek 200 MB'ı aşmaz.
+#[cfg(windows)]
 #[test]
 fn huge_file_is_not_read_whole() {
     use std::io::Write;

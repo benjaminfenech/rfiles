@@ -188,7 +188,7 @@ impl Preview {
                 .rounded(theme::RADIUS_SM)
                 .bg(p.content_bg)
                 .text_sm()
-                .when(!is_markdown(&e), |d| d.font_family("Cascadia Mono").child(text.clone()))
+                .when(!is_markdown(&e), |d| d.font_family(crate::sys::mono_font()).child(text.clone()))
                 .when(is_markdown(&e), |d| d.child(gpui_kit::component::text::TextView::markdown("ql-md", text.clone())))
                 .into_any_element()
         } else {
@@ -343,7 +343,7 @@ impl Preview {
             pl.started = true;
             rf_win::sta::run(move |_| rf_win::preview_host::media_play(owner, &path, None));
         } else if pl.started {
-            let rect = pl.rect.map(|r| windows::Win32::Foundation::RECT { left: r[0], top: r[1], right: r[2], bottom: r[3] });
+            let rect = pl.rect.map(|r| crate::sys::Rect { left: r[0], top: r[1], right: r[2], bottom: r[3] });
             rf_win::sta::run(move |_| rf_win::preview_host::media_play(owner, &path, rect));
         } else {
             // the video box takes its place on the next frame and starts playback there
@@ -395,7 +395,7 @@ impl Preview {
         }
         let first = pl.rect.is_none();
         pl.rect = Some(r);
-        let rect = windows::Win32::Foundation::RECT { left: r[0], top: r[1], right: r[2], bottom: r[3] };
+        let rect = crate::sys::Rect { left: r[0], top: r[1], right: r[2], bottom: r[3] };
         rf_win::sta::run(move |_| {
             if first {
                 rf_win::preview_host::media_play(owner, &path, Some(rect));
@@ -552,7 +552,7 @@ impl Preview {
             }
         };
         let dark = Palette::for_window(window).dark;
-        let rect = windows::Win32::Foundation::RECT { left: r[0], top: r[1], right: r[2], bottom: r[3] };
+        let rect = crate::sys::Rect { left: r[0], top: r[1], right: r[2], bottom: r[3] };
         rf_win::sta::run(move |_| {
             if same_file {
                 rf_win::preview_host::reposition(rect);
@@ -875,7 +875,7 @@ impl Render for Preview {
                         .border_1()
                         .border_color(p.border)
                         .text_xs()
-                        .when(!md, |d| d.font_family("Cascadia Mono").text_color(p.text_secondary).child(text.clone()))
+                        .when(!md, |d| d.font_family(crate::sys::mono_font()).text_color(p.text_secondary).child(text.clone()))
                         .when(md, |d| d.child(gpui_kit::component::text::TextView::markdown("pv-md", text.clone()))),
                 );
             }

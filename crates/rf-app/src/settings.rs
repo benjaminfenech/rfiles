@@ -598,6 +598,9 @@ pub fn apply_component_theme(cx: &mut App) {
         Theme::update(cx, |t| t.font_family = f.into());
     } else if std::path::Path::new(r"C:\Windows\Fonts\SegUIVar.ttf").exists() {
         Theme::update(cx, |t| t.font_family = "Segoe UI Variable Text".into());
+    } else if let Some(f) = crate::sys::ui_font() {
+        // Linux: the desktop's own UI font
+        Theme::update(cx, |t| t.font_family = f.into());
     }
 }
 

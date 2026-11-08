@@ -433,7 +433,8 @@ pub(crate) fn footer(ws: &mut Workspace, s: &Rc<PickSession>, p: &Palette, windo
         .into_any_element()
 }
 
-#[cfg(test)]
+// Windows paths: the picker answers the Open/Save dialog DLL, which is Windows-only
+#[cfg(all(test, windows))]
 mod tests {
     // not `super::*`: gpui's `test` macro would shadow the built-in one
     use super::{names_text, parse_names, resolve};

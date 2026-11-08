@@ -1,3 +1,6 @@
+//! D3D11 presenter tests (Windows only).
+#![cfg(windows)]
+
 use rf_player::{Frame, render_offscreen};
 
 fn px(rgba: &[u8], w: u32, x: u32, y: u32) -> (u8, u8, u8) {

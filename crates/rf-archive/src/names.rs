@@ -5,12 +5,15 @@
 use std::borrow::Cow;
 use std::sync::OnceLock;
 
+#[cfg(windows)]
 use windows::Win32::Globalization::{GetLocaleInfoEx, LOCALE_IDEFAULTCODEPAGE, MULTI_BYTE_TO_WIDE_CHAR_FLAGS, MultiByteToWideChar};
+#[cfg(windows)]
 use windows::core::PCWSTR;
 
 /// The user locale's traditional OEM code page (857 for tr-TR, 437 for en-US). Deliberately
 /// not `GetOEMCP()`: with "Use Unicode UTF-8 for worldwide language support" enabled that is
 /// 65001, but old archives were still written in the legacy page.
+#[cfg(windows)]
 pub fn legacy_oem_codepage() -> u32 {
     static CP: OnceLock<u32> = OnceLock::new();
     *CP.get_or_init(|| {
@@ -21,6 +24,7 @@ pub fn legacy_oem_codepage() -> u32 {
     })
 }
 
+#[cfg(windows)]
 fn decode_codepage(raw: &[u8], cp: u32) -> Option<String> {
     let n = unsafe { MultiByteToWideChar(cp, MULTI_BYTE_TO_WIDE_CHAR_FLAGS(0), raw, None) };
     if n <= 0 {
@@ -29,6 +33,44 @@ fn decode_codepage(raw: &[u8], cp: u32) -> Option<String> {
     let mut out = vec![0u16; n as usize];
     let n = unsafe { MultiByteToWideChar(cp, MULTI_BYTE_TO_WIDE_CHAR_FLAGS(0), raw, Some(&mut out)) };
     (n > 0).then(|| String::from_utf16_lossy(&out[..n as usize]))
+}
+
+/// Linux has no OEM code page: guess the one Windows would use for the user's language
+/// (from `LC_ALL` / `LC_CTYPE` / `LANG`), so zips made on that Windows decode the same way.
+/// CJK pages (932, 936, 949, 950) are not covered and fall back to 437.
+#[cfg(unix)]
+pub fn legacy_oem_codepage() -> u32 {
+    static CP: OnceLock<u32> = OnceLock::new();
+    *CP.get_or_init(|| {
+        let locale = ["LC_ALL", "LC_CTYPE", "LANG"]
+            .iter()
+            .find_map(|v| std::env::var(v).ok().filter(|s| !s.is_empty()))
+            .unwrap_or_default();
+        codepage_for_language(locale.split(['_', '.', '@']).next().unwrap_or(""))
+    })
+}
+
+#[cfg(unix)]
+fn codepage_for_language(lang: &str) -> u32 {
+    match lang {
+        "tr" | "az" => 857,
+        "ru" | "uk" | "be" | "bg" => 866,
+        "el" => 737,
+        "ar" | "fa" => 720,
+        "he" => 862,
+        "pl" | "cs" | "sk" | "hu" | "hr" | "sl" | "ro" | "sr" | "bs" | "sq" => 852,
+        "lt" | "lv" | "et" => 775,
+        "th" => 874,
+        "de" | "fr" | "es" | "it" | "nl" | "pt" | "sv" | "da" | "nb" | "nn" | "no" | "fi" | "is" | "ca" | "eu"
+        | "gl" | "ga" => 850,
+        _ => 437,
+    }
+}
+
+#[cfg(unix)]
+fn decode_codepage(raw: &[u8], cp: u32) -> Option<String> {
+    let table = oem_cp::code_table::DECODING_TABLE_CP_MAP.get(&u16::try_from(cp).ok()?)?;
+    table.decode_string_checked(raw)
 }
 
 /// Best name for an entry: valid UTF-8 bytes are UTF-8 (flagged or not); anything else is the

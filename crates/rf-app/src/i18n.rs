@@ -191,13 +191,10 @@ fn match_tag(tag: &str) -> Lang {
 
 /// The Windows UI language's best translation (English when there is none).
 fn system_lang() -> Lang {
-    use windows::Win32::Globalization::{GetUserDefaultUILanguage, LCIDToLocaleName};
-    let mut buf = [0u16; 85];
-    let n = unsafe { LCIDToLocaleName(GetUserDefaultUILanguage() as u32, Some(&mut buf), 0) };
-    if n <= 1 {
-        return Lang::En;
+    match crate::sys::ui_language_tag() {
+        Some(tag) => match_tag(&tag),
+        None => Lang::En,
     }
-    match_tag(&String::from_utf16_lossy(&buf[..n as usize - 1]))
 }
 
 // 0 = Tr, 1 = En, 2 + i = LOCALES[i] (resolved; never System).

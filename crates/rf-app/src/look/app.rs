@@ -39,7 +39,7 @@ fn open_settings() {
             return;
         }
         if let Ok(me) = std::env::current_exe() {
-            let _ = std::process::Command::new(me.with_file_name("rustyfiles.exe")).arg("--settings=directlook").spawn();
+            let _ = std::process::Command::new(me.with_file_name(format!("rustyfiles{}", std::env::consts::EXE_SUFFIX))).arg("--settings=directlook").spawn();
         }
     });
 }
