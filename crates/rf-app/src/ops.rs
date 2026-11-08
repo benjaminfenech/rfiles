@@ -522,12 +522,17 @@ impl FolderView {
         };
         let old = self.entry(ei).name.to_string();
         self.set_renaming(None, None);
-        // Explorer's rule, said up front instead of a shell error after the fact
-        const INVALID: &[char] = &['\\', '/', ':', '*', '?', '"', '<', '>', '|'];
-        if new_name.contains(INVALID) || new_name.ends_with('.') {
+        // the platform's rule, said up front instead of an error after the fact (Explorer's on
+        // Windows; Linux only forbids "/")
+        if invalid_file_name(&new_name) {
             let title = crate::t!("Yeniden adlandır").to_string();
-            let msg = format!("{}\n\n{}", new_name, crate::t!("Dosya adı şu karakterleri içeremez: \\ / : * ? \" < > | ve nokta ile bitemez."));
-            rf_win::sta::run(move |owner| rf_win::shell::alert(owner, &title, &msg));
+            let rule = if cfg!(windows) {
+                crate::t!("Dosya adı şu karakterleri içeremez: \\ / : * ? \" < > | ve nokta ile bitemez.").to_string()
+            } else {
+                "A file name can't contain \"/\".".to_string()
+            };
+            let msg = format!("{}\n\n{}", new_name, rule);
+            alert_box(title, msg, window.window_handle(), cx);
             window.focus(&self.focus, cx);
             cx.notify();
             return;
@@ -553,14 +558,11 @@ impl FolderView {
                 let ext = |n: &str| std::path::Path::new(n).extension().map(|e| e.to_string_lossy().to_lowercase());
                 let warn = cx.global::<crate::settings::Settings>().warn_extension_change;
                 let confirm_rx = (warn && !self.entry(ei).is_dir() && ext(&old).is_some() && ext(&old) != ext(&new_name)).then(|| {
-                    let (t, r) = oneshot::channel::<bool>();
                     let title = crate::t!("Dosya adı uzantısı").to_string();
                     let msg = crate::t!("Dosya adı uzantısını değiştirirseniz dosya kullanılamaz hale gelebilir. Değiştirmek istediğinizden emin misiniz?").to_string();
-                    rf_win::sta::run(move |owner| {
-                        let _ = t.send(rf_win::shell::confirm(owner, &title, &msg));
-                    });
-                    r
+                    confirm_box(title, msg, window.window_handle(), cx)
                 });
+                let win = window.window_handle();
                 let (f2, n2) = (from.clone(), new_name.clone());
                 cx.spawn(async move |this, cx| {
                     if let Some(r) = confirm_rx {
@@ -574,14 +576,15 @@ impl FolderView {
                     let (src, dst) = (f2.clone(), f2.with_file_name(&n2));
                     let clash = cx
                         .background_spawn(async move {
-                            let case_only = src.to_string_lossy().to_lowercase() == dst.to_string_lossy().to_lowercase();
+                            // case-insensitive names on Windows only: on Linux "A.txt" is another file
+                            let case_only = cfg!(windows) && src.to_string_lossy().to_lowercase() == dst.to_string_lossy().to_lowercase();
                             !case_only && std::fs::symlink_metadata(&dst).is_ok()
                         })
                         .await;
                     if clash {
                         let title = crate::t!("Yeniden adlandır").to_string();
                         let msg = format!("{}\n\n{}", n2, crate::t!("Bu adda bir öğe zaten var. Başka bir ad deneyin."));
-                        rf_win::sta::run(move |owner| rf_win::shell::alert(owner, &title, &msg));
+                        let _ = cx.update(|cx| alert_box(title, msg, win, cx));
                         let _ = this.update(cx, |v, _| v.clear_reselect());
                         return;
                     }
@@ -903,5 +906,84 @@ mod tests {
         assert!(unflatten(&rec).is_err());
         assert!(root.join("Gün1/derin/a.mp4").exists() && root.join("Gün1/a.mp4").exists());
         let _ = std::fs::remove_dir_all(&root);
+    }
+}
+
+/// Whether a new file name breaks the platform's rules: Explorer's characters and no trailing
+/// dot on Windows; only "/" on Linux (and never "." or "..").
+pub(crate) fn invalid_file_name(name: &str) -> bool {
+    if cfg!(windows) {
+        name.contains(['\\', '/', ':', '*', '?', '"', '<', '>', '|']) || name.ends_with('.')
+    } else {
+        name.contains(['/', '\0']) || name == "." || name == ".."
+    }
+}
+
+/// A message box: the shell's on Windows, the app's own dialog in `win` elsewhere (Linux has
+/// no shell message box).
+fn alert_box(title: String, msg: String, win: AnyWindowHandle, cx: &mut App) {
+    #[cfg(windows)]
+    {
+        let _ = (win, &cx);
+        rf_win::sta::run(move |owner| rf_win::shell::alert(owner, &title, &msg));
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = win.update(cx, |_, window, cx| {
+            let ok = crate::prompt::Button::new(crate::t!("Tamam"), crate::prompt::Kind::Primary, |_, _, _| Ok(()));
+            crate::prompt::show(title, Some(msg), None, vec![ok], window, cx);
+        });
+    }
+}
+
+/// A yes / no question: the shell's on Windows, the app's own dialog (OK / Cancel) in `win`
+/// elsewhere. Closing it without answering is a no.
+fn confirm_box(title: String, msg: String, win: AnyWindowHandle, cx: &mut App) -> oneshot::Receiver<bool> {
+    let (tx, rx) = oneshot::channel::<bool>();
+    #[cfg(windows)]
+    {
+        let _ = (win, &cx);
+        rf_win::sta::run(move |owner| {
+            let _ = tx.send(rf_win::shell::confirm(owner, &title, &msg));
+        });
+    }
+    #[cfg(not(windows))]
+    {
+        let tx = std::rc::Rc::new(std::cell::RefCell::new(Some(tx)));
+        let answer = move |yes: bool| {
+            let tx = tx.clone();
+            move |_: Option<String>, _: &mut Window, _: &mut App| {
+                if let Some(tx) = tx.borrow_mut().take() {
+                    let _ = tx.send(yes);
+                }
+                Ok(())
+            }
+        };
+        let _ = win.update(cx, |_, window, cx| {
+            let buttons = vec![
+                crate::prompt::Button::new(crate::t!("Tamam"), crate::prompt::Kind::Primary, answer(true)),
+                crate::prompt::Button::new(crate::t!("İptal"), crate::prompt::Kind::Normal, answer(false)),
+            ];
+            crate::prompt::show(title, Some(msg), None, buttons, window, cx);
+        });
+    }
+    rx
+}
+
+#[cfg(test)]
+mod name_tests {
+    use super::invalid_file_name;
+
+    #[test]
+    fn file_name_rules() {
+        assert!(invalid_file_name("a/b"));
+        assert!(!invalid_file_name("normal.txt"));
+        if cfg!(windows) {
+            assert!(invalid_file_name("a:b") && invalid_file_name("dot."));
+        } else {
+            // legal on Linux
+            assert!(!invalid_file_name("notes: 2026?") && !invalid_file_name("dot.") && !invalid_file_name("a\\b"));
+            assert!(invalid_file_name(".") && invalid_file_name(".."));
+        }
     }
 }

@@ -1320,7 +1320,8 @@ impl Workspace {
         }
         let pick = self.addr_sel.unwrap_or(0);
         if let Some(p) = self.addr_suggest.get(pick).cloned() {
-            let text = format!("{}\\", p.to_string_lossy().trim_end_matches('\\'));
+            let sep = std::path::MAIN_SEPARATOR;
+            let text = format!("{}{sep}", p.to_string_lossy().trim_end_matches(sep));
             self.address.update(cx, |s, cx| s.set_value(text.clone(), window, cx));
             self.update_suggestions(text, cx);
         }
@@ -1666,7 +1667,8 @@ impl Workspace {
     /// plus open in new tab/window and pin/unpin.
     fn sidebar_menu(&mut self, path: PathBuf, window: &mut Window, cx: &mut Context<Self>) {
         use crate::fluent_menu::{Item, Menu, MenuIcon, Sub};
-        let shift = crate::sys::shift_down();
+        // Windows only: Linux has no classic shell menu to show
+        let shift = cfg!(windows) && crate::sys::shift_down();
         if shift {
             // the classic Explorer menu, extended verbs included
             let p2 = path.clone();
@@ -3204,6 +3206,10 @@ impl Render for Workspace {
                     });
                 }
             }))
+            // Shift / Ctrl as GPUI sees them, for drops and menus (Linux; see sys::shift_down);
+            // mouse moves carry them too, so a key released outside the window can't stick
+            .on_modifiers_changed(|e: &ModifiersChangedEvent, _, _| crate::sys::note_modifiers(e.modifiers))
+            .on_mouse_move(|e: &MouseMoveEvent, _, _| crate::sys::note_modifiers(e.modifiers))
             .relative()
             .children(backdrop_layers)
             .child(titlebar)

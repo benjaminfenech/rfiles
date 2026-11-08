@@ -44,7 +44,9 @@ fn resolve_in(text: &str, list: &[(String, PathBuf)]) -> Option<String> {
     let (_, path) = list.iter().find(|(n, _)| n.eq_ignore_ascii_case(name) || n.to_lowercase() == name.to_lowercase())?;
     let base = path.to_string_lossy();
     let base = base.trim_end_matches(['\\', '/']);
-    Some(if sub.is_empty() { format!("{base}\\") } else { format!("{base}{}", sub.replace('/', "\\")) })
+    let sep = std::path::MAIN_SEPARATOR;
+    // "/" typed in the sub path becomes the platform's separator (backslash on Windows)
+    Some(if sub.is_empty() { format!("{base}{sep}") } else { format!("{base}{}", sub.replace(['/', '\\'], &sep.to_string())) })
 }
 
 /// Aliases starting with the typed name, while only the name is typed (`@pro`).
@@ -117,6 +119,17 @@ pub fn edit_dialog(dir: PathBuf, window: &mut gpui_kit::Window, cx: &mut gpui_ki
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
+    #[test]
+    fn resolves_on_unix() {
+        let list = vec![("proje".to_string(), PathBuf::from("/home/me/İşler/Proje")), ("Ölçüm".to_string(), PathBuf::from("/data/"))];
+        assert_eq!(resolve_in("@proje", &list).as_deref(), Some("/home/me/İşler/Proje/"));
+        assert_eq!(resolve_in("@PROJE/src/lib", &list).as_deref(), Some("/home/me/İşler/Proje/src/lib"));
+        assert_eq!(resolve_in(" @ölçüm/", &list).as_deref(), Some("/data/"));
+        assert_eq!(resolve_in("/proje", &list), None);
+    }
+
+    #[cfg(windows)]
     #[test]
     fn resolves_names_and_sub_paths() {
         let list = vec![("proje".to_string(), PathBuf::from(r"D:\İşler\Proje")), ("Ölçüm".to_string(), PathBuf::from(r"E:\data\"))];
