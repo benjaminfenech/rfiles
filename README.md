@@ -3,6 +3,15 @@
   <img alt="rustyfiles: a file manager for Windows that never freezes. Written in Rust." src="docs/readme/banner-light.svg" width="100%">
 </picture>
 
+> [!NOTE]
+> **This is the Linux port of rustyfiles**, a fork of
+> [gelenmedya/rustyfiles](https://github.com/gelenmedya/rustyfiles). The same code builds for
+> **Windows or Linux**: Windows builds are the original app, unchanged, and Linux builds swap the
+> Windows layer for a Linux one. The port is early: browsing works, copying and trash don't
+> yet. See [Linux](#linux) for how to build it and [docs/LINUX_PORT.md](docs/LINUX_PORT.md) for
+> what's done and what's next. The download, website and Discord links below belong to the
+> original project, and its releases are Windows only.
+
 rustyfiles is a file manager for Windows, written from scratch in Rust. It is meant to replace
 File Explorer for everyday work: tabs, dual panes, archives you open like folders, and a
 Quick Look–style previewer called DirectLook.
@@ -42,6 +51,23 @@ Measured on one machine (Ryzen 7 9800X3D, NVMe SSD, Windows 11) on 2026-11-06. r
 already running in the background; Explorer and Files each started a new process, and Files
 loads its list incrementally, so its numbers are an upper bound. Starting rustyfiles cold
 takes 350–480 ms.
+
+### A 100,000-file folder that keeps changing
+
+The folder open, one file selected, then about 1,000 files renamed per second in the background
+for 5 seconds:
+
+| | |
+|---|--:|
+| Launch to a listed folder (100,001 files) | 315 ms |
+| The list follows the changes | every ~750 ms |
+| Re-reading the folder (background thread) | ~70 ms |
+| Work on the UI thread per update | 7–8 ms |
+| Selection and cursor | stay on the selected file |
+
+The window never waits for the folder: re-reading happens off the UI thread, and the update
+itself costs less than one frame at 120 Hz. Measure it yourself with
+`RUSTYFILES_TRACE_LIVE=1` and `RUST_LOG=warn,rf_app=info`.
 
 ### New tab in an open window
 
@@ -188,6 +214,37 @@ cd rustyfiles
 
 `cargo run --release -p rf-app` starts it without installing.
 
+### Linux
+
+This fork builds on Linux (Wayland or X11). There's no package yet: build it from source. You
+need [Rust](https://rustup.rs) 1.95 or newer, a C compiler, and these libraries:
+
+```bash
+# Arch / CachyOS / Manjaro
+sudo pacman -S --needed base-devel libxkbcommon-x11 wayland fontconfig freetype2
+
+# Debian / Ubuntu (what CI uses)
+sudo apt install build-essential pkg-config libxkbcommon-dev libxkbcommon-x11-dev libxcb1-dev libwayland-dev libfontconfig1-dev libfreetype-dev
+```
+
+Then:
+
+```bash
+git clone https://github.com/benjaminfenech/rustyfiles-linux
+cd rustyfiles-linux
+cargo run --release -p rf-app --bin rustyfiles
+```
+
+What works on Linux today: browsing with live updates, the sidebar (your XDG folders and
+mounted drives), breadcrumbs and `~` in the address bar, tabs, folder sizes, Git status,
+hashes, image thumbnails, opening files with their default app, and "Open terminal here".
+
+Not yet: copy, move and trash, file-type icons, "Open with", DirectLook outside the window
+(Wayland has no global hotkeys), sound in video previews, and the tray icon. These show a
+"not implemented on Linux yet" message instead of doing nothing. Windows-only features
+(jump lists, the Open/Save dialog for other apps, the taskbar preview, auto-update) stay
+Windows-only.
+
 ## Keyboard
 
 | Keys | Action |
@@ -212,7 +269,9 @@ the new keys.
 | Crate | What it holds |
 |---|---|
 | `crates/rf-app` | The interface, and the two programs: `rustyfiles` and `directlook` (`src/look/`) |
-| `crates/rf-win` | Windows and shell integration, the file operation engine |
+| `crates/rf-win` | Windows and shell integration, the file operation engine (Windows builds) |
+| `crates/rf-linux` | The Linux counterpart of `rf-win`: the same modules and functions, used under its name in Linux builds |
+| `crates/gpui-windows-shim` | Linux stand-in for the few calls rf-app makes into the GPUI Windows fork |
 | `crates/rf-core` | The model: locations, history, entries |
 | `crates/rf-archive` | Archive operations: browse, extract, create, edit |
 | `crates/rf-player` | DirectLook's video and audio player |

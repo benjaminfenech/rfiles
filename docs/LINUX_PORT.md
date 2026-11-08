@@ -136,6 +136,9 @@ still holds).
   `rawler` or the embedded JPEG preview.
 - `look/pdf.rs`: `pdfium-render` (bundled pdfium) or poppler-glib.
 - `preview_host` (Windows preview handlers): no equivalent; leave out.
+- DirectLook info card (from upstream, 2026-11-08): `pe` shows only the architecture on Linux;
+  read the version strings from the `VS_VERSIONINFO` resource ourselves. `cert` returns
+  nothing on Linux; decode with an X.509 crate (`x509-parser`).
 - rf-player: present decoded frames as a GPUI image texture (simplest), and later a
   wgpu/Vulkan presenter if it is too slow. Audio via `cpal` (PipeWire/ALSA).
 
@@ -154,7 +157,7 @@ still holds).
 
 ### Not ported
 
-Jump lists, Windows Libraries, Windows Search index (maybe later: Baloo/Tracker/plocate),
+The taskbar preview (`--bar-preview`, upstream 2026-11-08), jump lists, Windows Libraries, Windows Search index (maybe later: Baloo/Tracker/plocate),
 rf-dialog (an Open/Save dialog for other apps would be an xdg-desktop-portal backend: a
 separate project), Velopack updates (ship a PKGBUILD/AUR package, then Flatpak/AppImage),
 the hybrid GPU/CPU renderer, critical-error-dialog suppression, `keep_gdiplus_alive`.
