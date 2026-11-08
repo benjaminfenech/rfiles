@@ -61,6 +61,8 @@ pub mod sta;
 pub mod removal;
 pub mod rotate;
 pub mod thumbs;
+/// Linux only: running command-line tools.
+pub mod tool;
 pub mod tray;
 pub mod watch;
 pub mod window;

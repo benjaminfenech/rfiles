@@ -229,6 +229,11 @@ impl ImageView {
             }
             Err(e) => {
                 log::warn!("look image {}: {e:#}", self.path.display());
+                // decode_full already fell back to the thumbnail, so the early one can only be
+                // the file-type icon: show why instead (on Linux: which decoder to install)
+                if let Some(t) = self.thumb.take() {
+                    cx.drop_image(t, None);
+                }
                 self.state = State::Failed(e.to_string());
             }
         }

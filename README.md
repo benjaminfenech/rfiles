@@ -242,8 +242,10 @@ managers), file-type icons from your icon theme, thumbnails (shared with other f
 managers; videos, PDFs and documents through the installed thumbnailers), folder sizes, Git
 status, hashes, opening files with their default app or any other ("Open with" lists the
 apps for the file's type, your default first), "Open terminal here", and DirectLook
-previews of images, SVGs and PDFs (PDFs need poppler's `pdfinfo` and `pdftoppm`: package
-`poppler` on Arch, `poppler-utils` on Debian/Ubuntu). Copy and paste
+previews of images (JPEG XL built in), SVGs and PDFs. Some previews use tools you may need to
+install: PDFs need poppler (`poppler` on Arch, `poppler-utils` on Debian/Ubuntu), AVIF needs
+libavif or libheif (`libavif` / `libavif-bin`), and HEIC needs libheif (`libheif` /
+`libheif-examples`). Copy and paste
 files with other apps (Dolphin, Nautilus, Thunar, browsers…) on Wayland compositors with
 data-control (Hyprland, Sway, KDE) and on X11; on GNOME's Wayland session they work inside
 rustyfiles only.

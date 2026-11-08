@@ -4,14 +4,14 @@
 //!
 //! Both tools run as child processes and block: use a worker thread, never the UI thread.
 
-use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
-use std::time::{Duration, Instant};
+use std::process::Command;
+use std::time::Duration;
 
 use anyhow::{Context, anyhow};
 
 use crate::thumbs::Bgra;
+use crate::tool::{NotInstalled, path_arg, run};
 
 /// Widest page we render (physical pixels); wider requests are capped.
 pub const MAX_WIDTH: u32 = 4096;
@@ -51,67 +51,6 @@ impl std::fmt::Display for PdfError {
 }
 
 impl std::error::Error for PdfError {}
-
-/// A path the tools won't mistake for an option.
-fn path_arg(path: &Path) -> PathBuf {
-    if path.as_os_str().as_encoded_bytes().starts_with(b"-") {
-        Path::new(".").join(path)
-    } else {
-        path.to_path_buf()
-    }
-}
-
-struct Ran {
-    ok: bool,
-    stdout: Vec<u8>,
-    stderr: Vec<u8>,
-}
-
-/// Runs `cmd`, collecting its output; kills it after `timeout`.
-fn run(mut cmd: Command, timeout: Duration) -> anyhow::Result<Ran> {
-    let prog = cmd.get_program().to_string_lossy().into_owned();
-    let mut child = match cmd
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-    {
-        Ok(c) => c,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            return Err(PdfError::NoPoppler.into());
-        }
-        Err(e) => return Err(anyhow!("{prog}: {e}")),
-    };
-    // read both pipes on their own threads so a full pipe never stalls the child
-    let reader = |r: Option<Box<dyn Read + Send>>| {
-        std::thread::spawn(move || {
-            let mut buf = Vec::new();
-            if let Some(mut r) = r {
-                let _ = r.read_to_end(&mut buf);
-            }
-            buf
-        })
-    };
-    let out = reader(child.stdout.take().map(|s| Box::new(s) as _));
-    let err = reader(child.stderr.take().map(|s| Box::new(s) as _));
-    let started = Instant::now();
-    let status = loop {
-        match child.try_wait()? {
-            Some(s) => break s,
-            None if started.elapsed() > timeout => {
-                let _ = child.kill();
-                let _ = child.wait();
-                anyhow::bail!("{prog} took longer than {timeout:?}");
-            }
-            None => std::thread::sleep(Duration::from_millis(5)),
-        }
-    };
-    Ok(Ran {
-        ok: status.success(),
-        stdout: out.join().unwrap_or_default(),
-        stderr: err.join().unwrap_or_default(),
-    })
-}
 
 fn with_password(cmd: &mut Command, password: Option<&str>) {
     if let Some(p) = password {
@@ -239,7 +178,7 @@ impl Pdf {
         cmd.arg("-box").args(["-f", "1", "-l", "2147483647"]);
         with_password(&mut cmd, password);
         cmd.arg(path_arg(path));
-        let ran = run(cmd, INFO_TIMEOUT)?;
+        let ran = run(cmd, INFO_TIMEOUT).map_err(|e| if e.is::<NotInstalled>() { PdfError::NoPoppler.into() } else { e })?;
         if !ran.ok {
             let err = String::from_utf8_lossy(&ran.stderr).to_lowercase();
             if err.contains("password") {
@@ -342,7 +281,7 @@ mod tests {
     fn have_poppler() -> bool {
         Command::new("pdftoppm")
             .arg("-v")
-            .stderr(Stdio::null())
+            .stderr(std::process::Stdio::null())
             .status()
             .is_ok()
     }

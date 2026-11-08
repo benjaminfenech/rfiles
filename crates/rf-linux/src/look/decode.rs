@@ -1,13 +1,20 @@
-//! Hızlı Bakış resim çözücü: image paketi → resvg (SVG) → WIC (HEIC, AVIF, JXL, RAW…) → RAW'daki
-//! gömülü JPEG → PSD birleşik görüntü → kabuk küçük resmi.
+//! Hızlı Bakış resim çözücü: image paketi → resvg (SVG) → jxl-oxide (JXL) → avifdec / heif-dec
+//! (AVIF, HEIC) → RAW'daki gömülü JPEG → PSD birleşik görüntü → kabuk küçük resmi.
+//!
+//! On Linux, JPEG XL decodes in-process (pure Rust); AVIF and HEIC go through libavif's and
+//! libheif's command-line decoders when installed, so building needs no system codec library.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
 #![allow(unused)]
 use std::io::Cursor;
 use std::path::Path;
+use std::process::Command;
+use std::time::Duration;
 use anyhow::{Context, anyhow};
 use image::{AnimationDecoder, DynamicImage, ImageDecoder, RgbaImage};
 use crate::thumbs::Bgra;
+use crate::tool::{NotInstalled, path_arg, run};
+use super::heif;
 /// Çözülmüş resim: kareler (BGRA, süre ms), yön (EXIF 1–8), EXIF alanları.
 pub struct Decoded {
     pub frames: Vec<(Bgra, u32)>,
@@ -211,9 +218,111 @@ fn svg(bytes: &[u8], max_side: u32) -> anyhow::Result<Decoded> {
     }
     Ok(Decoded { frames: vec![(Bgra { width: pw, height: ph, data }, 0)], orientation: 1, exif: Vec::new(), width: w.round() as u32, height: h.round() as u32 })
 }
-/// Windows Imaging Component: kurulu codec'ler (HEIC, AVIF, JXL, JPEG XR, kamera RAW…).
-fn wic(path: &Path, max_side: u32) -> anyhow::Result<Decoded> {
-    Err(anyhow::anyhow!("rf-linux: `wic` is not implemented on Linux yet").into())
+/// HEIF containers: HEIC (HEVC) and AVIF (AV1).
+const HEIF_EXTENSIONS: &[&str] = &["heic", "heif", "hif", "avif"];
+
+/// How long an external decoder may take for one image.
+const TOOL_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// No decoder for this format is installed; the message says what to install.
+#[derive(Debug)]
+pub struct MissingDecoder(pub &'static str);
+
+impl std::fmt::Display for MissingDecoder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0)
+    }
+}
+
+impl std::error::Error for MissingDecoder {}
+
+fn one_frame(img: RgbaImage, exif: Vec<(String, String)>, max_side: u32) -> Decoded {
+    let (width, height) = img.dimensions();
+    Decoded { frames: vec![(to_bgra(shrink(img, max_side)), 0)], orientation: 1, exif, width, height }
+}
+
+/// EXIF fields of a HEIF file (HEIC, AVIF). Not applied: the decoders turn the image with the
+/// container's own rotation, which HEIF says wins over EXIF's.
+fn heif_exif(bytes: &[u8]) -> Vec<(String, String)> {
+    heif::exif(bytes).map(|t| exif_fields(t).1).unwrap_or_default()
+}
+
+/// JPEG XL in pure Rust; jxl-oxide turns the image upright itself.
+fn jxl(bytes: &[u8], max_side: u32) -> anyhow::Result<Decoded> {
+    let mut dec = jxl_oxide::integration::JxlDecoder::new(Cursor::new(bytes))?;
+    let exif = dec.exif_metadata().ok().flatten().map(|r| exif_fields(&r).1).unwrap_or_default();
+    let img = DynamicImage::from_decoder(dec)?.into_rgba8();
+    Ok(one_frame(img, exif, max_side))
+}
+
+/// AVIF / HEIC through libavif's or libheif's command-line decoder, into a PNG in a private
+/// temporary folder. Both apply the container's rotation and mirroring.
+fn heif_tools(path: &Path, ext: &str, bytes: &[u8], max_side: u32) -> anyhow::Result<Decoded> {
+    // heif-convert is heif-dec's name before libheif 1.17
+    let tools: &[(&str, &[&str])] = if ext == "avif" {
+        &[("avifdec", &["--png-compress", "0", "-d", "8"]), ("heif-dec", &[]), ("heif-convert", &[])]
+    } else {
+        &[("heif-dec", &[]), ("heif-convert", &[])]
+    };
+    static N: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+    let n = N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let dir = std::env::temp_dir().join(format!("rustyfiles-look-{}-{n}", std::process::id()));
+    {
+        use std::os::unix::fs::DirBuilderExt;
+        std::fs::DirBuilder::new().mode(0o700).create(&dir).with_context(|| dir.display().to_string())?;
+    }
+    let result = (|| {
+        let out = dir.join("out.png");
+        let mut last: Option<anyhow::Error> = None;
+        for (prog, args) in tools {
+            let mut cmd = Command::new(prog);
+            cmd.args(*args).arg(path_arg(path)).arg(&out);
+            match run(cmd, TOOL_TIMEOUT) {
+                Err(e) if e.is::<NotInstalled>() => continue,
+                Err(e) => last = Some(e),
+                Ok(r) if !r.ok => last = Some(anyhow!("{prog}: {}", String::from_utf8_lossy(&r.stderr).trim())),
+                Ok(_) => match written_image(&dir) {
+                    Ok(img) => return Ok(one_frame(img, heif_exif(bytes), max_side)),
+                    Err(e) => last = Some(e.context(*prog)),
+                },
+            }
+        }
+        Err(last.unwrap_or_else(|| {
+            MissingDecoder(if ext == "avif" {
+                "To preview AVIF images at full size, install libavif (avifdec) or libheif (heif-dec)."
+            } else {
+                "To preview HEIC images, install libheif (it provides heif-dec)."
+            })
+            .into()
+        }))
+    })();
+    let _ = std::fs::remove_dir_all(&dir);
+    result
+}
+
+/// The decoded image a tool left in `dir`: `out.png`, or when it numbered several top-level
+/// images (`out-1.png`, …), the largest one; depth and other auxiliary images are skipped.
+fn written_image(dir: &Path) -> anyhow::Result<RgbaImage> {
+    let main = dir.join("out.png");
+    if main.exists() {
+        return Ok(image::open(&main)?.into_rgba8());
+    }
+    let mut best: Option<(u64, std::path::PathBuf)> = None;
+    for e in std::fs::read_dir(dir)?.flatten() {
+        let p = e.path();
+        let name = e.file_name().to_string_lossy().to_ascii_lowercase();
+        if !name.ends_with(".png") || name.contains("depth") || name.contains("aux") || name.contains("urn:") {
+            continue;
+        }
+        if let Ok((w, h)) = image::image_dimensions(&p) {
+            let area = w as u64 * h as u64;
+            if best.as_ref().is_none_or(|(a, _)| area > *a) {
+                best = Some((area, p));
+            }
+        }
+    }
+    let (_, p) = best.context("the decoder wrote no image")?;
+    Ok(image::open(&p)?.into_rgba8())
 }
 /// Kamera RAW dosyasının içine gömülü en büyük JPEG önizleme.
 fn raw_embedded_jpeg(bytes: &[u8], max_side: u32) -> anyhow::Result<Decoded> {
@@ -260,6 +369,17 @@ pub fn dimensions(path: &Path) -> Option<(u32, u32)> {
         let tree = resvg::usvg::Tree::from_data(&bytes, &resvg::usvg::Options::default()).ok()?;
         return Some((tree.size().width().round() as u32, tree.size().height().round() as u32));
     }
+    if HEIF_EXTENSIONS.contains(&ext.as_str()) {
+        use std::io::Read;
+        // the `meta` box comes first in practice; 1 MiB is plenty
+        let mut head = Vec::new();
+        std::fs::File::open(path).ok()?.take(1 << 20).read_to_end(&mut head).ok()?;
+        return heif::primary_size(&head);
+    }
+    if ext == "jxl" {
+        let f = std::io::BufReader::new(std::fs::File::open(path).ok()?);
+        return jxl_oxide::integration::JxlDecoder::new(f).ok().map(|d| d.dimensions());
+    }
     if !RAW_EXTENSIONS.contains(&ext.as_str()) {
         if let Ok(r) = image::ImageReader::open(path).and_then(|r| r.with_guessed_format()) {
             if let Ok(mut d) = r.into_decoder() {
@@ -269,7 +389,7 @@ pub fn dimensions(path: &Path) -> Option<(u32, u32)> {
             }
         }
     }
-    // Windows asks WIC here (HEIC, AVIF, JXL, RAW); on Linux their size comes with the decode
+    // Windows asks WIC here for RAW too; on Linux a RAW file's size comes with the decode
     None
 }
 /// Resmi tam çözünürlükte (en uzun kenar en çok `max_side`) çözer; sırayla dener.
@@ -289,8 +409,23 @@ pub fn decode_full(path: &Path, max_side: u32) -> anyhow::Result<Decoded> {
             return Ok(d);
         }
     }
-    if let Ok(d) = wic(path, max_side) {
-        return Ok(d);
+    if ext == "jxl" {
+        match jxl(&bytes, max_side) {
+            Ok(d) => return Ok(d),
+            Err(e) => log::debug!("jxl {}: {e:#}", path.display()),
+        }
+    }
+    if HEIF_EXTENSIONS.contains(&ext.as_str()) {
+        match heif_tools(path, &ext, &bytes, max_side) {
+            Ok(d) => return Ok(d),
+            Err(e) if e.is::<MissingDecoder>() => {
+                // a real thumbnail (at most 1024 px) beats the hint; the file-type icon doesn't
+                return crate::xdg_thumbs::thumbnail(path, max_side.min(1024))
+                    .map(|img| one_frame(img, heif_exif(&bytes), max_side))
+                    .map_err(|_| e);
+            }
+            Err(e) => log::debug!("heif {}: {e:#}", path.display()),
+        }
     }
     if raw {
         if let Ok(d) = raw_embedded_jpeg(&bytes, max_side) {
@@ -302,11 +437,7 @@ pub fn decode_full(path: &Path, max_side: u32) -> anyhow::Result<Decoded> {
             return Ok(d);
         }
     }
-    let t = crate::thumbs::get_image(
-        path,
-        max_side.min(1024),
-        crate::thumbs::Kind::Thumbnail,
-    )?;
+    let t = crate::thumbs::get_image(path, max_side.min(1024), crate::thumbs::Kind::Thumbnail)?;
     let (width, height) = (t.width, t.height);
     Ok(Decoded {
         frames: vec![(t, 0)],
@@ -336,5 +467,73 @@ mod tests {
         let (f, _) = &full.frames[0];
         assert!(f.width >= 400 && f.data.chunks_exact(4).any(|p| p == [0, 0, 255, 255]), "red, as BGRA");
         let _ = std::fs::remove_dir_all(&d);
+    }
+
+    fn testdata(name: &str) -> std::path::PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("testdata").join(name)
+    }
+
+    /// BGRA pixel at (x, y), as RGB.
+    fn rgb(b: &Bgra, x: u32, y: u32) -> [u8; 3] {
+        let p = &b.data[((y * b.width + x) * 4) as usize..][..4];
+        [p[2], p[1], p[0]]
+    }
+
+    fn near(a: [u8; 3], b: [u8; 3]) -> bool {
+        a.iter().zip(b).all(|(x, y)| x.abs_diff(y) < 40)
+    }
+
+    fn have(prog: &str) -> bool {
+        Command::new(prog).arg("--version").stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status().is_ok()
+    }
+
+    // small.png: 60 x 40, white, with a red 20 x 10 block in the top-left corner
+
+    #[test]
+    fn jpeg_xl_in_process() {
+        let p = testdata("small.jxl");
+        assert_eq!(dimensions(&p), Some((60, 40)));
+        let d = decode_full(&p, 2000).unwrap();
+        assert_eq!((d.width, d.height), (60, 40));
+        let f = &d.frames[0].0;
+        assert!(near(rgb(f, 2, 2), [255, 0, 0]) && near(rgb(f, 50, 30), [255, 255, 255]));
+    }
+
+    #[test]
+    fn avif_turned_a_quarter() {
+        // rotated.avif is small.png with irot 1 (a quarter turn anticlockwise): 40 x 60, red
+        // block bottom-left
+        let p = testdata("rotated.avif");
+        assert_eq!(dimensions(&p), Some((40, 60)));
+        if !have("avifdec") && !have("heif-dec") {
+            eprintln!("no AVIF decoder installed; skipped");
+            return;
+        }
+        let d = decode_full(&p, 2000).unwrap();
+        assert_eq!((d.width, d.height), (40, 60));
+        let f = &d.frames[0].0;
+        assert!(near(rgb(f, 2, 57), [255, 0, 0]) && near(rgb(f, 2, 2), [255, 255, 255]));
+    }
+
+    #[test]
+    fn heic_through_libheif() {
+        if !have("heif-enc") || !have("heif-dec") {
+            eprintln!("libheif's tools not installed; skipped");
+            return;
+        }
+        let dir = std::env::temp_dir().join(format!("rf-heic-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("small.heic");
+        let ok = Command::new("heif-enc").arg("-q").arg("90").arg(testdata("small.png")).arg("-o").arg(&p).status().unwrap();
+        if !ok.success() {
+            // libheif without its HEVC encoder plugin
+            eprintln!("heif-enc can't encode HEIC here; skipped");
+            return;
+        }
+        assert_eq!(dimensions(&p), Some((60, 40)));
+        let d = decode_full(&p, 2000).unwrap();
+        assert_eq!((d.width, d.height), (60, 40));
+        assert!(near(rgb(&d.frames[0].0, 2, 2), [255, 0, 0]));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

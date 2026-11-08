@@ -8,3 +8,5 @@ pub mod hook;
 pub mod win;
 pub mod decode;
 pub mod pdf;
+/// Linux only: HEIF/AVIF headers.
+pub mod heif;
