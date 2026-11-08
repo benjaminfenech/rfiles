@@ -783,7 +783,7 @@ pub fn sync_popup(ops: &Entity<Ops>, cx: &mut App) {
             let Some(owner) = owner else { return };
             // the app window keeps its active look (Mica, caption) while the flyout has focus
             gpui_windows::KEEP_ACTIVE_LOOK.store(true, std::sync::atomic::Ordering::Relaxed);
-            let opened = if std::env::var_os("RF_INWINDOW_MENU").is_some() { None } else { open_popup(ops, owner, cx) };
+            let opened = if crate::sys::separate_popups() { open_popup(ops, owner, cx) } else { None };
             match opened {
                 Some(h) => cx.set_global(ScPopup(Some(h))),
                 None => ops.update(cx, |o, cx| {
