@@ -176,7 +176,40 @@ fn with_image_crate(bytes: &[u8], max_side: u32) -> anyhow::Result<Decoded> {
     })
 }
 fn svg(bytes: &[u8], max_side: u32) -> anyhow::Result<Decoded> {
-    Err(anyhow::anyhow!("rf-linux: `svg` is not implemented on Linux yet").into())
+    use resvg::{tiny_skia, usvg};
+    let mut opt = usvg::Options::default();
+    // sistem yazı tipleri yalnız metin içeren SVG'de gerekir; yüklemesi pahalı, bir kez yapılır
+    if bytes.windows(5).any(|w| w == b"<text") {
+        static FONTS: std::sync::OnceLock<std::sync::Arc<usvg::fontdb::Database>> = std::sync::OnceLock::new();
+        opt.fontdb = FONTS
+            .get_or_init(|| {
+                let mut db = usvg::fontdb::Database::new();
+                db.load_system_fonts();
+                std::sync::Arc::new(db)
+            })
+            .clone();
+    }
+    let tree = usvg::Tree::from_data(bytes, &opt)?;
+    let size = tree.size();
+    let (w, h) = (size.width().max(1.0), size.height().max(1.0));
+    // küçük SVG'ler net görünsün diye en az 1024 piksele büyütülür
+    let target = max_side.min(4096).max(1) as f32;
+    let s = (target.min(w.max(h).max(1024.0)) / w.max(h)).max(0.01);
+    let (pw, ph) = ((w * s).ceil() as u32, (h * s).ceil() as u32);
+    let mut pix = tiny_skia::Pixmap::new(pw.max(1), ph.max(1)).ok_or_else(|| anyhow!("svg size"))?;
+    resvg::render(&tree, tiny_skia::Transform::from_scale(s, s), &mut pix.as_mut());
+    // tiny-skia önceden çarpılmış RGBA verir: düz alfaya çevir
+    let mut data = pix.take();
+    for px in data.chunks_exact_mut(4) {
+        let a = px[3] as u32;
+        if a > 0 && a < 255 {
+            for c in &mut px[..3] {
+                *c = ((*c as u32 * 255 + a / 2) / a).min(255) as u8;
+            }
+        }
+        px.swap(0, 2);
+    }
+    Ok(Decoded { frames: vec![(Bgra { width: pw, height: ph, data }, 0)], orientation: 1, exif: Vec::new(), width: w.round() as u32, height: h.round() as u32 })
 }
 /// Windows Imaging Component: kurulu codec'ler (HEIC, AVIF, JXL, JPEG XR, kamera RAW…).
 fn wic(path: &Path, max_side: u32) -> anyhow::Result<Decoded> {
@@ -218,7 +251,25 @@ fn psd(bytes: &[u8], max_side: u32) -> anyhow::Result<Decoded> {
     })
 }
 /// Resmin (EXIF yönüne göre döndürülmüş) boyutu; yalnız başlık okunur, hızlıdır.
+/// The image's size (EXIF rotation applied) without decoding it: from the header for what
+/// the image crate reads, SVG's own size.
 pub fn dimensions(path: &Path) -> Option<(u32, u32)> {
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+    if ext == "svg" || ext == "svgz" {
+        let bytes = std::fs::read(path).ok()?;
+        let tree = resvg::usvg::Tree::from_data(&bytes, &resvg::usvg::Options::default()).ok()?;
+        return Some((tree.size().width().round() as u32, tree.size().height().round() as u32));
+    }
+    if !RAW_EXTENSIONS.contains(&ext.as_str()) {
+        if let Ok(r) = image::ImageReader::open(path).and_then(|r| r.with_guessed_format()) {
+            if let Ok(mut d) = r.into_decoder() {
+                let (w, h) = d.dimensions();
+                let o = d.exif_metadata().ok().flatten().map_or(1, |raw| exif_fields(&raw).0);
+                return Some(if (5..=8).contains(&o) { (h, w) } else { (w, h) });
+            }
+        }
+    }
+    // Windows asks WIC here (HEIC, AVIF, JXL, RAW); on Linux their size comes with the decode
     None
 }
 /// Resmi tam çözünürlükte (en uzun kenar en çok `max_side`) çözer; sırayla dener.
@@ -264,4 +315,26 @@ pub fn decode_full(path: &Path, max_side: u32) -> anyhow::Result<Decoded> {
         width,
         height,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sizes_without_decoding_and_svg() {
+        let d = std::env::temp_dir().join(format!("rf-look-{}", std::process::id()));
+        std::fs::create_dir_all(&d).unwrap();
+        let png = d.join("a.png");
+        RgbaImage::from_pixel(300, 120, image::Rgba([1, 2, 3, 255])).save(&png).unwrap();
+        assert_eq!(dimensions(&png), Some((300, 120)));
+        let svg_path = d.join("b.svg");
+        std::fs::write(&svg_path, r#"<svg xmlns="http://www.w3.org/2000/svg" width="400" height="100"><rect width="400" height="100" fill="red"/></svg>"#).unwrap();
+        assert_eq!(dimensions(&svg_path), Some((400, 100)));
+        let full = decode_full(&svg_path, 2000).unwrap();
+        assert_eq!((full.width, full.height), (400, 100));
+        let (f, _) = &full.frames[0];
+        assert!(f.width >= 400 && f.data.chunks_exact(4).any(|p| p == [0, 0, 255, 255]), "red, as BGRA");
+        let _ = std::fs::remove_dir_all(&d);
+    }
 }

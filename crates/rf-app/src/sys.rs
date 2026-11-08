@@ -225,8 +225,9 @@ pub fn app_id(name: &str) -> Option<String> {
 }
 
 /// The work area (logical x, y, w, h) a new DirectLook window is sized and centered in:
-/// Windows asks the monitor under the cursor; Linux takes the primary display's visible area
-/// (a Wayland app can't know which output the pointer is on; the compositor places the window).
+/// Windows asks the monitor under the cursor; Linux takes the largest display's visible area
+/// (a Wayland app can't know which output the pointer is on, the compositor places the window,
+/// and GPUI's "primary" display is just the first output the compositor announced).
 pub fn work_area_at_cursor(cx: &gpui_kit::App) -> [f32; 4] {
     #[cfg(windows)]
     {
@@ -235,7 +236,12 @@ pub fn work_area_at_cursor(cx: &gpui_kit::App) -> [f32; 4] {
     }
     #[cfg(not(windows))]
     {
-        cx.primary_display().or_else(|| cx.displays().into_iter().next()).map_or([0., 0., 1280., 800.], |d| bounds_array(d.visible_bounds()))
+        let area = |b: gpui_kit::Bounds<gpui_kit::Pixels>| f32::from(b.size.width) * f32::from(b.size.height);
+        cx.displays()
+            .into_iter()
+            .map(|d| d.visible_bounds())
+            .max_by(|a, b| area(*a).total_cmp(&area(*b)))
+            .map_or([0., 0., 1280., 800.], bounds_array)
     }
 }
 
