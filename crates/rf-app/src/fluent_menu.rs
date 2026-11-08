@@ -205,9 +205,9 @@ pub fn show(menu: Menu, pos: Point<Pixels>, window: &mut Window, cx: &mut App) -
         popup: None,
     });
 
-    // Acrylic popups (Windows 11); RF_INWINDOW_MENU=1 or a failure falls back to drawing the
-    // menu inside the window.
-    if std::env::var_os("RF_INWINDOW_MENU").is_none() {
+    // Acrylic popups (Windows 11); RF_INWINDOW_MENU=1, Linux (see sys::separate_popups) or a
+    // failure draw the menu inside the window.
+    if crate::sys::separate_popups() {
         let anchor = window.bounds().origin + pos;
         let area = window.display(cx).map(|d| d.bounds()).unwrap_or_else(|| window.bounds());
         let wins: Wins = Default::default();

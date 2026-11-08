@@ -40,9 +40,20 @@ impl Choice {
 /// The open popup (one at a time), and which field closed one last: a click on the field that
 /// owns the open popup first deactivates the popup (closing it); that same click must not
 /// reopen it.
+/// A dropdown drawn inside its owner window (Linux; see `sys::separate_popups`).
+struct Inline {
+    owner: AnyWindowHandle,
+    view: Entity<SelectView>,
+    /// Where the list sits, in the owner's window coordinates.
+    bounds: Bounds<Pixels>,
+    /// Focus to give back on close.
+    restore: Option<FocusHandle>,
+}
+
 #[derive(Default)]
 struct Host {
     open: Option<AnyWindowHandle>,
+    inline: Option<Inline>,
     closed: Option<(SharedString, Instant)>,
 }
 impl Global for Host {}
@@ -137,6 +148,22 @@ fn open(key: SharedString, field: Bounds<Pixels>, choices: Vec<Choice>, window: 
     let list_h = (choices.len() as f32 * ROW_H).min(LIST_MAX);
     let h = list_h + 2. * PAD + if search { SEARCH_H } else { 0. };
 
+    let main = window.window_handle();
+    if !crate::sys::separate_popups() {
+        // inside the window: below the field when it fits, else above, kept on screen
+        let vp = window.viewport_size();
+        let (vw, vh) = (f32::from(vp.width), f32::from(vp.height));
+        let fx = f32::from(field.origin.x);
+        let ftop = f32::from(field.origin.y);
+        let fbottom = ftop + f32::from(field.size.height);
+        let x = fx.clamp(EDGE, (vw - EDGE - w).max(EDGE));
+        let y = if fbottom + 4. + h <= vh - EDGE { fbottom + 4. } else { (ftop - 4. - h).max(EDGE) };
+        let restore = window.focused(cx);
+        let view = cx.new(|cx| SelectView::new(key, choices, search, main, window, cx));
+        cx.default_global::<Host>().inline = Some(Inline { owner: main, view, bounds: Bounds::new(point(px(x), px(y)), size(px(w), px(h))), restore });
+        window.refresh();
+        return;
+    }
     let win = window.bounds();
     let area = window.display(cx).map(|d| d.bounds()).unwrap_or(win);
     let (ax, ay) = (f32::from(area.origin.x), f32::from(area.origin.y));
@@ -152,7 +179,6 @@ fn open(key: SharedString, field: Bounds<Pixels>, choices: Vec<Choice>, window: 
         crate::settings::ThemePref::Dark => true,
         crate::settings::ThemePref::System => matches!(cx.window_appearance(), WindowAppearance::Dark | WindowAppearance::VibrantDark),
     };
-    let main = window.window_handle();
     let opts = WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(Bounds::new(point(px(x), px(y)), size(px(w), px(h))))),
         titlebar: None,
@@ -186,11 +212,67 @@ fn open(key: SharedString, field: Bounds<Pixels>, choices: Vec<Choice>, window: 
 
 /// Closes the open popup (if any), after the current update.
 fn close_open(cx: &mut App) {
+    if let Some(i) = cx.default_global::<Host>().inline.take() {
+        cx.defer(move |cx| {
+            let _ = i.owner.update(cx, |_, window, cx| {
+                if let Some(f) = &i.restore {
+                    window.focus(f, cx);
+                }
+                window.refresh();
+            });
+        });
+        return;
+    }
     let Some(w) = cx.default_global::<Host>().open.take() else { return };
     gpui_windows::KEEP_ACTIVE_LOOK.store(false, std::sync::atomic::Ordering::Relaxed);
     cx.defer(move |cx| {
         let _ = w.update(cx, |_, window, _| window.remove_window());
     });
+}
+
+/// The in-window dropdown, if one is open in `window`: a click-away layer with the list on it.
+/// The workspace paints it as one of its top layers.
+pub fn current(window: &mut Window, cx: &mut App) -> Option<AnyElement> {
+    let (view, bounds) = {
+        let i = cx.try_global::<Host>()?.inline.as_ref()?;
+        if i.owner != window.window_handle() {
+            return None;
+        }
+        (i.view.clone(), i.bounds)
+    };
+    let p = Palette::for_window(window);
+    let dismiss = {
+        let view = view.clone();
+        move |cx: &mut App| view.update(cx, |v, cx| v.dismiss(cx))
+    };
+    let dismiss2 = dismiss.clone();
+    Some(
+        div()
+            .id("select-layer")
+            .absolute()
+            .inset_0()
+            .on_mouse_down(MouseButton::Left, move |_, _, cx| dismiss(cx))
+            .on_mouse_down(MouseButton::Right, move |_, _, cx| dismiss2(cx))
+            .on_scroll(|_, _, cx| cx.stop_propagation())
+            .child(
+                div()
+                    .id("select-panel")
+                    .absolute()
+                    .left(bounds.origin.x)
+                    .top(bounds.origin.y)
+                    .w(bounds.size.width)
+                    .h(bounds.size.height)
+                    .rounded(theme::RADIUS)
+                    .bg(p.card_bg)
+                    .border_1()
+                    .border_color(p.border)
+                    .shadow_lg()
+                    .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
+                    .on_mouse_down(MouseButton::Right, |_, _, cx| cx.stop_propagation())
+                    .child(view),
+            )
+            .into_any_element(),
+    )
 }
 
 struct SelectView {

@@ -3271,6 +3271,9 @@ impl Render for Workspace {
             .children(crate::fluent_menu::current(window, cx))
             .children(crate::prompt::current(window, cx))
             .children(crate::conflict_dialog::current(window, cx))
+            // in-window flyouts and dropdowns (Linux; see sys::separate_popups), over dialogs
+            .children(crate::flyout::current(window, cx))
+            .children(crate::select_box::current(window, cx))
             .children(self.bulk.clone().map(|br| {
                 div()
                     .absolute()

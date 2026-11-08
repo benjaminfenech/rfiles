@@ -170,3 +170,19 @@ fn fc_family(pattern: &str) -> Option<String> {
     let first = s.split(',').next()?.trim();
     (!first.is_empty()).then(|| first.to_string())
 }
+
+/// Whether menus, flyouts and dropdowns open as their own popup windows (Windows: Acrylic,
+/// may extend past the app window) instead of being drawn inside the app window.
+/// `RF_INWINDOW_MENU=1` asks for in-window on Windows too. Always in-window on Linux: Wayland
+/// can't place a window at the cursor, and tiling window managers (Hyprland, Sway, i3…) would
+/// tile a popup window next to the app.
+pub fn separate_popups() -> bool {
+    cfg!(windows) && std::env::var_os("RF_INWINDOW_MENU").is_none()
+}
+
+/// Whether the toolbar's View button opens the Layout flyout (tiles, size slider); otherwise a
+/// plain menu with the same choices. Only Windows' `RF_INWINDOW_MENU` asks for the menu: the
+/// flyout has an in-window mode of its own.
+pub fn layout_flyout() -> bool {
+    !cfg!(windows) || std::env::var_os("RF_INWINDOW_MENU").is_none()
+}
