@@ -295,6 +295,10 @@ pub struct FolderView {
     slow_click_serial: u64,
     /// Entries of an in-flight background refresh (swapped in atomically when complete).
     soft_pending: Option<Vec<Entry>>,
+    /// When Space opened Quick Look (a long press closes it again on release).
+    space_hold: Option<Instant>,
+    /// When the current soft reload (watcher) started (for the live trace).
+    soft_started: Instant,
     _watch: Option<rf_win::watch::DirWatch>,
     _watch_task: Option<Task<()>>,
     pub renaming: Option<(u32, Entity<gpui_kit::component::input::InputState>)>,
@@ -420,6 +424,8 @@ impl FolderView {
             slow_click: None,
             slow_click_serial: 0,
             soft_pending: None,
+            space_hold: None,
+            soft_started: Instant::now(),
             _watch: None,
             _watch_task: None,
             renaming: None,
@@ -825,6 +831,7 @@ impl FolderView {
         }
         if soft {
             self.soft_pending = Some(Vec::new());
+            self.soft_started = Instant::now();
         } else {
             self.soft_pending = None;
             self.entries.clear();
@@ -1134,6 +1141,9 @@ impl FolderView {
                     self.loading = false;
                     self.apply_adaptive();
                     self.load_ms = Some(self.load_started.elapsed().as_millis());
+                    if trace_live() {
+                        log::info!("live: listed {} entries in {} ms", self.entries.len(), self.load_started.elapsed().as_millis());
+                    }
                     if let Err(e) = r {
                         if let Some(rest) = e.strip_prefix(crate::archive_view::PASSWORD_MARK) {
                             // "<0|1><archive path>": ask the workspace to prompt for it
@@ -1206,6 +1216,7 @@ impl FolderView {
             return;
         }
         let Some(new_entries) = self.soft_pending.take() else { return };
+        let (was_selected, applying) = (self.selected.len(), Instant::now());
         let selected_names: HashSet<Arc<str>> =
             self.selected.iter().map(|&i| self.entries[i as usize].name.clone()).collect();
         let cursor_name = self.cursor.and_then(|c| self.visible.get(c)).map(|&i| self.entries[i as usize].name.clone());
@@ -1221,7 +1232,22 @@ impl FolderView {
             .filter(|(_, e)| selected_names.contains(&e.name))
             .map(|(i, _)| i as u32)
             .collect();
-        self.cursor = cursor_name.and_then(|n| self.visible.iter().position(|&i| self.entries[i as usize].name == n));
+        if trace_live() {
+            log::info!(
+                "live: update of {} entries, relisted in {} ms, applied in {} ms; selected {} of {}, cursor {:?}",
+                self.entries.len(),
+                self.soft_started.elapsed().as_millis(),
+                applying.elapsed().as_millis(),
+                self.selected.len(),
+                was_selected,
+                self.cursor
+            );
+        }
+        // the cursor's file renamed or deleted in the background: keep the place, not lose it
+        let old_cursor = self.cursor;
+        self.cursor = cursor_name
+            .and_then(|n| self.visible.iter().position(|&i| self.entries[i as usize].name == n))
+            .or_else(|| old_cursor.filter(|_| !self.visible.is_empty()).map(|c| c.min(self.visible.len() - 1)));
         if let Some(n) = renaming_name {
             match self.entries.iter().position(|e| e.name == n) {
                 Some(i) => {
@@ -1899,6 +1925,21 @@ impl FolderView {
         )
     }
 
+    /// Space held to peek (QuickLook's "hold to preview"): released after a long press, the
+    /// preview it opened closes. A short press keeps toggling as before.
+    fn on_key_up(&mut self, ev: &KeyUpEvent, cx: &mut Context<Self>) {
+        if ev.keystroke.key != "space" {
+            return;
+        }
+        let Some(pressed) = self.space_hold.take() else { return };
+        if pressed.elapsed() >= std::time::Duration::from_millis(400)
+            && QUICK_LOOK_OPEN.load(Ordering::Relaxed)
+            && crate::look::config::LookSettings::load().look_hold_to_close
+        {
+            cx.emit(FolderEvent::QuickLook);
+        }
+    }
+
     /// Explorer-style type-ahead: typing selects the next item whose name starts with the typed text.
     fn on_typeahead(&mut self, ev: &KeyDownEvent, cx: &mut Context<Self>) {
         let m = &ev.keystroke.modifiers;
@@ -1912,7 +1953,13 @@ impl FolderView {
         if ev.keystroke.key == "space" && !m.shift {
             let typing = !self.typeahead.0.is_empty() && now.duration_since(self.typeahead.1) <= std::time::Duration::from_millis(900);
             if !typing {
+                // holding Space repeats the key: one toggle per press
+                if ev.is_held {
+                    cx.stop_propagation();
+                    return;
+                }
                 if self.cursor_entry().is_some() || QUICK_LOOK_OPEN.load(Ordering::Relaxed) {
+                    self.space_hold = (!QUICK_LOOK_OPEN.load(Ordering::Relaxed)).then_some(now);
                     cx.emit(FolderEvent::QuickLook);
                     cx.stop_propagation();
                 }
@@ -2678,6 +2725,8 @@ impl FolderView {
                                 .into_any_element(),
                         })
                         .child(name_el)
+                        // encrypted: an archive member that needs a password, or an EFS file
+                        .children((e.attrs & rf_core::attrs::ENCRYPTED != 0).then(|| Icon::new(L::Lock).size(px(12.)).flex_shrink_0().text_color(p.text_secondary)))
                         .children(tag_dots)
                         .children(git_badge)
                         .child(div().flex_1())
@@ -3364,6 +3413,7 @@ impl Render for FolderView {
                 this.show_context_menu(bg, window, cx)
             }))
             .on_key_down(cx.listener(|this, ev: &KeyDownEvent, _, cx| this.on_typeahead(ev, cx)))
+            .on_key_up(cx.listener(|this, ev: &KeyUpEvent, _, cx| this.on_key_up(ev, cx)))
             .on_mouse_down(
                 MouseButton::Navigate(NavigationDirection::Back),
                 cx.listener(|this, _: &MouseDownEvent, _, cx| this.back(cx)),
@@ -3378,3 +3428,9 @@ impl Render for FolderView {
 
 #[allow(dead_code)]
 fn _assert_category_used(_: Category) {}
+
+/// `RUSTYFILES_TRACE_LIVE=1`: log listing and live-update timings (benchmarks).
+fn trace_live() -> bool {
+    static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ON.get_or_init(|| std::env::var_os("RUSTYFILES_TRACE_LIVE").is_some())
+}

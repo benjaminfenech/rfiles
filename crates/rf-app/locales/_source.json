@@ -2466,6 +2466,312 @@
   "en": "Flattening:"
  },
  {
+  "id": "1f5a06b8",
+  "key": "Verilen",
+  "tr": "Verilen",
+  "en": "Issued to"
+ },
+ {
+  "id": "5f62ca31",
+  "key": "Veren",
+  "tr": "Veren",
+  "en": "Issued by"
+ },
+ {
+  "id": "dcf39e11",
+  "key": "Geçerlilik",
+  "tr": "Geçerlilik",
+  "en": "Valid"
+ },
+ {
+  "id": "21167459",
+  "key": "süresi dolmuş",
+  "tr": "süresi dolmuş",
+  "en": "expired"
+ },
+ {
+  "id": "2c8ae42a",
+  "key": "henüz geçerli değil",
+  "tr": "henüz geçerli değil",
+  "en": "not yet valid"
+ },
+ {
+  "id": "a98d238f",
+  "key": "Açıklama",
+  "tr": "Açıklama",
+  "en": "Description"
+ },
+ {
+  "id": "a8affc4f",
+  "key": "Şirket",
+  "tr": "Şirket",
+  "en": "Company"
+ },
+ {
+  "id": "bc81e7ed",
+  "key": "Sürüm",
+  "tr": "Sürüm",
+  "en": "Version"
+ },
+ {
+  "id": "c272ef4d",
+  "key": "Yazı tipi okunamadı",
+  "tr": "Yazı tipi okunamadı",
+  "en": "Couldn't read the font"
+ },
+ {
+  "id": "7b474d09",
+  "key": "glif",
+  "tr": "glif",
+  "en": "glyphs"
+ },
+ {
+  "id": "d69799ce",
+  "key": "satır daha",
+  "tr": "satır daha",
+  "en": "more rows"
+ },
+ {
+  "id": "f5a6fb37",
+  "key": "Metin yazı tipi",
+  "tr": "Metin yazı tipi",
+  "en": "Text font"
+ },
+ {
+  "id": "b93f9c14",
+  "key": "Metin boyutu",
+  "tr": "Metin boyutu",
+  "en": "Text size"
+ },
+ {
+  "id": "675e9367",
+  "key": "Önizlenecek dosyalar",
+  "tr": "Önizlenecek dosyalar",
+  "en": "Files to preview"
+ },
+ {
+  "id": "41c4c6a3",
+  "key": "Hepsi, listedekiler hariç",
+  "tr": "Hepsi, listedekiler hariç",
+  "en": "All except those listed"
+ },
+ {
+  "id": "5935f483",
+  "key": "Yalnızca listedekiler",
+  "tr": "Yalnızca listedekiler",
+  "en": "Only those listed"
+ },
+ {
+  "id": "486cd422",
+  "key": "Önizlenecek uzantılar",
+  "tr": "Önizlenecek uzantılar",
+  "en": "Extensions to preview"
+ },
+ {
+  "id": "6ba24d2e",
+  "key": "Düzenle…",
+  "tr": "Düzenle…",
+  "en": "Edit…"
+ },
+ {
+  "id": "c531359b",
+  "key": "Noktalı virgülle ayırın, örneğin: .iso; .insv; .psd",
+  "tr": "Noktalı virgülle ayırın, örneğin: .iso; .insv; .psd",
+  "en": "Separate with semicolons, for example: .iso; .insv; .psd"
+ },
+ {
+  "id": "d8b485fc",
+  "key": "Değişiklikleri kaydet (commit)…",
+  "tr": "Değişiklikleri kaydet (commit)…",
+  "en": "Commit changes…"
+ },
+ {
+  "id": "f5075245",
+  "key": "Uzak depo adresini değiştir…",
+  "tr": "Uzak depo adresini değiştir…",
+  "en": "Change remote address…"
+ },
+ {
+  "id": "687cc38f",
+  "key": "Uzak depoya bağla…",
+  "tr": "Uzak depoya bağla…",
+  "en": "Connect to a remote…"
+ },
+ {
+  "id": "55b01ff8",
+  "key": "Ne değiştiğini kısaca yazın",
+  "tr": "Ne değiştiğini kısaca yazın",
+  "en": "Describe the change in a few words"
+ },
+ {
+  "id": "625340eb",
+  "key": "Kaydediliyor:",
+  "tr": "Kaydediliyor:",
+  "en": "Committing:"
+ },
+ {
+  "id": "397eded4",
+  "key": "Değişiklikleri kaydet",
+  "tr": "Değişiklikleri kaydet",
+  "en": "Commit changes"
+ },
+ {
+  "id": "f06f3df8",
+  "key": "Bu depodaki bütün değişiklikler (yeni dosyalar dahil) tek bir kayıt olarak saklanır.",
+  "tr": "Bu depodaki bütün değişiklikler (yeni dosyalar dahil) tek bir kayıt olarak saklanır.",
+  "en": "Every change in this repository (new files included) is saved as one commit."
+ },
+ {
+  "id": "36051133",
+  "key": "Örneğin: Kapak resmi güncellendi",
+  "tr": "Örneğin: Kapak resmi güncellendi",
+  "en": "For example: Updated the cover image"
+ },
+ {
+  "id": "dde53302",
+  "key": "Uzak depoya bağlanıyor:",
+  "tr": "Uzak depoya bağlanıyor:",
+  "en": "Connecting to remote:"
+ },
+ {
+  "id": "513d4d8e",
+  "key": "Bağla ve gönder",
+  "tr": "Bağla ve gönder",
+  "en": "Connect and push"
+ },
+ {
+  "id": "d25dd367",
+  "key": "Yalnızca bağla",
+  "tr": "Yalnızca bağla",
+  "en": "Connect only"
+ },
+ {
+  "id": "f8b2d759",
+  "key": "Uzak depoya bağla",
+  "tr": "Uzak depoya bağla",
+  "en": "Connect to a remote"
+ },
+ {
+  "id": "7d7f0d84",
+  "key": "Uzak depo adresi",
+  "tr": "Uzak depo adresi",
+  "en": "Remote address"
+ },
+ {
+  "id": "e672d0b0",
+  "key": "GitHub, GitLab ya da başka bir sunucudaki boş bir deponun adresi. Önce orada bir depo oluşturun.",
+  "tr": "GitHub, GitLab ya da başka bir sunucudaki boş bir deponun adresi. Önce orada bir depo oluşturun.",
+  "en": "The address of an empty repository on GitHub, GitLab or another server. Create the repository there first."
+ },
+ {
+  "id": "c3d90f7c",
+  "key": "Depo adresi boş",
+  "tr": "Depo adresi boş",
+  "en": "The repository address is empty"
+ },
+ {
+  "id": "d79e4468",
+  "key": "Kayıt açıklaması boş",
+  "tr": "Kayıt açıklaması boş",
+  "en": "The commit message is empty"
+ },
+ {
+  "id": "247fb2c6",
+  "key": "Kaydedilecek değişiklik yok",
+  "tr": "Kaydedilecek değişiklik yok",
+  "en": "Nothing to commit"
+ },
+ {
+  "id": "87629b23",
+  "key": "Uzak depo bağlanamadı",
+  "tr": "Uzak depo bağlanamadı",
+  "en": "Couldn't connect the remote"
+ },
+ {
+  "id": "d23202d0",
+  "key": "Değişiklikler eklenemedi",
+  "tr": "Değişiklikler eklenemedi",
+  "en": "Couldn't stage the changes"
+ },
+ {
+  "id": "f9b38f82",
+  "key": "Kaydedilemedi",
+  "tr": "Kaydedilemedi",
+  "en": "Couldn't commit"
+ },
+ {
+  "id": "1bb8533f",
+  "key": "Dosyayı değiştir",
+  "tr": "Dosyayı değiştir",
+  "en": "Replace the file"
+ },
+ {
+  "id": "15a4e193",
+  "key": "Dosyaları değiştir",
+  "tr": "Dosyaları değiştir",
+  "en": "Replace the files"
+ },
+ {
+  "id": "7fb143b9",
+  "key": "Gelen dosya, hedeftekinin yerine geçer",
+  "tr": "Gelen dosya, hedeftekinin yerine geçer",
+  "en": "The incoming file takes the place of the existing one"
+ },
+ {
+  "id": "5bb4f263",
+  "key": "Gelenler, hedeftekilerin yerine geçer",
+  "tr": "Gelenler, hedeftekilerin yerine geçer",
+  "en": "The incoming files take the place of the existing ones"
+ },
+ {
+  "id": "099259ee",
+  "key": "Bu dosyayı atla",
+  "tr": "Bu dosyayı atla",
+  "en": "Skip this file"
+ },
+ {
+  "id": "cdb25262",
+  "key": "Bu dosyaları atla",
+  "tr": "Bu dosyaları atla",
+  "en": "Skip these files"
+ },
+ {
+  "id": "a52581b6",
+  "key": "Hedefteki olduğu gibi kalır",
+  "tr": "Hedefteki olduğu gibi kalır",
+  "en": "The existing one stays as it is"
+ },
+ {
+  "id": "97833301",
+  "key": "Hedeftekiler olduğu gibi kalır",
+  "tr": "Hedeftekiler olduğu gibi kalır",
+  "en": "The existing ones stay as they are"
+ },
+ {
+  "id": "9c6c7954",
+  "key": "Gelen dosya \"(2)\" gibi yeni bir adla eklenir",
+  "tr": "Gelen dosya \"(2)\" gibi yeni bir adla eklenir",
+  "en": "The incoming file is added under a new name like \"(2)\""
+ },
+ {
+  "id": "9ba844d7",
+  "key": "Gelenler \"(2)\" gibi yeni adlarla eklenir",
+  "tr": "Gelenler \"(2)\" gibi yeni adlarla eklenir",
+  "en": "The incoming files are added under new names like \"(2)\""
+ },
+ {
+  "id": "eff439c0",
+  "key": "Her dosya için seç…",
+  "tr": "Her dosya için seç…",
+  "en": "Choose for each file…"
+ },
+ {
+  "id": "210ea0af",
+  "key": "Boyutları ve tarihleri karşılaştırarak",
+  "tr": "Boyutları ve tarihleri karşılaştırarak",
+  "en": "Comparing sizes and dates"
+ },
+ {
   "id": "17ee12ed",
   "key": "Topluluk",
   "tr": "Topluluk",

@@ -20,6 +20,7 @@ pub struct RECT {
     pub bottom: i32,
 }
 pub mod accent;
+pub mod cert;
 pub mod clipboard;
 pub mod complete;
 pub mod ctxmenu;
@@ -44,6 +45,7 @@ pub mod look;
 pub mod listing;
 pub mod localized;
 pub mod network;
+pub mod pe;
 pub mod fileactions;
 pub mod fileinfo;
 pub mod jumplist;

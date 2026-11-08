@@ -165,6 +165,8 @@ pub struct ArchiveEntry {
     pub is_dir: bool,
     /// Unix milliseconds, 0 when unknown.
     pub modified_ms: i64,
+    /// The member's content is encrypted (a password is needed to read it).
+    pub encrypted: bool,
 }
 
 /// Progress report. For zip / 7z the unit is uncompressed bytes. For tar-family streams and
@@ -517,6 +519,7 @@ pub fn list_with(path: &Path, opts: &Options) -> Result<Vec<ArchiveEntry>> {
                     packed: e.packed_size,
                     is_dir: e.is_dir,
                     modified_ms: own::mtime(e).map_or(0, mtime_ms),
+                    encrypted: e.encrypted,
                 })
                 .collect())
         }
@@ -531,6 +534,7 @@ pub fn list_with(path: &Path, opts: &Options) -> Result<Vec<ArchiveEntry>> {
                     packed: f.compressed_size(),
                     is_dir: f.is_dir(),
                     modified_ms: zip_mtime(f.last_modified()).map_or(0, mtime_ms),
+                    encrypted: f.encrypted(),
                 });
             }
             Ok(out)
@@ -548,6 +552,7 @@ pub fn list_with(path: &Path, opts: &Options) -> Result<Vec<ArchiveEntry>> {
                     packed: e.compressed_size,
                     is_dir: e.is_directory,
                     modified_ms: nt_mtime(e).map_or(0, mtime_ms),
+                    encrypted: false,
                 })
                 .collect())
         }
@@ -571,6 +576,7 @@ pub fn list_with(path: &Path, opts: &Options) -> Result<Vec<ArchiveEntry>> {
                     packed: 0,
                     is_dir: t.is_dir(),
                     modified_ms: h.mtime().ok().and_then(tar_mtime).map_or(0, mtime_ms),
+                    encrypted: false,
                 });
             }
             Ok(out)
@@ -592,6 +598,7 @@ pub fn list_with(path: &Path, opts: &Options) -> Result<Vec<ArchiveEntry>> {
                 packed,
                 is_dir: false,
                 modified_ms: meta.modified().map_or(0, mtime_ms),
+                encrypted: false,
             }])
         }
     }
@@ -927,6 +934,7 @@ fn own_entries(a: &rarchive::Archive) -> Vec<ArchiveEntry> {
             packed: e.packed_size,
             is_dir: e.is_dir,
             modified_ms: own::mtime(e).map_or(0, mtime_ms),
+            encrypted: e.encrypted,
         })
         .collect()
 }
@@ -1761,7 +1769,12 @@ mod tests {
 
         // listing: zip names are public; 7z hides them behind the header encryption
         match format {
-            Format::Zip => assert!(list(&arch).unwrap().iter().any(|e| e.path.ends_with("a.txt"))),
+            Format::Zip => {
+                let l = list(&arch).unwrap();
+                assert!(l.iter().any(|e| e.path.ends_with("a.txt")));
+                // members are marked encrypted (the list shows a lock); folders are not
+                assert!(l.iter().filter(|e| !e.is_dir).all(|e| e.encrypted), "{l:?}");
+            }
             _ => {
                 let e = list(&arch).unwrap_err();
                 assert!(is_pw(&e, PasswordError::Required), "{e:?}");

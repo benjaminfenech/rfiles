@@ -36,7 +36,8 @@ impl Viewer for InfoCard {
         let path = f.path.clone();
         let (exists, is_dir) = (f.exists, f.is_dir);
         self.view = Some(cx.new(|cx| InfoView::new(path, exists, is_dir, images, cx)));
-        let mut p = Prepared::new((520.0, 210.0), super::file_name(&f.path));
+        let h = if f.exists && !f.is_dir && (is_pe_ext(&f.path) || has_ext(&f.path, &["cer", "crt", "der", "pem"])) { 260.0 } else { 210.0 };
+        let mut p = Prepared::new((520.0, h), super::file_name(&f.path));
         p.resizable = false;
         p
     }
@@ -60,6 +61,10 @@ pub struct InfoView {
     folder: Option<(u64, u64, u64, bool)>,
     /// Sürücü kökü: (boş, toplam, etiket).
     drive: Option<(u64, u64, String)>,
+    /// Programs and libraries: version resource and architecture.
+    pe: Option<rf_win::pe::PeInfo>,
+    /// Certificate files: subject, issuer, validity.
+    cert: Option<rf_win::cert::CertInfo>,
     cancel: Arc<AtomicBool>,
 }
 
@@ -71,6 +76,15 @@ impl Drop for InfoView {
 
 fn ms(t: std::io::Result<std::time::SystemTime>) -> i64 {
     t.ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map_or(0, |d| d.as_millis() as i64)
+}
+
+fn has_ext(p: &Path, list: &[&str]) -> bool {
+    p.extension().and_then(|e| e.to_str()).is_some_and(|e| list.iter().any(|x| x.eq_ignore_ascii_case(e)))
+}
+
+fn is_pe_ext(p: &Path) -> bool {
+    const EXT: &[&str] = &["exe", "dll", "sys", "ocx", "cpl", "scr", "drv", "efi", "mui", "ax"];
+    p.extension().and_then(|e| e.to_str()).is_some_and(|e| EXT.iter().any(|x| x.eq_ignore_ascii_case(e)))
 }
 
 fn is_drive_root(p: &Path) -> bool {
@@ -87,7 +101,7 @@ impl InfoView {
             let kind = if m.is_dir() { EntryKind::Dir } else { EntryKind::File };
             Entry::new(&name, kind, m.len(), ms(m.modified()), ms(m.created()), 0)
         });
-        let mut v = Self { path, exists, entry, images, folder: None, drive: None, cancel: Default::default() };
+        let mut v = Self { path, exists, entry, images, folder: None, drive: None, pe: None, cert: None, cancel: Default::default() };
         if is_dir && is_drive_root(&v.path) {
             let root = v.path.clone();
             let task = cx.background_spawn(async move { rf_win::volume::volume_info(&root).ok() });
@@ -102,6 +116,30 @@ impl InfoView {
             .detach();
         } else if is_dir {
             v.count_folder(cx);
+        } else if exists && has_ext(&v.path, &["cer", "crt", "der", "pem"]) {
+            let file = v.path.clone();
+            let task = cx.background_spawn(async move { rf_win::cert::info(&file) });
+            cx.spawn(async move |this, cx| {
+                if let Some(i) = task.await {
+                    let _ = this.update(cx, |v, cx| {
+                        v.cert = Some(i);
+                        cx.notify();
+                    });
+                }
+            })
+            .detach();
+        } else if exists && is_pe_ext(&v.path) {
+            let file = v.path.clone();
+            let task = cx.background_spawn(async move { rf_win::pe::info(&file) });
+            cx.spawn(async move |this, cx| {
+                if let Some(i) = task.await {
+                    let _ = this.update(cx, |v, cx| {
+                        v.pe = Some(i);
+                        cx.notify();
+                    });
+                }
+            })
+            .detach();
         }
         v
     }
@@ -177,6 +215,29 @@ impl Render for InfoView {
         } else if let Some(e) = self.entry.as_ref().filter(|e| !e.is_dir()) {
             lines.push(line(&p, t!("Boyut"), format::size(e.size)));
         }
+        if let Some(c) = &self.cert {
+            lines.push(line(&p, t!("Verilen"), c.subject.clone()));
+            lines.push(line(&p, t!("Veren"), c.issuer.clone()));
+            let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as i64);
+            let state = if now > c.not_after {
+                format!(" ({})", t!("süresi dolmuş"))
+            } else if now < c.not_before {
+                format!(" ({})", t!("henüz geçerli değil"))
+            } else {
+                String::new()
+            };
+            lines.push(line(&p, t!("Geçerlilik"), format!("{} – {}{state}", day(c.not_before), day(c.not_after))));
+        }
+        if let Some(pe) = &self.pe {
+            if let Some(d) = pe.description.as_ref().or(pe.product.as_ref()) {
+                lines.push(line(&p, t!("Açıklama"), d.clone()));
+            }
+            if let Some(c) = &pe.company {
+                lines.push(line(&p, t!("Şirket"), c.clone()));
+            }
+            let ver = pe.version.clone().map_or_else(|| pe.arch.to_string(), |v| format!("{v} · {}", pe.arch));
+            lines.push(line(&p, t!("Sürüm"), ver));
+        }
         if let Some(e) = &self.entry {
             if e.modified_ms > 0 {
                 lines.push(line(&p, t!("Değiştirme"), format::datetime(e.modified_ms)));
@@ -217,3 +278,8 @@ fn img_element(img: Arc<RenderImage>) -> impl IntoElement {
 }
 
 use gpui_kit::prelude::FluentBuilder as _;
+
+/// Date only ("05.11.2026"), from the full local date-time.
+fn day(ms: i64) -> String {
+    format::datetime_full(ms).split(' ').next().unwrap_or_default().to_string()
+}

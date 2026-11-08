@@ -2,8 +2,11 @@
 //! Bilgi kartı en son. Eşit öncelikte kayıt sırası geçerli (arşiv metinden önce).
 
 pub mod archive;
+pub mod csv;
+pub mod font;
 pub mod image;
 pub mod info;
+pub mod markdown;
 pub mod pdf;
 pub mod text;
 pub mod video;
@@ -17,6 +20,9 @@ pub fn all() -> Vec<Box<dyn Viewer>> {
         Box::new(video::VideoViewer::default()),
         Box::new(pdf::PdfViewer::default()),
         Box::new(archive::ArchiveViewer::default()),
+        Box::new(markdown::MarkdownViewer::default()),
+        Box::new(csv::CsvViewer::default()),
+        Box::new(font::FontViewer::default()),
         Box::new(text::TextViewer::default()),
     ]
 }
