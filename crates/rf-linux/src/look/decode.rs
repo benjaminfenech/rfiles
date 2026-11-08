@@ -282,7 +282,12 @@ fn heif_tools(path: &Path, ext: &str, bytes: &[u8], max_side: u32) -> anyhow::Re
                 Err(e) => last = Some(e),
                 Ok(r) if !r.ok => last = Some(anyhow!("{prog}: {}", String::from_utf8_lossy(&r.stderr).trim())),
                 Ok(_) => match written_image(&dir) {
-                    Ok(img) => return Ok(one_frame(img, heif_exif(bytes), max_side)),
+                    Ok(mut img) => {
+                        if *prog == "avifdec" && !avifdec_transforms() {
+                            img = upright(img, bytes);
+                        }
+                        return Ok(one_frame(img, heif_exif(bytes), max_side));
+                    }
                     Err(e) => last = Some(e.context(*prog)),
                 },
             }
@@ -298,6 +303,48 @@ fn heif_tools(path: &Path, ext: &str, bytes: &[u8], max_side: u32) -> anyhow::Re
     })();
     let _ = std::fs::remove_dir_all(&dir);
     result
+}
+
+/// Whether `avifdec` applies the rotation and mirroring itself (libavif 1.4.0 and later).
+fn avifdec_transforms() -> bool {
+    static ANSWER: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ANSWER.get_or_init(|| {
+        let mut cmd = Command::new("avifdec");
+        cmd.arg("--version");
+        let ran = run(cmd, Duration::from_secs(5)).ok();
+        let text = ran.map(|r| String::from_utf8_lossy(&r.stdout).into_owned()).unwrap_or_default();
+        avifdec_version_transforms(&text)
+    })
+}
+
+/// From `avifdec --version` output ("Version: 1.0.4 (dav1d …)"): 1.4.0 or later. Unreadable
+/// counts as new.
+fn avifdec_version_transforms(text: &str) -> bool {
+    let Some(v) = text.lines().find_map(|l| l.trim().strip_prefix("Version:")) else { return true };
+    let mut parts = v.trim().split(|c: char| !c.is_ascii_digit()).map(|n| n.parse::<u32>().unwrap_or(0));
+    let (major, minor) = (parts.next().unwrap_or(0), parts.next().unwrap_or(0));
+    (major, minor) >= (1, 4)
+}
+
+/// Applies the container's `irot`, then `imir` (HEIF's order), to an image decoded as stored.
+fn upright(img: RgbaImage, bytes: &[u8]) -> RgbaImage {
+    use image::imageops;
+    let Some(p) = heif::primary(bytes) else { return img };
+    // already turned (a different tool, or a newer one than its version says)
+    if (img.width(), img.height()) == p.shown_size() && p.quarter_turns % 2 == 1 {
+        return img;
+    }
+    let img = match p.quarter_turns {
+        1 => imageops::rotate270(&img),
+        2 => imageops::rotate180(&img),
+        3 => imageops::rotate90(&img),
+        _ => img,
+    };
+    match p.mirror {
+        Some(0) => imageops::flip_horizontal(&img),
+        Some(_) => imageops::flip_vertical(&img),
+        None => img,
+    }
 }
 
 /// The decoded image a tool left in `dir`: `out.png`, or when it numbered several top-level
@@ -513,6 +560,21 @@ mod tests {
         assert_eq!((d.width, d.height), (40, 60));
         let f = &d.frames[0].0;
         assert!(near(rgb(f, 2, 57), [255, 0, 0]) && near(rgb(f, 2, 2), [255, 255, 255]));
+    }
+
+    #[test]
+    fn old_avifdec_is_turned_here() {
+        assert!(!avifdec_version_transforms("Version: 1.0.4 (dav1d [dec]:1.4.1)\nlibyuv : available"));
+        assert!(avifdec_version_transforms("Version: 1.4.2 (dav1d [dec]:1.5.4)"));
+        assert!(avifdec_version_transforms("Version: 2.0.0"));
+        assert!(avifdec_version_transforms("no version line"));
+        // rotated.avif decoded as stored (60 x 40, red top-left), turned upright here
+        let stored = image::open(testdata("small.png")).unwrap().into_rgba8();
+        let bytes = std::fs::read(testdata("rotated.avif")).unwrap();
+        let up = upright(stored, &bytes);
+        assert_eq!(up.dimensions(), (40, 60));
+        assert_eq!(up.get_pixel(2, 57).0, [255, 0, 0, 255]);
+        assert_eq!(up.get_pixel(2, 2).0, [255, 255, 255, 255]);
     }
 
     #[test]

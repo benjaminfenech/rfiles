@@ -42,8 +42,36 @@ fn child<'a>(data: &'a [u8], kind: &[u8; 4]) -> Option<&'a [u8]> {
     boxes(data).find(|b| &b.kind == kind).map(|b| b.body)
 }
 
+/// The primary image as stored, and how to show it.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Primary {
+    /// Stored size, before `irot`.
+    pub width: u32,
+    pub height: u32,
+    /// `irot`: anticlockwise quarter turns.
+    pub quarter_turns: u8,
+    /// `imir`: 0 mirrors about a vertical axis (left and right swap), 1 about a horizontal one.
+    pub mirror: Option<u8>,
+}
+
+impl Primary {
+    /// The size as shown.
+    pub fn shown_size(&self) -> (u32, u32) {
+        if self.quarter_turns % 2 == 1 {
+            (self.height, self.width)
+        } else {
+            (self.width, self.height)
+        }
+    }
+}
+
 /// The primary image's size as shown (`irot` applied), from the header alone.
 pub fn primary_size(data: &[u8]) -> Option<(u32, u32)> {
+    primary(data).map(|p| p.shown_size())
+}
+
+/// The primary image's stored size, rotation and mirroring, from the header alone.
+pub fn primary(data: &[u8]) -> Option<Primary> {
     // `meta` is a full box: 4 bytes of version and flags before its children
     let meta = child(data, b"meta")?.get(4..)?;
     let pitm = child(meta, b"pitm")?;
@@ -59,6 +87,7 @@ pub fn primary_size(data: &[u8]) -> Option<(u32, u32)> {
     let mut at = 8;
     let mut size = None;
     let mut quarter_turns = 0;
+    let mut mirror = None;
     for _ in 0..be32(ipma, 4)? {
         let item = if version < 1 {
             at += 2;
@@ -89,15 +118,17 @@ pub fn primary_size(data: &[u8]) -> Option<(u32, u32)> {
                 b"ispe" => size = Some((be32(p.body, 4)?, be32(p.body, 8)?)),
                 // anticlockwise quarter turns in the low two bits
                 b"irot" => quarter_turns = p.body.first()? & 3,
+                b"imir" => mirror = Some(p.body.first()? & 1),
                 _ => {}
             }
         }
     }
-    let (w, h) = size?;
-    (w > 0 && h > 0).then_some(if quarter_turns % 2 == 1 {
-        (h, w)
-    } else {
-        (w, h)
+    let (width, height) = size?;
+    (width > 0 && height > 0).then_some(Primary {
+        width,
+        height,
+        quarter_turns,
+        mirror,
     })
 }
 
@@ -239,6 +270,15 @@ mod tests {
         assert_eq!(primary_size(&heif(None)), Some((4000, 3000)));
         assert_eq!(primary_size(&heif(Some(1))), Some((3000, 4000)));
         assert_eq!(primary_size(&heif(Some(2))), Some((4000, 3000)));
+        assert_eq!(
+            primary(&heif(Some(3))),
+            Some(Primary {
+                width: 4000,
+                height: 3000,
+                quarter_turns: 3,
+                mirror: None
+            })
+        );
         let full = heif(None);
         assert_eq!(primary_size(&full[..full.len() / 2]), None);
         assert_eq!(primary_size(b"not a heif file"), None);
