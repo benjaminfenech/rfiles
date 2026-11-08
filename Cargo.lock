@@ -3159,7 +3159,7 @@ checksum = "99b18b06f5026b3d312488eacfdddbe78f82b4bf32bb2d2bc3186e31e552b797"
 
 [[package]]
 name = "gpui-windows-shim"
-version = "0.2.0"
+version = "0.3.0"
 
 [[package]]
 name = "gpustress"
@@ -6240,7 +6240,7 @@ dependencies = [
 
 [[package]]
 name = "rf-linux"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "ashpd",
