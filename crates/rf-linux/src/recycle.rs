@@ -68,13 +68,25 @@ fn ensure(t: &TrashDir) -> std::io::Result<()> {
     ensure_dir(&t.info())
 }
 
+/// Device of `p`, or of its nearest existing ancestor when `p` doesn't exist yet.
+fn nearest_dev(p: &Path) -> std::io::Result<u64> {
+    let mut last = None;
+    for a in p.ancestors() {
+        match std::fs::metadata(a) {
+            Ok(m) => return Ok(m.dev()),
+            Err(e) => last = Some(e),
+        }
+    }
+    Err(last.unwrap_or_else(|| std::io::Error::from(std::io::ErrorKind::NotFound)))
+}
+
 /// The trash folder for `path`: the home trash when they share a file system, else the trash
 /// at the top of `path`'s own mount.
 fn trash_for(path: &Path) -> Result<TrashDir> {
     let home = home_trash().context("no home folder")?;
-    let dev = |p: &Path| std::fs::metadata(p).map(|m| m.dev());
-    // the home trash's file system: the trash itself, or the folder that will hold it
-    let home_dev = dev(&home).or_else(|_| dev(home.parent().unwrap_or(&home)))?;
+    // the home trash's file system; on a new account the trash (even ~/.local/share) may not
+    // exist yet: it will be created on the file system of its nearest existing folder
+    let home_dev = nearest_dev(&home)?;
     let item_dev = std::fs::symlink_metadata(path)?.dev();
     if item_dev == home_dev {
         return Ok(TrashDir { root: home, topdir: None });
@@ -334,6 +346,14 @@ pub fn info() -> anyhow::Result<(u64, u64)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn missing_trash_folders_use_their_nearest_parent() {
+        // a fresh account: ~/.local/share/Trash and even ~/.local/share don't exist yet
+        let tmp = std::env::temp_dir();
+        let missing = tmp.join(format!("rf-no-such-{}", std::process::id())).join("share/Trash");
+        assert_eq!(nearest_dev(&missing).unwrap(), std::fs::metadata(&tmp).unwrap().dev());
+    }
 
     #[test]
     fn info_files_round_trip() {
