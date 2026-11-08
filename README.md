@@ -241,7 +241,9 @@ mounted drives), breadcrumbs and `~` in the address bar, tabs, copy, move, renam
 managers), file-type icons from your icon theme, thumbnails (shared with other file
 managers; videos, PDFs and documents through the installed thumbnailers), folder sizes, Git
 status, hashes, opening files with their default app or any other ("Open with" lists the
-apps for the file's type, your default first), and "Open terminal here". Copy and paste
+apps for the file's type, your default first), "Open terminal here", and DirectLook
+previews of images, SVGs and PDFs (PDFs need poppler's `pdfinfo` and `pdftoppm`: package
+`poppler` on Arch, `poppler-utils` on Debian/Ubuntu). Copy and paste
 files with other apps (Dolphin, Nautilus, Thunar, browsers…) on Wayland compositors with
 data-control (Hyprland, Sway, KDE) and on X11; on GNOME's Wayland session they work inside
 rustyfiles only.

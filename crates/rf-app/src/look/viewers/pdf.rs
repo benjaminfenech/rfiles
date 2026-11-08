@@ -1,6 +1,6 @@
-//! PDF: Windows' own PDF engine (`rf_win::look::pdf`) on a worker thread. Pages are laid out at
-//! their real proportions right away and rendered as they scroll into view, at the window's
-//! width; only the pages near the view are kept in memory.
+//! PDF: Windows' own PDF engine, or poppler's tools on Linux (`rf_win::look::pdf`), on a worker
+//! thread. Pages are laid out at their real proportions right away and rendered as they scroll
+//! into view, at the window's width; only the pages near the view are kept in memory.
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
@@ -97,6 +97,8 @@ fn worker(path: PathBuf, opened: mpsc::Sender<Result<Vec<(f32, f32)>, String>>, 
         Err(e) => {
             let msg = match e.downcast_ref::<PdfError>() {
                 Some(PdfError::Password) => t!("Bu PDF parola ile korunuyor; DirectLook parolalı PDF'leri henüz açmıyor."),
+                #[cfg(unix)]
+                Some(PdfError::NoPoppler) => "To preview PDFs, install poppler (it provides pdfinfo and pdftoppm).",
                 _ => t!("Bu dosya PDF olarak okunamadı; bozuk olabilir."),
             };
             let _ = opened.send(Err(msg.to_string()));

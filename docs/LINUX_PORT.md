@@ -146,8 +146,13 @@ sized from GPUI's display info and resized with `window.resize` (`sys::work_area
 `sys::set_window_rect`). Hyprland ignores a floating window's own resize, so on Linux a
 clearly different size (more than 12 % and 48 px on a side) reopens DirectLook at that size
 (`sys::reopen_for_size`, `LookManager::reopen`: the new window opens first, so rustyfiles
-keeps following the selection). Next: previews (PDF, SVG, sizes, full-size HEIC/AVIF/JXL), then
-media (audio, video fallback).
+keeps following the selection). Image sizes and SVG done.
+
+Progress (2026-11-09): **PDF preview done** through poppler's command-line tools, no library
+to link: `pdfinfo -box` reads every page's crop box and rotation once (575 pages in about
+40 ms), and `pdftoppm -scale-to` renders one page to PPM on stdout as it scrolls into view
+(`-scale-to-x/-y` would apply before the page's rotation). A missing poppler shows an
+install hint. Next: full-size HEIC/AVIF/JXL, then media (audio, video fallback).
 
 - **Global Space key over other apps does not work on Wayland** (no global keyboard hooks,
   no foreground-window inspection). On Linux DirectLook works inside rustyfiles only;
@@ -155,7 +160,8 @@ media (audio, video fallback).
   or a desktop-portal GlobalShortcuts binding.
 - `look/decode.rs`: drop WIC; HEIC/AVIF via `libheif-rs`, JXL via `jxl-oxide`, RAW via
   `rawler` or the embedded JPEG preview.
-- `look/pdf.rs`: `pdfium-render` (bundled pdfium) or poppler-glib.
+- ~~`look/pdf.rs`~~ done with poppler's `pdfinfo` / `pdftoppm` (runtime dependency for packaging).
+  Password-protected PDFs show a message, as on Windows.
 - `preview_host` (Windows preview handlers): no equivalent; leave out.
 - DirectLook info card (from upstream, 2026-11-08): `pe` shows only the architecture on Linux;
   read the version strings from the `VS_VERSIONINFO` resource ourselves. `cert` returns
@@ -186,7 +192,7 @@ the hybrid GPU/CPU renderer, critical-error-dialog suppression, `keep_gdiplus_al
 ## Packaging
 
 Start with a PKGBUILD in `packaging/arch/` (target machine is CachyOS) and a
-`rustyfiles.desktop` + icon. Flatpak later; it needs portal support for everything outside
+`rustyfiles.desktop` + icon. Runtime dependencies so far: `poppler` (DirectLook PDFs). Flatpak later; it needs portal support for everything outside
 the sandbox, which Phase 3 already uses.
 
 ## Testing
