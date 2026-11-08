@@ -98,8 +98,8 @@ Windows still builds (CI job on `windows-latest`).
 
 Progress (2026-11-08): **file operations done** (copy, move, rename, delete, the Trash;
 copy/paste inside rustyfiles), **icons and thumbnails done**, **menus drawn in-window**,
-**"Open with" done**. Next: clipboard exchange with other apps, modifier keys from GPUI, the
-path audit.
+**"Open with" done**, **Shift/Ctrl and the path audit done**. Next: clipboard exchange with
+other apps.
 
 
 | Module | Linux implementation |
@@ -124,9 +124,15 @@ path audit.
 Names that aren't valid UTF-8 are shown lossily by `listing` today; keep the raw bytes so they
 still open and rename.
 
-rf-app path audit: drive letters, `\\server` UNC roots, backslash separators, case-insensitive
-comparisons, `Location::from_shell_name`. Linux paths are case-sensitive and `/` is the
-only root.
+rf-app path audit ✅ (2026-11-08): DirectLook no longer turns `/` into `\\`; the address bar
+and folder aliases use the platform separator; the command palette takes `/…` and `~/…`;
+rename and archive names follow Linux's rule (only `/` is forbidden); a case-only rename is a
+clash on Linux; long paths wrap after `/`; a plain drag compares devices (it used to move
+everything on Linux, every path starting at `/`). Shift/Ctrl come from GPUI's events
+(`sys::note_modifiers`), and the extension-change question and rename errors use the app's
+own dialog (Linux has no shell message box). Left as is because harmless on Linux:
+drive-letter checks that never match, archive-path normalization, per-folder layout keys
+compared case-insensitively.
 
 Done when: you can browse, copy, move, rename, trash, search and open files on Wayland and
 X11 without freezes, including on a slow NFS/SMB mount (the "never waits on the disk" promise

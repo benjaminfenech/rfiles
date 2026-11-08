@@ -369,7 +369,7 @@ impl PropsView {
                     if let Some(app) = &i.opens_with {
                         card1.push(row(p, t!("Birlikte açılır"), app.clone()));
                     }
-                    let loc = path.parent().map(|d| d.to_string_lossy().replace('\\', "\\\u{200B}")).unwrap_or_default();
+                    let loc = path.parent().map(|d| crate::sys::wrap_path(&d.to_string_lossy())).unwrap_or_default();
                     card1.push(row(p, t!("Konum"), loc));
                     if i.is_dir {
                         let (size, contents) = match &self.folder {
@@ -391,7 +391,7 @@ impl PropsView {
                 }
             }
         } else if let Some(t) = &self.totals {
-            let dir = self.paths[0].parent().map(|d| d.to_string_lossy().replace('\\', "\\\u{200B}")).unwrap_or_default();
+            let dir = self.paths[0].parent().map(|d| crate::sys::wrap_path(&d.to_string_lossy())).unwrap_or_default();
             card1.push(row(p, t!("Seçim"), crate::i18n::items(self.paths.len())));
             card1.push(row(p, t!("Konum"), dir));
             let suffix = if t.done { String::new() } else { format!(" — {}", t!("hesaplanıyor…")) };
@@ -402,12 +402,12 @@ impl PropsView {
 
         // Files' "Shortcut" tab: where it points
         if let Some((target, args, dir)) = &self.shortcut {
-            let mut rows = vec![row(p, t!("Hedef"), target.replace('\\', "\\\u{200B}"))];
+            let mut rows = vec![row(p, t!("Hedef"), crate::sys::wrap_path(&target))];
             if !args.is_empty() {
                 rows.push(row(p, t!("Bağımsız değişkenler"), args.clone()));
             }
             if !dir.is_empty() {
-                rows.push(row(p, t!("Başlangıç yeri"), dir.replace('\\', "\\\u{200B}")));
+                rows.push(row(p, t!("Başlangıç yeri"), crate::sys::wrap_path(&dir)));
             }
             out.push(card(p, rows));
             let t = std::path::PathBuf::from(target);

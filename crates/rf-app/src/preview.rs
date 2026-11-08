@@ -784,9 +784,9 @@ fn render_extra(p: &Palette, x: &Extra) -> AnyElement {
         Extra::Shortcut { target, args, dir } => v_flex()
             .w_full()
             .gap_1p5()
-            .child(prop_row(p, t!("Hedef"), target.replace('\\', "\\\u{200B}")))
+            .child(prop_row(p, t!("Hedef"), crate::sys::wrap_path(&target)))
             .when(!args.is_empty(), |d| d.child(prop_row(p, t!("Bağımsız değişkenler"), args.clone())))
-            .when(!dir.is_empty(), |d| d.child(prop_row(p, t!("Başlangıç yeri"), dir.replace('\\', "\\\u{200B}"))))
+            .when(!dir.is_empty(), |d| d.child(prop_row(p, t!("Başlangıç yeri"), crate::sys::wrap_path(&dir))))
             .into_any_element(),
     }
 }
@@ -944,7 +944,7 @@ impl Render for Preview {
             .child(prop_row(&p, t!("Değiştirilme"), format::datetime(e.modified_ms)))
             .child(prop_row(&p, t!("Oluşturulma"), format::datetime(e.created_ms)))
             // zero-width space after each separator: long paths wrap at folder boundaries
-            .child(prop_row(&p, t!("Konum"), dir.to_string_lossy().replace('\\', "\\\u{200B}")));
+            .child(prop_row(&p, t!("Konum"), crate::sys::wrap_path(&dir.to_string_lossy())));
         let mut flags = Vec::new();
         if e.is_hidden() {
             flags.push(t!("Gizli"));

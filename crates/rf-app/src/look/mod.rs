@@ -102,7 +102,7 @@ impl LookManager {
     pub fn show(path: PathBuf, opts: ShowOpts, cx: &mut App) {
         trace::start();
         // kabuk API'leri `C:/a/b` biçimini ayrıştıramaz (özellikler, küçük resimler boş gelir)
-        let path = PathBuf::from(path.to_string_lossy().replace('/', "\\"));
+        let path = crate::sys::native_separators(path);
         if opts.pin {
             Self::pin_current(cx);
         } else if Self::with_active(cx, |v, w, cx| v.set_path(path.clone(), w, cx)).is_some() {
@@ -174,7 +174,7 @@ impl LookManager {
 
     /// Seçim değişti: açık pencere yeni dosyayı gösterir.
     pub fn switch(path: PathBuf, cx: &mut App) {
-        let path = PathBuf::from(path.to_string_lossy().replace('/', "\\"));
+        let path = crate::sys::native_separators(path);
         if Self::current_path(cx).as_ref() == Some(&path) {
             return;
         }

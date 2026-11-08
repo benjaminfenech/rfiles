@@ -1,6 +1,6 @@
 //! Small input and system queries that differ per platform. On Windows these are the same
-//! Win32 calls the app always made; on Linux GPUI owns the input state, so they return
-//! neutral answers until the call sites read GPUI's (see docs/LINUX_PORT.md, Phase 1).
+//! Win32 calls the app always made; on Linux GPUI owns the input state: the modifier keys come
+//! from the window's events, and the global cursor position doesn't exist (Wayland).
 
 /// Screen rectangle for the preview host (`left/top/right/bottom`).
 #[cfg(windows)]
@@ -24,6 +24,19 @@ pub fn cursor_pos() -> (i32, i32) {
     }
 }
 
+/// Shift / Ctrl as last seen by a window (Linux has no global key state to ask; the
+/// workspace reports every change and every mouse move). Bit 0 Shift, bit 1 Ctrl.
+#[cfg(not(windows))]
+static MODIFIERS: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0);
+
+/// Records the modifier keys a window event carried (no-op on Windows, which asks the OS).
+pub fn note_modifiers(m: gpui_kit::Modifiers) {
+    #[cfg(not(windows))]
+    MODIFIERS.store(u8::from(m.shift) | u8::from(m.control) << 1, std::sync::atomic::Ordering::Relaxed);
+    #[cfg(windows)]
+    let _ = m;
+}
+
 /// Whether Shift is held right now.
 pub fn shift_down() -> bool {
     #[cfg(windows)]
@@ -33,7 +46,7 @@ pub fn shift_down() -> bool {
     }
     #[cfg(not(windows))]
     {
-        false
+        MODIFIERS.load(std::sync::atomic::Ordering::Relaxed) & 1 != 0
     }
 }
 
@@ -46,7 +59,7 @@ pub fn ctrl_down() -> bool {
     }
     #[cfg(not(windows))]
     {
-        false
+        MODIFIERS.load(std::sync::atomic::Ordering::Relaxed) & 2 != 0
     }
 }
 
@@ -185,4 +198,39 @@ pub fn separate_popups() -> bool {
 /// flyout has an in-window mode of its own.
 pub fn layout_flyout() -> bool {
     !cfg!(windows) || std::env::var_os("RF_INWINDOW_MENU").is_none()
+}
+
+/// Inserts a zero-width space after every path separator, so a long path can wrap there.
+pub fn wrap_path(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 16);
+    for c in s.chars() {
+        out.push(c);
+        if c == '\\' || c == '/' {
+            out.push('\u{200B}');
+        }
+    }
+    out
+}
+
+/// The path with the platform's separators: Windows' shell APIs can't parse `C:/a/b`; Linux
+/// paths are left alone ("\\" is an ordinary character there).
+pub fn native_separators(p: std::path::PathBuf) -> std::path::PathBuf {
+    if cfg!(windows) { std::path::PathBuf::from(p.to_string_lossy().replace('/', "\\")) } else { p }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn paths_wrap_after_separators() {
+        assert_eq!(wrap_path("/a/b"), "/\u{200B}a/\u{200B}b");
+        assert_eq!(wrap_path(r"C:\a"), "C:\\\u{200B}a");
+        let p = std::path::PathBuf::from("/a/b");
+        if cfg!(windows) {
+            assert_eq!(native_separators(p), std::path::PathBuf::from(r"\a\b"));
+        } else {
+            assert_eq!(native_separators(p.clone()), p);
+        }
+    }
 }

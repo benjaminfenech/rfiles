@@ -64,7 +64,8 @@ fn cursor() -> (i32, i32) {
 impl FolderView {
     /// Opens our context menu for the selection (or the folder background) at the mouse.
     pub fn show_context_menu(&mut self, background: bool, window: &mut Window, cx: &mut Context<Self>) {
-        let shift = crate::sys::shift_down();
+        // Windows only: Linux has no classic shell menu to show
+        let shift = cfg!(windows) && crate::sys::shift_down();
         if shift {
             // power users: the full classic Explorer menu (extended verbs)
             self.show_native_menu(background, cx);
@@ -614,8 +615,12 @@ fn create_archive_dialog(items: Vec<PathBuf>, window: &mut Window, cx: &mut App)
         if name.is_empty() {
             return Err(t!("Bir ad girin").into());
         }
-        if name.contains(['\\', '/', ':', '*', '?', '"', '<', '>', '|']) {
+        // Explorer's characters on Windows; Linux only forbids "/"
+        if cfg!(windows) && name.contains(['\\', '/', ':', '*', '?', '"', '<', '>', '|']) {
             return Err(t!("Ad şu karakterleri içeremez: \\ / : * ? \" < > |").into());
+        }
+        if !cfg!(windows) && crate::ops::invalid_file_name(name) {
+            return Err("A file name can't contain \"/\".".into());
         }
         let lvl = [0, 1, 5, 9][level.get().min(3)];
         if format.get() == 3 {
