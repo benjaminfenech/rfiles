@@ -248,7 +248,7 @@ impl Render for TextView {
         let s = cx.global::<LookSettings>();
         let (numbers, wrap) = (s.look_text_line_numbers, s.look_text_wrap);
         let font_size = s.look_text_font_size.clamp(6.0, 72.0);
-        let font: SharedString = if s.look_text_font.trim().is_empty() { "Cascadia Mono".into() } else { s.look_text_font.clone().into() };
+        let font: SharedString = if s.look_text_font.trim().is_empty() { crate::sys::mono_font().into() } else { s.look_text_font.clone().into() };
         let Some(file) = self.file.clone() else {
             return div().size_full().p_4().text_color(p.danger).child(self.error.clone().unwrap_or_default()).into_any_element();
         };

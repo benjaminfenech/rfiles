@@ -14,4 +14,6 @@ filmcraft-codecs.workspace = true
 filmcraft-frame.workspace = true
 filmcraft-color.workspace = true
 filmcraft-time.workspace = true
+
+[target.'cfg(windows)'.dependencies]
 windows.workspace = true

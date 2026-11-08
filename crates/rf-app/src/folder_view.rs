@@ -903,7 +903,9 @@ impl FolderView {
             let generation = self.generation;
             let (tx, mut rx) = mpsc::unbounded::<Msg>();
             std::thread::spawn(move || {
-                use std::os::windows::fs::MetadataExt;
+                let ms = |t: std::io::Result<std::time::SystemTime>| {
+                    t.ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map_or(0, |d| d.as_millis() as i64)
+                };
                 let mut es = Vec::new();
                 let mut ps: Vec<Arc<std::path::Path>> = Vec::new();
                 for p in paths {
@@ -913,10 +915,10 @@ impl FolderView {
                     es.push(Entry::new(
                         &name,
                         kind,
-                        m.file_size(),
-                        format::filetime_to_unix_ms(m.last_write_time()),
-                        format::filetime_to_unix_ms(m.creation_time()),
-                        m.file_attributes(),
+                        m.len(),
+                        ms(m.modified()),
+                        ms(m.created()),
+                        crate::sys::file_attributes(&p, &m),
                     ));
                     ps.push(p.parent().unwrap_or(&p).into());
                 }
@@ -1000,14 +1002,13 @@ impl FolderView {
                         let mut es = Vec::new();
                         let mut ps: Vec<Arc<std::path::Path>> = Vec::new();
                         for p in paths {
-                            use std::os::windows::fs::MetadataExt;
                             let Ok(m) = std::fs::metadata(&p) else { continue };
                             let ms = |t: std::io::Result<std::time::SystemTime>| {
                                 t.ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map_or(0, |d| d.as_millis() as i64)
                             };
                             let kind = if m.is_dir() { rf_core::EntryKind::Dir } else { rf_core::EntryKind::File };
                             let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-                            es.push(Entry::new(&name, kind, if m.is_dir() { 0 } else { m.len() }, ms(m.modified()), ms(m.created()), m.file_attributes()));
+                            es.push(Entry::new(&name, kind, if m.is_dir() { 0 } else { m.len() }, ms(m.modified()), ms(m.created()), crate::sys::file_attributes(&p, &m)));
                             ps.push(p.parent().unwrap_or(&p).into());
                         }
                         let n = es.len();
@@ -1768,7 +1769,7 @@ impl FolderView {
         self.slow_click_serial += 1;
         let serial = self.slow_click_serial;
         self.slow_click = Some((ei, serial));
-        let wait = std::time::Duration::from_millis(unsafe { windows::Win32::UI::Input::KeyboardAndMouse::GetDoubleClickTime() } as u64);
+        let wait = std::time::Duration::from_millis(crate::sys::double_click_ms() as u64);
         cx.spawn(async move |this, cx| {
             cx.background_executor().timer(wait).await;
             let _ = this.update(cx, |v, cx| {

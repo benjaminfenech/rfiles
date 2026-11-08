@@ -271,12 +271,9 @@ impl LookWindow {
     fn share(&self) {
         let p = self.path.clone();
         rf_win::sta::run(move |owner| {
-            let mut pt = windows::Win32::Foundation::POINT::default();
-            unsafe {
-                let _ = windows::Win32::UI::WindowsAndMessaging::GetCursorPos(&mut pt);
-            }
+            let pt = crate::sys::cursor_pos();
             let target = rf_win::ctxmenu::ShellTarget::Items(vec![p]);
-            if let Err(e) = rf_win::ctxmenu::invoke_verb(owner, &target, "Windows.ModernShare", (pt.x, pt.y)) {
+            if let Err(e) = rf_win::ctxmenu::invoke_verb(owner, &target, "Windows.ModernShare", pt) {
                 log::warn!("look share: {e:#}");
             }
         });
@@ -293,10 +290,8 @@ impl LookWindow {
 
     fn drag_out(&self) {
         let items = vec![self.path.clone()];
-        let ui_thread = unsafe { windows::Win32::System::Threading::GetCurrentThreadId() };
-        unsafe {
-            let _ = windows::Win32::UI::Input::KeyboardAndMouse::ReleaseCapture();
-        }
+        let ui_thread = crate::sys::current_thread_id();
+        crate::sys::release_capture();
         rf_win::sta::run(move |owner| {
             if let Err(e) = rf_win::dnd::drag_out(owner, ui_thread, &items) {
                 log::warn!("look drag: {e:#}");

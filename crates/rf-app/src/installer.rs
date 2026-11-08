@@ -3,11 +3,14 @@
 //! A copy that wasn't installed by Velopack (a dev build, scripts/install.ps1) runs without
 //! updates.
 
+#[cfg(windows)]
 use std::path::Path;
 use std::sync::Mutex;
 use std::time::Duration;
 
+#[cfg(windows)]
 use velopack::sources::GithubSource;
+#[cfg(windows)]
 use velopack::{UpdateCheck, UpdateInfo, UpdateManager, VelopackApp};
 
 pub const REPO: &str = "https://github.com/gelenmedya/rustyfiles";
@@ -15,6 +18,7 @@ pub const REPO: &str = "https://github.com/gelenmedya/rustyfiles";
 pub const APP_ID: &str = "velopack.rustyfiles";
 
 /// First thing in `main`: Velopack's install / update / uninstall hooks run here and exit.
+#[cfg(windows)]
 pub fn startup() {
     VelopackApp::build()
         .on_after_install_fast_callback(|_| after_install_or_update())
@@ -23,8 +27,13 @@ pub fn startup() {
         .run();
 }
 
+/// Linux has no Velopack install: packages come from the distribution (see docs/LINUX_PORT.md).
+#[cfg(not(windows))]
+pub fn startup() {}
+
 /// Registrations that are on follow this install: the default file manager, DirectLook's start
 /// with Windows, and the Open/Save dialog DLL (a per-build copy).
+#[cfg(windows)]
 fn after_install_or_update() {
     let Ok(me) = std::env::current_exe() else { return };
     if rf_win::default_fm::is_enabled(rf_win::default_fm::CLASSES) {
@@ -41,6 +50,7 @@ fn after_install_or_update() {
 }
 
 /// Everything rustyfiles changed in Windows goes back (settings in %APPDATA% stay).
+#[cfg(windows)]
 fn before_uninstall() {
     let classes = rf_win::default_fm::CLASSES;
     if rf_win::default_fm::is_enabled(classes) {
@@ -56,6 +66,8 @@ fn before_uninstall() {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+// Linux never checks for updates: only NotInstalled is used there
+#[cfg_attr(not(windows), allow(dead_code))]
 pub enum State {
     /// Not installed by Velopack: no updates.
     NotInstalled,
@@ -69,6 +81,7 @@ pub enum State {
 }
 
 static STATE: Mutex<Option<State>> = Mutex::new(None);
+#[cfg(windows)]
 static PENDING: Mutex<Option<UpdateInfo>> = Mutex::new(None);
 
 pub fn state() -> State {
@@ -79,6 +92,7 @@ fn set(s: State) {
     *STATE.lock().unwrap() = Some(s);
 }
 
+#[cfg(windows)]
 fn manager() -> Option<UpdateManager> {
     UpdateManager::new(GithubSource::new(REPO, None, false), None, None).ok()
 }
@@ -91,12 +105,25 @@ pub fn version_full() -> String {
     format!("{} · {} · {when}", version(), env!("RUSTYFILES_COMMIT"))
 }
 
+#[cfg(not(windows))]
+pub fn version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
+#[cfg(windows)]
 pub fn version() -> String {
     static V: std::sync::OnceLock<String> = std::sync::OnceLock::new();
     V.get_or_init(|| manager().map(|m| m.get_current_version_as_string()).unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_string())).clone()
 }
 
 /// Looks for an update and downloads it. Blocking: call off the UI thread.
+#[cfg(not(windows))]
+pub fn check() {
+    set(State::NotInstalled);
+}
+
+/// Looks for an update and downloads it. Blocking: call off the UI thread.
+#[cfg(windows)]
 pub fn check() {
     let Some(um) = manager() else {
         set(State::NotInstalled);
@@ -146,7 +173,12 @@ pub fn spawn_checks(cx: &mut gpui_kit::App, changed: impl Fn(&mut gpui_kit::App)
     .detach();
 }
 
+/// Nothing is ever downloaded on Linux.
+#[cfg(not(windows))]
+pub fn restart_to_update() {}
+
 /// Restarts into the downloaded update. DirectLook is asked to quit first (its exe is replaced).
+#[cfg(windows)]
 pub fn restart_to_update() {
     let Some(um) = manager() else { return };
     let pending = PENDING.lock().unwrap().clone();

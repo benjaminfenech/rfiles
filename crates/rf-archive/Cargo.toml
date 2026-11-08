@@ -23,7 +23,12 @@ hadris-io.workspace = true
 hadris-udf.workspace = true
 hadris-storage.workspace = true
 
+[target.'cfg(windows)'.dependencies]
 windows = { workspace = true, features = ["Win32_System_Time", "Win32_Globalization", "Win32_System_Registry", "Win32_Foundation"] }
+
+[target."cfg(unix)".dependencies]
+chrono.workspace = true
+oem_cp = "2.1.2"
 
 [dev-dependencies]
 crc32fast.workspace = true

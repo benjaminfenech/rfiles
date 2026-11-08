@@ -107,7 +107,7 @@ impl ToApp {
 /// directlook.exe: bu programın yanında.
 pub fn exe() -> Option<PathBuf> {
     let me = std::env::current_exe().ok()?;
-    let p = me.with_file_name("directlook.exe");
+    let p = me.with_file_name(format!("directlook{}", std::env::consts::EXE_SUFFIX));
     p.exists().then_some(p)
 }
 

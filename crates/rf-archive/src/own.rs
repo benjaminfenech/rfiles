@@ -118,8 +118,10 @@ impl DiskSink<'_> {
 /// machine, the thread queues behind everything else. 20 000 small files from a ZIP with a
 /// busy IDE running: lowest + no boost 77 s, lowest + boost 48 s, normal without boost 87 s,
 /// normal + boost 21 s. Decoding itself stays low.
+#[cfg_attr(not(windows), allow(dead_code))]
 struct IoPriority(i32, i32);
 
+#[cfg(windows)]
 #[link(name = "kernel32")]
 unsafe extern "system" {
     fn GetCurrentThread() -> isize;
@@ -129,6 +131,7 @@ unsafe extern "system" {
     fn SetThreadPriorityBoost(thread: isize, disable: i32) -> i32;
 }
 
+#[cfg(windows)]
 impl IoPriority {
     fn raise() -> Self {
         // SAFETY: plain Win32 calls on the current thread's pseudo-handle
@@ -148,6 +151,7 @@ impl IoPriority {
     }
 }
 
+#[cfg(windows)]
 impl Drop for IoPriority {
     fn drop(&mut self) {
         // SAFETY: as above
@@ -159,6 +163,14 @@ impl Drop for IoPriority {
                 SetThreadPriorityBoost(GetCurrentThread(), 1);
             }
         }
+    }
+}
+
+/// No thread-priority boost to borrow on Linux: a no-op.
+#[cfg(not(windows))]
+impl IoPriority {
+    fn raise() -> Self {
+        IoPriority(0, 0)
     }
 }
 

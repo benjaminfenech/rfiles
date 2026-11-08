@@ -15,6 +15,7 @@ mod ipc;
 
 /// One line to `%LOCALAPPDATA%/rustyfiles/dialog.log` (kept under 256 KB): which app asked,
 /// whether rustyfiles answered, and how the app read the result. For diagnosing apps.
+#[cfg_attr(not(windows), allow(dead_code))]
 pub(crate) fn log(line: &str) {
     use std::io::Write;
     let Some(base) = std::env::var_os("LOCALAPPDATA") else { return };

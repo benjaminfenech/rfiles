@@ -675,6 +675,11 @@ fn font_choices(cx: &App) -> Vec<String> {
         "Open Sans",
         "Noto Sans",
         "Source Sans 3",
+        // common on Linux desktops
+        "Cantarell",
+        "Ubuntu",
+        "Fira Sans",
+        "DejaVu Sans",
         "Cascadia Code",
         "Consolas",
     ]
@@ -1355,7 +1360,10 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         link_row(p, "edit-file", L::FilePen, t!("Ayar dosyasını düzenle"), Some(t!("settings.toml metin düzenleyicide açılır")), |_, _| {
             if let Some(path) = settings::path() {
                 std::thread::spawn(move || {
+                    #[cfg(windows)]
                     let _ = std::process::Command::new("notepad.exe").arg(path).spawn();
+                    #[cfg(not(windows))]
+                    let _ = rf_win::shell::open(&path);
                 });
             }
         }),
@@ -1597,7 +1605,10 @@ fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
         link_row(p, "open-log", L::FolderOpen, t!("Kayıt ve ayar klasörünü aç"), settings::app_dir().map(|d| d.display().to_string()).as_deref(), |_, _| {
             if let Some(d) = settings::app_dir() {
                 std::thread::spawn(move || {
+                    #[cfg(windows)]
                     let _ = std::process::Command::new("explorer.exe").arg(d).spawn();
+                    #[cfg(not(windows))]
+                    let _ = rf_win::shell::open(&d);
                 });
             }
         }),

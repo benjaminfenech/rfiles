@@ -1,5 +1,9 @@
 //! rustyfiles ve DirectLook'un ortak kodu; iki program da bu kütüphaneyi kullanır.
 
+// Linux: rf-linux mirrors rf-win's API, so the code below uses it under rf-win's name.
+#[cfg(unix)]
+extern crate rf_linux as rf_win;
+
 mod actions;
 mod aliases;
 mod background;
@@ -38,6 +42,7 @@ mod properties_view;
 mod recycle_view;
 mod theme;
 mod workspace;
+mod sys;
 
 use std::path::PathBuf;
 
@@ -245,7 +250,11 @@ pub fn main() {
             // come straight back. Never ping-pong; a path is then shown here (with its error).
             if !rf_win::default_fm::forwarded_recently(&arg) {
                 rf_win::default_fm::note_forward(&arg);
+                #[cfg(windows)]
                 let _ = std::process::Command::new("explorer.exe").arg(&arg).spawn();
+                // Linux: a file's own default app
+                #[cfg(not(windows))]
+                let _ = rf_win::shell::open(std::path::Path::new(&arg));
                 return;
             }
             if shell_namespace {

@@ -8,28 +8,35 @@
 //! session while the child runs. The child is never started through a shell.
 
 use std::ffi::OsString;
+#[cfg(windows)]
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
+#[cfg(windows)]
 use windows::Win32::Foundation::ERROR_SUCCESS;
+#[cfg(windows)]
 use windows::Win32::System::Registry::{
     HKEY, HKEY_LOCAL_MACHINE, KEY_QUERY_VALUE, KEY_WOW64_32KEY, KEY_WOW64_64KEY, REG_SAM_FLAGS, RegCloseKey,
     RegOpenKeyExW, RegQueryValueExW,
 };
+#[cfg(windows)]
 use windows::core::PCWSTR;
 
 use super::{Cancelled, CompressCtx, CompressStats, Progress, collect};
 
+#[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
+#[cfg(windows)]
 fn wide(s: &str) -> Vec<u16> {
     s.encode_utf16().chain(std::iter::once(0)).collect()
 }
 
 /// Reads a `REG_SZ` / `REG_EXPAND_SZ` value under HKLM (`None` name = the key's default value).
+#[cfg(windows)]
 fn reg_string(subkey: &str, value: Option<&str>, view: REG_SAM_FLAGS) -> Option<String> {
     unsafe {
         let sub = wide(subkey);
@@ -63,6 +70,7 @@ fn reg_string(subkey: &str, value: Option<&str>, view: REG_SAM_FLAGS) -> Option<
 }
 
 /// `Rar.exe` candidates in lookup order (existence is checked by the caller).
+#[cfg(windows)]
 fn candidates() -> Vec<PathBuf> {
     let mut dirs: Vec<PathBuf> = Vec::new();
     let mut push_exe = |exe: Option<String>| {
@@ -81,6 +89,14 @@ fn candidates() -> Vec<PathBuf> {
         }
     }
     dirs.into_iter().map(|d| d.join("Rar.exe")).collect()
+}
+
+/// The `rar` console tool on `PATH` (RARLAB's Linux build, e.g. the AUR `rar` package).
+#[cfg(unix)]
+fn candidates() -> Vec<PathBuf> {
+    std::env::var_os("PATH")
+        .map(|p| std::env::split_paths(&p).map(|d| d.join("rar")).collect())
+        .unwrap_or_default()
 }
 
 /// Path of WinRAR's `Rar.exe`, or `None` when WinRAR is not installed (RAR creation is then
@@ -176,7 +192,7 @@ fn run_rar(
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .creation_flags(CREATE_NO_WINDOW)
+        .no_console_window()
         .spawn()
         .context("Rar.exe başlatılamadı")?;
     let status = loop {
@@ -287,5 +303,21 @@ mod tests {
         let l = crate::list_with(&dest, &crate::Options { password: Some("pw".into()), ..Default::default() }).unwrap();
         assert!(l.iter().any(|e| e.path.ends_with("a.txt")));
         let _ = std::fs::remove_dir_all(&d);
+    }
+}
+
+/// Keeps the child from flashing a console window on Windows; nothing to do elsewhere.
+trait NoConsole {
+    fn no_console_window(&mut self) -> &mut Self;
+}
+
+impl NoConsole for Command {
+    #[cfg(windows)]
+    fn no_console_window(&mut self) -> &mut Self {
+        self.creation_flags(CREATE_NO_WINDOW)
+    }
+    #[cfg(not(windows))]
+    fn no_console_window(&mut self) -> &mut Self {
+        self
     }
 }
