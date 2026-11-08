@@ -6,7 +6,9 @@ edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
-[dependencies]
+# rf-linux is empty on other platforms: none of this is built there (ashpd doesn't even
+# compile on Windows)
+[target.'cfg(unix)'.dependencies]
 image = { workspace = true, features = ["png", "jpeg", "gif", "webp", "bmp", "ico", "tiff", "tga", "qoi", "exr", "hdr", "dds", "pnm"] }
 resvg = { version = "0.46", default-features = false, features = ["text", "system-fonts", "memmap-fonts", "raster-images"] }
 kamadak-exif = "0.6"
