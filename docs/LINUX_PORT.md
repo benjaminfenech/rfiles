@@ -98,8 +98,8 @@ Windows still builds (CI job on `windows-latest`).
 
 Progress (2026-11-08): **file operations done** (copy, move, rename, delete, the Trash;
 copy/paste inside rustyfiles), **icons and thumbnails done**, **menus drawn in-window**,
-**"Open with" done**, **Shift/Ctrl and the path audit done**. Next: clipboard exchange with
-other apps.
+**"Open with" done**, **Shift/Ctrl and the path audit done**, **clipboard shared with other
+apps**. Phase 1 is complete; Phase 2 (DirectLook and media) is next.
 
 
 | Module | Linux implementation |
@@ -112,7 +112,7 @@ other apps.
 | shell::open, open_with, open_terminal | ✅ `xdg-open`; `$TERMINAL` or the first common terminal. "Open with": `xdg_apps` reads the `.desktop` files and `mimeapps.list` (defaults, added / removed associations, parent types via `subclasses`) and launches per the Desktop Entry spec (`%f %F %u %U %i %c %k`, `Terminal=true`); the context menu's "Open with" lists them (default first), the standalone "Open with…" asks the desktop portal's app chooser. `cargo run -p rf-linux --example open_with -- <file>` shows what a system offers |
 | fastcopy, fastdelete, fileops | ✅ rf-win's engine and tests, ported: `copy_file_range` in 8 MB chunks (read/write fallback), modes and times kept, `renameat2(RENAME_NOREPLACE)`, same device = rename. `fileops` is the fallback engine (symlinks copied as links). Extended attributes and ACLs are not copied yet |
 | recycle | ✅ freedesktop Trash spec, our own: home trash + per-disk `.Trash/$uid` / `.Trash-$uid`, list / restore / empty, undo of a delete. The UI still says "Recycle Bin" (renaming needs new translations) |
-| clipboard | ◐ inside rustyfiles only (in-process). Still to do: `text/uri-list` + `x-special/gnome-copied-files` (cut vs copy) on the system clipboard; GPUI can only write text and images, so `wl-clipboard-rs` (Wayland data-control) and an X11 path |
+| clipboard | ✅ `x-special/gnome-copied-files`, `text/uri-list` + `application/x-kde-cutselection`, and plain paths. Wayland through data-control (`wl-clipboard-rs`: wlroots compositors, KDE), X11 as the CLIPBOARD owner (`x11rb`); GNOME's Wayland has no data-control, so there copy/paste stays inside rustyfiles. `cargo run -p rf-linux --example clipboard` checks a system |
 | git, hash, encoding, complete | mostly portable: remove `creation_flags(CREATE_NO_WINDOW)` and Windows-path handling |
 | single_instance | Unix socket in `$XDG_RUNTIME_DIR` (or a D-Bus name) |
 | accent, sysparams, window::set_dark_mode | xdg-desktop-portal Settings (`color-scheme`, `accent-color`) via `ashpd`; GPUI window appearance |

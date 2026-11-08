@@ -241,9 +241,12 @@ mounted drives), breadcrumbs and `~` in the address bar, tabs, copy, move, renam
 managers), file-type icons from your icon theme, thumbnails (shared with other file
 managers; videos, PDFs and documents through the installed thumbnailers), folder sizes, Git
 status, hashes, opening files with their default app or any other ("Open with" lists the
-apps for the file's type, your default first), and "Open terminal here". Copy and paste work inside rustyfiles.
+apps for the file's type, your default first), and "Open terminal here". Copy and paste
+files with other apps (Dolphin, Nautilus, Thunar, browsers…) on Wayland compositors with
+data-control (Hyprland, Sway, KDE) and on X11; on GNOME's Wayland session they work inside
+rustyfiles only.
 
-Not yet: copy/paste with other apps, DirectLook outside the window
+Not yet: DirectLook outside the window
 (Wayland has no global hotkeys), sound in video previews, and the tray icon. These show a
 "not implemented on Linux yet" message instead of doing nothing. Windows-only features
 (jump lists, the Open/Save dialog for other apps, the taskbar preview, auto-update) stay

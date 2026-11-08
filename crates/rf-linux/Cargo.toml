@@ -31,6 +31,10 @@ png = "0.18"
 # the desktop portal (app chooser); the same features GPUI already builds
 ashpd = { version = "0.13", default-features = false, features = ["async-io", "open_uri"] }
 futures.workspace = true
+# sharing copied files with other apps: Wayland data-control, X11 selections (x11rb is
+# already in the tree through GPUI)
+wl-clipboard-rs = "0.9"
+x11rb = "0.13"
 sha1.workspace = true
 sha2.workspace = true
 crc32fast.workspace = true
