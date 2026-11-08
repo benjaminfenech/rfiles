@@ -1718,7 +1718,12 @@ impl Workspace {
                     let _ = rf_win::shell::open_terminal(&p);
                 });
             })),
-            Item::action(t!("Özellikler"), MenuIcon::Lucide(L::Wrench), with(|_, p, _, _| {
+            Item::action(t!("Özellikler"), MenuIcon::Lucide(L::Wrench), with(|ws, p, _, cx| {
+                // Linux: our own properties window (there is no shell dialog)
+                if !cfg!(windows) {
+                    crate::properties_view::open(vec![p], ws.images.clone(), cx);
+                    return;
+                }
                 rf_win::sta::run(move |owner| {
                     let pt = crate::sys::cursor_pos();
                     if let Err(e) = rf_win::ctxmenu::invoke_verb(owner, &rf_win::ctxmenu::ShellTarget::One(p), "properties", pt) {
@@ -1730,9 +1735,16 @@ impl Workspace {
             Item::Separator,
             Item::Sub { label: t!("Diğer seçenekleri göster").into(), icon: MenuIcon::Lucide(L::Ellipsis), items: Sub::Pending { key: "more", fallback: None } },
         ];
+        // Windows' shell menu (other apps' entries); Linux has none
+        let mut items = items;
+        if !cfg!(windows) {
+            items.truncate(items.len() - 2);
+        }
         let menu = crate::fluent_menu::show(Menu { quick: Vec::new(), items }, window.mouse_position(), window, cx);
         let view = self.active_tab().downgrade();
-        crate::ctx_menu::load_shell_more(menu.downgrade(), rf_win::ctxmenu::ShellTarget::One(path), view, cx);
+        if cfg!(windows) {
+            crate::ctx_menu::load_shell_more(menu.downgrade(), rf_win::ctxmenu::ShellTarget::One(path), view, cx);
+        }
     }
 
     /// Folders dropped on the sidebar's pin area get pinned (files are ignored, as in Explorer).
@@ -2079,7 +2091,8 @@ impl Workspace {
             .child(cmd("cb-rename", L::TextCursorInput, "Yeniden adlandır  (F2)", has_sel, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.rename_selection(w, cx))
             }))
-            .child(cmd("cb-share", L::Share2, "Paylaş", has_sel, cx, |this, _, cx| this.with_tab(cx, |v, _| v.share())))
+            // Share is Windows' share sheet
+            .when(cfg!(windows), |d| d.child(cmd("cb-share", L::Share2, "Paylaş", has_sel, cx, |this, _, cx| this.with_tab(cx, |v, _| v.share()))))
             .child(cmd("cb-delete", L::Trash, "Sil  (Del)", has_sel, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.delete_selected(false, w, cx))
             }))

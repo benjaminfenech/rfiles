@@ -260,8 +260,42 @@ fn lookup(key: &str) -> Option<&'static str> {
     }
 }
 
+/// Linux: texts that name a Windows feature differently there (the Recycle Bin is the Trash):
+/// (key, Turkish, English). Other languages keep their own word.
+#[cfg(unix)]
+const LINUX: &[(&str, &str, &str)] = &[
+    ("Geri dönüşüm kutusu", "Çöp kutusu", "Trash"),
+    ("Geri Dönüşüm Kutusu", "Çöp Kutusu", "Trash"),
+    ("Geri dönüşüm kutusuna taşı", "Çöp kutusuna taşı", "Move to Trash"),
+    ("Kutuyu boşalt", "Kutuyu boşalt", "Empty Trash"),
+    ("Geri dönüşüm kutusu boş", "Çöp kutusu boş", "The Trash is empty"),
+    ("Geri dönüşüm kutusuna taşınıyor:", "Çöp kutusuna taşınıyor:", "Moving to Trash:"),
+    ("Geri dönüşüm kutusundan geri yükleniyor:", "Çöp kutusundan geri yükleniyor:", "Restoring from Trash:"),
+    ("öğeler geri dönüşüm kutusunda bulunamadı", "öğeler çöp kutusunda bulunamadı", "items were not found in the Trash"),
+    ("Öğeler Geri Dönüşüm Kutusu'nda bulunamadı", "Öğeler Çöp Kutusu'nda bulunamadı", "Items were not found in the Trash"),
+    ("Geri dönüşüm kutusuna taşınsın mı?", "Çöp kutusuna taşınsın mı?", "Move to the Trash?"),
+    ("geri dönüşüm kutusuna taşınacak.", "çöp kutusuna taşınacak.", "will be moved to the Trash."),
+];
+
+/// The Linux text for `key` in Turkish or English, if it differs there.
+fn platform_text(key: &str) -> Option<&'static str> {
+    #[cfg(unix)]
+    if let Some((_, tr, en)) = LINUX.iter().find(|(k, _, _)| *k == key) {
+        return match active() {
+            Lang::Tr => Some(tr),
+            Lang::En => Some(en),
+            _ => None,
+        };
+    }
+    let _ = key;
+    None
+}
+
 /// Translates a Turkish literal. Missing entries fall back to English, then to the Turkish text.
 pub fn t(tr: &'static str) -> &'static str {
+    if let Some(s) = platform_text(tr) {
+        return s;
+    }
     if is_tr() {
         return tr;
     }
@@ -288,6 +322,9 @@ pub fn tx(tr: &'static str, en: &'static str) -> &'static str {
 /// lower crates, group labels, built-in tag names...). `"Klasör bulunamadı: C:\x"` is handled by
 /// translating the part before the first `": "`. Unknown strings are returned unchanged.
 pub fn td(s: &str) -> String {
+    if let Some(t) = platform_text(s) {
+        return t.to_string();
+    }
     if is_tr() {
         return s.to_string();
     }
@@ -360,6 +397,16 @@ mod tests {
         assert_eq!(EN.len(), crate::i18n_en::EN.len());
     }
 
+    /// An upstream rewording would leave a Linux override behind silently.
+    #[cfg(unix)]
+    #[test]
+    fn linux_overrides_name_existing_texts() {
+        for (key, tr, en) in LINUX {
+            assert!(EN.contains_key(key), "no text {key:?} any more");
+            assert!(!tr.is_empty() && !en.is_empty());
+        }
+    }
+
     #[test]
     fn ids_match_the_tools() {
         // python: fnv1a32("Aranacak metin") in scripts → 29b4f21c
@@ -396,12 +443,16 @@ mod tests {
         // One test mutates the global language; keep everything in it.
         set(Lang::Tr);
         for (tr, _) in crate::i18n_en::EN {
-            assert_eq!(t(tr), *tr);
+            assert_eq!(t(tr), platform_text(tr).unwrap_or(tr));
         }
+        #[cfg(unix)]
+        assert_eq!(t("Geri Dönüşüm Kutusu"), "Çöp Kutusu");
         assert_eq!(items(1), "1 öğe");
         assert_eq!(pct(53.), "%53");
         set(Lang::En);
         assert_eq!(t("Yeni klasör"), "New folder");
+        #[cfg(unix)]
+        assert_eq!(t("Geri Dönüşüm Kutusu"), "Trash");
         assert_eq!(items(1), "1 item");
         assert_eq!(items(3), "3 items");
         assert_eq!(items_selected(2), "2 items selected");
