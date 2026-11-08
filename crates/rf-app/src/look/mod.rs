@@ -119,7 +119,7 @@ impl LookManager {
 
     fn open(path: PathBuf, opts: ShowOpts, cx: &mut App) {
         let s = cx.global::<LookSettings>().clone();
-        let work = rect(rf_win::look::win::work_area_at_cursor());
+        let work = rect(crate::sys::work_area_at_cursor(cx));
         let (viewer, prepared) = window::prepare_viewer(&path, cx);
         let size = geometry::fit(prepared.preferred, work, prepared.fit_ratio);
         let r = geometry::first_rect(size, work);
@@ -139,6 +139,8 @@ impl LookManager {
             window_min_size: Some(gpui_kit::size(px(320.), px(180.))),
             window_background: backdrop(&s),
             focus: s.look_focus_on_open,
+            // Linux: the id window rules match (e.g. Hyprland's float rule, see README)
+            app_id: crate::sys::app_id("directlook"),
             ..TitleBar::window_options()
         };
         let show_in_taskbar = s.look_show_in_taskbar;
@@ -156,6 +158,18 @@ impl LookManager {
             }
             Err(e) => log::error!("look window: {e:#}"),
         }
+    }
+
+    /// Shows `path` in a new window instead of the active one (Linux, when the size must change:
+    /// see `sys::reopen_for_size`). The new window opens before the old one goes, so rustyfiles
+    /// never hears "closed" and keeps sending the selection.
+    pub(crate) fn reopen(path: PathBuf, topmost: bool, cx: &mut App) {
+        let old = Self::global(cx).active.take();
+        Self::open(path, ShowOpts { topmost, pin: false }, cx);
+        if let Some(old) = old {
+            let _ = old.update(cx, |_, window, _| window.remove_window());
+        }
+        Self::report_windows(cx);
     }
 
     pub fn close(cx: &mut App) {

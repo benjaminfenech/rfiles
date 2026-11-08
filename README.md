@@ -246,6 +246,27 @@ files with other apps (Dolphin, Nautilus, Thunar, browsers…) on Wayland compos
 data-control (Hyprland, Sway, KDE) and on X11; on GNOME's Wayland session they work inside
 rustyfiles only.
 
+**DirectLook on tiling window managers.** DirectLook (<kbd>Space</kbd>) is its own window,
+like Quick Look. A Wayland app can't float or place its own window, so tiling compositors tile
+it unless a rule floats it. Windows have the app id `directlook` (the main window:
+`rustyfiles`):
+
+```lua
+-- Hyprland, Lua config (hyprland.lua)
+hl.window_rule({ match = { class = "^(directlook)$" }, float = true, center = true })
+```
+
+```bash
+# Sway (~/.config/sway/config)
+for_window [app_id="directlook"] floating enable
+# i3 (X11)
+for_window [class="directlook"] floating enable
+```
+
+For Hyprland's classic `hyprland.conf`, add a rule that floats (and centers) class
+`directlook`; the rule syntax depends on your Hyprland version
+([window rules](https://wiki.hypr.land/Configuring/Basics/Window-Rules/)).
+
 Not yet: DirectLook outside the window
 (Wayland has no global hotkeys), sound in video previews, and the tray icon. These show a
 "not implemented on Linux yet" message instead of doing nothing. Windows-only features
