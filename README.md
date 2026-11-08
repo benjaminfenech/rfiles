@@ -221,10 +221,10 @@ need [Rust](https://rustup.rs) 1.95 or newer, a C compiler, and these libraries:
 
 ```bash
 # Arch / CachyOS / Manjaro
-sudo pacman -S --needed base-devel libxkbcommon-x11 wayland fontconfig freetype2
+sudo pacman -S --needed base-devel libxkbcommon-x11 wayland fontconfig freetype2 alsa-lib
 
 # Debian / Ubuntu (what CI uses)
-sudo apt install build-essential pkg-config libxkbcommon-dev libxkbcommon-x11-dev libxcb1-dev libwayland-dev libfontconfig1-dev libfreetype-dev
+sudo apt install build-essential pkg-config libxkbcommon-dev libxkbcommon-x11-dev libxcb1-dev libwayland-dev libfontconfig1-dev libfreetype-dev libasound2-dev
 ```
 
 Then:
@@ -272,7 +272,7 @@ For Hyprland's classic `hyprland.conf`, add a rule that floats (and centers) cla
 ([window rules](https://wiki.hypr.land/Configuring/Basics/Window-Rules/)).
 
 Not yet: DirectLook outside the window
-(Wayland has no global hotkeys), sound in video previews, and the tray icon. These show a
+(Wayland has no global hotkeys) and the tray icon. These show a
 "not implemented on Linux yet" message instead of doing nothing. Windows-only features
 (jump lists, the Open/Save dialog for other apps, the taskbar preview, auto-update) stay
 Windows-only.

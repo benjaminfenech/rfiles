@@ -17,3 +17,7 @@ filmcraft-time.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 windows.workspace = true
+
+# sound on Linux: ALSA (PipeWire and PulseAudio serve it through their ALSA plugins)
+[target.'cfg(target_os = "linux")'.dependencies]
+cpal = "0.18"
