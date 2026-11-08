@@ -218,6 +218,58 @@ pub fn native_separators(p: std::path::PathBuf) -> std::path::PathBuf {
     if cfg!(windows) { std::path::PathBuf::from(p.to_string_lossy().replace('/', "\\")) } else { p }
 }
 
+/// The app id window rules match on Linux (Wayland `app_id`, X11 `WM_CLASS`); Windows keeps
+/// its own taskbar identity (`rf_win::window::set_app_id`).
+pub fn app_id(name: &str) -> Option<String> {
+    (!cfg!(windows)).then(|| name.to_string())
+}
+
+/// The work area (logical x, y, w, h) a new DirectLook window is sized and centered in:
+/// Windows asks the monitor under the cursor; Linux takes the primary display's visible area
+/// (a Wayland app can't know which output the pointer is on; the compositor places the window).
+pub fn work_area_at_cursor(cx: &gpui_kit::App) -> [f32; 4] {
+    #[cfg(windows)]
+    {
+        let _ = cx;
+        rf_win::look::win::work_area_at_cursor()
+    }
+    #[cfg(not(windows))]
+    {
+        cx.primary_display().or_else(|| cx.displays().into_iter().next()).map_or([0., 0., 1280., 800.], |d| bounds_array(d.visible_bounds()))
+    }
+}
+
+/// The work area of the monitor `window` is on.
+pub fn work_area_of(hwnd: isize, window: &gpui_kit::Window, cx: &gpui_kit::App) -> [f32; 4] {
+    #[cfg(windows)]
+    {
+        let _ = (window, cx);
+        rf_win::look::win::work_area_of(hwnd)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = hwnd;
+        window.display(cx).map_or_else(|| work_area_at_cursor(cx), |d| bounds_array(d.visible_bounds()))
+    }
+}
+
+/// Moves and resizes a window (logical px). Linux: only the size (Wayland apps can't place
+/// themselves; a floating window keeps its place, a tiled one ignores both).
+pub fn set_window_rect(hwnd: isize, r: [f32; 4], window: &mut gpui_kit::Window) {
+    #[cfg(windows)]
+    rf_win::look::win::set_rect(hwnd, r, window.scale_factor());
+    #[cfg(not(windows))]
+    {
+        let _ = hwnd;
+        window.resize(gpui_kit::size(gpui_kit::px(r[2]), gpui_kit::px(r[3])));
+    }
+}
+
+#[cfg(not(windows))]
+fn bounds_array(b: gpui_kit::Bounds<gpui_kit::Pixels>) -> [f32; 4] {
+    [f32::from(b.origin.x), f32::from(b.origin.y), f32::from(b.size.width), f32::from(b.size.height)]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

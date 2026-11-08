@@ -166,13 +166,13 @@ impl LookWindow {
             let b = window.bounds();
             let cur = (f32::from(b.size.width), f32::from(b.size.height));
             // (a size the user dragged to is recorded by the bounds observer, see `new`)
-            let w = rf_win::look::win::work_area_of(self.hwnd);
+            let w = crate::sys::work_area_of(self.hwnd, window, cx);
             let work = Rect { x: w[0], y: w[1], w: w[2], h: w[3] };
             let size = geometry::fit(prepared.preferred, work, prepared.fit_ratio);
             let old = Rect { x: f32::from(b.origin.x), y: f32::from(b.origin.y), w: cur.0, h: cur.1 };
             let r = geometry::relocate(old, size, work);
             self.resizing_until = Some(std::time::Instant::now() + Duration::from_millis(400));
-            rf_win::look::win::set_rect(self.hwnd, [r.x, r.y, r.w, r.h], window.scale_factor());
+            crate::sys::set_window_rect(self.hwnd, [r.x, r.y, r.w, r.h], window);
             self.programmatic = size;
         }
         self.title = prepared.title.into();

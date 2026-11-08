@@ -33,6 +33,7 @@ pub fn open(paths: Vec<PathBuf>, images: Entity<ImageCache>, cx: &mut App) {
         window_bounds: Some(WindowBounds::centered(size(px(460.), px(640.)), cx)),
         window_min_size: Some(size(px(380.), px(440.))),
         window_background: WindowBackgroundAppearance::MicaBackdrop,
+        app_id: crate::sys::app_id("rustyfiles"),
         ..TitleBar::window_options()
     };
     if let Err(e) = gpui_kit::open_window(options, cx, move |window, cx| cx.new(|cx| PropsView::new(paths, images, window, cx))) {
