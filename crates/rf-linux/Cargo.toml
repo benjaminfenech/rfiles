@@ -24,6 +24,8 @@ chrono.workspace = true
 notify.workspace = true
 rayon.workspace = true
 md-5.workspace = true
+# thumbnail cache files carry their source in PNG text chunks
+png = "0.18"
 sha1.workspace = true
 sha2.workspace = true
 crc32fast.workspace = true

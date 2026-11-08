@@ -1,8 +1,7 @@
-//! Shell icons and thumbnails via IShellItemImageFactory, decoded to BGRA pixels.
-//! Blocking + COM: call from the worker pool (`ThumbPool`), never the UI thread.
-// Generated from rf-win's public API by a one-off stub generator, then edited by hand.
-// Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
+//! File icons and thumbnails, decoded to BGRA pixels. Icons come from the desktop's icon
+//! theme ([`crate::xdg_icons`]); thumbnails from the shared thumbnail cache, our decoders or
+//! the installed thumbnailers ([`crate::xdg_thumbs`]).
+//! Blocking: call from the worker pool (`ThumbPool`), never the UI thread.
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use crossbeam_channel::{Receiver, Sender};
@@ -30,28 +29,62 @@ pub enum Kind {
 /// process (the folder listing never starts). With our own reference held for the whole
 /// process lifetime, the shell's shutdown calls only decrement the count and never wait.
 pub fn keep_gdiplus_alive() {}
-/// Thumbnails of images the `image` crate decodes, scaled to fit `size`. File-type icons
-/// (freedesktop icon theme) and the shared `~/.cache/thumbnails` cache are Phase 1: until then
-/// anything else is an error and the UI shows its built-in icon.
-pub fn get_image(path: &Path, size: u32, kind: Kind) -> anyhow::Result<Bgra> {
-    anyhow::ensure!(kind == Kind::Thumbnail, "file-type icons are not implemented on Linux yet");
-    let ext = path.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
-    anyhow::ensure!(image::ImageFormat::from_extension(&ext).is_some(), "no thumbnailer for .{ext}");
-    let img = image::ImageReader::open(path)?.with_guessed_format()?.decode()?;
-    let rgba = img.thumbnail(size, size).into_rgba8();
-    let (width, height) = rgba.dimensions();
-    let mut data = rgba.into_raw();
+/// Straight-alpha RGBA → [`Bgra`].
+pub(crate) fn rgba_to_bgra(img: image::RgbaImage) -> Bgra {
+    let (width, height) = img.dimensions();
+    let mut data = img.into_raw();
     for px in data.chunks_exact_mut(4) {
-        px.swap(0, 2); // RGBA -> BGRA
+        px.swap(0, 2);
     }
-    Ok(Bgra { width, height, data })
+    Bgra { width, height, data }
 }
-/// Extensions whose icon differs per file (must not be cached by extension).
+
+/// An icon (`Kind::Icon`) or a thumbnail, at most `size` pixels on its longer side. A file
+/// without a thumbnail gets its icon at that size.
+pub fn get_image(path: &Path, size: u32, kind: Kind) -> anyhow::Result<Bgra> {
+    if kind == Kind::Thumbnail {
+        match crate::xdg_thumbs::thumbnail(path, size) {
+            Ok(img) => return Ok(rgba_to_bgra(img)),
+            Err(e) => log::debug!("thumbnail {}: {e:#}", path.display()),
+        }
+    }
+    icon(path, size).ok_or_else(|| anyhow::anyhow!("no icon for {}", path.display()))
+}
+
+/// The file-type icon from the desktop's icon theme.
+fn icon(path: &Path, size: u32) -> Option<Bgra> {
+    use std::os::unix::fs::PermissionsExt;
+    let meta = std::fs::metadata(path).ok();
+    if meta.as_ref().is_some_and(|m| m.is_dir()) {
+        return crate::xdg_icons::render_first(&["folder".into()], size);
+    }
+    let ext = path.extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();
+    if ext == "desktop" {
+        if let Some(b) = desktop_icon(path, size) {
+            return Some(b);
+        }
+    }
+    let mut names = crate::xdg_icons::mime_for_ext(&ext).map(crate::xdg_icons::icon_names_for_mime).unwrap_or_default();
+    if ext.is_empty() && meta.is_some_and(|m| m.permissions().mode() & 0o111 != 0) {
+        names.push("application-x-executable".into());
+    }
+    names.extend(["application-x-generic", "text-x-generic", "unknown"].map(String::from));
+    crate::xdg_icons::render_first(&names, size)
+}
+
+/// A `.desktop` launcher's own icon (`Icon=` name or path).
+fn desktop_icon(path: &Path, size: u32) -> Option<Bgra> {
+    let text = std::fs::read_to_string(path).ok()?;
+    let icon = text.lines().map(str::trim).find_map(|l| l.strip_prefix("Icon="))?.trim();
+    if icon.starts_with('/') {
+        return crate::xdg_icons::render_file(Path::new(icon), size);
+    }
+    crate::xdg_icons::render_first(&[icon.to_string(), "application-x-executable".into()], size)
+}
+
+/// Files whose icon differs per file (must not be cached by extension): launchers.
 pub fn has_unique_icon(ext: &str) -> bool {
-    matches!(
-        ext, "exe" | "lnk" | "ico" | "url" | "cur" | "ani" | "scr" | "cpl" | "msc" |
-        "appref-ms" | "website"
-    )
+    ext == "desktop"
 }
 pub struct Request {
     pub key: u64,

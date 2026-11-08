@@ -96,9 +96,10 @@ Windows still builds (CI job on `windows-latest`).
 
 ### Phase 1: a usable file manager (about 3–4 weeks)
 
-Progress: **file operations done** (2026-11-08). Copy, move, rename, delete and the Trash work,
-and copy/paste works inside rustyfiles. Next: file-type icons, "Open with", clipboard
-exchange with other apps, modifier keys from GPUI, the path audit.
+Progress (2026-11-08): **file operations done** (copy, move, rename, delete, the Trash;
+copy/paste inside rustyfiles), **icons and thumbnails done**, **menus drawn in-window**.
+Next: "Open with", clipboard exchange with other apps, modifier keys from GPUI, the path
+audit.
 
 
 | Module | Linux implementation |
@@ -107,7 +108,7 @@ exchange with other apps, modifier keys from GPUI, the path audit.
 | known, localized, libraries | `dirs` + `xdg-user-dirs`; drop localized names and libraries |
 | drives, volume | `/proc/self/mountinfo` + `statvfs`; filter pseudo filesystems |
 | watch | `notify` already uses inotify; just ungate |
-| thumbs | freedesktop icon theme lookup (`freedesktop-icons`), MIME type via `xdg-mime`/shared-mime-info DB; thumbnails from the shared `~/.cache/thumbnails` spec, generated with the existing image/resvg decoders |
+| thumbs | ✅ `xdg_icons`: shared-mime-info (by extension) → the desktop's icon theme per the Icon Theme spec (theme from kdeglobals / GTK settings / gsettings, inherited themes, hicolor, pixmaps), SVGs drawn with resvg. `xdg_thumbs`: the shared `~/.cache/thumbnails` (read and written, `Thumb::MTime` checked, failures in `fail/rustyfiles`), images and SVGs decoded here, other types through the installed `.thumbnailer`s with a 15 s limit. `cargo run -p rf-linux --example icon_lookup` / `--example thumbnail` to check a system |
 | shell::open, open_with, open_terminal | `xdg-open` / `gio launch`; `.desktop` files + `mimeapps.list` for "Open with"; `$TERMINAL` or `x-terminal-emulator` fallback |
 | fastcopy, fastdelete, fileops | ✅ rf-win's engine and tests, ported: `copy_file_range` in 8 MB chunks (read/write fallback), modes and times kept, `renameat2(RENAME_NOREPLACE)`, same device = rename. `fileops` is the fallback engine (symlinks copied as links). Extended attributes and ACLs are not copied yet |
 | recycle | ✅ freedesktop Trash spec, our own: home trash + per-disk `.Trash/$uid` / `.Trash-$uid`, list / restore / empty, undo of a delete. The UI still says "Recycle Bin" (renaming needs new translations) |
