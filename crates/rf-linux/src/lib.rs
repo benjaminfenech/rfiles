@@ -66,6 +66,7 @@ pub mod watch;
 pub mod window;
 pub mod volume;
 pub mod wide;
+pub mod xdg_apps;
 pub mod xdg_icons;
 pub mod xdg_thumbs;
 pub use drives::{Drive, DriveKind, list_drives};

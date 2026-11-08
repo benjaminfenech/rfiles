@@ -6,7 +6,9 @@ edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
-[dependencies]
+# rf-linux is empty on other platforms: none of this is built there (ashpd doesn't even
+# compile on Windows)
+[target.'cfg(unix)'.dependencies]
 image = { workspace = true, features = ["png", "jpeg", "gif", "webp", "bmp", "ico", "tiff", "tga", "qoi", "exr", "hdr", "dds", "pnm"] }
 resvg = { version = "0.46", default-features = false, features = ["text", "system-fonts", "memmap-fonts", "raster-images"] }
 kamadak-exif = "0.6"
@@ -26,6 +28,9 @@ rayon.workspace = true
 md-5.workspace = true
 # thumbnail cache files carry their source in PNG text chunks
 png = "0.18"
+# the desktop portal (app chooser); the same features GPUI already builds
+ashpd = { version = "0.13", default-features = false, features = ["async-io", "open_uri"] }
+futures.workspace = true
 sha1.workspace = true
 sha2.workspace = true
 crc32fast.workspace = true

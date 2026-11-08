@@ -6201,10 +6201,12 @@ name = "rf-linux"
 version = "0.2.0"
 dependencies = [
  "anyhow",
+ "ashpd",
  "chrono",
  "crc32fast",
  "crossbeam-channel",
  "dirs 6.0.0",
+ "futures",
  "image",
  "kamadak-exif",
  "libc",

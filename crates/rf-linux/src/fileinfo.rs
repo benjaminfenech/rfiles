@@ -61,8 +61,9 @@ fn cluster_size(path: &Path) -> Option<u64> {
     None
 }
 /// Friendly name of the default app for the file's type.
+/// The name of the app that opens this file by default (Properties: "Opens with").
 pub fn opens_with(path: &Path) -> Option<String> {
-    None
+    crate::xdg_apps::default_app(&crate::xdg_apps::mime_for_path(path)).map(|a| a.name.clone())
 }
 /// Sets / clears read-only and hidden, keeping the other attribute bits.
 pub fn set_flags(
