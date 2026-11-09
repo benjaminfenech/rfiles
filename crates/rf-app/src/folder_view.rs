@@ -671,8 +671,7 @@ impl FolderView {
             let cat = icons::category(e);
             let shell_icon = self.parent_of(ei).map(|d| d.to_path_buf()).and_then(|d| self.images.update(cx, |c, cx| c.icon(&d, e, cx)));
             let is_dir = e.is_dir();
-            out.push(
-                h_flex()
+            let row = h_flex()
                     .id(("crow", vi))
                     .w_full()
                     .h(px(28.))
@@ -697,9 +696,9 @@ impl FolderView {
                     .on_mouse_down(
                         MouseButton::Right,
                         cx.listener(move |this, _: &MouseDownEvent, window, cx| this.on_row_right_down(vi, window, cx)),
-                    )
-                    .into_any_element(),
-            );
+                    );
+            let row = self.draggable(row, ei, cx);
+            out.push(row.into_any_element());
         }
         out
     }
@@ -1832,6 +1831,7 @@ impl FolderView {
                                 }
                             }))
                     });
+                let cell = self.draggable(cell, ei, cx);
                 r = r.child(cell);
             }
             out.push(r.into_any_element());
@@ -2218,6 +2218,30 @@ impl FolderView {
             Some(p) => Some(p),
             None => self.location().path(),
         }
+    }
+
+    /// Linux: the row of entry `ei` can be dragged — onto folders, tabs, the sidebar, other
+    /// windows, and out to other apps (see `file_drag`). Windows drags through the shell
+    /// instead (`start_drag_out`).
+    fn draggable<E: StatefulInteractiveElement>(&self, el: E, ei: u32, cx: &mut Context<Self>) -> E {
+        if cfg!(windows) {
+            return el;
+        }
+        let Some(path) = self.path_of(ei) else { return el };
+        let me = cx.entity().downgrade();
+        el.on_drag(ExternalPaths(smallvec::smallvec![path]), move |p: &ExternalPaths, _, _, cx| {
+            let anchor = p.paths()[0].clone();
+            // the whole selection when the row is in it, else just the row
+            let items = me
+                .upgrade()
+                .map(|v| v.read(cx).selection_paths())
+                .filter(|sel| sel.contains(&anchor))
+                .unwrap_or_else(|| vec![anchor.clone()]);
+            let label = if items.len() == 1 { rf_core::history::display_name(&anchor) } else { crate::i18n::items(items.len()) };
+            crate::file_drag::begin(anchor, items);
+            cx.new(|_| crate::file_drag::Ghost(label.into()))
+        })
+        .external_drag_payload::<ExternalPaths>(|p, _, _| crate::file_drag::payload(p))
     }
 
     pub(crate) fn path_of(&self, ei: u32) -> Option<PathBuf> {
@@ -2906,6 +2930,7 @@ impl FolderView {
                         }
                     }))
                 });
+            let row = self.draggable(row, ei, cx);
             out.push(row.into_any_element());
         }
         out
@@ -3024,7 +3049,7 @@ impl FolderView {
                     .children(self.render_marquee(p))
                     .on_drag_move::<ExternalPaths>(cx.listener(|this, ev: &DragMoveEvent<ExternalPaths>, _, cx| {
                         if let Some(dir) = this.current_dir() {
-                            let paths: Vec<PathBuf> = ev.drag(cx).paths().to_vec();
+                            let paths: Vec<PathBuf> = crate::file_drag::peek(ev.drag(cx));
                             let t = rf_win::dnd::default_transfer(&paths, &dir, false, false);
                             gpui_windows::dnd_hint::set(match t {
                                 rf_win::fileops::Transfer::Move => gpui_windows::dnd_hint::MOVE,

@@ -1810,7 +1810,7 @@ impl Workspace {
     /// Folders dropped on the sidebar's pin area get pinned (files are ignored, as in Explorer).
     fn pin_dropped(&mut self, paths: &ExternalPaths, cx: &mut Context<Self>) {
         self.sidebar_ext_drag = false;
-        let dirs: Vec<PathBuf> = paths.paths().iter().filter(|p| p.is_dir()).cloned().collect();
+        let dirs: Vec<PathBuf> = crate::file_drag::take(paths).into_iter().filter(|p| p.is_dir()).collect();
         if dirs.is_empty() {
             return;
         }
@@ -2791,7 +2791,7 @@ pub fn open_in_ide(dir: PathBuf, ide: String) {
 }
 
 fn drop_files(paths: &ExternalPaths, dest: PathBuf, cx: &mut App) {
-    let sources: Vec<PathBuf> = paths.paths().to_vec();
+    let sources: Vec<PathBuf> = crate::file_drag::take(paths);
     if sources.is_empty() || rf_win::dnd::is_invalid_drop(&sources, &dest) {
         return;
     }

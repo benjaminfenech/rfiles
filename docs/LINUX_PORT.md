@@ -268,8 +268,16 @@ certificates for the info card.
   Hyprland: the save dialog came up with the name, folder and filter
   (`cargo run -p rf-linux --example pick -- open | folder | save`). rustyfiles *as* other
   apps' file dialog (rf-dialog) is still not ported: that would be a portal backend.
-- Drag out to other apps: depends on GPUI's Linux drag-and-drop support; check first, it may
-  need upstream work.
+- ~~Drag out to other apps~~ **done** (2026-11-09; needs a hand check): GPUI 0.3.11 can hand
+  an in-app drag to Wayland when the pointer leaves the window (`external_drag_payload`;
+  X11 isn't supported by GPUI). Before this, dragging files did nothing on Linux, not even
+  between panes: Windows routes every file drag through a shell OLE drag and drops come
+  back as `ExternalPaths`. Now each row is a GPUI drag source (`FolderView::draggable`,
+  list, grid and column views) whose value is an `ExternalPaths` of just its own path, so
+  the 21 existing drop handlers keep working; when the drag starts, the selection it stands
+  for is recorded (`file_drag::begin`) and drops expand it back (`file_drag::take` in
+  `drop_into`, `drop_files`, `pin_dropped`). Leaving the window offers the whole selection
+  as `text/uri-list`. Windows keeps its OLE drag (`start_drag_out` returns early on Linux).
 
 ### Linux polish
 
