@@ -450,6 +450,18 @@ impl FolderView {
             _git_task: None,
             _slow_task: None,
         };
+        // Linux: a tab or window that starts at a drive or network location to mount (from
+        // the command line, another app, the sidebar's "open in new tab") starts at Home and
+        // goes there once it is mounted
+        #[cfg(unix)]
+        if let Location::Path(target) = this.location().clone()
+            && (is_block_device(&target) || rf_win::remote::is_remote(&target))
+        {
+            this.history = History::new(Location::Home);
+            this.load(cx);
+            this.navigate(Location::Path(target), cx);
+            return this;
+        }
         this.load(cx);
         this
     }
@@ -496,12 +508,14 @@ impl FolderView {
     // ---------- navigation ----------
 
     pub fn navigate(&mut self, to: Location, cx: &mut Context<Self>) {
-        // Linux: an unmounted drive (sidebar, Home) is its device: mount it, then go there
+        // Linux: an unmounted drive (sidebar, Home) is its device, a network location a URL
+        // (smb://, sftp://, ftp://… or \\server\share): mount it, then go there
         #[cfg(unix)]
-        if let Location::Path(dev) = &to
-            && is_block_device(dev)
+        if let Location::Path(target) = &to
+            && (is_block_device(target) || rf_win::remote::is_remote(target))
         {
-            self.mount_and_open(dev.clone(), cx);
+            let text = target.to_string_lossy().into_owned();
+            self.mount_and_open(target.clone(), text, cx);
             return;
         }
         if to == Location::RecycleBin {
@@ -512,31 +526,80 @@ impl FolderView {
         self.load(cx);
     }
 
-    /// Mounts `dev` through UDisks (it may ask for a password) and opens it; tells the user
-    /// why when it can't.
+    /// Mounts `target` and opens it: a drive through UDisks (it may ask for a password), a
+    /// network location through kio-fuse / gvfs (`url` is `target`, maybe with a login added);
+    /// asks for a user name and password when the server wants one, and tells the user why
+    /// when it can't.
     #[cfg(unix)]
-    fn mount_and_open(&mut self, dev: PathBuf, cx: &mut Context<Self>) {
-        let win = cx.active_window();
+    fn mount_and_open(&mut self, target: PathBuf, url: String, cx: &mut Context<Self>) {
+        let remote = rf_win::remote::is_remote(&target);
         let work = cx.background_spawn({
-            let dev = dev.clone();
-            async move { rf_win::udisks::mount(&dev) }
+            let (target, url) = (target.clone(), url.clone());
+            async move { if remote { rf_win::remote::mount(&url) } else { rf_win::udisks::mount(&target) } }
         });
         cx.spawn(async move |this, cx| {
             let r = work.await;
-            let _ = this.update(cx, |v, cx| match r {
-                Ok(point) => {
+            // the window in front when the answer comes (a new window had none at the start)
+            let _ = this.update(cx, |v, cx| match (r, cx.active_window()) {
+                (Ok(point), _) => {
                     v.navigate(Location::Path(point), cx);
-                    v.places.update(cx, |p, cx| p.refresh(cx));
+                    if !remote {
+                        v.places.update(cx, |p, cx| p.refresh(cx));
+                    }
                 }
-                Err(e) => {
-                    log::warn!("mount {}: {e:#}", dev.display());
+                (Err(e), Some(win)) if e.is::<rf_win::remote::NeedsLogin>() => {
+                    // a login was already tried: say so above the new prompt
+                    let retry = url != target.to_string_lossy();
+                    v.ask_login(target, url, retry, win, cx);
+                }
+                (Err(e), win) => {
+                    // the target, not the URL: it may hold a password
+                    log::warn!("open {}: {e:#}", target.display());
                     if let Some(win) = win {
-                        crate::ops::alert_box(t!("Couldn't open the drive").to_string(), format!("{e}"), win, cx);
+                        let title = if remote { t!("Couldn't open the network location") } else { t!("Couldn't open the drive") };
+                        crate::ops::alert_box(title.to_string(), format!("{e}"), win, cx);
                     }
                 }
             });
         })
         .detach();
+    }
+
+    /// The server wants a login: asks for the user name, then the password, then tries again.
+    #[cfg(unix)]
+    fn ask_login(&mut self, target: PathBuf, url: String, retry: bool, win: AnyWindowHandle, cx: &mut Context<Self>) {
+        use crate::prompt::{self, Button, Kind};
+        let me = cx.entity().downgrade();
+        let user0 = rf_win::remote::login_user(&url).unwrap_or_else(|| std::env::var("USER").unwrap_or_default());
+        let place = target.to_string_lossy().into_owned();
+        let msg = if retry {
+            format!("{}\n{place}", t!("Wrong user name or password. Try again:"))
+        } else {
+            format!("{}\n{place}", t!("The server asks for a user name and password:"))
+        };
+        let _ = win.update(cx, move |_, window, cx| {
+            let next = Button::new(t!("Next"), Kind::Primary, move |user, window, cx| {
+                let user = user.unwrap_or_default().trim().to_string();
+                if user.is_empty() {
+                    return Err(t!("Enter a user name").to_string());
+                }
+                let (me, target, place) = (me.clone(), target.clone(), place.clone());
+                // the first dialog closes when this returns: the next one opens after it
+                window.defer(cx, move |window, cx| {
+                    let connect = Button::new(t!("Connect"), Kind::Primary, move |pass, _, cx| {
+                        let Some(url) = rf_win::remote::with_login(&target.to_string_lossy(), &user, &pass.unwrap_or_default()) else {
+                            return Ok(());
+                        };
+                        let target = target.clone();
+                        let _ = me.update(cx, |v, cx| v.mount_and_open(target, url, cx));
+                        Ok(())
+                    });
+                    prompt::show_secret(t!("Password"), Some(place), t!("Password").to_string(), vec![connect, Button::cancel()], window, cx);
+                });
+                Ok(())
+            });
+            prompt::show(t!("Sign in"), Some(msg), Some((user0, t!("User name").to_string())), vec![next, Button::cancel()], window, cx);
+        });
     }
 
     pub fn back(&mut self, cx: &mut Context<Self>) {

@@ -1825,6 +1825,10 @@ impl Workspace {
     }
 
     fn set_pinned(&mut self, path: PathBuf, pin: bool, cx: &mut Context<Self>) {
+        // Linux: a folder on a network mount is pinned by its URL (the mount's local path
+        // changes between sessions; opening the URL mounts it again)
+        #[cfg(unix)]
+        let path = rf_win::remote::remote_url(&path).map_or(path, PathBuf::from);
         let mut list = self.current_pins(cx);
         if !pin {
             list.retain(|p| *p != path);
