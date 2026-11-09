@@ -221,13 +221,22 @@ certificates for the info card.
   "Show drives as" picks the name: Automatic (label, else "share (server)" for network
   shares, else the mount point's folder; `/` is "File System"), mount point, last folder, or
   device / share. `places::drive_name` has a Linux version; Windows' is unchanged.
-- **Next: hide Windows-only settings and links** on Linux: about 20 settings rows (Explorer
-  context menu and shell submenus, Mica, Windows Search index, desktop.ini, DirectLook over
-  Explorer, start with Windows, taskbar, Windows copy engine, default file manager, Open/Save
-  dialogs, default archive apps, updates), "Show more options", "Share", "Windows
-  properties…", Libraries, Windows attributes. A `cfg!(windows)` condition per row keeps
-  upstream merges easy; "Follow Windows" becomes "Follow system", "Recycle Bin" becomes
-  "Trash". Rows Phase 3 brings back stay hidden until then.
+- **Windows-only settings and links hidden** (2026-11-09). `settings_view::windows_only(row)`
+  gives a hidden element (`display: none`: no space, no gap) on Linux, so upstream's
+  `vec![…]` lists keep their shape; other spots use `cfg!(windows)`. Hidden: shell
+  extensions submenu, Windows Search index, protected system files, Libraries, the OneDrive
+  sync column, DirectLook over Explorer / in the taskbar, the GPU/CPU renderer switch, the
+  tray and notifications (Phase 3), default file manager, archives and Open/Save dialogs
+  (Phase 3), Velopack updates; "Show more options", Share, "Windows properties…", the
+  Hidden checkbox (a dot name on Linux). Relabelled: background material (Translucent /
+  with blur / Solid: GPUI's Linux windows are see-through unless opaque, blurred on request),
+  "Follow system" animations (GNOME's `enable-animations` via gsettings, else on), the
+  fast-copy description, "Cloud folders". Made to work: start at login (XDG autostart
+  `.desktop`), Read-only in Properties (write permission), the sidebar's Properties (our own
+  window). "Recycle Bin" reads "Trash" through a small Linux table in `i18n::t` (Turkish and
+  English; a test fails if upstream rewords a key).
+- Later: Windows' "Recent" on the home page reads `%APPDATA%\Microsoft\Windows\Recent`;
+  Linux has `~/.local/share/recently-used.xbel`.
 
 ### Not ported
 

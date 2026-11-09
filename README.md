@@ -275,11 +275,10 @@ For Hyprland's classic `hyprland.conf`, add a rule that floats (and centers) cla
 `directlook`; the rule syntax depends on your Hyprland version
 ([window rules](https://wiki.hypr.land/Configuring/Basics/Window-Rules/)).
 
-Not yet: DirectLook outside the window
-(Wayland has no global hotkeys) and the tray icon. These show a
-"not implemented on Linux yet" message instead of doing nothing. Windows-only features
-(jump lists, the Open/Save dialog for other apps, the taskbar preview, auto-update) stay
-Windows-only.
+Not yet: DirectLook outside the window (Wayland has no global hotkeys), the tray icon and
+notifications, being the default file manager, and rustyfiles in other apps' Open/Save
+dialogs; their settings are hidden on Linux until they arrive. Windows-only features (jump
+lists, Windows Search, Libraries, the taskbar preview, auto-update) don't appear on Linux.
 
 ## Keyboard
 

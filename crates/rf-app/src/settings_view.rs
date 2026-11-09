@@ -207,6 +207,16 @@ fn sub(p: &Palette, title: &str, desc: Option<&str>, control: AnyElement) -> Any
         .into_any_element()
 }
 
+/// Whether this build runs on Windows: rows for Windows features (Explorer, the registry, the
+/// tray, Velopack updates…) are hidden elsewhere.
+const ON_WINDOWS: bool = cfg!(windows);
+
+/// A row for a Windows feature: elsewhere a hidden element (no space, no gap), so lists keep
+/// the shape upstream gave them.
+fn windows_only(row: AnyElement) -> AnyElement {
+    if ON_WINDOWS { row } else { div().hidden().into_any_element() }
+}
+
 fn section(p: &Palette, title: &str) -> AnyElement {
     div().pt_5().pb_1().text_sm().font_weight(FontWeight::SEMIBOLD).text_color(p.text).child(title.to_string()).into_any_element()
 }
@@ -424,13 +434,13 @@ fn general(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         },
         cx,
     ));
-    v.push(card(
+    v.push(windows_only(card(
         p,
         L::Ellipsis,
         t!("Kabuk uzantılarını alt menüye taşı"),
         Some(t!("Kapalıyken diğer uygulamaların öğeleri menünün sonunda listelenir.")),
         sw("shell-sub", p, s.menu.shell_submenu, |s, v| s.menu.shell_submenu = v),
-    ));
+    )));
 
     v.push(section(p, t!("Kaydırma")));
     v.push(card(p, L::ChevronsUpDown, t!("Akıcı kaydırma"), None, sw("smooth", p, s.smooth_scroll, |s, v| s.smooth_scroll = v)));
@@ -475,17 +485,30 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
             p,
             L::Layers,
             t!("Arka plan malzemesi"),
-            Some(t!("Mica masaüstü renginden ton alır; Mica Alt daha renklidir.")),
+            Some(if ON_WINDOWS {
+                t!("Mica masaüstü renginden ton alır; Mica Alt daha renklidir.")
+            } else {
+                t!("Translucent windows let the desktop show through; with blur, compositors that support it (KDE, Hyprland) blur it.")
+            }),
             dropdown(
                 "backdrop",
                 p,
                 s.backdrop,
-                vec![
-                    (BackdropPref::Mica, "Mica".into()),
-                    (BackdropPref::MicaAlt, "Mica Alt".into()),
-                    (BackdropPref::Acrylic, t!("Akrilik").into()),
-                    (BackdropPref::Solid, t!("Düz").into()),
-                ],
+                if ON_WINDOWS {
+                    vec![
+                        (BackdropPref::Mica, "Mica".into()),
+                        (BackdropPref::MicaAlt, "Mica Alt".into()),
+                        (BackdropPref::Acrylic, t!("Akrilik").into()),
+                        (BackdropPref::Solid, t!("Düz").into()),
+                    ]
+                } else {
+                    // Mica Alt looks like Mica here: both are a see-through window
+                    vec![
+                        (BackdropPref::Mica, t!("Translucent").into()),
+                        (BackdropPref::Acrylic, t!("Translucent with blur").into()),
+                        (BackdropPref::Solid, t!("Düz").into()),
+                    ]
+                },
                 |s, v| s.backdrop = v,
             ),
         ),
@@ -499,7 +522,7 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                 p,
                 s.animations,
                 vec![
-                    (AnimPref::System, t!("Windows ayarına uy").into()),
+                    (AnimPref::System, if ON_WINDOWS { t!("Windows ayarına uy") } else { t!("Sistem ayarını kullan") }.into()),
                     (AnimPref::On, t!("Açık").into()),
                     (AnimPref::Off, t!("Kapalı").into()),
                 ],
@@ -631,13 +654,13 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                     let on = shown("drives");
                     move |_, cx| settings::update(cx, |s| show_section(s, "drives", !on))
                 })),
-                sub(&pp, t!("Bulut ve Linux"), None, switch("sb-cloud", &pp, shown("cloud"), {
+                sub(&pp, if ON_WINDOWS { t!("Bulut ve Linux") } else { t!("Cloud folders") }, None, switch("sb-cloud", &pp, shown("cloud"), {
                     let on = shown("cloud");
                     move |_, cx| settings::update(cx, |s| show_section(s, "cloud", !on))
                 })),
-                sub(&pp, t!("Kütüphaneler"), Some(t!("Sabitlenenlerle aynı klasörleri gösterir")), switch("sb-libs", &pp, libs, move |_, cx| {
+                windows_only(sub(&pp, t!("Kütüphaneler"), Some(t!("Sabitlenenlerle aynı klasörleri gösterir")), switch("sb-libs", &pp, libs, move |_, cx| {
                     settings::update(cx, |s| s.show_libraries = !libs)
-                })),
+                }))),
                 sub(&pp, t!("Ağ"), None, switch("sb-net", &pp, shown("network"), {
                     let on = shown("network");
                     move |_, cx| settings::update(cx, |s| show_section(s, "network", !on))
@@ -780,6 +803,8 @@ fn layout(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
             ];
             rows.into_iter()
                 .enumerate()
+                // the sync status is OneDrive's (cloud placeholders): Windows only
+                .filter(|(_, (label, _, _))| ON_WINDOWS || *label != t!("Eşitleme durumu"))
                 .map(|(i, (label, on, set))| sub(&pp, label, None, switch(("col-sw", i), &pp, on, move |_, cx| settings::update(cx, |s| set(s, !on)))))
                 .collect()
         },
@@ -812,12 +837,12 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         move || {
             vec![
                 sub(&pp, t!("Gizli öğeleri göster"), Some("Ctrl+H"), switch("h1", &pp, h, move |_, cx| settings::update(cx, |s| s.show_hidden = !h))),
-                sub(
+                windows_only(sub(
                     &pp,
                     t!("Korunan işletim sistemi dosyalarını göster"),
                     Some(t!("desktop.ini, thumbs.db gibi sistem dosyaları")),
                     switch("h2", &pp, sys, move |_, cx| settings::update(cx, |s| s.show_system_files = !sys)),
-                ),
+                )),
                 sub(
                     &pp,
                     t!("Nokta ile başlayan dosyaları göster"),
@@ -895,13 +920,13 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         Some(t!("ZIP, 7z ve tar dosyalarının içine çift tıklayarak girilir; içindeki dosyalar açılınca geçici bir klasöre çıkarılır")),
         sw("browse-arc", p, s.browse_archives, |s, v| s.browse_archives = v),
     ));
-    v.push(card(
+    v.push(windows_only(card(
         p,
         L::Search,
         t!("Aramada Windows dizinini kullan"),
         Some(t!("Dizinlenmiş klasörlerde dosya içerikleri de aranır ve kind:picture, size:>10MB gibi filtreler çalışır")),
         sw("search-index", p, s.search_index, |s, v| s.search_index = v),
-    ));
+    )));
     v.push(card(
         p,
         L::HardDrive,
@@ -1251,7 +1276,8 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     if !enabled {
         return v;
     }
-    v.push(card(
+    // Wayland has no global hotkeys: DirectLook works inside rustyfiles only
+    v.push(windows_only(card(
         p,
         L::Monitor,
         t!("Explorer ve masaüstünde de Boşluk ile önizle"),
@@ -1268,8 +1294,8 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                 crate::look::ipc::send(crate::look::ipc::Msg::Wake, true);
             }
         }),
-    ));
-    if l.look_system_wide && !l.look_ignore_quicklook && crate::look::system::quicklook_running() {
+    )));
+    if ON_WINDOWS && l.look_system_wide && !l.look_ignore_quicklook && crate::look::system::quicklook_running() {
         v.push(card(
             p,
             L::TriangleAlert,
@@ -1293,18 +1319,32 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                 "look-backdrop",
                 p,
                 l.look_backdrop,
-                vec![
-                    (LookBackdrop::Mica, "Mica".into()),
-                    (LookBackdrop::Acrylic, "Acrylic".into()),
-                    (LookBackdrop::Tabbed, t!("Mica (sekmeli)").into()),
-                    (LookBackdrop::None, t!("Düz renk").into()),
-                ],
+                if ON_WINDOWS {
+                    vec![
+                        (LookBackdrop::Mica, "Mica".into()),
+                        (LookBackdrop::Acrylic, "Acrylic".into()),
+                        (LookBackdrop::Tabbed, t!("Mica (sekmeli)").into()),
+                        (LookBackdrop::None, t!("Düz renk").into()),
+                    ]
+                } else {
+                    vec![
+                        (LookBackdrop::Mica, t!("Translucent").into()),
+                        (LookBackdrop::Acrylic, t!("Translucent with blur").into()),
+                        (LookBackdrop::None, t!("Düz renk").into()),
+                    ]
+                },
                 |s, v| s.look_backdrop = v,
             ),
         ),
         card(p, L::PictureInPicture, t!("Her zaman üstte"), None, lsw("look-top", p, l.look_topmost, |s, v| s.look_topmost = v)),
-        card(p, L::PanelBottom, t!("Görev çubuğunda göster"), None, lsw("look-taskbar", p, l.look_show_in_taskbar, |s, v| s.look_show_in_taskbar = v)),
-        card(p, L::MousePointerClick, t!("Açılınca pencereyi odakla"), Some(t!("Kapalıyken klavye Explorer'da kalır: oklarla dosyalar arasında gezinilir")), lsw("look-focus", p, l.look_focus_on_open, |s, v| s.look_focus_on_open = v)),
+        windows_only(card(p, L::PanelBottom, t!("Görev çubuğunda göster"), None, lsw("look-taskbar", p, l.look_show_in_taskbar, |s, v| s.look_show_in_taskbar = v))),
+        card(
+            p,
+            L::MousePointerClick,
+            t!("Açılınca pencereyi odakla"),
+            Some(if ON_WINDOWS { t!("Kapalıyken klavye Explorer'da kalır: oklarla dosyalar arasında gezinilir") } else { t!("When off, the keyboard stays in rustyfiles: arrow keys move between files") }),
+            lsw("look-focus", p, l.look_focus_on_open, |s, v| s.look_focus_on_open = v),
+        ),
         card(p, L::CircleX, t!("Başka pencereye geçince kapat"), Some(t!("Sabitlenmiş pencereler açık kalır")), lsw("look-lostfocus", p, l.look_close_on_lost_focus, |s, v| s.look_close_on_lost_focus = v)),
         card(p, L::Zap, t!("Geçiş animasyonu"), None, lsw("look-transition", p, l.look_transition, |s, v| s.look_transition = v)),
         card(p, L::RefreshCw, t!("Yeniden yükle düğmesi"), None, lsw("look-reload", p, l.look_show_reload, |s, v| s.look_show_reload = v)),
@@ -1482,7 +1522,7 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         card(
             p,
             L::Power,
-            t!("Windows başladığında rustyfiles'ı aç"),
+            if ON_WINDOWS { t!("Windows başladığında rustyfiles'ı aç") } else { t!("Open rustyfiles when you log in") },
             None,
             switch("start-win", p, start_on, move |window, _| {
                 if let Ok(exe) = std::env::current_exe() {
@@ -1493,26 +1533,31 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
                 window.refresh();
             }),
         ),
-        card(
+        // the tray icon and notifications come to Linux with Phase 3
+        windows_only(card(
             p,
             L::PanelBottom,
             t!("Pencere kapatılınca arka planda çalışmaya devam et"),
             Some(t!("Bildirim alanında bir simge kalır; yeni pencere anında açılır")),
             sw("background", p, s.run_in_background, |s, v| s.run_in_background = v),
-        ),
-        card(
+        )),
+        windows_only(card(
             p,
             L::Bell,
             t!("Uzun işlemler bitince bildirim göster"),
             Some(t!("Kopyalama, taşıma, sıkıştırma 10 saniyeden uzun sürdüyse ve rustyfiles önde değilse")),
             sw("notify-ops", p, s.notify_long_ops, |s, v| s.notify_long_ops = v),
-        ),
+        )),
         section(p, t!("Performans")),
         card(
             p,
             L::Zap,
             t!("Hızlı dosya işlemleri"),
-            Some(t!("Kopyalama, başka sürücüye taşıma ve kalıcı silme kendi paralel motorumuzla. Kapalıyken her şey Windows'un motoruyla yapılır.")),
+            Some(if ON_WINDOWS {
+                t!("Kopyalama, başka sürücüye taşıma ve kalıcı silme kendi paralel motorumuzla. Kapalıyken her şey Windows'un motoruyla yapılır.")
+            } else {
+                t!("Copying, moving to another drive and permanent deletion use our parallel engine. When off, files are copied one at a time.")
+            }),
             sw("fast-ops", p, s.fast_file_ops, |s, v| s.fast_file_ops = v),
         ),
         card(
@@ -1552,7 +1597,8 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             Some(t!("Klasörün listelenme süresi ve çizim yöntemi (GPU / CPU)")),
             sw("perf-info", p, s.show_perf_info, |s, v| s.show_perf_info = v),
         ),
-        shell(p)
+        // GPU / CPU switching is the Windows renderer's (gpui-windows)
+        windows_only(shell(p)
             .child(card_body(
                 p,
                 L::Activity,
@@ -1567,9 +1613,10 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
                 )),
             ))
             .child(div().pl(px(56.)).pr_4().pb_3().text_xs().text_color(p.text_tertiary).child(live))
-            .into_any_element(),
-        section(p, t!("Deneysel")),
-        card(
+            .into_any_element()),
+        // the default file manager and the Open / Save dialogs come to Linux with Phase 3
+        windows_only(section(p, t!("Deneysel"))),
+        windows_only(card(
             p,
             L::AppWindow,
             t!("Varsayılan dosya yöneticisi olarak ayarla"),
@@ -1586,11 +1633,11 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
                 });
                 window.refresh();
             }),
-        ),
+        )),
     ];
-    out.extend(archives);
+    out.extend(archives.filter(|_| ON_WINDOWS));
     // other apps' Open / Save / folder dialogs show rustyfiles (needs rustyfiles_dialog.dll)
-    out.push(card(
+    out.push(windows_only(card(
         p,
         L::FolderOpen,
         t!("Aç / Kaydet pencerelerinde rustyfiles"),
@@ -1617,7 +1664,11 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             });
             window.refresh();
         }),
-    ));
+    )));
+    // the flatten switch stays: on Linux it heads the list without the Experimental title
+    if !ON_WINDOWS {
+        out.push(section(p, t!("Deneysel")));
+    }
     out.extend([
         card(
             p,
@@ -1692,14 +1743,15 @@ fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
             Some(&version),
             button("copy-ver", p, t!("Kopyala"), move |_, cx| cx.write_to_clipboard(ClipboardItem::new_string(format!("rustyfiles {ver}")))),
         ),
-        update_card(p, &s),
-        card(
+        // Velopack updates are Windows' installer; Linux gets updates from its package
+        windows_only(update_card(p, &s)),
+        windows_only(card(
             p,
             L::Download,
             t!("Güncellemeleri kendiliğinden indir"),
             Some(t!("Arka planda denetlenir ve indirilir; bir sonraki açılışta uygulanır.")),
             sw("auto-upd", p, s.auto_update, |s, v| s.auto_update = v),
-        ),
+        )),
         section(p, "GitHub"),
         link_row(p, "gh-star", L::Star, t!("GitHub'da yıldız ver"), Some(t!("rustyfiles işinize yarıyorsa başkalarının da bulmasına yardım eder.")), |_, _| open_url(REPO_URL)),
         link_row(p, "gh-issue", L::MessageSquare, t!("Hata bildir ya da öneride bulun"), None, |_, _| open_url(ISSUES_URL)),
@@ -1744,6 +1796,7 @@ fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
                     ("chrono, serde, toml", "MIT / Apache-2.0"),
                 ]
                 .iter()
+                .filter(|(n, _)| ON_WINDOWS || !matches!(*n, "Velopack" | "windows-rs"))
                 .map(|(n, l)| sub(&pp, n, Some(l), div().into_any_element()))
                 .collect()
             },

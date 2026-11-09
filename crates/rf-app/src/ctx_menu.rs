@@ -134,6 +134,10 @@ impl FolderView {
             Quick::new(L::Trash, t!("Sil  (Del)"), true, act(me, |v, w, cx| v.delete_selected(false, w, cx))),
             Quick::new(L::Wrench, t!("Özellikler  (Alt+Enter)"), true, act(me, |v, _, cx| v.properties(cx))),
         ]
+        .into_iter()
+        // Share is Windows' share sheet
+        .filter(|q| cfg!(windows) || q.icon != L::Share2)
+        .collect()
     }
 
     fn items_menu(&self, me: &Me, dir: &std::path::Path, items: &[PathBuf], cx: &mut Context<Self>) -> Menu {
@@ -311,8 +315,11 @@ impl FolderView {
             let d = target_dir.clone();
             v.push(Item::action(t!("Terminalde aç"), icon(L::SquareTerminal), move |_, _| open_terminal(d.clone())).hint("Ctrl+Shift+`"));
         }
-        v.push(Item::Separator);
-        v.push(Item::Sub { label: t!("Diğer seçenekleri göster").into(), icon: icon(L::Ellipsis), items: Sub::Pending { key: "more", fallback: None } });
+        // Windows' shell menu (other apps' entries); Linux has none
+        if cfg!(windows) {
+            v.push(Item::Separator);
+            v.push(Item::Sub { label: t!("Diğer seçenekleri göster").into(), icon: icon(L::Ellipsis), items: Sub::Pending { key: "more", fallback: None } });
+        }
         Menu { quick: self.quick_clipboard(me, true), items: v }
     }
 
@@ -348,8 +355,11 @@ impl FolderView {
             git_items.push(Item::action(t!("Depoyu klonla…"), icon(L::GitFork), move |w, cx| crate::git_ui::clone_dialog(m.clone(), d.clone(), w, cx)));
             v.push(Item::sub("Git", icon(L::GitBranch), git_items));
         }
-        v.push(Item::Separator);
-        v.push(Item::Sub { label: t!("Diğer seçenekleri göster").into(), icon: icon(L::Ellipsis), items: Sub::Pending { key: "more", fallback: None } });
+        // Windows' shell menu (other apps' entries); Linux has none
+        if cfg!(windows) {
+            v.push(Item::Separator);
+            v.push(Item::Sub { label: t!("Diğer seçenekleri göster").into(), icon: icon(L::Ellipsis), items: Sub::Pending { key: "more", fallback: None } });
+        }
         Menu { quick: self.quick_clipboard(me, false), items: v }
     }
 

@@ -342,7 +342,8 @@ impl LookWindow {
                 let on = !v.topmost;
                 v.set_topmost(on, cx);
             })))
-            .child(self.button("look-share", L::Share, t!("Paylaş").into(), false, p).on_click(cx.listener(|v, _, _, _| v.share())))
+            // Share is Windows' share sheet
+            .when(cfg!(windows), |d| d.child(self.button("look-share", L::Share, t!("Paylaş").into(), false, p).on_click(cx.listener(|v, _, _, _| v.share()))))
             .child(
                 self.button("look-openwith", L::SquareArrowOutUpRight, t!("Birlikte aç").into(), false, p)
                     .on_click(cx.listener(|v, _, _, _| v.open_with())),

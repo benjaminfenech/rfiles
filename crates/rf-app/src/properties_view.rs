@@ -457,9 +457,14 @@ impl PropsView {
                     v.hidden = Some(!hid.unwrap_or(false));
                     cx.notify();
                 })),
-            ],
+            ]
+            .into_iter()
+            // Linux: hidden means a name starting with a dot, not a switch
+            .take(if cfg!(windows) { 2 } else { 1 })
+            .collect(),
         ));
-        out.push(
+        // Linux has no Windows properties dialog (security, sharing, previous versions)
+        out.extend(cfg!(windows).then(|| {
             h_flex()
                 .id("win-props")
                 .gap_1p5()
@@ -471,8 +476,8 @@ impl PropsView {
                 .child(Icon::new(L::ExternalLink).size(px(14.)))
                 .child(t!("Windows özellikleri (güvenlik, paylaşım, önceki sürümler)…"))
                 .on_click(cx.listener(|v, _, _, _| v.windows_properties()))
-                .into_any_element(),
-        );
+                .into_any_element()
+        }));
         out
     }
 

@@ -66,15 +66,39 @@ pub fn opens_with(path: &Path) -> Option<String> {
     crate::xdg_apps::default_app(&crate::xdg_apps::mime_for_path(path)).map(|a| a.name.clone())
 }
 /// Sets / clears read-only and hidden, keeping the other attribute bits.
-pub fn set_flags(
-    path: &Path,
-    readonly: Option<bool>,
-    hidden: Option<bool>,
-) -> std::io::Result<()> {
-    Err(
-        std::io::Error::new(
-            std::io::ErrorKind::Unsupported,
-            "rf-linux: `set_flags` is not implemented on Linux yet",
-        ),
-    )
+///
+/// Linux: read-only takes the write permission from everyone, and clearing it gives it back to
+/// the owner. Hidden is a name starting with a dot, which a flag can't change.
+pub fn set_flags(path: &Path, readonly: Option<bool>, hidden: Option<bool>) -> std::io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    if hidden.is_some() {
+        return Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "on Linux a hidden item's name starts with a dot"));
+    }
+    if let Some(ro) = readonly {
+        let mut perm = std::fs::metadata(path)?.permissions();
+        let mode = perm.mode();
+        perm.set_mode(if ro { mode & !0o222 } else { mode | 0o200 });
+        std::fs::set_permissions(path, perm)?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::os::unix::fs::PermissionsExt;
+
+    #[test]
+    fn read_only_is_the_write_permission() {
+        let p = std::env::temp_dir().join(format!("rf-flags-{}", std::process::id()));
+        std::fs::write(&p, b"x").unwrap();
+        std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o664)).unwrap();
+        set_flags(&p, Some(true), None).unwrap();
+        assert_eq!(std::fs::metadata(&p).unwrap().permissions().mode() & 0o777, 0o444);
+        assert_eq!(info(&p).unwrap().attrs & 0x1, 0x1, "shows as read-only");
+        set_flags(&p, Some(false), None).unwrap();
+        assert_eq!(std::fs::metadata(&p).unwrap().permissions().mode() & 0o777, 0o644);
+        assert!(set_flags(&p, None, Some(true)).is_err(), "hidden is a dot name");
+        let _ = std::fs::remove_file(&p);
+    }
 }
