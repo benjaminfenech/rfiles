@@ -358,6 +358,34 @@ separators, case-insensitive paths, drive letters).
   the two; on this machine: home folder (525k entries, built in 4 s, 22 MB) 12 ms against
   0.25–1.2 s for the walk; `/usr` (361k) 3 ms against 35–64 ms (warm cache). The walk finds
   a few more hits: those inside the left-out folders.
+- **Name index memory** (2026-11-09, upstream `c8e1e57` + `b593628`). Same layout as
+  upstream now: each different name stored once in a name table (raw bytes, as before),
+  entries keep a 4-byte name id (9 bytes an entry), folder and name lookups are 4-byte id
+  tables instead of keyed `HashMap`s, walk workers add names to the table as they list (a
+  tree's raw names are never held twice), searching matches each different name once. A
+  folder's exact name is its name id, so the case-sensitive folder lookup is (parent, name
+  id); ids are kept unique, a file listing a name twice is folded on loading. Index files
+  are format 2 (`RFNIXL\0\x02`), read straight into the arrays, written little-endian on any
+  machine; format 1 files (`~/.cache/rustyfiles/index/*.rfidx` from before) convert on
+  loading, and the start-up walk saves them as format 2. Not taken: the NTFS change journal
+  (`5bc4945`, `8981033`) and the folder file ids it needs, which is all `b593628` counts
+  (Linux keeps following changes with inotify). Hashing a folder's names happens before the
+  walk's shared lock. Measured with `search_bench -- <folder> readme 0` (warm cache) and
+  `index_mem` on the real saved file:
+
+  | | entries | different names | index | process | query | build (warm) |
+  |---|---|---|---|---|---|---|
+  | home folder, before | 528,817 | — | 22.8 MB | 48 MB | 3.4 ms | 40 ms |
+  | home folder, after | 528,817 | 314,634 | 20.8 MB | 32 MB | 3.0 ms | 76 ms |
+  | `/usr`, before | 361,424 | — | 10.8 MB | 24 MB | 1.6 ms | 25 ms |
+  | `/usr`, after | 361,424 | 210,727 | 9.0 MB | 17 MB | 1.2 ms | 38 ms |
+
+  The index itself shrinks less than upstream's (C: 150 → 61 MB) because Linux leaves out
+  the folders where names repeat most (`node_modules`, `.git`, `.cargo`, `target/`…): here
+  60% of names are different, against 10% on upstream's drive. The process drops a third, as
+  build workers no longer hold every raw name until the walk ends. The saved home index goes
+  from 21.5 to 18.6 MB; the old file converts in 0.06 s. A warm-cache build takes longer
+  (interning under one lock); a real walk is disk-bound, seconds, at nice 10.
 
 ## Packaging
 
