@@ -226,6 +226,12 @@ pub fn main() {
     // `--bar-preview`: our taskbar, as an ordinary window (see taskbar_preview)
     let bar_preview = cfg!(windows) && std::env::args().nth(1).as_deref() == Some("--bar-preview");
     let arg = std::env::args().nth(1).map(|a| a.trim().trim_matches('"').to_string()).filter(|a| !a.is_empty());
+    // Linux: launchers pass file:// URIs (the desktop entry's %U, which lets smb://… in too)
+    #[cfg(unix)]
+    let arg = arg.map(|a| match a.starts_with("file://").then(|| rf_win::fm_service::uri_to_path(&a)).flatten() {
+        Some(p) => p.to_string_lossy().into_owned(),
+        None => a,
+    });
     let arg = arg.filter(|_| !open_look_settings && pick.is_none() && !bar_preview);
     // jump list task "New window"
     let new_window = arg.as_deref() == Some(rf_win::jumplist::NEW_WINDOW_ARG);

@@ -318,11 +318,19 @@ the hybrid GPU/CPU renderer, critical-error-dialog suppression, `keep_gdiplus_al
 
 ## Packaging
 
-Start with a PKGBUILD in `packaging/arch/` (target machine is CachyOS) and a
-`rustyfiles.desktop` + icon. Runtime dependencies so far: `poppler` (DirectLook PDFs);
-optional `libavif`, `libheif` (full-size AVIF, HEIC), `ffmpeg` (video formats FilmCraft
-can't play). Flatpak later; it needs portal support for everything outside the sandbox,
-which Phase 3 already uses.
+**Arch** (2026-11-09): `packaging/arch/PKGBUILD` builds `rustyfiles-git` from the GitHub
+repo's latest commit (`pkgver` from `git describe`: `0.3.0.r95.gabc1234`). Both binaries go
+to `/usr/lib/rustyfiles/` (DirectLook is looked up next to rustyfiles, and `current_exe`
+resolves the `/usr/bin/rustyfiles` symlink), plus `packaging/linux/rustyfiles.desktop`
+(`Exec=rustyfiles %U`: launchers pass `file://` URIs, which the app now decodes, and
+`smb://`… addresses), an AppStream metainfo file, and the SVG / 256 px icons in hicolor.
+Runtime libraries: alsa-lib, libxcb, libxkbcommon(-x11), and wayland, vulkan-icd-loader,
+libglvnd, fontconfig, freetype2 (GPUI loads some at runtime). Everything else is an
+optdepend: poppler, libavif, libheif, ffmpeg, kio-fuse / gvfs-smb, udisks2,
+xdg-desktop-portal, git. The default-file-manager entry (same name, in the user's data dir)
+uses the installed icon when there is one. Not done: an AUR upload (needs an AUR account),
+Flatpak (needs portal support for everything outside the sandbox, which Phase 3 mostly
+uses), Debian/Fedora packages.
 
 ## Testing
 

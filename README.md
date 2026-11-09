@@ -216,8 +216,22 @@ cd rustyfiles
 
 ### Linux
 
-This fork builds on Linux (Wayland or X11). There's no package yet: build it from source. You
-need [Rust](https://rustup.rs) 1.95 or newer, a C compiler, and these libraries:
+This fork runs on Linux (Wayland or X11).
+
+**Arch, CachyOS, Manjaro:** build and install the package (`rustyfiles-git`, from the latest
+commit), which adds rustyfiles to your app menu with its icon:
+
+```bash
+git clone https://github.com/benjaminfenech/rustyfiles-linux
+cd rustyfiles-linux/packaging/arch
+makepkg -si
+```
+
+Run `makepkg -si` there again to update. The package lists optional extras (PDF previews,
+video formats, network locations, drives…); `pacman -Qi rustyfiles-git` shows them.
+
+**Other distributions:** build from source. You need [Rust](https://rustup.rs) 1.95 or newer,
+a C compiler, and these libraries:
 
 ```bash
 # Arch / CachyOS / Manjaro

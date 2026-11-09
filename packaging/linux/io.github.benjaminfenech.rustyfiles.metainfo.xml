@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.benjaminfenech.rustyfiles</id>
+  <name>rustyfiles</name>
+  <summary>Fast file manager with tabs, dual panes and previews</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <launchable type="desktop-id">rustyfiles.desktop</launchable>
+  <description>
+    <p>
+      rustyfiles is a file manager written in Rust: tabs, dual panes, a column view,
+      DirectLook previews (images, PDFs, video, text, archives), archives as folders,
+      tags, git status, network locations and removable drives.
+    </p>
+  </description>
+  <url type="homepage">https://github.com/benjaminfenech/rustyfiles-linux</url>
+  <url type="bugtracker">https://github.com/benjaminfenech/rustyfiles-linux/issues</url>
+  <categories>
+    <category>System</category>
+    <category>FileManager</category>
+  </categories>
+  <provides>
+    <binary>rustyfiles</binary>
+    <mediatype>inode/directory</mediatype>
+  </provides>
+  <content_rating type="oars-1.1"/>
+</component>

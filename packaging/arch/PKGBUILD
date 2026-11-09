@@ -1,0 +1,77 @@
+# Maintainer: Benjamin Fenech <benjamin@fenech.dev>
+# rustyfiles, Linux port: built from the latest commit of the GitHub repository.
+# Build and install from this folder with: makepkg -si
+
+pkgname=rustyfiles-git
+_name=rustyfiles
+pkgver=0.3.0
+pkgrel=1
+pkgdesc='Fast file manager with tabs, dual panes and previews'
+arch=('x86_64' 'aarch64')
+url='https://github.com/benjaminfenech/rustyfiles-linux'
+license=('MIT')
+depends=(
+  'alsa-lib'
+  'fontconfig'
+  'freetype2'
+  'libgcc'
+  'glibc'
+  'hicolor-icon-theme'
+  'libglvnd'
+  'libxcb'
+  'libxkbcommon'
+  'libxkbcommon-x11'
+  'vulkan-icd-loader'
+  'wayland'
+)
+makedepends=('cargo' 'git' 'pkgconf')
+optdepends=(
+  'poppler: PDF previews'
+  'libavif: full-size AVIF images'
+  'libheif: full-size HEIC images'
+  'ffmpeg: video formats rustyfiles cannot play on its own'
+  'kio-fuse: network locations (smb://, sftp://, ftp://) on KDE'
+  'gvfs-smb: network locations on GNOME and others (with gvfs)'
+  'udisks2: mounting and ejecting drives'
+  'xdg-desktop-portal: file dialogs and "Open with"'
+  'git: git status and actions in repositories'
+)
+provides=("$_name")
+conflicts=("$_name")
+options=('!lto')
+source=("$_name::git+$url.git")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "$_name"
+  git describe --long --tags --abbrev=7 | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+prepare() {
+  cd "$_name"
+  export RUSTUP_TOOLCHAIN=stable
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+  cd "$_name"
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  cargo build --frozen --release -p rf-app --bins
+}
+
+package() {
+  cd "$_name"
+  # DirectLook is found next to rustyfiles: both live in /usr/lib/rustyfiles
+  install -Dm755 target/release/rustyfiles "$pkgdir/usr/lib/$_name/rustyfiles"
+  install -Dm755 target/release/directlook "$pkgdir/usr/lib/$_name/directlook"
+  install -dm755 "$pkgdir/usr/bin"
+  ln -s "/usr/lib/$_name/rustyfiles" "$pkgdir/usr/bin/rustyfiles"
+
+  install -Dm644 packaging/linux/rustyfiles.desktop "$pkgdir/usr/share/applications/rustyfiles.desktop"
+  install -Dm644 packaging/linux/io.github.benjaminfenech.rustyfiles.metainfo.xml \
+    "$pkgdir/usr/share/metainfo/io.github.benjaminfenech.rustyfiles.metainfo.xml"
+  install -Dm644 crates/rf-app/assets/rustyfiles.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/rustyfiles.svg"
+  install -Dm644 crates/rf-app/assets/rustyfiles.png "$pkgdir/usr/share/icons/hicolor/256x256/apps/rustyfiles.png"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

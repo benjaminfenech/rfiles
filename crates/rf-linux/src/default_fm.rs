@@ -162,11 +162,22 @@ fn without_default(text: &str, mime: &str, id: &str) -> String {
 
 fn desktop_entry(exe: &str) -> String {
     let exe = crate::dialogs::exec_quote(exe);
+    let icon = if icon_installed() { "rustyfiles" } else { "system-file-manager" };
     format!(
         "[Desktop Entry]\nType=Application\nName=rustyfiles\nGenericName=File Manager\nComment=Browse files and folders\n\
-         Exec={exe} %F\nIcon=system-file-manager\nTerminal=false\nCategories=System;FileTools;FileManager;\n\
+         Exec={exe} %U\nIcon={icon}\nTerminal=false\nCategories=System;FileTools;FileManager;\n\
          MimeType=inode/directory;\nStartupWMClass=rustyfiles\n"
     )
+}
+
+/// Whether the package installed rustyfiles' own icon (`hicolor/…/apps/rustyfiles.*`): this
+/// entry replaces the package's (same name), so it should look the same.
+fn icon_installed() -> bool {
+    let dirs = std::env::var("XDG_DATA_DIRS").unwrap_or_else(|_| "/usr/local/share:/usr/share".into());
+    dirs.split(':').filter(|d| !d.is_empty()).any(|d| {
+        let hicolor = Path::new(d).join("icons/hicolor");
+        hicolor.join("scalable/apps/rustyfiles.svg").exists() || hicolor.join("256x256/apps/rustyfiles.png").exists()
+    })
 }
 
 fn service_entry(exe: &str) -> String {
@@ -369,7 +380,7 @@ mod tests {
         assert!(is_enabled(&root));
         assert_eq!(registered_exe(&root), Some(PathBuf::from("/opt/rusty files/rustyfiles")));
         let desktop = std::fs::read_to_string(base.join("data/applications/rustyfiles.desktop")).unwrap();
-        assert!(desktop.contains("Exec=\"/opt/rusty files/rustyfiles\" %F\n"), "{desktop}");
+        assert!(desktop.contains("Exec=\"/opt/rusty files/rustyfiles\" %U\n"), "{desktop}");
         let service = std::fs::read_to_string(base.join("data/dbus-1/services/org.freedesktop.FileManager1.service")).unwrap();
         assert!(service.contains("Exec=\"/opt/rusty files/rustyfiles\" --file-manager-service\n"), "{service}");
         // the exe moved: heal points the entry at the new one
