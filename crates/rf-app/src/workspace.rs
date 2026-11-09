@@ -1449,6 +1449,11 @@ impl Workspace {
 
     fn begin_address_edit(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let text = match self.active_tab().read(cx).location() {
+            // Linux: a network folder as its address (typing it back mounts the same folder)
+            #[cfg(unix)]
+            Location::Path(p) if crate::settings::address_shows_url() && rf_win::remote::display_url(p).is_some() => {
+                rf_core::history::redact_credentials(&rf_win::remote::display_url(p).unwrap_or_default())
+            }
             Location::Path(p) => p.to_string_lossy().into_owned(),
             Location::Search { root, .. } => root.to_string_lossy().into_owned(),
             _ => String::new(),
@@ -2838,7 +2843,19 @@ fn render_backend_badge(p: &Palette) -> impl IntoElement + use<> {
 fn breadcrumbs(path: &Path) -> Vec<(String, Location)> {
     let mut out = Vec::new();
     let mut acc = PathBuf::new();
-    for comp in path.components() {
+    #[allow(unused_mut)] // reassigned on Linux only
+    let mut comps: Box<dyn Iterator<Item = std::path::Component>> = Box::new(path.components());
+    // Linux: a network folder starts at its address ("smb://nas") rather than /run/user/…
+    #[cfg(unix)]
+    if crate::settings::address_shows_url()
+        && let Some((url, root)) = rf_win::remote::mount_url(path)
+        && let Ok(rest) = path.strip_prefix(&root)
+    {
+        out.push((rf_core::history::redact_credentials(&url), Location::Path(root.clone())));
+        acc = root;
+        comps = Box::new(rest.components());
+    }
+    for comp in comps {
         acc.push(comp.as_os_str());
         if matches!(comp, std::path::Component::RootDir) {
             // Unix: no drive before the root, so "/" is a crumb of its own

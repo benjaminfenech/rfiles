@@ -336,6 +336,9 @@ pub struct Settings {
     pub show_dot_files: bool,
     /// Linux: how drives are named.
     pub drive_names: DriveNames,
+    /// Linux: the address bar shows a network folder as its address (`smb://nas/media`)
+    /// rather than where it is mounted (`/run/user/1000/kio-fuse-…/smb/nas/media`).
+    pub address_shows_url: bool,
     pub show_thumbnails: bool,
     pub show_checkboxes: bool,
     pub single_click: ClickPref,
@@ -427,6 +430,7 @@ impl Default for Settings {
             show_system_files: false,
             show_dot_files: true,
             drive_names: DriveNames::Auto,
+            address_shows_url: true,
             show_thumbnails: true,
             show_checkboxes: false,
             single_click: ClickPref::Never,
@@ -460,6 +464,14 @@ static SOLID: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new
 static ANIM: AtomicU8 = AtomicU8::new(0);
 
 static DRIVE_NAMES: AtomicU8 = AtomicU8::new(0);
+
+static ADDRESS_URL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
+/// Linux: whether the address bar shows network folders as their address (Settings → Files
+/// and folders), readable without an `App`.
+pub fn address_shows_url() -> bool {
+    ADDRESS_URL.load(Ordering::Relaxed)
+}
 
 /// How drives are named (Settings → Files and folders), readable without an `App`.
 pub fn drive_names() -> DriveNames {
@@ -571,6 +583,7 @@ impl Settings {
         SOLID.store(self.backdrop == BackdropPref::Solid, Ordering::Relaxed);
         ANIM.store(self.animations as u8, Ordering::Relaxed);
         DRIVE_NAMES.store(self.drive_names as u8, Ordering::Relaxed);
+        ADDRESS_URL.store(self.address_shows_url, Ordering::Relaxed);
         gpui_windows::SMOOTH_SCROLL.store(self.smooth_scroll, Ordering::Relaxed);
         THEME.store(
             match self.theme {
