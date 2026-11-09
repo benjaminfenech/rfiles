@@ -215,7 +215,17 @@ certificates for the info card.
   A file manager that is already running keeps the name (Dolphin doesn't allow replacement).
   Tried end to end in a private bus session with scratch XDG folders
   (`cargo run -p rf-linux --example default_fm -- enable <exe> | disable | status`).
-- Tray and notifications: StatusNotifierItem (`ksni`) + `notify-rust`.
+- ~~Tray and notifications~~ **done** (2026-11-09): `rf-linux` `tray` keeps rf-win's API
+  (`show` / `hide` / `notify` / `set_handler`). The icon is a StatusNotifierItem from `ksni`
+  (async-io + blocking, on the zbus we already have: no tokio) with the app icon as pixmaps
+  and an Open / New window / Quit menu; it stays registered across bar restarts.
+  Notifications call `org.freedesktop.Notifications.Notify` directly (no `notify-rust`).
+  Both run on one worker thread. "Keep running in the background" and "Notify when long
+  operations finish" are shown on Linux again; "rustyfiles isn't in front" asks GPUI whether
+  one of our windows is active (Wayland has no foreground-window query). DirectLook's own
+  tray icon stays Windows-only. Tried against Noctalia: the icon registers, Activate and
+  the menu items reach the app, background mode keeps the process after the last window
+  closes, Quit exits (`cargo run -p rf-linux --example tray -- [notify] [secs]`).
 - ~~Removable drives and safe removal~~ **done** (2026-11-09): `rf-linux` `udisks` talks to
   UDisks2 on the system bus. `drives::unmounted_drives()` lists file systems UDisks doesn't
   hide (not recovery/reserved partitions or swap) that aren't mounted; their `root` is the
@@ -250,7 +260,7 @@ certificates for the info card.
   `vec![…]` lists keep their shape; other spots use `cfg!(windows)`. Hidden: shell
   extensions submenu, Windows Search index, protected system files, Libraries, the OneDrive
   sync column, DirectLook over Explorer / in the taskbar, the GPU/CPU renderer switch, the
-  tray and notifications (Phase 3), default file manager, archives and Open/Save dialogs
+  ~~tray and notifications~~ (back since Phase 3), default file manager, archives and Open/Save dialogs
   (Phase 3), Velopack updates; "Show more options", Share, "Windows properties…", the
   Hidden checkbox (a dot name on Linux). Relabelled: background material (Translucent /
   with blur / Solid: GPUI's Linux windows are see-through unless opaque, blurred on request),

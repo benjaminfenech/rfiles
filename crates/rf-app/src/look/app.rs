@@ -107,7 +107,8 @@ pub fn main() {
         }
         crate::settings::apply_component_theme(cx);
         cx.set_global(LookSettings::load());
-        if cx.global::<LookSettings>().look_tray_icon {
+        // Linux: DirectLook only runs for the app's window (no global hotkey): no icon of its own
+        if cfg!(windows) && cx.global::<LookSettings>().look_tray_icon {
             rf_win::tray::show(tray_labels());
         }
         // önizleme penceresi kapanınca DirectLook çalışmayı sürdürür (arka planda bekler)
@@ -123,7 +124,7 @@ pub fn main() {
         super::system::sync(cx);
         cx.observe_global::<LookSettings>(|cx| {
             super::system::sync(cx);
-            if cx.global::<LookSettings>().look_tray_icon {
+            if cfg!(windows) && cx.global::<LookSettings>().look_tray_icon {
                 rf_win::tray::show(tray_labels());
             } else {
                 rf_win::tray::hide();

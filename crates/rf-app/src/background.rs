@@ -95,7 +95,7 @@ pub fn op_finished(ops: &Entity<Ops>, id: u64, cx: &mut App) {
         return;
     }
     let Some((title, phase, took)) = ops.read(cx).summary(id) else { return };
-    if took < NOTIFY_AFTER || rf_win::window::app_in_front() {
+    if took < NOTIFY_AFTER || app_in_front(cx) {
         return;
     }
     let (head, body) = match phase {
@@ -104,4 +104,13 @@ pub fn op_finished(ops: &Entity<Ops>, id: u64, cx: &mut App) {
         OpPhase::Cancelled | OpPhase::Running => return,
     };
     rf_win::tray::notify(head, &body);
+}
+
+/// Whether one of our windows has the focus. Linux has no foreground-window query that works
+/// on Wayland: GPUI knows whether its windows are active.
+fn app_in_front(cx: &mut App) -> bool {
+    if cfg!(windows) {
+        return rf_win::window::app_in_front();
+    }
+    cx.windows().into_iter().any(|w| w.update(cx, |_, window, _| window.is_window_active()).unwrap_or(false))
 }

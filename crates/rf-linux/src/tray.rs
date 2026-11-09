@@ -1,15 +1,19 @@
-//! Notification-area (tray) icon and notifications, like Files' "keep running in the
-//! background": the icon stays while no window is open; clicking it opens a window, its menu
-//! offers New window / Quit. Notifications use the icon's balloon, which Windows 10/11 show as
-//! a regular toast — no packaging / AppUserModelID registration needed.
+//! The tray icon and notifications on Linux, for "keep running in the background": the icon
+//! stays while no window is open; clicking it opens a window, its menu offers New window /
+//! Quit. Long operations end with a desktop notification.
 //!
-//! Everything runs on its own thread with a hidden window; the public functions only post to it.
-// Generated from rf-win's public API by a one-off stub generator, then edited by hand.
-// Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
-use std::collections::VecDeque;
+//! The icon is a StatusNotifierItem (`ksni`): KDE, Waybar, Noctalia and most bars show it;
+//! GNOME needs the AppIndicator extension. Notifications go to
+//! `org.freedesktop.Notifications`. Both talk D-Bus on one worker thread; the public
+//! functions only post to it.
+
 use std::sync::OnceLock;
+use std::sync::mpsc::{Sender, channel};
+
+use ksni::blocking::{Handle, TrayMethods as _};
+use ksni::menu::{MenuItem, StandardItem};
 use parking_lot::Mutex;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TrayEvent {
     /// Click on the icon (or "Open" in its menu).
@@ -17,6 +21,7 @@ pub enum TrayEvent {
     NewWindow,
     Quit,
 }
+
 /// Menu labels (the app's language).
 #[derive(Clone)]
 pub struct Labels {
@@ -25,66 +30,176 @@ pub struct Labels {
     pub new_window: String,
     pub quit: String,
 }
+
 enum Cmd {
     Show(Labels),
     Hide,
     Notify { title: String, body: String },
 }
-struct Tray {
-    hwnd: isize,
-    queue: Mutex<VecDeque<Cmd>>,
-    on_event: Mutex<Option<Box<dyn Fn(TrayEvent) + Send>>>,
+
+static ON_EVENT: Mutex<Option<Box<dyn Fn(TrayEvent) + Send>>> = Mutex::new(None);
+
+fn fire(e: TrayEvent) {
+    if let Some(f) = ON_EVENT.lock().as_ref() {
+        f(e);
+    }
 }
-static TRAY: OnceLock<Tray> = OnceLock::new();
-const WM_CMD: u32 = 0;
-const WM_TRAY: u32 = 0;
-const ICON_ID: u32 = 1;
-thread_local! {
-    #[doc =
-    " Thread-side state: whether the icon is shown on request (vs. only for a notification)."]
-    static STATE : std::cell::RefCell < (Option < Labels >, bool) > = const {
-    std::cell::RefCell::new((None, false)) };
+
+fn post(cmd: Cmd) {
+    static TX: OnceLock<Mutex<Sender<Cmd>>> = OnceLock::new();
+    let tx = TX.get_or_init(|| {
+        let (tx, rx) = channel::<Cmd>();
+        let _ = std::thread::Builder::new().name("rf-tray".into()).spawn(move || {
+            let mut icon: Option<Handle<Item>> = None;
+            for cmd in rx {
+                run(cmd, &mut icon);
+            }
+        });
+        Mutex::new(tx)
+    });
+    let _ = tx.lock().send(cmd);
 }
-/// Linux: the StatusNotifierItem tray is Phase 3. The handler is kept; nothing is shown.
-fn tray() -> &'static Tray {
-    TRAY.get_or_init(|| Tray { hwnd: 0, queue: Mutex::new(VecDeque::new()), on_event: Mutex::new(None) })
+
+fn run(cmd: Cmd, icon: &mut Option<Handle<Item>>) {
+    match cmd {
+        Cmd::Show(labels) => match icon {
+            Some(h) => {
+                h.update(|i| i.labels = labels);
+            }
+            None => match (Item { labels }).spawn() {
+                Ok(h) => *icon = Some(h),
+                // no tray host (GNOME without the extension): background mode still works
+                Err(e) => log::info!("tray icon: {e}"),
+            },
+        },
+        Cmd::Hide => {
+            if let Some(h) = icon.take() {
+                let _ = h.shutdown();
+            }
+        }
+        Cmd::Notify { title, body } => {
+            if let Err(e) = send_notification(&title, &body) {
+                log::info!("notification: {e:#}");
+            }
+        }
+    }
 }
-fn post(cmd: Cmd) {}
+
 /// Where tray clicks / menu choices go (set once; later calls replace it).
 pub fn set_handler(f: impl Fn(TrayEvent) + Send + 'static) {
-    *tray().on_event.lock() = Some(Box::new(f));
+    *ON_EVENT.lock() = Some(Box::new(f));
 }
+
 /// Shows (or updates) the icon.
 pub fn show(labels: Labels) {
     post(Cmd::Show(labels));
 }
-/// Removes the icon (a notification still adds it for a moment).
+
+/// Removes the icon.
 pub fn hide() {
     post(Cmd::Hide);
 }
-/// A notification (toast) from rustyfiles. Respects Focus Assist / quiet hours.
+
+/// A desktop notification from rustyfiles (the notification daemon decides about quiet hours).
 pub fn notify(title: &str, body: &str) {
-    post(Cmd::Notify {
-        title: title.to_string(),
-        body: body.to_string(),
-    });
+    post(Cmd::Notify { title: title.to_string(), body: body.to_string() });
 }
-fn copy_into(dst: &mut [u16], s: &str) {
-    let v: Vec<u16> = s.encode_utf16().take(dst.len() - 1).collect();
-    dst[..v.len()].copy_from_slice(&v);
-    dst[v.len()] = 0;
+
+struct Item {
+    labels: Labels,
 }
-/// Adds the icon if it is not there yet. Returns whether it was added now.
-fn ensure_icon(hwnd: crate::Opaque, tooltip: &str) -> bool {
-    false
-}
-fn remove_icon(hwnd: crate::Opaque) {}
-fn run_commands(hwnd: crate::Opaque) {}
-fn fire(e: TrayEvent) {
-    if let Some(t) = TRAY.get() {
-        if let Some(f) = t.on_event.lock().as_ref() {
-            f(e);
-        }
+
+impl ksni::Tray for Item {
+    fn id(&self) -> String {
+        "rustyfiles".into()
+    }
+    fn title(&self) -> String {
+        self.labels.tooltip.clone()
+    }
+    fn category(&self) -> ksni::Category {
+        ksni::Category::ApplicationStatus
+    }
+    fn icon_pixmap(&self) -> Vec<ksni::Icon> {
+        app_icon().to_vec()
+    }
+    fn tool_tip(&self) -> ksni::ToolTip {
+        ksni::ToolTip { title: self.labels.tooltip.clone(), ..Default::default() }
+    }
+    fn activate(&mut self, _x: i32, _y: i32) {
+        fire(TrayEvent::Open);
+    }
+    fn menu(&self) -> Vec<MenuItem<Self>> {
+        let item = |label: &str, e: TrayEvent| {
+            StandardItem { label: label.replace('_', "__"), activate: Box::new(move |_: &mut Self| fire(e)), ..Default::default() }.into()
+        };
+        vec![
+            item(&self.labels.open, TrayEvent::Open),
+            item(&self.labels.new_window, TrayEvent::NewWindow),
+            MenuItem::Separator,
+            item(&self.labels.quit, TrayEvent::Quit),
+        ]
+    }
+    /// The bar restarted or isn't there yet: keep the icon, it registers again when it is.
+    fn watcher_offline(&self, _reason: ksni::OfflineReason) -> bool {
+        true
     }
 }
-fn menu(hwnd: crate::Opaque) {}
+
+/// The app icon (`rf-app/assets/rustyfiles.png`) as SNI pixmaps (ARGB32, big-endian), in a
+/// few sizes for the bar to pick from.
+fn app_icon() -> &'static [ksni::Icon] {
+    static ICONS: OnceLock<Vec<ksni::Icon>> = OnceLock::new();
+    ICONS.get_or_init(|| {
+        let Ok(img) = image::load_from_memory(include_bytes!("../../rf-app/assets/rustyfiles.png")) else { return Vec::new() };
+        [22u32, 32, 48, 64]
+            .iter()
+            .map(|&s| {
+                let rgba = img.resize_exact(s, s, image::imageops::FilterType::Lanczos3).into_rgba8();
+                let data = rgba.pixels().flat_map(|p| [p[3], p[0], p[1], p[2]]).collect();
+                ksni::Icon { width: s as i32, height: s as i32, data }
+            })
+            .collect()
+    })
+}
+
+fn send_notification(title: &str, body: &str) -> anyhow::Result<()> {
+    use std::collections::HashMap;
+    use zbus::zvariant::Value;
+    static CONN: Mutex<Option<zbus::blocking::Connection>> = Mutex::new(None);
+    let conn = {
+        let mut c = CONN.lock();
+        match &*c {
+            Some(c) => c.clone(),
+            None => {
+                let new = zbus::blocking::Connection::session()?;
+                *c = Some(new.clone());
+                new
+            }
+        }
+    };
+    let mut hints: HashMap<&str, Value> = HashMap::new();
+    hints.insert("desktop-entry", Value::from("rustyfiles"));
+    let actions: Vec<&str> = Vec::new();
+    conn.call_method(
+        Some("org.freedesktop.Notifications"),
+        "/org/freedesktop/Notifications",
+        Some("org.freedesktop.Notifications"),
+        "Notify",
+        &("rustyfiles", 0u32, "system-file-manager", title, body, actions, hints, -1i32),
+    )?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn icon_pixmaps() {
+        let icons = super::app_icon();
+        assert_eq!(icons.len(), 4);
+        for i in icons {
+            assert_eq!(i.data.len(), (i.width * i.height * 4) as usize);
+        }
+        // ARGB: some pixels are opaque, the corners of a rounded icon aren't
+        assert!(icons[3].data.chunks(4).any(|p| p[0] == 255));
+    }
+}

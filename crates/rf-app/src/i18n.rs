@@ -275,6 +275,12 @@ const LINUX: &[(&str, &str, &str)] = &[
     ("Öğeler Geri Dönüşüm Kutusu'nda bulunamadı", "Öğeler Çöp Kutusu'nda bulunamadı", "Items were not found in the Trash"),
     ("Geri dönüşüm kutusuna taşınsın mı?", "Çöp kutusuna taşınsın mı?", "Move to the Trash?"),
     ("geri dönüşüm kutusuna taşınacak.", "çöp kutusuna taşınacak.", "will be moved to the Trash."),
+    // the notification area is the system tray on Linux
+    (
+        "Bildirim alanında bir simge kalır; yeni pencere anında açılır",
+        "Sistem tepsisinde bir simge kalır; yeni pencere anında açılır",
+        "An icon stays in the system tray; new windows open instantly",
+    ),
 ];
 
 /// The Linux text for `key` in Turkish or English, if it differs there.
