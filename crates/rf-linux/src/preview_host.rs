@@ -122,3 +122,9 @@ fn bgr(c: u32) -> u32 {
 pub fn hide() {}
 /// Moves the visible host (window moved / pane resized) without reloading.
 pub fn reposition(rect: crate::RECT) {}
+
+/// Whether the system has a hardware video decoder for `codec` (Windows: Media Foundation,
+/// for 4K and past-1080p60 video). Linux: no; DirectLook decodes on the CPU as before.
+pub fn mf_decodes(_codec: &str) -> bool {
+    false
+}

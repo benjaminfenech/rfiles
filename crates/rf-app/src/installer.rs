@@ -21,7 +21,10 @@ pub const APP_ID: &str = "velopack.rustyfiles";
 #[cfg(windows)]
 pub fn startup() {
     VelopackApp::build()
-        .on_after_install_fast_callback(|_| after_install_or_update())
+        .on_after_install_fast_callback(|_| {
+            after_install_or_update();
+            dialogs_on_by_default();
+        })
         .on_after_update_fast_callback(|_| after_install_or_update())
         .on_before_uninstall_fast_callback(|_| before_uninstall())
         .run();
@@ -45,6 +48,18 @@ fn after_install_or_update() {
     if rf_win::dialog_reg::is_enabled(rf_win::dialog_reg::CLASSES) {
         if let Some(dll) = crate::dialog_dll() {
             rf_win::dialog_reg::point_to(&dll, rf_win::dialog_reg::CLASSES);
+        }
+    }
+}
+
+/// A fresh install turns on rustyfiles' Open/Save dialogs (per user, no admin rights; Settings →
+/// Advanced turns them off). Updates don't, so someone who turned them off keeps them off.
+#[cfg(windows)]
+fn dialogs_on_by_default() {
+    let classes = rf_win::dialog_reg::CLASSES;
+    if !rf_win::dialog_reg::is_enabled(classes) {
+        if let Some(dll) = crate::dialog_dll() {
+            let _ = rf_win::dialog_reg::enable(&dll, classes);
         }
     }
 }
@@ -74,7 +89,8 @@ pub enum State {
     Idle,
     Checking,
     UpToDate,
-    Downloading(String),
+    /// Version and percent downloaded.
+    Downloading(String, u8),
     /// Downloaded: applied on restart (or at the next start anyway).
     Ready(String),
     Failed(String),
@@ -89,7 +105,36 @@ pub fn state() -> State {
 }
 
 fn set(s: State) {
+    if matches!(s, State::Ready(_)) && !matches!(state(), State::Ready(_)) {
+        *READY_SINCE.lock().unwrap() = Some(std::time::Instant::now());
+    }
     *STATE.lock().unwrap() = Some(s);
+}
+
+static READY_SINCE: std::sync::Mutex<Option<std::time::Instant>> = std::sync::Mutex::new(None);
+
+/// When the downloaded update became ready (the Status Center button pulses for a few seconds).
+pub fn ready_since() -> Option<std::time::Instant> {
+    *READY_SINCE.lock().unwrap()
+}
+
+/// A check or download is running (the About page redraws while this is true).
+pub fn busy() -> bool {
+    matches!(state(), State::Checking | State::Downloading(..))
+}
+
+/// `RUSTYFILES_FAKE_UPDATE=1` (test copies): check, download 0→100 % and "ready" without a network,
+/// to see the About page's states.
+#[cfg(windows)]
+fn fake_check() {
+    use std::thread::sleep;
+    set(State::Checking);
+    sleep(Duration::from_millis(1500));
+    for pct in (0..=100).step_by(4) {
+        set(State::Downloading("9.9.9".into(), pct));
+        sleep(Duration::from_millis(120));
+    }
+    set(State::Ready("9.9.9".into()));
 }
 
 #[cfg(windows)]
@@ -125,6 +170,9 @@ pub fn check() {
 /// Looks for an update and downloads it. Blocking: call off the UI thread.
 #[cfg(windows)]
 pub fn check() {
+    if std::env::var_os("RUSTYFILES_FAKE_UPDATE").is_some() {
+        return fake_check();
+    }
     let Some(um) = manager() else {
         set(State::NotInstalled);
         return;
@@ -137,8 +185,18 @@ pub fn check() {
     match um.check_for_updates() {
         Ok(UpdateCheck::UpdateAvailable(info)) => {
             let v = info.TargetFullRelease.Version.clone();
-            set(State::Downloading(v.clone()));
-            match um.download_updates(&info, None) {
+            set(State::Downloading(v.clone(), 0));
+            // Velopack reports 0–100 on a channel; mirror it into the state while it downloads
+            let (tx, rx) = std::sync::mpsc::channel::<i16>();
+            let pv = v.clone();
+            let progress = std::thread::spawn(move || {
+                for pct in rx {
+                    set(State::Downloading(pv.clone(), pct.clamp(0, 100) as u8));
+                }
+            });
+            let result = um.download_updates(&info, Some(tx));
+            let _ = progress.join();
+            match result {
                 Ok(()) => {
                     *PENDING.lock().unwrap() = Some(*info);
                     set(State::Ready(v));
@@ -151,22 +209,28 @@ pub fn check() {
     }
 }
 
-/// Starts the background checks: soon after start, then every 12 hours (when auto-download is
+/// Starts the background checks: soon after start, then every 2 hours (when auto-download is
 /// on; the Check button works either way). Calls `changed` on the UI thread after each.
 pub fn spawn_checks(cx: &mut gpui_kit::App, changed: impl Fn(&mut gpui_kit::App) + 'static) {
-    if std::env::var_os("RUSTYFILES_CONFIG_DIR").is_some() {
-        return; // test copies
+    // test copies don't look for updates, unless they fake one (RUSTYFILES_FAKE_UPDATE)
+    let fake = std::env::var_os("RUSTYFILES_FAKE_UPDATE").is_some();
+    if std::env::var_os("RUSTYFILES_CONFIG_DIR").is_some() && !fake {
+        return;
     }
     cx.spawn(async move |cx| {
-        let mut wait = Duration::from_secs(30);
+        let mut wait = Duration::from_secs(if fake { 2 } else { 30 });
         loop {
             cx.background_executor().timer(wait).await;
-            wait = Duration::from_secs(12 * 3600);
+            // a file manager stays open for days: a long gap meant releases waited a day to arrive
+            // (GitHub allows 60 unauthenticated calls an hour; this is one call every two hours)
+            wait = Duration::from_secs(2 * 3600);
             let auto = cx.update(|cx| cx.global::<crate::settings::Settings>().auto_update);
             if !auto {
                 continue;
             }
-            cx.background_executor().spawn(async { check() }).await;
+            let run = cx.background_executor().spawn(async { check() });
+            redraw_while_busy(cx).await;
+            run.await;
             cx.update(|cx| changed(cx));
         }
     })
@@ -176,6 +240,16 @@ pub fn spawn_checks(cx: &mut gpui_kit::App, changed: impl Fn(&mut gpui_kit::App)
 /// Nothing is ever downloaded on Linux.
 #[cfg(not(windows))]
 pub fn restart_to_update() {}
+
+/// Redraws the windows a few times a second while a check or download runs (progress on About).
+pub async fn redraw_while_busy(cx: &mut gpui_kit::AsyncApp) {
+    cx.background_executor().timer(Duration::from_millis(50)).await;
+    while busy() {
+        cx.update(|cx| cx.refresh_windows());
+        cx.background_executor().timer(Duration::from_millis(150)).await;
+    }
+    cx.update(|cx| cx.refresh_windows());
+}
 
 /// Restarts into the downloaded update. DirectLook is asked to quit first (its exe is replaced).
 #[cfg(windows)]

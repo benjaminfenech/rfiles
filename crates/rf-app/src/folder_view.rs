@@ -283,6 +283,9 @@ pub struct FolderView {
     reselect: Option<String>,
     /// Start inline rename on `reselect` once it appears (new folder flow).
     rename_after_load: bool,
+    /// Items that just arrived (a paste): selected as they show up in the list, until all are
+    /// there or the deadline passes (the watcher can lag behind the copy).
+    reselect_many: Option<(Vec<String>, Instant)>,
     /// Begin inline rename on the next render (needs a Window).
     pending_rename: bool,
     /// Shown by the Open/Save dialog: opening a file picks it instead.
@@ -418,6 +421,7 @@ impl FolderView {
             focus: cx.focus_handle(),
             reselect: None,
             rename_after_load: false,
+            reselect_many: None,
             pending_rename: false,
             picking: false,
             name_hit: false,
@@ -1120,16 +1124,30 @@ impl FolderView {
                         let _ = tx.unbounded_send(Msg::Done(Ok(n)));
                         return;
                     }
-                    // Windows Search index first (names + contents + AQS) where the folder is
-                    // indexed; our own walker otherwise, for wildcards, or if the index fails
+                    // 1. our name index (milliseconds) when it covers this folder
                     let glob = query.contains(['*', '?']);
+                    let mut seen: Option<std::collections::HashSet<String>> = None;
+                    let mut found = 0usize;
+                    let t_index = std::time::Instant::now();
+                    if let Some(paths) = rf_win::indexer::search(&query, &root, include_hidden, 50_000) {
+                        let looked_up = t_index.elapsed();
+                        found = send_index_hits(&paths, &tx, &cancel);
+                        log::info!("search: the index answered \"{query}\" in {} with {} hits ({looked_up:?} to find, {:?} with details)", root.display(), found, t_index.elapsed());
+                        seen = Some(paths.iter().map(|p| p.to_string_lossy().to_lowercase()).collect());
+                    }
+                    // 2. Windows Search (names + contents + AQS) where the folder is indexed: with
+                    //    our index, only what it adds (matches inside files)
                     if use_index && !glob && rf_win::wsearch::is_indexed(&root) {
                         let tx2 = tx.clone();
+                        let seen2 = seen.as_ref();
                         let r = rf_win::wsearch::search(&root, &query, 50_000, &|| cancel.load(Ordering::Relaxed), &mut |hits| {
                             let mut es = Vec::with_capacity(hits.len());
                             let mut ps = Vec::with_capacity(hits.len());
                             for h in hits {
                                 if !include_hidden && h.entry.is_hidden() {
+                                    continue;
+                                }
+                                if seen2.is_some_and(|s| s.contains(&h.path.to_string_lossy().to_lowercase())) {
                                     continue;
                                 }
                                 let parent: Arc<std::path::Path> = h.path.parent().unwrap_or(&h.path).into();
@@ -1140,12 +1158,18 @@ impl FolderView {
                         });
                         match r {
                             Ok(n) => {
-                                let _ = tx.unbounded_send(Msg::Done(Ok(n)));
+                                let _ = tx.unbounded_send(Msg::Done(Ok(n + found)));
                                 return;
                             }
-                            Err(e) => log::warn!("index search failed, walking instead: {e:#}"),
+                            Err(e) if seen.is_none() => log::warn!("index search failed, walking instead: {e:#}"),
+                            Err(e) => log::warn!("Windows Search failed: {e:#}"),
                         }
                     }
+                    if seen.is_some() {
+                        let _ = tx.unbounded_send(Msg::Done(Ok(found)));
+                        return;
+                    }
+                    // 3. walking the disk
                     let q = rf_win::search::SearchQuery { root, pattern: query, include_hidden, max_results: 50_000 };
                     let tx2 = tx.clone();
                     let r = rf_win::search::search(&q, &|| cancel.load(Ordering::Relaxed), &mut |hits| {
@@ -1265,12 +1289,31 @@ impl FolderView {
             self.visible.extend(start..self.entries.len() as u32);
         }
         if done {
+            self.resort_for_sizes();
             self.apply_reselect(cx);
         }
         cx.notify();
     }
 
     fn apply_reselect(&mut self, cx: &mut Context<Self>) {
+        if let Some((names, until)) = self.reselect_many.take() {
+            let want: HashSet<&str> = names.iter().map(String::as_str).collect();
+            let found: Vec<usize> = self.visible.iter().enumerate().filter(|&(_, &i)| want.contains(&*self.entries[i as usize].name)).map(|(vi, _)| vi).collect();
+            if !found.is_empty() {
+                self.selected.clear();
+                for &vi in &found {
+                    self.selected.insert(self.visible[vi]);
+                }
+                self.cursor = found.first().copied();
+                self.anchor = found.first().copied();
+                self.scroll.scroll_to_item(self.list_row(found[0]), ScrollStrategy::Center);
+                cx.notify();
+            }
+            // keep waiting for the rest while the watcher catches up
+            if found.len() < want.len() && Instant::now() < until {
+                self.reselect_many = Some((names, until));
+            }
+        }
         if let Some(name) = self.reselect.take() {
             if let Some(vi) = self.visible.iter().position(|&i| &*self.entries[i as usize].name == name) {
                 self.select_only(vi);
@@ -1322,6 +1365,8 @@ impl FolderView {
         if !self.try_install_view(view) {
             self.rebuild_visible();
         }
+        // measured folder sizes go back into the fresh entries (before the cursor is placed)
+        self.resort_for_sizes();
         self.selected = self
             .entries
             .iter()
@@ -1470,6 +1515,24 @@ impl FolderView {
         let Location::Path(p) = self.location().clone() else { return };
         let (l, adaptive) = match crate::layouts::get(&p, cx) {
             Some(l) => (l, false),
+            // Adaptive, like Explorer's folder types: Pictures and Videos as a grid, Downloads
+            // newest first in date groups (the rest is decided once the folder is listed)
+            None if s.default_view == crate::settings::DefaultView::Adaptive && known_kind(&p).is_some() => {
+                let grid = known_kind(&p) != Some(KnownKind::Downloads);
+                (
+                    crate::layouts::FolderLayout {
+                        view: if grid { 1 } else { 0 },
+                        sort: if grid { s.default_sort } else { rf_core::SortKey::Modified },
+                        desc: if grid { s.default_sort_desc } else { true },
+                        dirs_first: s.folders_first,
+                        files_first: !s.folders_first && s.files_first,
+                        row_size: DEFAULT_ROW_SIZE,
+                        grid_size: DEFAULT_GRID_SIZE,
+                        group: if grid { crate::settings_view::group_ix(&s.default_group) as u8 } else { 3 },
+                    },
+                    false,
+                )
+            }
             None => (
                 crate::layouts::FolderLayout {
                     view: match s.default_view {
@@ -1511,6 +1574,44 @@ impl FolderView {
         self.adaptive_pending = adaptive;
     }
 
+}
+
+/// Known folders with a layout of their own in adaptive mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum KnownKind {
+    Pictures,
+    Downloads,
+}
+
+/// Pictures and Videos (and folders inside them), or Downloads itself.
+fn known_kind(p: &std::path::Path) -> Option<KnownKind> {
+    use rf_win::known::KnownFolder;
+    static PATHS: std::sync::OnceLock<Vec<(std::path::PathBuf, KnownKind)>> = std::sync::OnceLock::new();
+    let paths = PATHS.get_or_init(|| {
+        [(KnownFolder::Pictures, KnownKind::Pictures), (KnownFolder::Videos, KnownKind::Pictures), (KnownFolder::Downloads, KnownKind::Downloads)]
+            .into_iter()
+            .filter_map(|(k, kind)| k.path().map(|p| (p, kind)))
+            .collect()
+    });
+    // Linux: paths are case-sensitive and '/'-separated; compare them part by part
+    #[cfg(unix)]
+    return paths.iter().find_map(|(root, kind)| match kind {
+        KnownKind::Downloads => (p == root.as_path()).then_some(*kind),
+        KnownKind::Pictures => p.starts_with(root).then_some(*kind),
+    });
+    #[allow(unreachable_code)]
+    let lower = |q: &std::path::Path| q.to_string_lossy().to_lowercase();
+    let here = lower(p);
+    paths.iter().find_map(|(root, kind)| {
+        let r = lower(root);
+        match kind {
+            KnownKind::Downloads => (here == r).then_some(*kind),
+            KnownKind::Pictures => (here == r || here.starts_with(&format!("{r}\\"))).then_some(*kind),
+        }
+    })
+}
+
+impl FolderView {
     /// Adaptive layout: a folder of mostly pictures and videos opens as a grid.
     fn apply_adaptive(&mut self) {
         if !self.adaptive_pending {
@@ -2132,6 +2233,35 @@ impl FolderView {
         (self.selected.len(), size, has_dir)
     }
 
+    /// Folders whose size was measured carry it in their entry, so sorting by Size puts them
+    /// among the files by their real size. Returns whether anything changed.
+    fn apply_dir_sizes(&mut self) -> bool {
+        if self.folder_sizes.is_empty() {
+            return false;
+        }
+        let mut changed = false;
+        for i in 0..self.entries.len() {
+            if !self.entries[i].is_dir() {
+                continue;
+            }
+            let Some(p) = self.path_of(i as u32) else { continue };
+            if let Some(DirSize::Done(b)) = self.folder_sizes.get(&p) {
+                if self.entries[i].size != *b {
+                    self.entries[i].size = *b;
+                    changed = true;
+                }
+            }
+        }
+        changed
+    }
+
+    /// Re-sorts when measured folder sizes changed what a Size sort shows.
+    fn resort_for_sizes(&mut self) {
+        if self.apply_dir_sizes() && self.sort.key == SortKey::Size {
+            self.rebuild_visible();
+        }
+    }
+
     /// Narrow panes (dual pane, small windows) drop columns: Type first, then Date.
     /// Size of folder `p` as far as known; asks for it when it was never requested. Requests of
     /// one frame start together as one batch (all folders walk in parallel, each shows up as soon
@@ -2182,6 +2312,7 @@ impl FolderView {
                         }
                         v.size_batches.retain(|(b, _)| !b.finished());
                         if changed {
+                            v.resort_for_sizes();
                             cx.notify();
                         }
                         let more = !v.size_batches.is_empty();
@@ -2282,6 +2413,16 @@ impl FolderView {
     ) {
         self.renaming = r;
         self._rename_sub = sub;
+    }
+
+    /// Select these names (in the current folder) as soon as they're listed: a paste or a copy
+    /// into this folder shows what arrived, like Explorer does.
+    pub(crate) fn select_when_listed(&mut self, names: Vec<String>, cx: &mut Context<Self>) {
+        if names.is_empty() {
+            return;
+        }
+        self.reselect_many = Some((names, Instant::now() + std::time::Duration::from_secs(6)));
+        self.soft_reload(cx);
     }
 
     pub(crate) fn set_reselect(&mut self, name: String) {
@@ -2425,6 +2566,27 @@ impl FolderView {
         Cols { modified, created, kind, size, tags, git, sync, commit: [message, author, date, hash] }
     }
 
+    /// Width the visible Details columns leave unused (what [`Self::visible_cols`] still had free).
+    fn spare_width(&self, cx: &App) -> f32 {
+        let vis = self.visible_cols(cx);
+        let w = self.col_widths(cx);
+        let mut used = 0.;
+        for (on, width) in [(vis.modified, w[0]), (vis.created, w[1]), (vis.size, w[3]), (vis.tags, w[4]), (vis.git, w[5]), (vis.sync, w[6])] {
+            if on {
+                used += width;
+            }
+        }
+        if vis.kind {
+            used += f32::from(self.type_col_w(cx));
+        }
+        for (i, on) in vis.commit.iter().enumerate() {
+            if *on {
+                used += w[7 + i];
+            }
+        }
+        (f32::from(self.content_width) - 180. - 24. - used).max(0.)
+    }
+
     fn render_header(&self, p: &Palette, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         let w = self.col_widths(cx);
         let search = self.is_search();
@@ -2453,7 +2615,17 @@ impl FolderView {
         let (show_tags, show_git, show_sync) = (vis.tags, vis.git, vis.sync);
         // columns that don't sort: plain label + resize handle
         let plain = |id: &'static str, label: &'static str, width: f32| {
-            h_flex().id(id).h_full().px_2().items_center().w(px(width)).flex_shrink_0().text_color(p.text_secondary).child(label).relative()
+            h_flex()
+                .id(id)
+                .h_full()
+                .px_2()
+                .items_center()
+                .w(px(width))
+                .flex_shrink_0()
+                .overflow_hidden()
+                .text_color(p.text_secondary)
+                .child(div().min_w_0().whitespace_nowrap().overflow_hidden().text_ellipsis().child(label))
+                .relative()
         };
         let col = |id: &'static str, label: &'static str, key: SortKey, w: Option<Pixels>, right: bool, cx: &mut Context<Self>| {
             let active = self.sort.key == key;
@@ -2469,8 +2641,9 @@ impl FolderView {
                 .hover(|s| s.bg(p.hover))
                 .text_color(if active { p.text } else { p.text_secondary })
                 .when(right, |d| d.justify_end())
-                .child(label)
-                .when(active, |d| d.child(Icon::new(arrow).size(px(12.)).text_color(p.text_secondary)))
+                .overflow_hidden()
+                .child(div().min_w_0().whitespace_nowrap().overflow_hidden().text_ellipsis().child(label))
+                .when(active, |d| d.child(Icon::new(arrow).size(px(12.)).flex_shrink_0().text_color(p.text_secondary)))
                 .on_click(cx.listener(move |this, _, _, cx| this.set_sort(key, cx)));
             d = match w {
                 Some(w) => d.w(w).flex_shrink_0(),
@@ -2488,7 +2661,10 @@ impl FolderView {
             .on_drag_move(cx.listener(|this, e: &DragMoveEvent<ColumnResize>, _, cx| {
                 let Some((ix, sx, sw)) = this.col_drag else { return };
                 let mut w = this.col_widths(cx);
-                w[ix] = (sw - (f32::from(e.event.position.x) - sx)).clamp(70., 600.).round();
+                // no wider than the room left: a column that no longer fits is hidden, so
+                // widening one would make it (or its neighbour) vanish under the pointer
+                let most = (w[ix] + this.spare_width(cx)).clamp(w[ix].min(600.), 600.);
+                w[ix] = (sw - (f32::from(e.event.position.x) - sx)).clamp(70., most.max(70.)).round();
                 this.col_live = Some(w);
                 this.schedule_col_save(cx);
                 cx.notify();
@@ -2865,6 +3041,8 @@ impl FolderView {
                         .px_2()
                         .text_color(p.text_secondary)
                         .whitespace_nowrap()
+                        .overflow_hidden()
+                        .text_ellipsis()
                         .child(format::datetime(e.modified_ms))
                 }))
                 .children(show_created.then(|| {
@@ -2874,6 +3052,8 @@ impl FolderView {
                         .px_2()
                         .text_color(p.text_secondary)
                         .whitespace_nowrap()
+                        .overflow_hidden()
+                        .text_ellipsis()
                         .child(format::datetime(e.created_ms))
                 }))
                 .when(show_type, |row| row.child(
@@ -3569,4 +3749,52 @@ fn trace_live() -> bool {
 fn is_block_device(p: &std::path::Path) -> bool {
     use std::os::unix::fs::FileTypeExt;
     p.starts_with("/dev/") && std::fs::metadata(p).is_ok_and(|m| m.file_type().is_block_device())
+}
+
+#[cfg(test)]
+mod known_kind_tests {
+    use super::{KnownKind, known_kind};
+    use rf_win::known::KnownFolder;
+
+    #[test]
+    fn pictures_and_downloads_are_recognised() {
+        let (Some(pics), Some(dl)) = (KnownFolder::Pictures.path(), KnownFolder::Downloads.path()) else { return };
+        assert_eq!(known_kind(&pics), Some(KnownKind::Pictures));
+        assert_eq!(known_kind(&pics.join("Screenshots")), Some(KnownKind::Pictures));
+        assert_eq!(known_kind(&dl), Some(KnownKind::Downloads));
+        // only Downloads itself gets date groups, not the folders inside it
+        assert_eq!(known_kind(&dl.join("project")), None);
+        // a sibling whose name starts the same is not inside Pictures
+        let sibling = std::path::PathBuf::from(format!("{} old", pics.display()));
+        assert_eq!(known_kind(&sibling), None);
+    }
+}
+
+/// Name-index hits to rows: each path is looked up (size, dates, attributes) on 8 threads, 2 000
+/// at a time, and sent in order; paths gone since they were indexed are left out. Returns how
+/// many were sent.
+fn send_index_hits(paths: &[PathBuf], tx: &mpsc::UnboundedSender<Msg>, cancel: &AtomicBool) -> usize {
+    let ms = |t: std::io::Result<std::time::SystemTime>| t.ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map_or(0, |d| d.as_millis() as i64);
+    let row = |p: &PathBuf| -> Option<(Entry, Arc<std::path::Path>)> {
+        let m = std::fs::symlink_metadata(p).ok()?;
+        let kind = if m.is_dir() { rf_core::EntryKind::Dir } else { rf_core::EntryKind::File };
+        let name = p.file_name()?.to_string_lossy().into_owned();
+        let parent: Arc<std::path::Path> = p.parent().unwrap_or(p).into();
+        Some((Entry::new(&name, kind, if m.is_dir() { 0 } else { m.len() }, ms(m.modified()), ms(m.created()), crate::sys::file_attributes(p, &m)), parent))
+    };
+    let mut sent = 0usize;
+    for batch in paths.chunks(2000) {
+        if cancel.load(Ordering::Relaxed) {
+            break;
+        }
+        let per = batch.len().div_ceil(8).max(1);
+        let parts: Vec<Vec<(Entry, Arc<std::path::Path>)>> = std::thread::scope(|s| {
+            let handles: Vec<_> = batch.chunks(per).map(|c| s.spawn(move || c.iter().filter_map(row).collect::<Vec<_>>())).collect();
+            handles.into_iter().map(|h| h.join().unwrap_or_default()).collect()
+        });
+        let (es, ps): (Vec<Entry>, Vec<Arc<std::path::Path>>) = parts.into_iter().flatten().unzip();
+        sent += es.len();
+        let _ = tx.unbounded_send(Msg::Hits(es, ps));
+    }
+    sent
 }

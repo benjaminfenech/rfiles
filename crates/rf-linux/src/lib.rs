@@ -51,6 +51,8 @@ pub mod fileinfo;
 /// Linux only: org.freedesktop.FileManager1 ("Show in folder") while we are the default.
 pub mod fm_service;
 pub mod udisks;
+pub mod indexer;
+pub mod nameindex;
 pub mod remote;
 pub mod jumplist;
 pub mod wsearch;

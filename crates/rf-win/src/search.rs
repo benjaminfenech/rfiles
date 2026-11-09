@@ -16,7 +16,7 @@ use windows::Win32::Storage::FileSystem::{
     FIND_FIRST_EX_LARGE_FETCH, FindClose, FindExInfoBasic, FindExSearchNameMatch, FindFirstFileExW, FindNextFileW,
     WIN32_FIND_DATAW,
 };
-use windows::Win32::System::Threading::{GetCurrentThread, SetThreadPriority, THREAD_MODE_BACKGROUND_BEGIN};
+use windows::Win32::System::Threading::{GetCurrentThread, SetThreadPriority, THREAD_PRIORITY_BELOW_NORMAL};
 use windows::core::PCWSTR;
 
 use crate::listing::to_entry;
@@ -53,18 +53,20 @@ pub struct SearchStats {
 
 /// Lowercases and drops the combining dot above (U+0307) that `"İ".to_lowercase()` yields, so
 /// "İ" and "i" compare equal.
+/// Case-folded for matching. Dotless ı counts as i (and İ, lowered to i + combining dot, loses
+/// the dot), so "IŞIK", "ışık" and "Işık" find each other, as Windows' own comparison does.
 fn fold(s: &str) -> Vec<char> {
-    s.to_lowercase().chars().filter(|&c| c != '\u{307}').collect()
+    s.to_lowercase().chars().filter(|&c| c != '\u{307}').map(|c| if c == 'ı' { 'i' } else { c }).collect()
 }
 
-enum Matcher {
+pub(crate) enum Matcher {
     All,
     Substr(Vec<char>),
     Glob(Vec<char>),
 }
 
 impl Matcher {
-    fn new(pattern: &str) -> Self {
+    pub(crate) fn new(pattern: &str) -> Self {
         let p = fold(pattern.trim());
         if p.is_empty() {
             Matcher::All
@@ -75,7 +77,7 @@ impl Matcher {
         }
     }
 
-    fn is_match(&self, name: &str) -> bool {
+    pub(crate) fn is_match(&self, name: &str) -> bool {
         match self {
             Matcher::All => true,
             Matcher::Substr(p) => {
@@ -226,13 +228,16 @@ pub fn search(
     let (dirs, entries, skipped) = (AtomicUsize::new(0), AtomicUsize::new(0), AtomicUsize::new(0));
     let (tx, rx) = unbounded::<Vec<SearchHit>>();
 
-    let threads = std::thread::available_parallelism().map_or(2, |n| (n.get() / 2).clamp(2, 6));
+    // as many as the folder size engine (measured there: 8 is the sweet spot on NVMe)
+    let threads = std::thread::available_parallelism().map_or(4, |n| n.get()).clamp(4, 8);
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(threads)
         .thread_name(|i| format!("rf-search-{i}"))
         .start_handler(|_| unsafe {
-            // Lowers CPU and I/O priority for this worker for its whole life.
-            let _ = SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+            // Below-normal CPU priority (the UI thread always wins). Not background mode: that
+            // also drops the I/O priority to the floor, and the walk crawled at ~30 000
+            // entries a second.
+            let _ = SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
         })
         .build()?;
 

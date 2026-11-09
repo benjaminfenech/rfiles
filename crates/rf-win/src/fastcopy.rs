@@ -11,6 +11,11 @@
 //! * Small files are spread over folders: threads writing into the same folder wait on its
 //!   lock (20 000 files: ~3 400/s in folder order, ~6 500/s spread).
 //! * Pause, a speed limit and byte-accurate progress run in CopyFile2's progress callback.
+//! * Crash-safe: the planned job list goes to a journal (synced to disk) before the first byte
+//!   is copied, and finished files are recorded as they complete. If the app dies mid-copy,
+//!   [`interrupted`] finds the job on the next start and [`resume`] carries it on with the same
+//!   decisions (conflicts aren't asked again); every file the journal or the destination says
+//!   is done is re-checked against its source before it's skipped.
 //!
 //! Left to the shell engine, so behavior stays Explorer's where it matters: items containing
 //! links / junctions, a folder into itself, paths that aren't plain file system paths, and
@@ -23,12 +28,12 @@ use std::cell::Cell;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 use std::sync::atomic::{AtomicI32, AtomicU64, AtomicUsize, Ordering};
 use std::time::{Duration, Instant, SystemTime};
 
 use windows::Win32::Storage::FileSystem::{
-    COPY_FILE_FAIL_IF_EXISTS, COPY_FILE_NO_BUFFERING, COPYFILE2_CALLBACK_CHUNK_FINISHED, COPYFILE2_EXTENDED_PARAMETERS, COPYFILE2_MESSAGE,
+    COPY_FILE_FAIL_IF_EXISTS, COPY_FILE_RESTARTABLE, COPYFILE2_CALLBACK_CHUNK_FINISHED, COPYFILE2_EXTENDED_PARAMETERS, COPYFILE2_MESSAGE,
     COPYFILE2_MESSAGE_ACTION, COPYFILE2_PROGRESS_CANCEL, COPYFILE2_PROGRESS_CONTINUE, CopyFile2, FILE_ATTRIBUTE_READONLY, FILE_ATTRIBUTE_REPARSE_POINT,
     FILE_FLAGS_AND_ATTRIBUTES, GetFileAttributesW, MOVE_FILE_FLAGS, MOVEFILE_REPLACE_EXISTING, MoveFileExW, SetFileAttributesW,
 };
@@ -38,9 +43,13 @@ use crate::fileops::{Tracker, Transfer};
 use crate::wide::long_path;
 
 /// Files above this size are copied unbuffered (no point filling the cache with them).
-const UNBUFFERED: u64 = 256 << 20;
 /// Files above this size are started first (they set the pace; small ones fill the gaps).
 const BIG: u64 = 8 << 20;
+/// With a journal, files above this size are copied restartably (Windows keeps the progress in
+/// the target), so a copy cut off by a crash carries on mid-file instead of starting over. The
+/// bookkeeping costs about 30 % (1 GB: 364 ms against 285 ms), and a file under 2 GB copies
+/// again in about a second, so only the files where carrying on saves real time use it.
+const RESTARTABLE_MIN: u64 = 2 << 30;
 /// A rename counts like this many bytes of progress.
 const RENAME_WEIGHT: u64 = 64 << 10;
 
@@ -98,6 +107,8 @@ struct Job {
     op: Op,
     /// The destination exists and is to be replaced.
     replace: bool,
+    /// A restartable copy cut off earlier: carry it on where it stopped.
+    resume: bool,
 }
 
 /// What a transfer will do, worked out before anything is written.
@@ -188,7 +199,7 @@ impl Plan {
         match there {
             None if rename => {
                 self.taken.insert(key(dst));
-                self.jobs.push(Job { src: src.into(), dst: dst.into(), size: RENAME_WEIGHT, op: Op::Rename, replace: false });
+                self.jobs.push(Job { src: src.into(), dst: dst.into(), size: RENAME_WEIGHT, op: Op::Rename, replace: false, resume: false });
                 self.undo.push((src.into(), dst.into()));
             }
             None if meta.is_dir() => {
@@ -197,7 +208,7 @@ impl Plan {
             }
             None => {
                 self.taken.insert(key(dst));
-                self.jobs.push(Job { src: src.into(), dst: dst.into(), size: meta.len(), op: Op::Copy, replace: false });
+                self.jobs.push(Job { src: src.into(), dst: dst.into(), size: meta.len(), op: Op::Copy, replace: false, resume: false });
                 self.undo.push((src.into(), dst.into()));
             }
             // folder onto folder: merge, item by item
@@ -229,7 +240,7 @@ impl Plan {
                     check_tree(src)?;
                 }
                 let size = if rename { RENAME_WEIGHT } else { meta.len() };
-                self.conflicts.push((c, Job { src: src.into(), dst: dst.into(), size, op: if rename { Op::Rename } else { Op::Copy }, replace: false }));
+                self.conflicts.push((c, Job { src: src.into(), dst: dst.into(), size, op: if rename { Op::Rename } else { Op::Copy }, replace: false, resume: false }));
             }
         }
         Ok(())
@@ -254,7 +265,7 @@ impl Plan {
                     self.new_dirs.push((a.clone(), b.clone()));
                     stack.push((a, b));
                 } else {
-                    self.jobs.push(Job { src: a, dst: b, size: m.len(), op: Op::Copy, replace: false });
+                    self.jobs.push(Job { src: a, dst: b, size: m.len(), op: Op::Copy, replace: false, resume: false });
                 }
             }
         }
@@ -360,6 +371,11 @@ fn order(jobs: Vec<Job>) -> Vec<Job> {
 /// Progress, pause, speed limit and cancel, shared by the copy threads.
 struct Run<'a> {
     tracker: &'a Tracker,
+    /// In temporary names (".name.<tag>.rfpart"): the journal's id (the same when the job is
+    /// resumed, so a restartable copy finds its partial file again), else the process id.
+    tag: String,
+    /// Journaled: big files are copied restartably.
+    restartable: bool,
     total: u64,
     done: AtomicU64,
     /// Turned non-zero to stop CopyFile2 (it removes the partial file).
@@ -439,11 +455,14 @@ unsafe extern "system" fn on_chunk(msg: *const COPYFILE2_MESSAGE, ctx: *const co
     if ctx.run.cancelled() { COPYFILE2_PROGRESS_CANCEL } else { COPYFILE2_PROGRESS_CONTINUE }
 }
 
-fn copy_file(src: &Path, dst: &Path, size: u64, run: &Run) -> windows::core::Result<()> {
+/// `restart`: carry on a restartable copy into an existing partial `dst`.
+fn copy_file(src: &Path, dst: &Path, size: u64, run: &Run, restart: bool) -> windows::core::Result<()> {
     let (s, d) = (long_path(src), long_path(dst));
-    let mut flags = COPY_FILE_FAIL_IF_EXISTS.0;
-    if size >= UNBUFFERED {
-        flags |= COPY_FILE_NO_BUFFERING.0;
+    // Buffered, like Explorer: unbuffered writes of big files measured twice as slow
+    // (1 GB: 755 ms against Windows' 348 ms; buffered 285 against 265).
+    let mut flags = if restart { 0 } else { COPY_FILE_FAIL_IF_EXISTS.0 };
+    if run.restartable && size >= RESTARTABLE_MIN {
+        flags |= COPY_FILE_RESTARTABLE.0;
     }
     let ctx = FileCtx { run, name: src, sent: Cell::new(0) };
     let params = COPYFILE2_EXTENDED_PARAMETERS {
@@ -477,9 +496,28 @@ fn move_into_place(from: &Path, to: &Path, replace: bool) -> windows::core::Resu
 }
 
 /// A temporary name next to `dst` for a copy that replaces it.
-fn part_name(dst: &Path) -> PathBuf {
+fn part_name(dst: &Path, tag: &str) -> PathBuf {
     let name = dst.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-    dst.with_file_name(format!(".{name}.{}.rfpart", std::process::id()))
+    dst.with_file_name(format!(".{name}.{tag}.rfpart"))
+}
+
+/// A copy into `to`; a resumed one carries on, and starts over if Windows can't (the partial
+/// file is removed first).
+fn copy_or_resume(j: &Job, to: &Path, run: &Run) -> windows::core::Result<()> {
+    if j.resume && std::fs::symlink_metadata(to).is_ok() {
+        match copy_file(&j.src, to, j.size, run, true) {
+            Ok(()) => {
+                log::info!("fastcopy: carried on {} where it stopped", j.dst.display());
+                return Ok(());
+            }
+            Err(e) if run.cancelled() => return Err(e),
+            Err(e) => {
+                log::info!("fastcopy: resume of {} failed ({e}), copying it again", j.dst.display());
+                let _ = std::fs::remove_file(to);
+            }
+        }
+    }
+    copy_file(&j.src, to, j.size, run, false)
 }
 
 /// One job; `Err` = leave it to the shell.
@@ -491,14 +529,16 @@ fn run_job(j: &Job, run: &Run) -> windows::core::Result<()> {
             r
         }
         Op::Copy if j.replace => {
-            let tmp = part_name(&j.dst);
-            let _ = std::fs::remove_file(&tmp);
-            copy_file(&j.src, &tmp, j.size, run)?;
+            let tmp = part_name(&j.dst, &run.tag);
+            if !j.resume {
+                let _ = std::fs::remove_file(&tmp);
+            }
+            copy_or_resume(j, &tmp, run)?;
             move_into_place(&tmp, &j.dst, true).inspect_err(|_| {
                 let _ = std::fs::remove_file(&tmp);
             })
         }
-        Op::Copy => copy_file(&j.src, &j.dst, j.size, run),
+        Op::Copy => copy_or_resume(j, &j.dst, run),
     }
 }
 
@@ -516,9 +556,10 @@ pub struct Outcome {
     cancelled: bool,
 }
 
-/// Plans, asks about conflicts, and runs a transfer with our engine (`rename` = a move on one
-/// volume). Everything it can't do is in the returned leftovers.
-fn execute(sources: &[PathBuf], dest_dir: &Path, tracker: &Tracker, threads: usize, rename: bool) -> Outcome {
+/// Plans, asks about conflicts, journals the plan and runs a transfer with our engine (`rename`
+/// = a move on one volume). Everything it can't do is in the returned leftovers. The journal is
+/// returned open: the caller closes it once `finish` is done (a crash before that leaves it).
+fn execute(kind: Transfer, sources: &[PathBuf], dest_dir: &Path, tracker: &Tracker, threads: usize, rename: bool) -> (Outcome, Option<Jr>) {
     let mut p = plan(sources, dest_dir, rename);
     if !p.conflicts.is_empty() {
         let list: Vec<Conflict> = p.conflicts.iter().map(|c| c.0.clone()).collect();
@@ -528,9 +569,21 @@ fn execute(sources: &[PathBuf], dest_dir: &Path, tracker: &Tracker, threads: usi
         };
         match answers {
             Some(a) => p.resolve(&a),
-            None => return Outcome { cancelled: true, ..Default::default() },
+            None => return (Outcome { cancelled: true, ..Default::default() }, None),
         }
     }
+    p.jobs = order(std::mem::take(&mut p.jobs));
+    let jr = journal_start(kind, rename, tracker.verify_mode(), sources, dest_dir, &p);
+    let n = p.jobs.len();
+    let out = run_jobs(p, tracker, threads, jr.as_ref().map(|j| (j, (0..n).collect::<Vec<_>>())), Vec::new());
+    (out, jr)
+}
+
+/// Creates the plan's folders and runs its jobs (already ordered) on `threads` threads.
+/// `journal`: where finished jobs are recorded, with each job's index in the journal.
+/// `already`: (source, copy) pairs done before (a resumed job), checked and finished like the
+/// rest.
+fn run_jobs(mut p: Plan, tracker: &Tracker, threads: usize, journal: Option<(&Jr, Vec<usize>)>, already: Vec<(PathBuf, PathBuf)>) -> Outcome {
     for d in &p.dirs {
         if let Err(e) = std::fs::create_dir(d) {
             if e.kind() != std::io::ErrorKind::AlreadyExists {
@@ -538,9 +591,12 @@ fn execute(sources: &[PathBuf], dest_dir: &Path, tracker: &Tracker, threads: usi
             }
         }
     }
-    let jobs = order(std::mem::take(&mut p.jobs));
+    let jobs = std::mem::take(&mut p.jobs);
+    let tag = journal.as_ref().and_then(|(jr, _)| jr.path.file_stem()).map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| std::process::id().to_string());
     let run = Run {
         tracker,
+        tag,
+        restartable: journal.is_some(),
         total: jobs.iter().map(|j| j.size.max(1)).sum::<u64>().max(1),
         done: AtomicU64::new(0),
         cancel: AtomicI32::new(0),
@@ -561,7 +617,12 @@ fn execute(sources: &[PathBuf], dest_dir: &Path, tracker: &Tracker, threads: usi
                     let i = next.fetch_add(1, Ordering::Relaxed);
                     let Some(j) = jobs.get(i) else { return };
                     match run_job(j, &run) {
-                        Ok(()) => done.lock().unwrap().push(i),
+                        Ok(()) => {
+                            done.lock().unwrap().push(i);
+                            if let Some((jr, ix)) = &journal {
+                                jr.done(ix[i]);
+                            }
+                        }
                         Err(e) => {
                             if !run.cancelled() {
                                 log::info!("fastcopy: {} → shell ({e})", j.src.display());
@@ -574,6 +635,9 @@ fn execute(sources: &[PathBuf], dest_dir: &Path, tracker: &Tracker, threads: usi
         }
     });
     run.report(None);
+    if let Some((jr, _)) = &journal {
+        jr.sync();
+    }
     let cancelled = run.cancelled();
     // folder attributes (hidden, read-only, …) once their contents are in
     for (src, dst) in &p.new_dirs {
@@ -591,14 +655,19 @@ fn execute(sources: &[PathBuf], dest_dir: &Path, tracker: &Tracker, threads: usi
         .into_iter()
         .filter_map(|i| jobs[i].dst.parent().map(|d| (jobs[i].src.clone(), d.to_path_buf())))
         .collect();
-    let copied = done.into_inner().unwrap().into_iter().filter(|&i| jobs[i].op == Op::Copy).map(|i| (jobs[i].src.clone(), jobs[i].dst.clone())).collect();
+    let mut copied = already;
+    copied.extend(done.into_inner().unwrap().into_iter().filter(|&i| jobs[i].op == Op::Copy).map(|i| (jobs[i].src.clone(), jobs[i].dst.clone())));
     Outcome { undo: p.undo, failed, whole: p.whole, copied, src_dirs: p.src_dirs, cancelled }
 }
 
 /// Copies `sources` into `dest_dir` in parallel (conflicts as `tracker.ask` says; without it
 /// both are kept). Returns the undo pairs and the leftovers for the shell.
 pub fn copy(sources: &[PathBuf], dest_dir: &Path, tracker: &Tracker, threads: usize) -> Outcome {
-    execute(sources, dest_dir, tracker, threads, false)
+    let (out, jr) = execute(Transfer::Copy, sources, dest_dir, tracker, threads, false);
+    if let Some(j) = jr {
+        j.close();
+    }
+    out
 }
 
 /// Copy or move with our engine where it can, the shell engine for the rest. Returns like
@@ -614,13 +683,21 @@ pub fn transfer(kind: Transfer, sources: &[PathBuf], dest_dir: &Path, tracker: A
     let (here, there): (Vec<PathBuf>, Vec<PathBuf>) = sources.iter().cloned().partition(|s| kind == Transfer::Move && same_volume(s, dest_dir));
     let mut ok = true;
     if !here.is_empty() {
-        let out = execute(&here, dest_dir, &tracker, 4, true);
-        ok &= finish(Transfer::Move, &here, dest_dir, &tracker, out)?;
+        let (out, jr) = execute(Transfer::Move, &here, dest_dir, &tracker, 4, true);
+        let r = finish(Transfer::Move, &here, dest_dir, &tracker, out);
+        if let Some(j) = jr {
+            j.close();
+        }
+        ok &= r?;
     }
     if !there.is_empty() && !tracker.cancel.load(Ordering::Relaxed) {
         let threads = threads_for(&there, dest_dir);
-        let out = execute(&there, dest_dir, &tracker, threads, false);
-        ok &= finish(kind, &there, dest_dir, &tracker, out)?;
+        let (out, jr) = execute(kind, &there, dest_dir, &tracker, threads, false);
+        let r = finish(kind, &there, dest_dir, &tracker, out);
+        if let Some(j) = jr {
+            j.close();
+        }
+        ok &= r?;
     }
     for s in sources {
         if let Some(p) = s.parent() {
@@ -686,6 +763,253 @@ fn finish(kind: Transfer, sources: &[PathBuf], dest_dir: &Path, tracker: &Arc<Tr
         anyhow::bail!("{}: {} ({})", NOT_VERIFIED, bad.len(), names.join(", "));
     }
     Ok(ok)
+}
+
+// ---------------------------------------------------------------- crash-safe job journal
+//
+// One file per running plan in the journal folder, records (see `journal`):
+//   B kind(c|m) rename(0|1) verify(0|1|2) dest sources…   the job
+//   D dir · N src dst · S src_dir · W whole                 the plan's folders and shell items
+//   J op(c|r) replace(0|1) size src dst                    one per job, in run order
+//   P                                                       the plan is complete (synced)
+//   F index                                                 job `index` finished (batched)
+// A journal without P never started copying. Closing a journal deletes it, so what's left in the
+// folder is exactly the jobs that were cut off.
+
+static JOURNAL_DIR: OnceLock<PathBuf> = OnceLock::new();
+/// Finished-file records are flushed to disk at most this often (a lost one only means that
+/// file is checked again on resume).
+const JOURNAL_SYNC: Duration = Duration::from_millis(250);
+
+/// Where journals live; set once at startup. Without it nothing is journaled.
+pub fn set_journal_dir(dir: PathBuf) {
+    let _ = std::fs::create_dir_all(&dir);
+    let _ = JOURNAL_DIR.set(dir);
+}
+
+struct Jr {
+    w: Mutex<(crate::journal::Writer, Instant)>,
+    path: PathBuf,
+}
+
+impl Jr {
+    fn done(&self, index: usize) {
+        let mut g = self.w.lock().unwrap();
+        let _ = g.0.record(&["F", &index.to_string()]);
+        if g.1.elapsed() >= JOURNAL_SYNC {
+            let _ = g.0.sync();
+            g.1 = Instant::now();
+        }
+    }
+    fn sync(&self) {
+        let _ = self.w.lock().unwrap().0.sync();
+    }
+    /// The job ended (done, failed or cancelled by the user): nothing to resume.
+    fn close(self) {
+        let Jr { w, path } = self;
+        drop(w);
+        let _ = std::fs::remove_file(&path);
+    }
+}
+
+fn ps(p: &Path) -> String {
+    p.to_string_lossy().into_owned()
+}
+
+fn journal_start(kind: Transfer, rename: bool, verify: Verify, sources: &[PathBuf], dest: &Path, p: &Plan) -> Option<Jr> {
+    let dir = JOURNAL_DIR.get()?;
+    static N: AtomicUsize = AtomicUsize::new(0);
+    let stamp = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).map_or(0, |d| d.as_millis());
+    let path = dir.join(format!("{}-{stamp}-{}.jrn", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+    let mut w = crate::journal::Writer::create(&path).map_err(|e| log::warn!("journal: {}: {e}", path.display())).ok()?;
+    let b = |x: bool| if x { "1" } else { "0" };
+    let written = (|| -> std::io::Result<()> {
+        let mut head = vec!["B".to_string(), (if kind == Transfer::Move { "m" } else { "c" }).into(), b(rename).into(), (verify as u8).to_string(), ps(dest)];
+        head.extend(sources.iter().map(|x| ps(x)));
+        w.record(&head.iter().map(String::as_str).collect::<Vec<_>>())?;
+        for d in &p.dirs {
+            w.record(&["D", &ps(d)])?;
+        }
+        for (a, c) in &p.new_dirs {
+            w.record(&["N", &ps(a), &ps(c)])?;
+        }
+        for d in &p.src_dirs {
+            w.record(&["S", &ps(d)])?;
+        }
+        for x in &p.whole {
+            w.record(&["W", &ps(x)])?;
+        }
+        for j in &p.jobs {
+            w.record(&["J", if j.op == Op::Copy { "c" } else { "r" }, b(j.replace), &j.size.to_string(), &ps(&j.src), &ps(&j.dst)])?;
+        }
+        w.record(&["P"])?;
+        w.sync()
+    })();
+    if let Err(e) = written {
+        log::warn!("journal: {}: {e}", path.display());
+        drop(w);
+        let _ = std::fs::remove_file(&path);
+        return None;
+    }
+    Some(Jr { w: Mutex::new((w, Instant::now())), path })
+}
+
+/// A job that was cut off (the app closed or crashed while it ran).
+#[derive(Clone, Debug)]
+pub struct Interrupted {
+    pub journal: PathBuf,
+    pub kind: Transfer,
+    pub verify: Verify,
+    pub sources: Vec<PathBuf>,
+    pub dest: PathBuf,
+    /// Jobs in the plan, and how many were recorded as finished.
+    pub files: usize,
+    pub done: usize,
+}
+
+struct Loaded {
+    info: Interrupted,
+    rename: bool,
+    records: Vec<Vec<String>>,
+}
+
+fn load(path: &Path) -> Option<Loaded> {
+    let records = crate::journal::read(path).ok()?;
+    let head = records.first().filter(|r| r.len() >= 5 && r[0] == "B")?;
+    if !records.iter().any(|r| r[0] == "P") {
+        return None;
+    }
+    let kind = if head[1] == "m" { Transfer::Move } else { Transfer::Copy };
+    let verify = match head[3].as_str() {
+        "1" => Verify::Quick,
+        "2" => Verify::Full,
+        _ => Verify::Off,
+    };
+    let files = records.iter().filter(|r| r[0] == "J").count();
+    let done = records.iter().filter(|r| r[0] == "F").filter_map(|r| r.get(1)?.parse::<usize>().ok()).collect::<HashSet<_>>().len();
+    Some(Loaded {
+        rename: head[2] == "1",
+        info: Interrupted { journal: path.to_path_buf(), kind, verify, sources: head[5..].iter().map(PathBuf::from).collect(), dest: PathBuf::from(&head[4]), files, done },
+        records,
+    })
+}
+
+/// Jobs left unfinished by an earlier run. Journals that never got past planning (nothing was
+/// copied) are removed; journals still open (a running job, maybe in another window's process)
+/// are left alone.
+pub fn interrupted() -> Vec<Interrupted> {
+    let Some(dir) = JOURNAL_DIR.get() else { return Vec::new() };
+    let Ok(rd) = std::fs::read_dir(dir) else { return Vec::new() };
+    let mut out = Vec::new();
+    for e in rd.flatten() {
+        let path = e.path();
+        if path.extension().and_then(|x| x.to_str()) != Some("jrn") || crate::journal::in_use(&path) {
+            continue;
+        }
+        match load(&path) {
+            Some(l) => out.push(l.info),
+            None => {
+                let _ = std::fs::remove_file(&path);
+            }
+        }
+    }
+    out.sort_by(|a, b| a.journal.cmp(&b.journal));
+    out
+}
+
+/// Forget an interrupted job (what it copied stays).
+pub fn discard(journal: &Path) {
+    let _ = std::fs::remove_file(journal);
+}
+
+/// Carries an interrupted job on with its original plan: no conflict is asked again. A file is
+/// skipped only when the journal says it finished, or its copy matches the source (size and
+/// time; byte for byte when the job verifies fully: that happens in `finish` for every file,
+/// skipped or not). Anything else at a destination is a partial copy from the cut, and is
+/// replaced (through a temporary name, as always). Moves delete sources only after the check.
+pub fn resume(journal: &Path, tracker: Arc<Tracker>) -> anyhow::Result<bool> {
+    let Some(l) = load(journal) else {
+        discard(journal);
+        return Ok(true);
+    };
+    let tag = journal.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+    let mut p = Plan::default();
+    let mut finished: HashSet<usize> = HashSet::new();
+    let mut jobs: Vec<Job> = Vec::new();
+    for r in &l.records {
+        match (r[0].as_str(), r.len()) {
+            ("D", 2) => p.dirs.push(PathBuf::from(&r[1])),
+            ("N", 3) => p.new_dirs.push((PathBuf::from(&r[1]), PathBuf::from(&r[2]))),
+            ("S", 2) => p.src_dirs.push(PathBuf::from(&r[1])),
+            ("W", 2) => p.whole.push(PathBuf::from(&r[1])),
+            ("J", 6) => jobs.push(Job {
+                op: if r[1] == "r" { Op::Rename } else { Op::Copy },
+                replace: r[2] == "1",
+                size: r[3].parse().unwrap_or(0),
+                src: PathBuf::from(&r[4]),
+                dst: PathBuf::from(&r[5]),
+                resume: false,
+            }),
+            ("F", 2) => {
+                if let Ok(i) = r[1].parse() {
+                    finished.insert(i);
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut already = Vec::new();
+    let mut index = Vec::new();
+    for (i, mut j) in jobs.into_iter().enumerate() {
+        let src_there = std::fs::symlink_metadata(&j.src).is_ok();
+        let dst_there = std::fs::symlink_metadata(&j.dst).is_ok();
+        match j.op {
+            Op::Rename => {
+                if !src_there {
+                    continue; // renamed before the cut
+                }
+            }
+            Op::Copy => {
+                let tmp = part_name(&j.dst, &tag);
+                if !src_there {
+                    let _ = std::fs::remove_file(&tmp);
+                    continue; // a move that already deleted it: its copy checked out then
+                }
+                if dst_there && (finished.contains(&i) || same_meta(&j.src, &j.dst)) {
+                    let _ = std::fs::remove_file(&tmp);
+                    already.push((j.src.clone(), j.dst.clone()));
+                    continue;
+                }
+                if j.size >= RESTARTABLE_MIN && (if j.replace { std::fs::symlink_metadata(&tmp).is_ok() } else { dst_there }) {
+                    // a big copy cut off mid-way: it carries on where it stopped
+                    j.resume = true;
+                } else {
+                    let _ = std::fs::remove_file(&tmp);
+                    // a small partial copy from the cut (or a file the plan replaces): again
+                    j.replace = j.replace || dst_there;
+                }
+            }
+        }
+        index.push(i);
+        p.jobs.push(j);
+    }
+    // a clean journal (no torn tail) to go on recording into
+    let w = crate::journal::rewrite(journal, &l.records)?;
+    let jr = Jr { w: Mutex::new((w, Instant::now())), path: journal.to_path_buf() };
+    tracker.set_verify(l.info.verify);
+    let threads = if l.rename { 4 } else { threads_for(&l.info.sources, &l.info.dest) };
+    let out = run_jobs(p, &tracker, threads, Some((&jr, index)), already);
+    let kind = if l.rename { Transfer::Move } else { l.info.kind };
+    let r = finish(kind, &l.info.sources, &l.info.dest, &tracker, out);
+    // done, failed or cancelled by the user: either way nothing is left to resume
+    jr.close();
+    for s in &l.info.sources {
+        if let Some(p) = s.parent() {
+            crate::shell::notify_updated(p);
+        }
+    }
+    crate::shell::notify_updated(&l.info.dest);
+    r
 }
 
 /// Error text for copies that didn't verify (translated by the app).
@@ -851,6 +1175,61 @@ mod tests {
 
     fn tracker() -> Tracker {
         Tracker::new(Box::new(|_, _, _| {}), Arc::new(AtomicBool::new(false)))
+    }
+
+    /// A copy cut off half-way (some files finished and recorded, one partial at its real name,
+    /// a replace whose temporary copy was left behind), then resumed: the result is the same as
+    /// an uncut copy, nothing is asked again, the user's "replace" answer still holds, and the
+    /// journal is gone.
+    #[test]
+    fn resume_after_a_crash() {
+        let b = base("resume");
+        let src = b.join("kaynak");
+        tree(&src);
+        let dst = b.join("hedef");
+        std::fs::create_dir_all(dst.join("kaynak")).unwrap();
+        // an older file the user chose to replace
+        std::fs::write(dst.join("kaynak/kök.txt"), b"eski").unwrap();
+        set_journal_dir(std::env::temp_dir().join("rf-journals-test"));
+        let t = answering(Resolve::Replace);
+        let mut p = plan(std::slice::from_ref(&src), &dst, false);
+        let list: Vec<Conflict> = p.conflicts.iter().map(|c| c.0.clone()).collect();
+        p.resolve(&vec![Resolve::Replace; list.len()]);
+        p.jobs = order(std::mem::take(&mut p.jobs));
+        let jr = journal_start(Transfer::Copy, false, Verify::Full, std::slice::from_ref(&src), &dst, &p).expect("journal");
+        for d in &p.dirs {
+            let _ = std::fs::create_dir(d);
+        }
+        // the "crash": a third of the files done (most recorded), one partial, one torn temp
+        let tag = jr.path.file_stem().unwrap().to_string_lossy().into_owned();
+        let run = Run { tracker: &t, tag: tag.clone(), restartable: true, total: 1, done: AtomicU64::new(0), cancel: AtomicI32::new(0), clock: Mutex::new((Instant::now(), 0)), last_report: Mutex::new(Instant::now()) };
+        let n = p.jobs.len();
+        for (i, j) in p.jobs.iter().enumerate().take(n / 3) {
+            run_job(j, &run).unwrap();
+            if i % 4 != 0 {
+                jr.done(i); // every 4th finished file's record is lost
+            }
+        }
+        let partial = p.jobs[n / 3].clone();
+        std::fs::write(&partial.dst, b"yarim").unwrap();
+        let rep = p.jobs.iter().find(|j| j.replace).expect("the replace job").dst.clone();
+        let name = rep.file_name().unwrap().to_string_lossy().into_owned();
+        std::fs::write(rep.with_file_name(format!(".{name}.{tag}.rfpart")), b"yarim").unwrap();
+        jr.sync();
+        let journal = jr.path.clone();
+        drop(jr); // the process dies: the journal stays
+        let found = interrupted().into_iter().find(|i| i.journal == journal).expect("the cut job is found");
+        assert_eq!(found.dest, dst);
+        assert!(found.done > 0 && found.done < found.files);
+        // resume: nothing is asked (an `ask` that panics proves it)
+        let mut t2 = tracker();
+        t2.ask = Some(Box::new(|_| panic!("resume must not ask")));
+        assert!(resume(&journal, Arc::new(t2)).unwrap());
+        same(&src, &dst.join("kaynak"));
+        assert!(!journal.exists(), "the journal is removed once the job is done");
+        let leftovers = std::fs::read_dir(dst.join("kaynak")).unwrap().flatten().filter(|e| e.file_name().to_string_lossy().ends_with(".rfpart")).count();
+        assert_eq!(leftovers, 0);
+        let _ = std::fs::remove_dir_all(&b);
     }
 
     fn answering(r: Resolve) -> Tracker {
@@ -1034,8 +1413,11 @@ mod tests {
         std::fs::write(&lone, b"tek").unwrap();
         // the cross-volume path, exercised on one volume
         let t = Arc::new(tracker());
-        let out = execute(&[src.clone(), lone.clone()], &dst, &t, 8, false);
+        let (out, jr) = execute(Transfer::Move, &[src.clone(), lone.clone()], &dst, &t, 8, false);
         assert!(finish(Transfer::Move, &[src.clone(), lone.clone()], &dst, &t, out).unwrap());
+        if let Some(j) = jr {
+            j.close();
+        }
         assert!(!src.exists() && !lone.exists(), "sources removed");
         same_bytes_tree(&keep, &dst.join("kaynak"));
         assert_eq!(std::fs::read(dst.join("tek dosya.txt")).unwrap(), b"tek");
@@ -1095,7 +1477,7 @@ mod tests {
 
     #[test]
     fn order_spreads_small_files_over_folders() {
-        let j = |d: &str, f: &str, size: u64| Job { src: PathBuf::from(format!("s/{d}/{f}")), dst: PathBuf::from(format!("d/{d}/{f}")), size, op: Op::Copy, replace: false };
+        let j = |d: &str, f: &str, size: u64| Job { src: PathBuf::from(format!("s/{d}/{f}")), dst: PathBuf::from(format!("d/{d}/{f}")), size, op: Op::Copy, replace: false, resume: false };
         let jobs = vec![j("a", "1", 10), j("a", "2", 10), j("a", "3", 10), j("b", "1", 10), j("b", "2", 10), j("c", "big", 100 << 20)];
         let order: Vec<String> = order(jobs).iter().map(|j| j.dst.to_string_lossy().replace('\\', "/")).collect();
         assert_eq!(order, ["d/c/big", "d/a/1", "d/b/1", "d/a/2", "d/b/2", "d/a/3"]);

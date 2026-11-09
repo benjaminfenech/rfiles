@@ -1705,6 +1705,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "encodify"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e95d6e27686e1d6991a3077f4dbec9d33d18903466d234165ad86cd08c3ebc79"
+dependencies = [
+ "memchr",
+ "simdutf8",
+]
+
+[[package]]
 name = "encoding_rs"
 version = "0.8.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3231,7 +3241,7 @@ dependencies = [
 [[package]]
 name = "gpui-pre-windows"
 version = "0.3.11"
-source = "git+https://github.com/gelenmedya/gpui-pre-windows?rev=5b6b34ba9d5e7609b5f3e856415e7d950a909770#5b6b34ba9d5e7609b5f3e856415e7d950a909770"
+source = "git+https://github.com/gelenmedya/gpui-pre-windows?rev=a52f753d12bd7216e26afbfb2f067aa88bab79df#a52f753d12bd7216e26afbfb2f067aa88bab79df"
 dependencies = [
  "accesskit",
  "accesskit_windows",
@@ -3275,11 +3285,11 @@ checksum = "99b18b06f5026b3d312488eacfdddbe78f82b4bf32bb2d2bc3186e31e552b797"
 
 [[package]]
 name = "gpui-windows-shim"
-version = "0.3.0"
+version = "0.4.0"
 
 [[package]]
 name = "gpustress"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "windows 0.62.2",
 ]
@@ -3495,6 +3505,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a"
 dependencies = [
  "foldhash 0.2.0",
+]
+
+[[package]]
+name = "hashify"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04a037b1848eada162d6534c206770180e6bfc0eaa97292250c3e7179d8b1f73"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
 ]
 
 [[package]]
@@ -4691,6 +4712,18 @@ name = "mach2"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dae608c151f68243f2b000364e1f7b186d9c29845f7d2d85bd31b9ad77ad552b"
+
+[[package]]
+name = "mail-parser"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d4ea9311ef3ca6189aa85c5f984bd47b2f12079bcabae28917d900ab26c9ecc"
+dependencies = [
+ "encodify",
+ "hashify",
+ "memchr",
+ "simdutf8",
+]
 
 [[package]]
 name = "malloc_buf"
@@ -6334,8 +6367,9 @@ checksum = "a611d15b50743feb4c76b7d03edcb0e64f399c26961e4efe6975bc398be6aa3d"
 
 [[package]]
 name = "rarchive"
-version = "0.0.1"
-source = "git+https://github.com/gelenmedya/rarchive?rev=e7e0dc43e23e740d5e9902d53f621179bed1f4c4#e7e0dc43e23e740d5e9902d53f621179bed1f4c4"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ceccf4fa72e4b051de40af069f91e0532a154717e8bd9de844d105d8d988b16"
 dependencies = [
  "aes 0.8.4",
  "bzip2",
@@ -6596,7 +6630,7 @@ dependencies = [
 
 [[package]]
 name = "rf-app"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6610,6 +6644,7 @@ dependencies = [
  "gpui-windows-shim",
  "image",
  "log",
+ "mail-parser",
  "parking_lot",
  "raw-window-handle",
  "rf-archive",
@@ -6631,7 +6666,7 @@ dependencies = [
 
 [[package]]
 name = "rf-archive"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "bzip2",
@@ -6655,7 +6690,7 @@ dependencies = [
 
 [[package]]
 name = "rf-core"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "chardetng",
@@ -6673,7 +6708,7 @@ dependencies = [
 
 [[package]]
 name = "rf-dialog"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -6683,7 +6718,7 @@ dependencies = [
 
 [[package]]
 name = "rf-linux"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "ashpd",
@@ -6717,7 +6752,7 @@ dependencies = [
 
 [[package]]
 name = "rf-player"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "cpal",
@@ -6734,7 +6769,7 @@ dependencies = [
 
 [[package]]
 name = "rf-win"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "crc32fast",
@@ -6749,6 +6784,7 @@ dependencies = [
  "rayon",
  "resvg 0.46.0",
  "rf-core",
+ "serde",
  "sha1 0.10.7",
  "sha2 0.10.9",
  "smallvec",
@@ -6915,6 +6951,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
 dependencies = [
  "semver",
+]
+
+[[package]]
+name = "rustdecoder"
+version = "0.4.0"
+dependencies = [
+ "log",
+ "thiserror 2.0.21",
 ]
 
 [[package]]

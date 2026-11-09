@@ -7,6 +7,14 @@ extern crate rf_linux as rf_win;
 mod actions;
 mod aliases;
 mod background;
+// the speed test races File Explorer: Windows only (Linux: an empty page, see bench_view_linux)
+#[cfg(windows)]
+pub mod bench;
+#[cfg(windows)]
+mod bench_view;
+#[cfg(not(windows))]
+#[path = "bench_view_linux.rs"]
+mod bench_view;
 mod archive_view;
 mod bulk_rename;
 mod command_palette;
@@ -220,7 +228,9 @@ pub fn main() {
     // The folder check is bounded: an offline network path must not keep the window from
     // appearing for the whole SMB timeout. Undecided after 2 s = treat as a (slow) folder.
     // `--settings=directlook`: DirectLook'un simge menüsünden "DirectLook ayarları"
-    let open_look_settings = std::env::args().nth(1).as_deref() == Some("--settings=directlook");
+    // `--settings=speed`: straight to Settings → Speed test
+    let settings_arg = std::env::args().nth(1).and_then(|a| a.strip_prefix("--settings=").map(str::to_string));
+    let open_look_settings = settings_arg.is_some();
     // `--pick <pipe>`: an app's Open/Save dialog (rustyfiles_dialog.dll) asks for a file
     let pick = (std::env::args().nth(1).as_deref() == Some("--pick")).then(|| std::env::args().nth(2)).flatten();
     // `--bar-preview`: our taskbar, as an ordinary window (see taskbar_preview)
@@ -345,6 +355,11 @@ pub fn main() {
         _ if select.is_some() => format!("{}{}", workspace::SELECT_PREFIX, select.as_deref().unwrap_or_default()),
         Some(Location::Path(p)) => p.to_string_lossy().into_owned(),
         Some(Location::RecycleBin) => "shell:RecycleBinFolder".to_string(),
+        // a search link goes on to the running window as a search link
+        Some(Location::Search { root, query }) => {
+            let enc = |s: &str| s.replace('%', "%25").replace('&', "%26");
+            format!("search-ms:query={}&crumb=location:{}", enc(query), enc(&root.to_string_lossy()))
+        }
         _ => String::new(),
     };
     // RUSTYFILES_MULTI_INSTANCE=1 skips forwarding (automated tests run several copies).
@@ -381,8 +396,12 @@ pub fn main() {
         actions::bind(cx);
         actions::bind_user(cx);
         keymap_editor::init(cx);
-        if open_look_settings {
-            settings_view::open_page(settings_view::Page::Look, cx);
+        if let Some(page) = &settings_arg {
+            settings_view::open_page(if page == "speed" { settings_view::Page::Speed } else { settings_view::Page::Look }, cx);
+        }
+        // copies and moves keep a crash-safe journal there (see rf_win::fastcopy)
+        if let Some(d) = settings::app_dir() {
+            rf_win::fastcopy::set_journal_dir(d.join("jobs"));
         }
         let bounds = restored_bounds(cx);
         match pick.clone() {
@@ -393,6 +412,8 @@ pub fn main() {
             None => {
                 installer::count_start(cx);
                 open_main_window(if open_look_settings { Some(Location::Settings) } else { start }, None, bounds, cx);
+                // a copy or move cut off last time: ask to carry it on
+                status_center::offer_resume(cx);
             }
         }
         // updates from GitHub Releases (installed copies only)

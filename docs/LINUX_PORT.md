@@ -316,6 +316,27 @@ rf-dialog (an Open/Save dialog for other apps would be an xdg-desktop-portal bac
 separate project), Velopack updates (ship a PKGBUILD/AUR package, then Flatpak/AppImage),
 the hybrid GPU/CPU renderer, critical-error-dialog suppression, `keep_gdiplus_alive`.
 
+## Upstream syncs
+
+Merge `upstream/main` into a `sync/upstream-<version>` branch (merge commit, never squash).
+New `rf-win` API that the app calls needs a Linux counterpart in `rf-linux` (the build says
+which); new `rf-win` examples get the `support/<name>_win.rs` wrapper with a stub `main`;
+new features need checking for Windows-only assumptions the compiler can't see (`\\`
+separators, case-insensitive paths, drive letters).
+
+- **0.4.0** (2026-11-09, 52 commits). Linux stand-ins: `fastcopy` journals and resume
+  (`interrupted` finds nothing: Linux's engine doesn't journal yet), `indexer` /
+  `nameindex` (the NTFS name index: never running, searches walk the disk as before; its
+  Settings card and "Leave out of the search index" are hidden), `preview_host::mf_decodes`
+  (false: DirectLook decodes 4K on the CPU as before). The speed test (races File Explorer)
+  is Windows only (`bench_view_linux.rs` keeps the page empty and hidden). Fixed for Linux:
+  adaptive layouts recognised Pictures / Videos subfolders with a `\\` separator. Works on
+  Linux unchanged: hex and e-mail views in DirectLook, adaptive layouts (Pictures as a grid,
+  Downloads in date groups), Sort by Size with measured folders, paste selecting what
+  arrived, the `rustdecoder` crate (builds; `search-ms:` links parse too, though nothing on
+  Linux sends them). Follow-ups: copy journals and resume
+  in rf-linux's engine; the name index on Linux (ext4/btrfs walk + inotify).
+
 ## Packaging
 
 **Arch** (2026-11-09): `packaging/arch/PKGBUILD` builds `rustyfiles-git` from the GitHub

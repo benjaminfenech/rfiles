@@ -20,11 +20,12 @@ pub enum ThemePref {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum DefaultView {
-    #[default]
     Details,
     Grid,
     Columns,
-    /// Picks per folder: mostly pictures/videos → grid, otherwise details.
+    /// Picks per folder, like Explorer's folder types: mostly pictures/videos → grid, Pictures
+    /// and Videos → grid, Downloads → newest first in date groups, otherwise details.
+    #[default]
     Adaptive,
 }
 
@@ -258,6 +259,8 @@ pub struct Settings {
     pub show_hidden: bool,
     pub preview_open: bool,
     pub sidebar_open: bool,
+    /// The sidebar as a narrow strip of icons (drag it narrow to get there).
+    pub sidebar_rail: bool,
     /// Pane widths (drag the pane edge to resize).
     pub sidebar_width: f32,
     /// Sidebar sections the user turned off ("drives", "cloud", "libraries", "network", "tags").
@@ -286,6 +289,8 @@ pub struct Settings {
     pub first_start_ms: i64,
     pub starts: u32,
     pub star_asked: bool,
+    /// The one-time move from "details" to "adaptive" (0.3.3) has been made.
+    pub adaptive_offered: bool,
     pub show_extensions: bool,
     /// Custom shortcuts: keystroke → action, e.g. `"ctrl-k" = "NewFolder"` (names as in the
     /// command palette's actions; `rustyfiles::` prefix optional). Applied at startup.
@@ -362,6 +367,10 @@ pub struct Settings {
     pub browse_archives: bool,
     /// Search through the Windows Search index (contents, AQS) where the folder is indexed.
     pub search_index: bool,
+    /// Our own name index of the local drives: searching in subfolders takes milliseconds.
+    pub name_index: bool,
+    /// Folders left out of the name index (searching inside them walks the disk).
+    pub index_excluded: Vec<String>,
 
     // ---- Developer tools
     pub ide_button: IdePref,
@@ -381,10 +390,11 @@ impl Default for Settings {
         Self {
             theme: ThemePref::System,
             language: Lang::System,
-            default_view: DefaultView::Details,
+            default_view: DefaultView::Adaptive,
             show_hidden: false,
             preview_open: true,
             sidebar_open: true,
+            sidebar_rail: false,
             sidebar_width: 232.,
             sidebar_hidden: Vec::new(),
             preview_width: 300.,
@@ -401,6 +411,7 @@ impl Default for Settings {
             first_start_ms: 0,
             starts: 0,
             star_asked: false,
+            adaptive_offered: false,
             show_extensions: true,
             keybindings: Default::default(),
             window: None,
@@ -448,6 +459,8 @@ impl Default for Settings {
             show_libraries: false,
             browse_archives: true,
             search_index: true,
+            name_index: true,
+            index_excluded: Vec::new(),
             ide_button: IdePref::GitRepos,
             ide_path: String::new(),
             show_flatten: false,
@@ -538,13 +551,26 @@ impl Settings {
             })
             .unwrap_or_default();
         let mut s = s;
-        // older files: "restore_session = false" means "start with a new tab"
-        if !s.restore_session && s.startup == StartupPref::Continue {
-            s.startup = StartupPref::NewTab;
-            s.restore_session = true;
-        }
+        s.migrate();
         s.apply_side_effects();
         s
+    }
+
+    /// Brings settings written by older versions up to date.
+    fn migrate(&mut self) {
+        // older files: "restore_session = false" means "start with a new tab"
+        if !self.restore_session && self.startup == StartupPref::Continue {
+            self.startup = StartupPref::NewTab;
+            self.restore_session = true;
+        }
+        // "details" was the default before 0.3.3, so it says nothing about a choice: move it
+        // once to "adaptive" (plain folders still open as details). Grid and columns stay.
+        if !self.adaptive_offered {
+            if self.default_view == DefaultView::Details {
+                self.default_view = DefaultView::Adaptive;
+            }
+            self.adaptive_offered = true;
+        }
     }
 
     /// Field by field: a value this version doesn't understand (a newer build's theme, a
@@ -571,6 +597,7 @@ impl Settings {
     }
 
     fn apply_side_effects(&self) {
+        sync_name_index(self.name_index, &self.index_excluded);
         crate::i18n::set(self.language);
         crate::aliases::set(self.folder_aliases.clone());
         crate::background::sync_tray(self.run_in_background);
@@ -660,6 +687,23 @@ pub fn update(cx: &mut App, f: impl FnOnce(&mut Settings)) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn details_moves_to_adaptive_once() {
+        // a file from before the move: details becomes adaptive
+        let mut s = super::Settings::parse_lenient("default_view = \"details\"\n").unwrap();
+        s.migrate();
+        assert_eq!(s.default_view, super::DefaultView::Adaptive);
+        assert!(s.adaptive_offered);
+        // chosen afterwards: stays
+        let mut s = super::Settings::parse_lenient("default_view = \"details\"\nadaptive_offered = true\n").unwrap();
+        s.migrate();
+        assert_eq!(s.default_view, super::DefaultView::Details);
+        // grid was a real choice
+        let mut s = super::Settings::parse_lenient("default_view = \"grid\"\n").unwrap();
+        s.migrate();
+        assert_eq!(s.default_view, super::DefaultView::Grid);
+    }
+
     use super::{Settings, ThemePref};
 
     #[test]
@@ -698,4 +742,49 @@ yeni_alan = 3").unwrap();
         assert_eq!(s.sidebar_width, Settings::default().sidebar_width);
         assert!(Settings::parse_lenient("[[[bozuk").is_err(), "syntax errors still fail");
     }
+}
+
+/// Starts or stops the name index when the setting changes. The first start waits a few seconds
+/// so it never competes with opening the window.
+fn sync_name_index(on: bool, excluded: &[String]) {
+    use std::sync::atomic::{AtomicU8, Ordering};
+    // 0 = not decided yet, 1 = off, 2 = on
+    static STATE: AtomicU8 = AtomicU8::new(0);
+    static EXCLUDED: parking_lot::Mutex<Option<Vec<String>>> = parking_lot::Mutex::new(None);
+    let list_changed = {
+        let mut e = EXCLUDED.lock();
+        let changed = e.as_deref() != Some(excluded);
+        if changed {
+            *e = Some(excluded.to_vec());
+            rf_win::nameindex::set_excluded(&excluded.iter().map(std::path::PathBuf::from).collect::<Vec<_>>());
+        }
+        changed
+    };
+    let want = if on { 2 } else { 1 };
+    let was = STATE.swap(want, Ordering::Relaxed);
+    // a changed exclusion list rebuilds a running index (the fresh walk leaves the folders out)
+    if was == want && !(on && list_changed && was != 0) {
+        return;
+    }
+    if !on {
+        std::thread::spawn(rf_win::indexer::stop);
+        return;
+    }
+    let delay = if was == 0 { 5 } else { 0 };
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(delay));
+        // extra instances (tests, the speed test's) leave it to the main one
+        // (RUSTYFILES_INDEX=1 indexes there too, for testing)
+        let extra = std::env::var_os("RUSTYFILES_MULTI_INSTANCE").is_some() && std::env::var_os("RUSTYFILES_INDEX").is_none();
+        if STATE.load(Ordering::Relaxed) != 2 || std::env::var_os("RUSTYFILES_NO_INDEX").is_some() || extra {
+            return;
+        }
+        let dir = std::env::var_os("LOCALAPPDATA").map_or_else(std::env::temp_dir, std::path::PathBuf::from).join("rustyfiles").join("index");
+        // RUSTYFILES_INDEX_ROOTS="E:\;F:\" picks the roots (testing)
+        let roots = match std::env::var("RUSTYFILES_INDEX_ROOTS") {
+            Ok(v) => v.split(';').filter(|s| !s.is_empty()).map(std::path::PathBuf::from).collect(),
+            Err(_) => rf_win::indexer::local_roots(),
+        };
+        rf_win::indexer::start(roots, dir);
+    });
 }
