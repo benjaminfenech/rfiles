@@ -37,6 +37,7 @@ pub mod foldersize;
 pub mod sysparams;
 pub mod git;
 pub mod hash;
+pub mod journal;
 pub mod known;
 pub mod libraries;
 pub mod ftp;
