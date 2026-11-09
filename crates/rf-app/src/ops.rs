@@ -921,7 +921,7 @@ pub(crate) fn invalid_file_name(name: &str) -> bool {
 
 /// A message box: the shell's on Windows, the app's own dialog in `win` elsewhere (Linux has
 /// no shell message box).
-fn alert_box(title: String, msg: String, win: AnyWindowHandle, cx: &mut App) {
+pub(crate) fn alert_box(title: String, msg: String, win: AnyWindowHandle, cx: &mut App) {
     #[cfg(windows)]
     {
         let _ = (win, &cx);

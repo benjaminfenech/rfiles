@@ -252,7 +252,12 @@ data-control (Hyprland, Sway, KDE) and on X11; on GNOME's Wayland session they w
 rustyfiles only.
 
 Drives are named by their label, network share or mount point; Settings → Files and folders →
-"Show drives as" switches to the mount point, its last folder, or the device.
+"Show drives as" switches to the mount point, its last folder, or the device. Drives that are
+connected but not mounted (a USB stick, the Windows partition of a dual-boot disk) are listed
+too: opening one mounts it through UDisks2. Right-click a drive in the sidebar to unmount it,
+or to eject a USB stick, SD card or disc safely. Internal disks may ask for an administrator
+password, which needs a polkit agent running (KDE and GNOME start one; on Hyprland or Sway
+start e.g. `hyprpolkitagent` or `polkit-kde-agent`).
 
 **DirectLook on tiling window managers.** DirectLook (<kbd>Space</kbd>) is its own window,
 like Quick Look. A Wayland app can't float or place its own window, so tiling compositors tile

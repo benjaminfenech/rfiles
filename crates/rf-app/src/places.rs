@@ -30,6 +30,9 @@ fn linux_drive_name(d: &Drive, style: crate::settings::DriveNames) -> String {
         DriveNames::Auto => {
             if !d.label.is_empty() {
                 d.label.clone()
+            } else if unmounted(d) {
+                // what other file managers call a partition without a label: "500 GB Volume"
+                format!("{} {}", rf_core::format::size(d.total), crate::t!("Volume"))
             } else if let Some(share) = share_name(&d.source) {
                 share
             } else {
@@ -193,10 +196,14 @@ impl Places {
         // Notice drives appearing/disappearing (USB, network mappings) without any shell hooks.
         cx.spawn(async move |this, cx| {
             let mut mask = rf_win::drives::drive_mask();
+            let mut recheck = false;
             loop {
                 cx.background_executor().timer(std::time::Duration::from_secs(3)).await;
                 let now = rf_win::drives::drive_mask();
-                if now != mask {
+                // after a change, look once more on the next tick: a new stick's file system
+                // shows up in UDisks a moment after its device does
+                if now != mask || recheck {
+                    recheck = now != mask;
                     mask = now;
                     if this.update(cx, |p, cx| p.refresh(cx)).is_err() {
                         break;
@@ -229,7 +236,11 @@ impl Places {
                     })
                     .collect(),
             };
-            let drives = rf_win::list_drives();
+            #[allow(unused_mut)]
+            let mut drives = rf_win::list_drives();
+            // Linux: connected but not mounted (opening one mounts it)
+            #[cfg(unix)]
+            drives.extend(rf_win::drives::unmounted_drives());
             let recent = load_recent(14);
             let cloud = load_cloud_and_wsl();
             let libraries = rf_win::libraries::list();
@@ -261,6 +272,18 @@ pub fn known_icon(k: KnownFolder) -> L {
         KnownFolder::Music => L::Music,
         KnownFolder::Videos => L::Video,
         KnownFolder::Profile => L::House,
+    }
+}
+
+/// Linux: a connected drive that isn't mounted yet (its `root` is the device; opening it
+/// mounts it). Never on Windows.
+pub fn unmounted(d: &Drive) -> bool {
+    #[cfg(unix)]
+    return rf_win::drives::is_unmounted(d);
+    #[cfg(not(unix))]
+    {
+        let _ = d;
+        false
     }
 }
 
@@ -305,5 +328,13 @@ mod tests {
         assert_eq!(names(MountPoint), ["/", "/run/media/me/KINGSTON", "/mnt/media", "/mnt/nas", "/home/me/remote"]);
         assert_eq!(names(Folder), [root_name, "KINGSTON", "media", "nas", "remote"]);
         assert_eq!(names(Device), ["nvme0n1p2", "sdb1", "//10.0.0.9/media", "nas:/export/photos/", "me@box:"]);
+        // connected, not mounted: named by its size until it has a label
+        let mut part = drive("/dev/sda2", "/dev/sda2", "");
+        part.total = 500_000_000_000;
+        assert!(super::unmounted(&part));
+        assert!(linux_drive_name(&part, Auto).ends_with(crate::t!("Volume")), "{}", linux_drive_name(&part, Auto));
+        assert_eq!(linux_drive_name(&part, Device), "sda2");
+        part.label = "Windows".into();
+        assert_eq!(linux_drive_name(&part, Auto), "Windows");
     }
 }
