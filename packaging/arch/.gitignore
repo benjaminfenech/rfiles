@@ -1,0 +1,6 @@
+# makepkg's working files
+/rustyfiles/
+/src/
+/pkg/
+*.pkg.tar.*
+*.log
