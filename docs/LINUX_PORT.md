@@ -216,7 +216,21 @@ certificates for the info card.
   Tried end to end in a private bus session with scratch XDG folders
   (`cargo run -p rf-linux --example default_fm -- enable <exe> | disable | status`).
 - Tray and notifications: StatusNotifierItem (`ksni`) + `notify-rust`.
-- Removable drives and safe removal: UDisks2 over D-Bus (`zbus`) for mount, unmount, eject.
+- ~~Removable drives and safe removal~~ **done** (2026-11-09): `rf-linux` `udisks` talks to
+  UDisks2 on the system bus. `drives::unmounted_drives()` lists file systems UDisks doesn't
+  hide (not recovery/reserved partitions or swap) that aren't mounted; their `root` is the
+  device (`/dev/sdb1`), named "465 GB Volume" without a label, with no usage bar.
+  `FolderView::navigate` mounts a block device and opens the mount point instead, so the
+  sidebar, Home and anything else that opens it all mount. The sidebar menu has Unmount (any
+  `/dev` mount but `/`, `/home`, `/boot`…) and Eject (removable / optical): every window
+  lets go first (`workspace::release_mount`: panes go Home, previews close), then every file
+  system on the drive is unmounted (an unlocked LUKS volume is locked again), and the drive
+  ejected or powered off; a disk image is detached. "Busy" names the programs holding it
+  (`udisks::users_of`, from `/proc`). `drive_mask` hashes `/sys/class/block` too, so a
+  stick shows up before anything mounts it. Not done: unlocking LUKS (needs a passphrase
+  prompt), and an eject button on the sidebar row. Tried with a FAT image on a loop device
+  (`cargo run -p rf-linux --example udisks -- list | mount <dev> | unmount <dir> | eject <dir>`);
+  the sidebar showed it as unmounted; clicking it and the menu items weren't tried by hand.
 - Network: browse mounted gvfs paths (`/run/user/$UID/gvfs`) first; native SMB later.
 - FTP: `suppaftp` instead of WinINet.
 - File dialogs: xdg-desktop-portal FileChooser (`ashpd`).

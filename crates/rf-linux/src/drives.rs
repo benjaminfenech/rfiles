@@ -104,10 +104,12 @@ fn kind_of(fs: &str, src: &str, point: &Path) -> Option<DriveKind> {
     if fs == "iso9660" || fs == "udf" {
         return Some(DriveKind::Optical);
     }
-    if !src.starts_with("/dev/") || src.starts_with("/dev/loop") {
+    // a disk image the user mounted (UDisks puts those under /run/media) counts as removable
+    let user_mount = point.starts_with("/run/media") || point.starts_with("/media");
+    if !src.starts_with("/dev/") || (src.starts_with("/dev/loop") && !user_mount) {
         return None; // proc, sysfs, tmpfs, overlay, snap loops…
     }
-    if removable_dev(src) || point.starts_with("/run/media") || point.starts_with("/media") {
+    if removable_dev(src) || user_mount {
         return Some(DriveKind::Removable);
     }
     Some(DriveKind::Fixed)
@@ -194,6 +196,31 @@ pub fn is_removable(path: &Path) -> bool {
         .is_some_and(|d| d.kind == DriveKind::Removable)
 }
 
+/// Drives that are connected but not mounted (a USB stick nothing mounted yet, the Windows
+/// partition of a dual-boot disk), from UDisks. Their `root` is the device (`/dev/sdb1`):
+/// opening it mounts it (`udisks::mount`). Talks to the system bus: off the UI thread.
+pub fn unmounted_drives() -> Vec<Drive> {
+    crate::udisks::unmounted()
+        .into_iter()
+        .map(|v| {
+            let kind = if v.optical {
+                DriveKind::Optical
+            } else if v.removable || v.loop_dev {
+                DriveKind::Removable
+            } else {
+                DriveKind::Fixed
+            };
+            let source = v.device.to_string_lossy().into_owned();
+            Drive { root: v.device, letter: '\0', label: v.label, source, kind, total: v.size, free: 0, fs: v.fs }
+        })
+        .collect()
+}
+
+/// Whether `d` is a connected drive that isn't mounted (see [`unmounted_drives`]).
+pub fn is_unmounted(d: &Drive) -> bool {
+    d.root.starts_with("/dev/")
+}
+
 /// Changes when drives come and go (cheap; polled to notice USB plug/unplug). Linux has no
 /// letter bitmask: a hash of the mount list stands in.
 pub fn drive_mask() -> u32 {
@@ -203,6 +230,12 @@ pub fn drive_mask() -> u32 {
         if src.starts_with("/dev/") {
             p.hash(&mut h);
         }
+    }
+    // block devices too: a plugged-in stick shows up before anything mounts it
+    if let Ok(dir) = std::fs::read_dir("/sys/class/block") {
+        let mut names: Vec<_> = dir.flatten().map(|e| e.file_name()).collect();
+        names.sort();
+        names.hash(&mut h);
     }
     h.finish() as u32
 }

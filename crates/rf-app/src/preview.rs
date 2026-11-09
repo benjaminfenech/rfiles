@@ -297,8 +297,8 @@ impl Preview {
 
     /// The drive is about to be ejected: drop a target on it (a hosted preview handler keeps
     /// the file open, which would block the removal).
-    pub fn release_drive(&mut self, letter: char, cx: &mut Context<Self>) {
-        if self.target.as_ref().is_some_and(|(p, _)| crate::workspace::on_drive(p, letter)) {
+    pub fn release_where(&mut self, on_it: impl Fn(&std::path::Path) -> bool, cx: &mut Context<Self>) {
+        if self.target.as_ref().is_some_and(|(p, _)| on_it(p)) {
             self.hide_host();
             self.set_target(None, cx);
             cx.notify();

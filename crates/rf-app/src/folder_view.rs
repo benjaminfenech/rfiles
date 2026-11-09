@@ -496,12 +496,47 @@ impl FolderView {
     // ---------- navigation ----------
 
     pub fn navigate(&mut self, to: Location, cx: &mut Context<Self>) {
+        // Linux: an unmounted drive (sidebar, Home) is its device: mount it, then go there
+        #[cfg(unix)]
+        if let Location::Path(dev) = &to
+            && is_block_device(dev)
+        {
+            self.mount_and_open(dev.clone(), cx);
+            return;
+        }
         if to == Location::RecycleBin {
             self.recycle = None; // fresh listing each visit
         }
         self.history.navigate(to);
         self.filter.query.clear();
         self.load(cx);
+    }
+
+    /// Mounts `dev` through UDisks (it may ask for a password) and opens it; tells the user
+    /// why when it can't.
+    #[cfg(unix)]
+    fn mount_and_open(&mut self, dev: PathBuf, cx: &mut Context<Self>) {
+        let win = cx.active_window();
+        let work = cx.background_spawn({
+            let dev = dev.clone();
+            async move { rf_win::udisks::mount(&dev) }
+        });
+        cx.spawn(async move |this, cx| {
+            let r = work.await;
+            let _ = this.update(cx, |v, cx| match r {
+                Ok(point) => {
+                    v.navigate(Location::Path(point), cx);
+                    v.places.update(cx, |p, cx| p.refresh(cx));
+                }
+                Err(e) => {
+                    log::warn!("mount {}: {e:#}", dev.display());
+                    if let Some(win) = win {
+                        crate::ops::alert_box(t!("Couldn't open the drive").to_string(), format!("{e}"), win, cx);
+                    }
+                }
+            });
+        })
+        .detach();
     }
 
     pub fn back(&mut self, cx: &mut Context<Self>) {
@@ -2982,6 +3017,7 @@ impl FolderView {
             let root = d.root.clone();
             let frac = d.used_fraction();
             let bar_color = if frac > 0.9 { p.danger } else { p.accent };
+            let unmounted = places::unmounted(&d);
             drive_grid = drive_grid.child(
                 card(("drive", i).into())
                     .child(
@@ -2994,15 +3030,20 @@ impl FolderView {
                                     .flex_1()
                                     .gap_1()
                                     .child(div().text_sm().child(crate::places::drive_name(&d)))
-                                    .child(
-                                        div()
-                                            .h(px(6.))
-                                            .w_full()
-                                            .rounded_full()
-                                            .bg(p.pressed)
-                                            .child(div().h_full().rounded_full().bg(bar_color).w(relative(frac))),
-                                    )
-                                    .child(div().text_xs().text_color(p.text_secondary).child(if d.total > 0 {
+                                    .when(!unmounted, |c| {
+                                        c.child(
+                                            div()
+                                                .h(px(6.))
+                                                .w_full()
+                                                .rounded_full()
+                                                .bg(p.pressed)
+                                                .child(div().h_full().rounded_full().bg(bar_color).w(relative(frac))),
+                                        )
+                                    })
+                                    .child(div().text_xs().text_color(p.text_secondary).child(if unmounted {
+                                        // Linux: connected, not mounted yet (a click mounts it)
+                                        format!("{} · {}", format::size(d.total), t!("Not mounted"))
+                                    } else if d.total > 0 {
                                         format!("{} {} / {}", format::size(d.free), t!("boş"), format::size(d.total))
                                     } else {
                                         String::new()
@@ -3433,4 +3474,11 @@ fn _assert_category_used(_: Category) {}
 fn trace_live() -> bool {
     static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *ON.get_or_init(|| std::env::var_os("RUSTYFILES_TRACE_LIVE").is_some())
+}
+
+/// A block device (`/dev/sdb1`): an unmounted drive in the sidebar.
+#[cfg(unix)]
+fn is_block_device(p: &std::path::Path) -> bool {
+    use std::os::unix::fs::FileTypeExt;
+    p.starts_with("/dev/") && std::fs::metadata(p).is_ok_and(|m| m.file_type().is_block_device())
 }

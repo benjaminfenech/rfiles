@@ -208,6 +208,18 @@ pub fn release_drive(letter: char, cx: &mut App) {
     }
 }
 
+/// Linux: every window lets go of the drive mounted at `root` before it is unmounted (as
+/// [`release_drive`] does for a Windows drive letter).
+#[cfg(unix)]
+pub fn release_mount(root: &std::path::Path, cx: &mut App) {
+    let list = cx.try_global::<OpenWorkspaces>().map(|g| g.0.clone()).unwrap_or_default();
+    for (handle, ws) in list {
+        let Some(ws) = ws.upgrade() else { continue };
+        let root = root.to_path_buf();
+        let _ = handle.update(cx, |_, _, cx| ws.update(cx, |w, cx| w.release_where(&root.display().to_string(), |p| p.starts_with(&root), cx)));
+    }
+}
+
 /// Whether any app window (not a menu / flyout popup) is still open.
 pub fn any_main_window(cx: &App) -> bool {
     let open = cx.windows();
@@ -962,23 +974,53 @@ impl Workspace {
     }
 
     fn release_drive(&mut self, letter: char, cx: &mut Context<Self>) {
+        self.release_where(&format!("{letter}:"), |p| on_drive(p, letter), cx);
+    }
+
+    /// Panes showing a folder `on_it` go Home (their watchers, size walks and listings stop),
+    /// previews of it close, queued thumbnails are dropped. `name` is for the log.
+    fn release_where(&mut self, name: &str, on_it: impl Fn(&Path) -> bool, cx: &mut Context<Self>) {
         let views: Vec<Entity<FolderView>> =
             self.tabs.iter().flat_map(|t| std::iter::once(t.left.clone()).chain(t.right.clone())).collect();
         let mut moved = false;
         for v in views {
-            let here = v.read(cx).location().path().is_some_and(|p| on_drive(p, letter));
+            let here = v.read(cx).location().path().is_some_and(&on_it);
             if here {
                 v.update(cx, |v, cx| v.navigate(Location::Home, cx));
                 moved = true;
             }
         }
         self.close_quick_look(cx);
-        self.preview.update(cx, |pv, cx| pv.release_drive(letter, cx));
+        self.preview.update(cx, |pv, cx| pv.release_where(&on_it, cx));
         self.images.update(cx, |c, _| c.cancel_pending());
         if moved {
-            log::info!("{letter}: is being removed; its panes went Home");
+            log::info!("{name} is being removed; its panes went Home");
         }
         cx.notify();
+    }
+
+    /// Linux: unmounts (or, with `eject`, safely removes) the drive mounted at `root` after
+    /// every window let go of it; says why when it can't.
+    #[cfg(unix)]
+    fn unmount_drive(&mut self, root: PathBuf, eject: bool, window: &mut Window, cx: &mut Context<Self>) {
+        release_mount(&root, cx);
+        let win = window.window_handle();
+        let work = cx.background_spawn({
+            let root = root.clone();
+            async move { if eject { rf_win::udisks::eject(&root) } else { rf_win::udisks::unmount(&root) } }
+        });
+        cx.spawn(async move |this, cx| {
+            let r = work.await;
+            let _ = this.update(cx, |ws, cx| {
+                ws.places.update(cx, |p, cx| p.refresh(cx));
+                if let Err(e) = r {
+                    log::warn!("unmount {}: {e:#}", root.display());
+                    let title = if eject { t!("Couldn't eject the drive") } else { t!("Couldn't unmount the drive") };
+                    crate::ops::alert_box(title.to_string(), format!("{e}"), win, cx);
+                }
+            });
+        })
+        .detach();
     }
 
     fn close_quick_look(&mut self, cx: &mut Context<Self>) {
@@ -1740,6 +1782,24 @@ impl Workspace {
         if !cfg!(windows) {
             items.truncate(items.len() - 2);
         }
+        // Linux: a mounted drive can be unmounted, a stick or disc ejected (Windows has these
+        // in its shell menu)
+        #[cfg(unix)]
+        if let Some(d) = self.places.read(cx).drives.iter().find(|d| d.root == path && !places::unmounted(d)) {
+            use rf_win::DriveKind;
+            let system = ["/", "/home", "/boot", "/efi", "/usr", "/var"].iter().any(|s| d.root == Path::new(s));
+            let removable = matches!(d.kind, DriveKind::Removable | DriveKind::Optical);
+            if d.source.starts_with("/dev/") && !system {
+                let at = items.len().min(4);
+                let mut extra = Vec::new();
+                if removable {
+                    extra.push(Item::action(t!("Eject"), MenuIcon::Lucide(L::Eject), with(|ws, p, w, cx| ws.unmount_drive(p, true, w, cx))));
+                }
+                extra.push(Item::action(t!("Unmount"), MenuIcon::Lucide(L::Unplug), with(|ws, p, w, cx| ws.unmount_drive(p, false, w, cx))));
+                extra.push(Item::Separator);
+                items.splice(at..at, extra);
+            }
+        }
         let menu = crate::fluent_menu::show(Menu { quick: Vec::new(), items }, window.mouse_position(), window, cx);
         let view = self.active_tab().downgrade();
         if cfg!(windows) {
@@ -2406,7 +2466,7 @@ impl Workspace {
             let loc = Location::Path(d.root.clone());
             let active = cur == loc;
             let frac = d.used_fraction();
-            let bar = (d.total > 0).then(|| {
+            let bar = (d.total > 0 && !places::unmounted(&d)).then(|| {
                 div()
                     .mt(px(5.))
                     .h(px(2.))
