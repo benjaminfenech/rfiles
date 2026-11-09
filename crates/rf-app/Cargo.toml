@@ -19,6 +19,7 @@ rf-core.workspace = true
 rf-dialog = { path = "../rf-dialog" }
 rf-archive.workspace = true
 rf-player.workspace = true
+rustdecoder.workspace = true
 gpui-kit.workspace = true
 anyhow.workspace = true
 log.workspace = true

@@ -355,6 +355,9 @@ pub struct Settings {
     pub select_previous_on_up: bool,
     pub decimal_sizes: bool,
     pub calculate_folder_sizes: bool,
+    /// Folders show their size on disk (files rounded up to whole clusters) instead of the sum
+    /// of their file sizes.
+    pub folder_size_on_disk: bool,
     /// Our own parallel engine for copies, moves to other drives and permanent deletes
     /// (off: Windows' engine for everything, like Explorer).
     pub fast_file_ops: bool,
@@ -453,6 +456,7 @@ impl Default for Settings {
             select_previous_on_up: true,
             decimal_sizes: false,
             calculate_folder_sizes: false,
+            folder_size_on_disk: false,
             fast_file_ops: true,
             copy_verify: CopyVerify::Off,
             copy_speed_limit: 0,
@@ -720,6 +724,15 @@ mod tests {
     }
 }
 
+/// Where data that can be rebuilt lives (remembered folder sizes): `%LOCALAPPDATA%\rustyfiles`,
+/// or `RUSTYFILES_CONFIG_DIR` when set, so test copies keep their data apart.
+pub fn local_data_dir() -> Option<std::path::PathBuf> {
+    if let Some(d) = std::env::var_os("RUSTYFILES_CONFIG_DIR").filter(|d| !d.is_empty()) {
+        return Some(std::path::PathBuf::from(d));
+    }
+    dirs::data_local_dir().map(|d| d.join("rustyfiles"))
+}
+
 /// `%APPDATA%\rustyfiles`, or `RUSTYFILES_CONFIG_DIR` when set (portable use, tests).
 pub fn app_dir() -> Option<std::path::PathBuf> {
     if let Some(d) = std::env::var_os("RUSTYFILES_CONFIG_DIR").filter(|d| !d.is_empty()) {
@@ -779,13 +792,13 @@ fn sync_name_index(on: bool, excluded: &[String]) {
         if STATE.load(Ordering::Relaxed) != 2 || std::env::var_os("RUSTYFILES_NO_INDEX").is_some() || extra {
             return;
         }
-        #[cfg(windows)]
-        let dir = std::env::var_os("LOCALAPPDATA").map_or_else(std::env::temp_dir, std::path::PathBuf::from).join("rustyfiles").join("index");
-        // Linux: the cache folder (`~/.cache/rustyfiles/index`, never indexed itself); beside
-        // the settings when RUSTYFILES_CONFIG_DIR isolates a run
-        #[cfg(not(windows))]
+        // a copy with its own settings folder (tests, portable) keeps its index there too
         let dir = match std::env::var_os("RUSTYFILES_CONFIG_DIR").filter(|d| !d.is_empty()) {
-            Some(d) => std::path::PathBuf::from(d).join("index"),
+            Some(cfg) => std::path::PathBuf::from(cfg).join("index"),
+            #[cfg(windows)]
+            None => std::env::var_os("LOCALAPPDATA").map_or_else(std::env::temp_dir, std::path::PathBuf::from).join("rustyfiles").join("index"),
+            // Linux: the cache folder (`~/.cache/rustyfiles/index`, never indexed itself)
+            #[cfg(not(windows))]
             None => dirs::cache_dir().unwrap_or_else(std::env::temp_dir).join("rustyfiles").join("index"),
         };
         // RUSTYFILES_INDEX_ROOTS="E:\;F:\" picks the roots (testing; Linux: "/data;/home/me")

@@ -235,9 +235,29 @@ pub fn any_main_window(cx: &App) -> bool {
 /// (`rustyfiles /select,<file>`, like Explorer).
 pub const SELECT_PREFIX: &str = "\u{1}select:";
 
+/// A second launch on a shell folder (a phone, Network…) reaches the running window as this
+/// prefix plus the folder's parsing name (and, in a saved session, a tab and its name).
+pub const SHELL_PREFIX: &str = "rustyfiles-shell:";
+
+/// How a tab is kept in the saved session: a folder's path, a search's folder, the Recycle Bin
+/// and shell folders (a phone…) by name; other places come back as Home ("").
+fn session_text(loc: &Location) -> String {
+    match loc {
+        Location::Path(p) => rf_core::history::redact_credentials(&p.to_string_lossy()),
+        Location::Search { root, .. } => root.to_string_lossy().into_owned(),
+        Location::RecycleBin => "shell:RecycleBinFolder".into(),
+        Location::Shell { parsing, name } => format!("{SHELL_PREFIX}{parsing}\t{name}"),
+        _ => String::new(),
+    }
+}
+
 /// What a launch message opens: a folder (or Home), and maybe a name to select there.
 pub fn parse_launch(msg: &str) -> (Location, Option<String>) {
     let m = msg.trim();
+    if let Some(rest) = m.strip_prefix(SHELL_PREFIX) {
+        let (parsing, name) = rest.split_once('\t').unwrap_or((rest, ""));
+        return (Location::Shell { parsing: parsing.to_string(), name: name.to_string() }, None);
+    }
     if let Some(loc) = Location::from_shell_name(m) {
         return (loc, None);
     }
@@ -523,7 +543,7 @@ impl Workspace {
             }
             None if prefs.startup == crate::settings::StartupPref::Continue && !prefs.session_tabs.is_empty() => {
                 for t in &prefs.session_tabs {
-                    let loc = if t.is_empty() { Location::Home } else { Location::Path(PathBuf::from(t)) };
+                    let loc = if t.is_empty() { Location::Home } else { parse_launch(t).0 };
                     this.open_tab(loc, window, cx);
                 }
                 let a = prefs.session_active.min(this.tabs.len() - 1);
@@ -611,11 +631,7 @@ impl Workspace {
         let tabs: Vec<String> = self
             .tabs
             .iter()
-            .map(|t| match t.left.read(cx).location() {
-                Location::Path(p) => rf_core::history::redact_credentials(&p.to_string_lossy()),
-                Location::Search { root, .. } => root.to_string_lossy().into_owned(),
-                _ => String::new(),
-            })
+            .map(|t| session_text(t.left.read(cx).location()))
             .collect();
         let active = self.active;
         cx.update_global::<crate::settings::Settings, _>(|s, _| {
@@ -666,7 +682,9 @@ impl Workspace {
             FolderEvent::OpenInNewTab(loc) => {
                 let keep = this.active;
                 this.open_tab(loc.clone(), window, cx);
-                if !cx.global::<crate::settings::Settings>().focus_new_tab {
+                // a view asked for by name (disk usage) is what the user wants to see now
+                let wanted = matches!(loc, Location::DiskUsage(_));
+                if !wanted && !cx.global::<crate::settings::Settings>().focus_new_tab {
                     this.activate(keep, window, cx);
                 }
             }
@@ -1889,6 +1907,7 @@ impl Workspace {
             it.take(16)
                 .map(|l| match l {
                     Location::Path(p) => p.to_string_lossy().into_owned(),
+                    Location::DiskUsage(p) => crate::disk_usage::title(p),
                     other => crate::i18n::td(&other.title()),
                 })
                 .collect()
@@ -2111,6 +2130,8 @@ impl Workspace {
         let in_folder = tab.location().path().is_some();
         let (sel, _, _) = tab.selection_summary();
         let has_sel = sel > 0;
+        // a phone's folder is read-only here: changing commands are greyed out, not refused later
+        let writable_sel = has_sel && !matches!(tab.location(), Location::Shell { .. });
         let preview_open = self.preview_open;
         let filter_on = self.filter_bar;
         let paste_ok = in_folder && rf_win::clipboard::has_files();
@@ -2170,7 +2191,7 @@ impl Workspace {
             .border_color(p.divider)
             .child(drop("cb-new", L::CirclePlus, Some("Yeni"), "Yeni öğe", in_folder, cx, |_, _| crate::ctx_menu::BarMenu::New))
             .child(sep())
-            .child(cmd("cb-cut", L::Scissors, "Kes  (Ctrl+X)", has_sel, cx, |this, w, cx| {
+            .child(cmd("cb-cut", L::Scissors, "Kes  (Ctrl+X)", writable_sel, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.copy_to_clipboard(rf_win::fileops::Transfer::Move, w, cx))
             }))
             .child(cmd("cb-copy", L::Copy, "Kopyala  (Ctrl+C)", has_sel, cx, |this, w, cx| {
@@ -2179,12 +2200,12 @@ impl Workspace {
             .child(cmd("cb-paste", L::ClipboardPaste, "Yapıştır  (Ctrl+V)", paste_ok, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.paste(w, cx))
             }))
-            .child(cmd("cb-rename", L::TextCursorInput, "Yeniden adlandır  (F2)", has_sel, cx, |this, w, cx| {
+            .child(cmd("cb-rename", L::TextCursorInput, "Yeniden adlandır  (F2)", writable_sel, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.rename_selection(w, cx))
             }))
             // Share is Windows' share sheet
-            .when(cfg!(windows), |d| d.child(cmd("cb-share", L::Share2, "Paylaş", has_sel, cx, |this, _, cx| this.with_tab(cx, |v, _| v.share()))))
-            .child(cmd("cb-delete", L::Trash, "Sil  (Del)", has_sel, cx, |this, w, cx| {
+            .when(cfg!(windows), |d| d.child(cmd("cb-share", L::Share2, "Paylaş", writable_sel, cx, |this, _, cx| this.with_tab(cx, |v, _| v.share()))))
+            .child(cmd("cb-delete", L::Trash, "Sil  (Del)", writable_sel, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.delete_selected(false, w, cx))
             }))
             .child(cmd("cb-props", L::Wrench, "Özellikler  (Alt+Enter)", in_folder, cx, |this, _, cx| {
@@ -2237,6 +2258,9 @@ impl Workspace {
         let mut row = h_flex().gap_0p5().items_center().text_sm().overflow_hidden();
         let crumbs: Vec<(String, Location)> = match loc {
             Location::Path(path) | Location::Search { root: path, .. } => breadcrumbs(path),
+            // the shell's own name for the folder (the location may carry none)
+            Location::Shell { .. } => vec![(self.active_tab().read(cx).title(cx), loc.clone())],
+            Location::DiskUsage(path) => vec![(crate::disk_usage::title(path), loc.clone())],
             other => vec![(crate::i18n::td(&other.title()), other.clone())],
         };
         // Too long for the address box: hide leading segments after the drive behind "…"
@@ -3076,7 +3100,7 @@ impl Render for Workspace {
         let commandbar = self.render_commandbar(&p, cx);
         let filter_strip = self.render_filter_bar(&p, window, cx);
         // the command bar acts on folder contents: not on Home, Settings, the Recycle Bin…
-        let show_commandbar = matches!(self.active_tab().read(cx).location(), Location::Path(_) | Location::Search { .. } | Location::Library { .. } | Location::Tag(_));
+        let show_commandbar = matches!(self.active_tab().read(cx).location(), Location::Path(_) | Location::Search { .. } | Location::Library { .. } | Location::Tag(_) | Location::Shell { .. });
         // Adaptive layout (as Files does): a narrow window gives the list its room first by
         // hiding the preview, then the sidebar. The settings themselves are not changed.
         const LIST_MIN: f32 = 380.;
@@ -3153,10 +3177,7 @@ impl Render for Workspace {
         let session: Vec<String> = self
             .tabs
             .iter()
-            .map(|t| {
-                let loc = t.left.read(cx).location();
-                loc.path().map(|p| rf_core::history::redact_credentials(&p.to_string_lossy())).unwrap_or_default()
-            })
+            .map(|t| session_text(t.left.read(cx).location()))
             .collect();
         if session != self.last_session && self.picker.is_none() {
             self.last_session = session.clone();
@@ -3556,5 +3577,18 @@ mod launch_tests {
         assert_eq!(sel.as_deref(), Some("rapor ü.txt"));
         assert_eq!(parse_launch(r"C:\Windows"), (Location::Path(PathBuf::from(r"C:\Windows")), None));
         assert_eq!(parse_launch("  "), (Location::Home, None));
+    }
+
+    #[test]
+    fn session_tabs_come_back_as_they_were() {
+        let phone = Location::Shell {
+            parsing: r"::{20D04FE0-3AEA-1069-A2D8-08002B30309D}\\?\usb#vid_04e8&pid_6860#r58n#{6ac27878-a6fa-4155-ba85-f98f491d4f33}".into(),
+            name: "Galaxy S24".into(),
+        };
+        for loc in [Location::Path(PathBuf::from(r"C:\Kullanıcılar\Özer")), Location::RecycleBin, phone] {
+            assert_eq!(parse_launch(&super::session_text(&loc)).0, loc);
+        }
+        // places a session can't keep come back as Home
+        assert_eq!(super::session_text(&Location::Settings), "");
     }
 }

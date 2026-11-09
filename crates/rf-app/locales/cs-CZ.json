@@ -953,5 +953,20 @@
  "2220b7a5": "Stahuje se rustyfiles {v}",
  "7daa795d": "rustyfiles {v} je připraven",
  "099cc52a": "Nainstaluje se po restartu",
- "4dc479c7": "Restartovat"
+ "4dc479c7": "Restartovat",
+ "5d57c6f0": "Zobrazit velikost na disku u složek",
+ "241b2a9f": "Sloupec Velikost zobrazuje složky podle místa, které zabírají na disku (zaokrouhleno nahoru na celé clustery), místo součtu velikostí jejich souborů; řazení se řídí tímto údajem",
+ "16fafed3": "Zařízení",
+ "be3cb212": "Tato složka je pouze pro čtení",
+ "bba08e14": "Položky na zařízeních, jako jsou telefony, zde nelze měnit; zkopírujte je a vložte do jiné složky.",
+ "7450cc15": "Kopírování ze zařízení:",
+ "eecbf1b8": "Využití disku",
+ "84283d09": "Zobrazit využití disku",
+ "61ec32a9": "Probíhá výpočet využití disku…",
+ "9de07d77": "Zavřením karty se prohledávání zastaví",
+ "c0187744": "Velikost na disku",
+ "69146383": "Přejít do této složky",
+ "22542ba8": "Zobrazit ve složce",
+ "d76b8c14": "složek se nepodařilo přečíst",
+ "186c7384": "dalších položek"
 }

@@ -203,6 +203,10 @@ enum Msg {
     View(View),
     /// Search hits: entries plus their parent folders.
     Hits(Vec<Entry>, Vec<Arc<std::path::Path>>),
+    /// Shell folder items (a phone, Network…): entries plus what the shell knows about each.
+    Shell(Vec<Entry>, Vec<rf_win::shellfolder::ShellChild>),
+    /// The shell's own name for the folder being listed.
+    ShellName(String),
     Done(Result<usize, String>),
 }
 
@@ -211,26 +215,33 @@ enum Msg {
 pub(crate) enum DirSize {
     /// Being measured: bytes counted so far.
     Partial(u64),
-    Done(u64),
+    Done(rf_win::foldersize::FolderSize),
 }
 
 impl From<rf_win::foldersize::SizeState> for DirSize {
     fn from(s: rf_win::foldersize::SizeState) -> Self {
         match s {
             rf_win::foldersize::SizeState::Partial(b) => DirSize::Partial(b),
-            rf_win::foldersize::SizeState::Done(s) => DirSize::Done(s.bytes),
+            // a size remembered from the last run stands in until the new measurement ends; the
+            // fresh value then replaces it without any marking
+            rf_win::foldersize::SizeState::Provisional(s) | rf_win::foldersize::SizeState::Done(s) => DirSize::Done(s),
         }
     }
 }
 
 impl DirSize {
     /// "…" until something is counted, then the running total with "…", then the size.
-    pub(crate) fn text(self) -> String {
+    pub(crate) fn text(self, on_disk: bool) -> String {
         match self {
             DirSize::Partial(0) => "…".into(),
             DirSize::Partial(b) => format!("{}…", format::size(b)),
-            DirSize::Done(b) => format::size(b),
+            DirSize::Done(s) => format::size(Self::bytes(s, on_disk)),
         }
+    }
+
+    /// The size to show and sort by; without a known cluster size the logical size stands in.
+    fn bytes(s: rf_win::foldersize::FolderSize, on_disk: bool) -> u64 {
+        if on_disk { s.allocated.unwrap_or(s.bytes) } else { s.bytes }
     }
 }
 
@@ -257,6 +268,10 @@ pub struct FolderView {
     pub(crate) entries: Vec<Entry>,
     /// Search mode only: parent folder of each entry (aligned with `entries`).
     parents: Vec<Arc<std::path::Path>>,
+    /// Shell folders only: what the shell knows about each entry (aligned with `entries`).
+    pub(crate) shell_items: Vec<rf_win::shellfolder::ShellChild>,
+    /// Shell folders only: the shell's name for the folder (when the location carries none).
+    shell_title: Option<String>,
     visible: Vec<u32>,
     pub sort: SortSpec,
     pub group: GroupBy,
@@ -265,7 +280,7 @@ pub struct FolderView {
     /// visible index → row index (grouping only).
     row_of_vi: Vec<usize>,
     pub filter: Filter,
-    selected: HashSet<u32>,
+    pub(crate) selected: HashSet<u32>,
     cursor: Option<usize>,
     anchor: Option<usize>,
     pub loading: bool,
@@ -306,6 +321,8 @@ pub struct FolderView {
     _watch_task: Option<Task<()>>,
     pub renaming: Option<(u32, Entity<gpui_kit::component::input::InputState>)>,
     recycle: Option<Entity<crate::recycle_view::RecycleView>>,
+    /// The disk usage page of this tab (kept while the tab stays on that folder).
+    disk_usage: Option<Entity<crate::disk_usage::DiskUsageView>>,
     /// Git status of the repository containing this folder (if any).
     pub git: Option<Arc<rf_win::git::GitStatus>>,
     /// Last commit per child of the current folder (commit columns), keyed by name.
@@ -360,6 +377,8 @@ impl FolderView {
                 this.filter.dot_hidden = dot;
                 this.rebuild_visible();
             }
+            // folders show (and sort by) size on disk or the sum of their files, as set
+            this.resort_for_sizes(cx);
             // turning a commit column on loads the commits
             if this.git.is_some() && this.git_commits.is_none() && Self::commit_cols_on(cx) {
                 this.refresh_git(cx);
@@ -390,6 +409,8 @@ impl FolderView {
             content_width: px(900.),
             entries: Vec::new(),
             parents: Vec::new(),
+            shell_items: Vec::new(),
+            shell_title: None,
             visible: Vec::new(),
             sort: SortSpec {
                 key: prefs.default_sort,
@@ -438,6 +459,7 @@ impl FolderView {
             marquee: None,
             typeahead: (String::new(), Instant::now()),
             recycle: None,
+            disk_usage: None,
             git: None,
             git_commits: None,
             column_cache: Default::default(),
@@ -480,10 +502,20 @@ impl FolderView {
                 return format!("{} {}", crate::t!("Etiket:"), crate::i18n::td(&d.name));
             }
         }
+        if let Location::Shell { name, .. } = self.location() {
+            if name.is_empty() {
+                if let Some(t) = &self.shell_title {
+                    return t.clone();
+                }
+            }
+        }
         if let Location::Path(p) = self.location() {
             if let Some(l) = rf_win::localized::folder_label(p, None) {
                 return l.to_string();
             }
+        }
+        if let Location::DiskUsage(p) = self.location() {
+            return crate::disk_usage::title(p);
         }
         crate::i18n::td(&self.location().title())
     }
@@ -496,6 +528,8 @@ impl FolderView {
             Location::Search { .. } => L::Search,
             Location::Tag(_) => L::Tag,
             Location::Library { .. } => L::Library,
+            Location::Shell { .. } => L::Usb,
+            Location::DiskUsage(_) => L::ChartPie,
             Location::Path(p) if rf_win::network::server_root(p).is_some() => L::Server,
             // the archive itself or a folder inside it (name check only: no disk access here)
             Location::Path(p) if crate::archive_view::is_browsable_path(p) => L::FileArchive,
@@ -937,6 +971,8 @@ impl FolderView {
             self.soft_pending = None;
             self.entries.clear();
             self.parents.clear();
+            self.shell_items.clear();
+            self.shell_title = None;
             self.visible.clear();
             self.selected.clear();
             self.cursor = None;
@@ -1000,6 +1036,46 @@ impl FolderView {
                     msgs.push(m);
                 }
                 let _ = this.update(cx, |v, cx| v.apply(generation, msgs, cx));
+            }));
+            cx.notify();
+            return;
+        }
+        if let Location::Shell { parsing, .. } = self.location().clone() {
+            self.loading = true;
+            self.load_started = Instant::now();
+            let generation = self.generation;
+            let cancel = self.cancel.clone();
+            let (tx, mut rx) = mpsc::unbounded::<Msg>();
+            std::thread::Builder::new()
+                .name("rf-shell-list".into())
+                .spawn(move || {
+                    use rf_win::shellfolder as sf;
+                    if let Some(n) = sf::display_name(&parsing) {
+                        let _ = tx.unbounded_send(Msg::ShellName(n));
+                    }
+                    let r = sf::list(&parsing, &|| cancel.load(Ordering::Relaxed), &mut |batch| {
+                        let es = batch
+                            .iter()
+                            .map(|c| {
+                                let kind = if c.is_folder { rf_core::EntryKind::Dir } else { rf_core::EntryKind::File };
+                                Entry::new(&c.name, kind, c.size.unwrap_or(0), c.modified_ms.unwrap_or(0), 0, 0)
+                            })
+                            .collect();
+                        let _ = tx.unbounded_send(Msg::Shell(es, batch));
+                    });
+                    let _ = tx.unbounded_send(Msg::Done(r.map_err(|e| format!("{e:#}"))));
+                })
+                .ok();
+            self._load_task = Some(cx.spawn(async move |this, cx| {
+                while let Some(first) = rx.next().await {
+                    let mut msgs = vec![first];
+                    while let Ok(m) = rx.try_recv() {
+                        msgs.push(m);
+                    }
+                    if this.update(cx, |v, cx| v.apply(generation, msgs, cx)).is_err() {
+                        break;
+                    }
+                }
             }));
             cx.notify();
             return;
@@ -1257,6 +1333,11 @@ impl FolderView {
                     self.entries.extend(es);
                     self.parents.extend(ps);
                 }
+                Msg::Shell(es, items) => {
+                    self.entries.extend(es);
+                    self.shell_items.extend(items);
+                }
+                Msg::ShellName(n) => self.shell_title = Some(n),
                 Msg::Done(r) => {
                     done = true;
                     self.loading = false;
@@ -1289,7 +1370,7 @@ impl FolderView {
             self.visible.extend(start..self.entries.len() as u32);
         }
         if done {
-            self.resort_for_sizes();
+            self.resort_for_sizes(cx);
             self.apply_reselect(cx);
         }
         cx.notify();
@@ -1340,7 +1421,7 @@ impl FolderView {
                         p.extend(b)
                     }
                 }
-                Msg::Hits(..) => {}
+                Msg::Hits(..) | Msg::Shell(..) | Msg::ShellName(_) => {}
                 Msg::Done(Err(e)) if e.contains("bulunamadı") => {
                     // The folder we are showing was deleted/renamed away: step up.
                     self.soft_pending = None;
@@ -1366,7 +1447,7 @@ impl FolderView {
             self.rebuild_visible();
         }
         // measured folder sizes go back into the fresh entries (before the cursor is placed)
-        self.resort_for_sizes();
+        self.resort_for_sizes(cx);
         self.selected = self
             .entries
             .iter()
@@ -2235,7 +2316,7 @@ impl FolderView {
 
     /// Folders whose size was measured carry it in their entry, so sorting by Size puts them
     /// among the files by their real size. Returns whether anything changed.
-    fn apply_dir_sizes(&mut self) -> bool {
+    fn apply_dir_sizes(&mut self, on_disk: bool) -> bool {
         if self.folder_sizes.is_empty() {
             return false;
         }
@@ -2245,9 +2326,10 @@ impl FolderView {
                 continue;
             }
             let Some(p) = self.path_of(i as u32) else { continue };
-            if let Some(DirSize::Done(b)) = self.folder_sizes.get(&p) {
-                if self.entries[i].size != *b {
-                    self.entries[i].size = *b;
+            if let Some(DirSize::Done(s)) = self.folder_sizes.get(&p) {
+                let b = DirSize::bytes(*s, on_disk);
+                if self.entries[i].size != b {
+                    self.entries[i].size = b;
                     changed = true;
                 }
             }
@@ -2256,8 +2338,9 @@ impl FolderView {
     }
 
     /// Re-sorts when measured folder sizes changed what a Size sort shows.
-    fn resort_for_sizes(&mut self) {
-        if self.apply_dir_sizes() && self.sort.key == SortKey::Size {
+    fn resort_for_sizes(&mut self, cx: &App) {
+        let on_disk = cx.global::<crate::settings::Settings>().folder_size_on_disk;
+        if self.apply_dir_sizes(on_disk) && self.sort.key == SortKey::Size {
             self.rebuild_visible();
         }
     }
@@ -2312,7 +2395,7 @@ impl FolderView {
                         }
                         v.size_batches.retain(|(b, _)| !b.finished());
                         if changed {
-                            v.resort_for_sizes();
+                            v.resort_for_sizes(cx);
                             cx.notify();
                         }
                         let more = !v.size_batches.is_empty();
@@ -2345,6 +2428,9 @@ impl FolderView {
 
     /// Folder containing entry `ei` (differs per entry in search results).
     pub(crate) fn parent_of(&self, ei: u32) -> Option<&std::path::Path> {
+        if matches!(self.location(), Location::Shell { .. }) {
+            return self.shell_items.get(ei as usize)?.fs_path.as_deref()?.parent();
+        }
         match self.parents.get(ei as usize) {
             Some(p) => Some(p),
             None => self.location().path(),
@@ -2376,6 +2462,10 @@ impl FolderView {
     }
 
     pub(crate) fn path_of(&self, ei: u32) -> Option<PathBuf> {
+        if matches!(self.location(), Location::Shell { .. }) {
+            // only items that are real files have a path; a phone's items have none
+            return self.shell_items.get(ei as usize)?.fs_path.clone();
+        }
         Some(self.parent_of(ei)?.join(&*self.entries.get(ei as usize)?.name))
     }
 
@@ -2473,7 +2563,55 @@ impl FolderView {
 
     // ---------- opening ----------
 
+    /// Shell folders (phones…): opens what only the shell can open. Returns false for items
+    /// that are real files or folders (they go the ordinary way through `path_of`).
+    fn open_shell_entry(&mut self, ei: u32, cx: &mut Context<Self>) -> bool {
+        let Some(child) = self.shell_items.get(ei as usize).cloned() else { return true };
+        let loc = if child.is_folder {
+            match &child.fs_path {
+                Some(p) if p.extension().is_some_and(|x| x.eq_ignore_ascii_case("library-ms")) => {
+                    Location::Library { file: p.clone(), name: child.name.clone() }
+                }
+                Some(_) => return false,
+                // a network computer (`\nas`) is a path to us, the shell lists its shares
+                None if child.parsing.starts_with(r"\\") => Location::Path(PathBuf::from(&child.parsing)),
+                None => Location::Shell { parsing: child.parsing.clone(), name: child.name.clone() },
+            }
+        } else {
+            if child.fs_path.is_some() {
+                return false;
+            }
+            // an item on a phone: the shell fetches it and opens it with its default app
+            // (a dialog asking for a file cannot be answered with one)
+            if !self.picking {
+                let parsing = child.parsing;
+                std::thread::spawn(move || {
+                    if let Err(e) = rf_win::shellfolder::open(&parsing) {
+                        log::warn!("open {parsing}: {e:#}");
+                    }
+                });
+            }
+            return true;
+        };
+        if cx.global::<crate::settings::Settings>().open_folders_in_new_tab {
+            cx.emit(FolderEvent::OpenInNewTab(loc));
+        } else {
+            self.navigate(loc, cx);
+        }
+        true
+    }
+
+    /// The selected items of a shell folder, in list order.
+    pub(crate) fn selection_shell(&self) -> Vec<rf_win::shellfolder::ShellChild> {
+        let mut v: Vec<u32> = self.selected.iter().copied().collect();
+        v.sort_unstable();
+        v.into_iter().filter_map(|i| self.shell_items.get(i as usize).cloned()).collect()
+    }
+
     fn open_entry(&mut self, ei: u32, cx: &mut Context<Self>) {
+        if matches!(self.location(), Location::Shell { .. }) && self.open_shell_entry(ei, cx) {
+            return;
+        }
         let Some(path) = self.path_of(ei) else { return };
         let e = &self.entries[ei as usize];
         let browse = !e.is_dir()
@@ -2726,6 +2864,7 @@ impl FolderView {
         // folders inside an archive have no size of their own to measure
         let measurable = !self.location().path().is_some_and(crate::archive_view::is_browsable_path);
         let folder_sizes = prefs.calculate_folder_sizes;
+        let on_disk = prefs.folder_size_on_disk;
         let vis = self.visible_cols(cx);
         let show_date = vis.modified;
         let show_created = vis.created;
@@ -2772,9 +2911,9 @@ impl FolderView {
             let dir_path = (show_size && measurable && self.entries[ei as usize].is_dir()).then(|| self.path_of(ei)).flatten();
             let dir_size: Option<String> = dir_path.clone().and_then(|p| {
                 if folder_sizes {
-                    Some(self.folder_size(p, cx).text())
+                    Some(self.folder_size(p, cx).text(on_disk))
                 } else {
-                    self.folder_sizes.get(&p).map(|s| s.text())
+                    self.folder_sizes.get(&p).map(|s| s.text(on_disk))
                 }
             });
             let calc_link = dir_path.filter(|_| dir_size.is_none());
@@ -3252,6 +3391,7 @@ impl FolderView {
         let pinned = places.pinned.clone();
         let drives = places.drives.clone();
         let recent = places.recent.clone();
+        let devices = places.devices.clone();
         let card = |id: ElementId| {
             v_flex()
                 .id(id)
@@ -3283,6 +3423,7 @@ impl FolderView {
         let mut drive_grid = div().grid().grid_cols(tile_cols(avail, 240., 340., 12.)).gap_3();
         for (i, d) in drives.into_iter().enumerate() {
             let root = d.root.clone();
+            let usage_root = d.root.clone();
             let frac = d.used_fraction();
             let bar_color = if frac > 0.9 { p.danger } else { p.accent };
             let unmounted = places::unmounted(&d);
@@ -3316,9 +3457,44 @@ impl FolderView {
                                     } else {
                                         String::new()
                                     })),
+                            )
+                            // where the space goes, as its own tab (the card itself opens the drive)
+                            .child(
+                                div()
+                                    .id(("drive-usage", i))
+                                    .size(px(28.))
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .rounded(theme::RADIUS_SM)
+                                    .hover(|s| s.bg(p.hover))
+                                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Disk kullanımını göster")).build(w, cx))
+                                    .on_click(cx.listener(move |_, _, _, cx| {
+                                        cx.stop_propagation();
+                                        cx.emit(FolderEvent::OpenInNewTab(Location::DiskUsage(usage_root.clone())))
+                                    }))
+                                    .child(Icon::new(L::ChartPie).size(px(16.)).text_color(p.text_secondary)),
                             ),
                     )
                     .on_click(cx.listener(move |this, _, _, cx| this.navigate(Location::Path(root.clone()), cx))),
+            );
+        }
+
+        // phones and cameras (not drives): none connected = no group at all
+        let has_devices = !devices.is_empty();
+        let mut device_grid = div().grid().grid_cols(tile_cols(avail, 240., 340., 12.)).gap_3();
+        for (i, d) in devices.into_iter().enumerate() {
+            let loc = Location::Shell { parsing: d.parsing.clone(), name: d.name.clone() };
+            device_grid = device_grid.child(
+                card(("device", i).into())
+                    .child(
+                        h_flex()
+                            .gap_3()
+                            .items_center()
+                            .child(Icon::new(L::Usb).size(px(28.)).text_color(p.text_secondary))
+                            .child(div().flex_1().min_w_0().text_sm().overflow_hidden().text_ellipsis().whitespace_nowrap().child(d.name)),
+                    )
+                    .on_click(cx.listener(move |this, _, _, cx| this.navigate(loc.clone(), cx))),
             );
         }
 
@@ -3401,6 +3577,7 @@ impl FolderView {
                     .child(div().h_2())
                     .child(section(t!("Sürücüler")))
                     .child(drive_grid)
+                    .when(has_devices, |d| d.child(div().h_2()).child(section(t!("Cihazlar"))).child(device_grid))
                     .when(has_recent, |d| d.child(div().h_2()).child(section(t!("Son kullanılanlar"))))
                     .child(recent_list),
             )
@@ -3558,7 +3735,7 @@ fn empty_state(p: &Palette, icon: L, title: String, sub: &'static str) -> impl I
 /// the text inside starts exactly where the name was drawn.
 const RENAME_INSET: f32 = 5.;
 
-fn open_in_background(path: PathBuf, cx: &mut App) {
+pub(crate) fn open_in_background(path: PathBuf, cx: &mut App) {
     if !rf_win::ftp::is_ftp(&path) && !path.exists() && crate::archive_view::split(&path).is_some() {
         // an item inside an archive: extract just it (Status Center), open the real file
         crate::archive_view::open_items(cx, vec![path]);
@@ -3601,6 +3778,27 @@ impl Render for FolderView {
         let content = match self.location() {
             Location::Home => self.render_home(&p, cx),
             Location::Settings => crate::settings_view::render(&p, cx),
+            Location::DiskUsage(root) => {
+                let root = root.clone();
+                let dv = match &self.disk_usage {
+                    Some(dv) if dv.read(cx).root() == root => dv.clone(),
+                    _ => {
+                        let dv = cx.new(|cx| crate::disk_usage::DiskUsageView::new(root, cx));
+                        cx.subscribe(&dv, |this, _, ev: &crate::disk_usage::DiskEvent, cx| match ev {
+                            crate::disk_usage::DiskEvent::ShowInFolder(path) => {
+                                if let (Some(parent), Some(name)) = (path.parent(), path.file_name()) {
+                                    this.set_reselect(name.to_string_lossy().into_owned());
+                                    this.navigate(Location::Path(parent.to_path_buf()), cx);
+                                }
+                            }
+                        })
+                        .detach();
+                        self.disk_usage = Some(dv.clone());
+                        dv
+                    }
+                };
+                div().size_full().child(dv).into_any_element()
+            }
             Location::RecycleBin => {
                 let rv = match &self.recycle {
                     Some(rv) => rv.clone(),
