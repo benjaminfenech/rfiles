@@ -52,7 +52,7 @@ impl Drive {
 const NETWORK_FS: &[&str] = &["nfs", "nfs4", "cifs", "smb3", "smbfs", "sshfs", "fuse.sshfs", "9p", "afs", "ceph"];
 
 /// One mount from `/proc/self/mountinfo`: (mount point, fs type, source).
-fn mounts() -> Vec<(PathBuf, String, String)> {
+pub(crate) fn mounts() -> Vec<(PathBuf, String, String)> {
     let Ok(text) = std::fs::read_to_string("/proc/self/mountinfo") else { return Vec::new() };
     text.lines()
         .filter_map(|l| {

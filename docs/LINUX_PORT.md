@@ -104,7 +104,7 @@ apps**. Phase 1 is complete; Phase 2 (DirectLook and media) is next.
 
 | Module | Linux implementation |
 |---|---|
-| listing, search, foldersize | `std::fs::read_dir` + `std::os::unix` metadata; hidden = leading dot; skip symlink loops (track dev+inode) instead of junctions |
+| listing, search ✅, foldersize, nameindex ✅ | `std::fs::read_dir` + `std::os::unix` metadata; hidden = leading dot; skip symlink loops (track dev+inode) instead of junctions |
 | known, localized, libraries | `dirs` + `xdg-user-dirs`; drop localized names and libraries |
 | drives, volume | `/proc/self/mountinfo` + `statvfs`; filter pseudo filesystems |
 | watch | `notify` already uses inotify; just ungate |
@@ -325,9 +325,7 @@ new features need checking for Windows-only assumptions the compiler can't see (
 separators, case-insensitive paths, drive letters).
 
 - **0.4.0** (2026-11-09, 52 commits). Linux stand-ins: `fastcopy` journals and resume
-  (`interrupted` finds nothing: Linux's engine doesn't journal yet), `indexer` /
-  `nameindex` (the NTFS name index: never running, searches walk the disk as before; its
-  Settings card and "Leave out of the search index" are hidden), `preview_host::mf_decodes`
+  (`interrupted` finds nothing: Linux's engine doesn't journal yet), `preview_host::mf_decodes`
   (false: DirectLook decodes 4K on the CPU as before). The speed test (races File Explorer)
   is Windows only (`bench_view_linux.rs` keeps the page empty and hidden). Fixed for Linux:
   adaptive layouts recognised Pictures / Videos subfolders with a `\\` separator. Works on
@@ -335,7 +333,31 @@ separators, case-insensitive paths, drive letters).
   Downloads in date groups), Sort by Size with measured folders, paste selecting what
   arrived, the `rustdecoder` crate (builds; `search-ms:` links parse too, though nothing on
   Linux sends them). Follow-ups: copy journals and resume
-  in rf-linux's engine; the name index on Linux (ext4/btrfs walk + inotify).
+  in rf-linux's engine.
+- **Name index on Linux** (2026-11-09, after 0.4.0). `rf-linux/src/nameindex.rs` is
+  upstream's `rf-win/src/nameindex.rs` function by function, in the same order (compare the
+  two files on an upstream sync). Not shared, because the differences run through all of
+  it: names stored as raw bytes (non-UTF-8 names round-trip), folders found by their exact
+  name (upstream folds case: "Foo" and "foo" would be one folder), `read_dir` + the entry
+  type instead of `FindFirstFileExW`, dot names hidden, symlinks listed but never entered,
+  other mounts inside a root (FUSE cloud folders, shares, another disk) listed but not walked
+  (a search inside one walks the disk), the folder searched isn't its own hit (upstream
+  returns it), and Linux's exclusions (`node_modules`, `.git`, `.cache`, `.cargo`, `.npm`…,
+  anything with a `CACHEDIR.TAG`, the user's folders; case-sensitive). Roots
+  (`indexer::local_roots`): the home folder plus fixed local disks (ext4, btrfs, xfs…)
+  mounted outside it and outside `/`; never `/`, network, FUSE or removable mounts. Index
+  files go to `~/.cache/rustyfiles/index` (`$RUSTYFILES_CONFIG_DIR/index` when set).
+  Watching: raw inotify, one watch per indexed folder, added by the walk itself just before
+  it lists the folder (a recursive `notify` watch would walk the tree a second time and
+  watch the left-out caches). It takes at most half of `max_user_watches`; a root with more
+  folders, or whose event queue overflowed, is walked again every 30 minutes. The disk-walk
+  search (`rf-linux/src/search.rs`) was still a stub and is now rf-win's walk on
+  `read_dir` (only hits are `stat`ed). The Settings card, the exclusions list (folder picked
+  through the portal) and the context menu's "Leave out of the search index" show on Linux.
+  `cargo run --release -p rf-linux --example search_bench -- <folder> <query>` compares
+  the two; on this machine: home folder (525k entries, built in 4 s, 22 MB) 12 ms against
+  0.25–1.2 s for the walk; `/usr` (361k) 3 ms against 35–64 ms (warm cache). The walk finds
+  a few more hits: those inside the left-out folders.
 
 ## Packaging
 

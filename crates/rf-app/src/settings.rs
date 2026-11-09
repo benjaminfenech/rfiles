@@ -779,8 +779,16 @@ fn sync_name_index(on: bool, excluded: &[String]) {
         if STATE.load(Ordering::Relaxed) != 2 || std::env::var_os("RUSTYFILES_NO_INDEX").is_some() || extra {
             return;
         }
+        #[cfg(windows)]
         let dir = std::env::var_os("LOCALAPPDATA").map_or_else(std::env::temp_dir, std::path::PathBuf::from).join("rustyfiles").join("index");
-        // RUSTYFILES_INDEX_ROOTS="E:\;F:\" picks the roots (testing)
+        // Linux: the cache folder (`~/.cache/rustyfiles/index`, never indexed itself); beside
+        // the settings when RUSTYFILES_CONFIG_DIR isolates a run
+        #[cfg(not(windows))]
+        let dir = match std::env::var_os("RUSTYFILES_CONFIG_DIR").filter(|d| !d.is_empty()) {
+            Some(d) => std::path::PathBuf::from(d).join("index"),
+            None => dirs::cache_dir().unwrap_or_else(std::env::temp_dir).join("rustyfiles").join("index"),
+        };
+        // RUSTYFILES_INDEX_ROOTS="E:\;F:\" picks the roots (testing; Linux: "/data;/home/me")
         let roots = match std::env::var("RUSTYFILES_INDEX_ROOTS") {
             Ok(v) => v.split(';').filter(|s| !s.is_empty()).map(std::path::PathBuf::from).collect(),
             Err(_) => rf_win::indexer::local_roots(),
