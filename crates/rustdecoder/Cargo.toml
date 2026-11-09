@@ -8,4 +8,13 @@ publish.workspace = true
 
 [dependencies]
 thiserror.workspace = true
+rayon.workspace = true
 log.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows.workspace = true
+windows-core.workspace = true
+
+[dev-dependencies]
+flate2.workspace = true
+crc32fast.workspace = true

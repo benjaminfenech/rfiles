@@ -953,5 +953,20 @@
  "2220b7a5": "Sťahuje sa rustyfiles {v}",
  "7daa795d": "rustyfiles {v} je pripravený",
  "099cc52a": "Nainštaluje sa po reštarte",
- "4dc479c7": "Reštartovať"
+ "4dc479c7": "Reštartovať",
+ "5d57c6f0": "Zobraziť veľkosť na disku pri priečinkoch",
+ "241b2a9f": "Stĺpec Veľkosť zobrazuje priečinky podľa miesta, ktoré zaberajú na disku (zaokrúhlené nahor na celé klastre), namiesto súčtu veľkostí ich súborov; zoradenie sa riadi týmto údajom",
+ "16fafed3": "Zariadenia",
+ "be3cb212": "Tento priečinok je iba na čítanie",
+ "bba08e14": "Položky na zariadeniach, ako sú telefóny, tu nemožno meniť; skopírujte ich a vložte do iného priečinka.",
+ "7450cc15": "Kopírovanie zo zariadenia:",
+ "eecbf1b8": "Využitie disku",
+ "84283d09": "Zobraziť využitie disku",
+ "61ec32a9": "Prebieha výpočet využitia disku…",
+ "9de07d77": "Zatvorením karty sa skenovanie zastaví",
+ "c0187744": "Veľkosť na disku",
+ "69146383": "Prejsť do tohto priečinka",
+ "22542ba8": "Zobraziť v priečinku",
+ "d76b8c14": "priečinkov sa nepodarilo prečítať",
+ "186c7384": "ďalších položiek"
 }

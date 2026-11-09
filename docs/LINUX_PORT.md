@@ -104,7 +104,7 @@ apps**. Phase 1 is complete; Phase 2 (DirectLook and media) is next.
 
 | Module | Linux implementation |
 |---|---|
-| listing, search ✅, foldersize, nameindex ✅ | `std::fs::read_dir` + `std::os::unix` metadata; hidden = leading dot; skip symlink loops (track dev+inode) instead of junctions |
+| listing, search ✅, foldersize ✅, nameindex ✅, diskusage ✅ | `std::fs::read_dir` + `std::os::unix` metadata; hidden = leading dot; skip symlink loops (track dev+inode) instead of junctions |
 | known, localized, libraries | `dirs` + `xdg-user-dirs`; drop localized names and libraries |
 | drives, volume | `/proc/self/mountinfo` + `statvfs`; filter pseudo filesystems |
 | watch | `notify` already uses inotify; just ungate |
@@ -358,6 +358,20 @@ separators, case-insensitive paths, drive letters).
   the two; on this machine: home folder (525k entries, built in 4 s, 22 MB) 12 ms against
   0.25–1.2 s for the walk; `/usr` (361k) 3 ms against 35–64 ms (warm cache). The walk finds
   a few more hits: those inside the left-out folders.
+- **main @ a1d7ca3** (2026-11-09, 89 commits after 0.4.0). Ported: `diskusage` (the "Show
+  disk usage" tab: rf-win's tree with a `read_dir` walk that skips symlinks and stays on one
+  file system, block size from `statvfs`, case-sensitive names; home folder here: 1.07 M
+  entries in 1.0 s, 52 MB, totals equal to `du -sxbl`; `examples/diskusage.rs`), and
+  `foldersize`'s remembered sizes (`foldersizes.bin` in `~/.local/share/rustyfiles`, shown as
+  provisional and measured again). Fixed on the way: the folder size cache keyed paths
+  case-insensitively and `invalidate` looked for `\` below a folder, so on Linux it never
+  forgot the folders inside. Stand-ins: `shellfolder` (phones, Libraries: Windows shell
+  namespace; Linux mounts phones as folders), DirectLook's rustdecoder route
+  (`rd_video_linux.rs`: never taken, rustdecoder plays through Direct3D 11 and WASAPI). The
+  new rf-win and rustdecoder examples are wrapped as Windows only; rustdecoder's test clips
+  used ffmpeg's `-top`, an input-only option since ffmpeg 9, now `setfield`. Works on Linux
+  unchanged: rustdecoder's containers (MXF, MPEG-TS/PS, AVI, fragmented MP4) and CPU
+  decoders (ProRes, DNxHD), session tabs keeping the Recycle Bin, shared extension strings.
 - **Name index memory** (2026-11-09, upstream `c8e1e57` + `b593628`). Same layout as
   upstream now: each different name stored once in a name table (raw bytes, as before),
   entries keep a 4-byte name id (9 bytes an entry), folder and name lookups are 4-byte id
