@@ -34,6 +34,8 @@ png = "0.18"
 ashpd = { version = "0.13", default-features = false, features = ["async-io", "open_uri"] }
 # serves org.freedesktop.FileManager1 ("Show in folder"); already built for ashpd
 zbus = { version = "5", default-features = false, features = ["async-io", "blocking-api"] }
+# the tray icon (StatusNotifierItem + its D-Bus menu), on the same zbus
+ksni = { version = "0.3", default-features = false, features = ["async-io", "blocking"] }
 futures.workspace = true
 # sharing copied files with other apps: Wayland data-control, X11 selections (x11rb is
 # already in the tree through GPUI)

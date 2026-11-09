@@ -285,9 +285,13 @@ opened from other apps, and "Show in folder" in browsers, open in rustyfiles (fo
 only; turning it off brings your previous file manager back). While another file manager is
 running it keeps answering "Show in folder" until it quits.
 
-Not yet: DirectLook outside the window (Wayland has no global hotkeys), the tray icon and
-notifications, and rustyfiles in other apps' Open/Save dialogs; their settings are hidden on
-Linux until they arrive. Windows-only features (jump
+**Tray and notifications.** Settings → Advanced → "Keep running in the background" leaves an
+icon in the system tray when the last window closes (KDE, Waybar, Noctalia and most bars show
+it; GNOME needs the AppIndicator extension). Long copies and moves end with a desktop
+notification when rustyfiles isn't in front.
+
+Not yet: DirectLook outside the window (Wayland has no global hotkeys) and rustyfiles in other
+apps' Open/Save dialogs; their settings are hidden on Linux until they arrive. Windows-only features (jump
 lists, Windows Search, Libraries, the taskbar preview, auto-update) don't appear on Linux.
 
 ## Keyboard

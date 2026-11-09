@@ -1533,21 +1533,20 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
                 window.refresh();
             }),
         ),
-        // the tray icon and notifications come to Linux with Phase 3
-        windows_only(card(
+        card(
             p,
             L::PanelBottom,
             t!("Pencere kapatılınca arka planda çalışmaya devam et"),
             Some(t!("Bildirim alanında bir simge kalır; yeni pencere anında açılır")),
             sw("background", p, s.run_in_background, |s, v| s.run_in_background = v),
-        )),
-        windows_only(card(
+        ),
+        card(
             p,
             L::Bell,
             t!("Uzun işlemler bitince bildirim göster"),
             Some(t!("Kopyalama, taşıma, sıkıştırma 10 saniyeden uzun sürdüyse ve rustyfiles önde değilse")),
             sw("notify-ops", p, s.notify_long_ops, |s, v| s.notify_long_ops = v),
-        )),
+        ),
         section(p, t!("Performans")),
         card(
             p,
