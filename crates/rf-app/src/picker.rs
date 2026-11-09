@@ -103,6 +103,12 @@ fn ok_label(req: &Request) -> SharedString {
     .into()
 }
 
+/// Roomy enough for the list and the preview side by side: 1240x780, at most 85 % of the screen.
+fn picker_size(cx: &App) -> Size<Pixels> {
+    let screen = cx.primary_display().map(|d| d.bounds().size).unwrap_or(size(px(1920.), px(1080.)));
+    size(px(1240.).min(screen.width * 0.85), px(780.).min(screen.height * 0.85))
+}
+
 fn open_window(pipe: File, req: Request, cx: &mut App) {
     let start = req.folder.as_deref().map(PathBuf::from).filter(|p| p.is_dir()).map(Location::Path).unwrap_or(Location::Home);
     let title = {
@@ -111,7 +117,7 @@ fn open_window(pipe: File, req: Request, cx: &mut App) {
     };
     let owner = req.owner;
     let options = WindowOptions {
-        window_bounds: Some(WindowBounds::centered(size(px(1040.), px(660.)), cx)),
+        window_bounds: Some(WindowBounds::centered(picker_size(cx), cx)),
         window_min_size: Some(size(px(640.), px(400.))),
         window_background: WindowBackgroundAppearance::MicaBackdrop,
         ..gpui_kit::component::TitleBar::window_options()
@@ -157,15 +163,25 @@ fn open_window(pipe: File, req: Request, cx: &mut App) {
     // Asked from a background process (Chrome's file dialog helper), Windows may refuse the
     // switch while the window is still being shown: try again once it is on screen.
     cx.spawn(async move |cx| {
-        for ms in [50u64, 250, 600] {
+        let mut waited = 0;
+        let mut retries = 0;
+        for ms in [50u64, 250, 600, 1200] {
             cx.background_executor().timer(std::time::Duration::from_millis(ms)).await;
+            waited += ms;
             let hwnd = shown_hwnd.get();
             if hwnd == 0 || rf_win::window::is_foreground(hwnd) {
                 break;
             }
             log::info!("picker: not in front after {ms} ms, bringing it forward");
+            retries += 1;
             rf_win::window::bring_to_front(hwnd);
         }
+        let hwnd = shown_hwnd.get();
+        // next to the dialog DLL's own lines: a picker that opened behind is visible there
+        dialog_log(&format!(
+            "app picker: owner 0x{owner:x}, in front: {}, {retries} retries in {waited} ms",
+            hwnd != 0 && rf_win::window::is_foreground(hwnd)
+        ));
     })
     .detach();
 }
@@ -352,84 +368,88 @@ pub(crate) fn footer(ws: &mut Workspace, s: &Rc<PickSession>, p: &Palette, windo
         Mode::Folder => t!("Klasör:"),
         _ => t!("Dosya adı:"),
     };
+    // file type: a select box, like the ones in Settings
     let filter = (!s.req.filters.is_empty() && s.req.mode != Mode::Folder).then(|| {
         let current: SharedString =
             s.req.filters.get(s.filter_ix.get().saturating_sub(1) as usize).map(|f| f.name.clone()).unwrap_or_default().into();
         let me = cx.entity().downgrade();
         let filters = s.req.filters.clone();
-        h_flex()
-            .id("pick-filter")
-            .h(px(32.))
-            .px_3()
-            .gap_2()
-            .max_w(px(320.))
-            .rounded(theme::RADIUS_SM)
-            .border_1()
-            .border_color(p.border)
-            .bg(p.card_bg)
-            .hover(|d| d.bg(p.hover))
-            .cursor_pointer()
-            .text_sm()
-            .child(div().min_w_0().overflow_hidden().text_ellipsis().whitespace_nowrap().child(current))
-            .child(Icon::new(gpui_kit::assets::IconName::ChevronDown).size(px(14.)))
-            .on_click(move |ev, window, cx| {
-                use crate::fluent_menu::{Item, Menu, MenuIcon};
-                let items = filters
-                    .iter()
-                    .enumerate()
-                    .map(|(i, f)| {
-                        let me = me.clone();
-                        Item::action(f.name.clone(), MenuIcon::None, move |window, cx| {
-                            if let Some(ws) = me.upgrade() {
-                                ws.update(cx, |ws, cx| ws.set_pick_filter(i as u32 + 1, window, cx));
-                            }
-                        })
+        let sel = s.filter_ix.get();
+        // 36 px like the name field and the buttons beside it
+        div().w(px(240.)).flex_shrink_0().child(crate::select_box::select_box_h("pick-filter", p, current, 36., move |_| {
+            filters
+                .iter()
+                .enumerate()
+                .map(|(i, f)| {
+                    let me = me.clone();
+                    crate::select_box::Choice::new(f.name.clone(), sel == i as u32 + 1, move |window, cx| {
+                        if let Some(ws) = me.upgrade() {
+                            ws.update(cx, |ws, cx| ws.set_pick_filter(i as u32 + 1, window, cx));
+                        }
                     })
-                    .collect();
-                crate::fluent_menu::show(Menu { quick: Vec::new(), items }, ev.position(), window, cx);
-            })
+                })
+                .collect()
+        }))
     });
     let button = |id: &'static str, label: SharedString, primary: bool| {
         div()
             .id(id)
-            .h(px(32.))
-            .min_w(px(96.))
+            .h(px(36.))
+            .min_w(px(104.))
             .px_4()
             .flex()
+            .flex_shrink_0()
             .items_center()
             .justify_center()
             .rounded(theme::RADIUS_SM)
             .text_sm()
             .cursor_pointer()
-            .when(primary, |d| d.bg(p.accent).text_color(gpui_kit::rgb(0xFFFFFF)).hover(|d| d.opacity(0.9)))
+            .when(primary, |d| d.bg(p.accent).text_color(gpui_kit::rgb(0xFFFFFF)).font_weight(FontWeight::SEMIBOLD).hover(|d| d.opacity(0.9)))
             .when(!primary, |d| d.border_1().border_color(p.border).bg(p.card_bg).hover(|d| d.bg(p.hover)))
             .child(label)
     };
-    // two rows, like Windows' own dialog: the name gets the whole width (long paths fit)
-    gpui_kit::component::v_flex()
+    // the name field carries its own label (as a prefix), so everything fits on one row:
+    // [ Dosya adı | name …………… ] [ file type ▾ ] [ Aç ] [ İptal ]
+    use gpui_kit::assets::IconName as L;
+    let icon = if s.req.mode == Mode::Folder { L::Folder } else { L::File };
+    let prefix = h_flex()
+        .gap_2()
+        .pl_1()
+        .pr_2()
+        .mr_1()
+        .items_center()
+        .border_r_1()
+        .border_color(p.divider)
+        .text_sm()
+        .text_color(p.text_secondary)
+        .child(Icon::new(icon).size(px(15.)))
+        .child(div().whitespace_nowrap().child(label.trim_end_matches(':').to_string()));
+    h_flex()
         .w_full()
+        .flex_shrink_0()
         .px_4()
         .py_3()
-        .gap_2()
+        .gap_3()
+        .items_center()
         .border_t_1()
         .border_color(p.divider)
         .child(
+            // the same field look as the select box next to it
             h_flex()
-                .w_full()
-                .gap_3()
+                .flex_1()
+                .min_w(px(200.))
+                .h(px(36.))
+                .px_2()
                 .items_center()
-                .child(div().w(px(80.)).text_sm().text_color(p.text_secondary).flex_shrink_0().child(label))
-                .child(div().flex_1().min_w_0().child(Input::new(&s.name)))
-                .children(filter),
+                .rounded(theme::RADIUS_SM)
+                .bg(p.hover)
+                .border_1()
+                .border_color(p.border)
+                .child(div().flex_1().min_w_0().child(Input::new(&s.name).appearance(false).prefix(prefix))),
         )
-        .child(
-            h_flex()
-                .w_full()
-                .gap_3()
-                .justify_end()
-                .child(button("pick-ok", ok_label(&s.req), true).on_click(cx.listener(|ws, _, window, cx| accept(ws, window, cx))))
-                .child(button("pick-cancel", t!("İptal").into(), false).on_click(cx.listener(|ws, _, window, _| cancel(ws, window)))),
-        )
+        .children(filter)
+        .child(button("pick-ok", ok_label(&s.req), true).on_click(cx.listener(|ws, _, window, cx| accept(ws, window, cx))))
+        .child(button("pick-cancel", t!("İptal").into(), false).on_click(cx.listener(|ws, _, window, _| cancel(ws, window))))
         .into_any_element()
 }
 
@@ -450,5 +470,16 @@ mod tests {
         assert_eq!(resolve(Some(Path::new(r"C:\a")), "b.txt"), Some(PathBuf::from(r"C:\a\b.txt")));
         assert_eq!(resolve(None, r"D:\x.txt"), Some(PathBuf::from(r"D:\x.txt")));
         assert_eq!(resolve(None, "x.txt"), None);
+    }
+}
+
+/// Appends a line to `%LOCALAPPDATA%/rustyfiles/dialog.log` (where the dialog DLL logs).
+fn dialog_log(line: &str) {
+    use std::io::Write;
+    let Some(dir) = std::env::var_os("LOCALAPPDATA") else { return };
+    let path = PathBuf::from(dir).join("rustyfiles").join("dialog.log");
+    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs());
+    if let Ok(mut f) = std::fs::OpenOptions::new().append(true).open(&path) {
+        let _ = writeln!(f, "{secs} rustyfiles[{}] app {} {line}", std::process::id(), env!("CARGO_PKG_VERSION"));
     }
 }

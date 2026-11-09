@@ -5,6 +5,7 @@
 #![cfg(windows)]
 
 pub mod accent;
+pub mod bench;
 pub mod cert;
 pub mod clipboard;
 pub mod complete;
@@ -22,6 +23,7 @@ pub mod foldersize;
 pub mod sysparams;
 pub mod git;
 pub mod hash;
+pub mod indexer;
 pub mod known;
 pub mod libraries;
 pub mod ftp;
@@ -29,10 +31,12 @@ pub mod keys;
 pub mod look;
 pub mod listing;
 pub mod localized;
+pub mod nameindex;
 pub mod network;
 pub mod pe;
 pub mod fileactions;
 pub mod fileinfo;
+pub mod journal;
 pub mod jumplist;
 pub mod wsearch;
 pub mod preview_host;

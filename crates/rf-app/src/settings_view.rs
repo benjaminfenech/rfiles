@@ -32,10 +32,11 @@ pub enum Page {
     Look,
     Dev,
     Advanced,
+    Speed,
     About,
 }
 
-const PAGES: [(Page, L, &str); 10] = [
+const PAGES: [(Page, L, &str); 11] = [
     (Page::General, L::Settings, "Genel"),
     (Page::Appearance, L::Palette, "Görünüm"),
     (Page::Layout, L::LayoutGrid, "Sayfa düzeni"),
@@ -45,6 +46,7 @@ const PAGES: [(Page, L, &str); 10] = [
     (Page::Look, L::Eye, "DirectLook"),
     (Page::Dev, L::SquareTerminal, "Geliştirici araçları"),
     (Page::Advanced, L::Wrench, "Gelişmiş"),
+    (Page::Speed, L::Gauge, "Hız testi"),
     (Page::About, L::Info, "Hakkında"),
 ];
 
@@ -245,6 +247,10 @@ pub fn render(p: &Palette, cx: &mut App) -> AnyElement {
         div().px_2().pb_3().text_xl().font_weight(FontWeight::SEMIBOLD).child(t!("Ayarlar")),
     );
     for (i, (pg, icon, label)) in PAGES.iter().copied().enumerate() {
+        // the speed test races File Explorer: Windows only
+        if pg == Page::Speed && !cfg!(windows) {
+            continue;
+        }
         let on = pg == page;
         nav = nav.child(
             h_flex()
@@ -277,6 +283,7 @@ pub fn render(p: &Palette, cx: &mut App) -> AnyElement {
         Page::Look => look(p, &s, cx),
         Page::Dev => dev(p, &s),
         Page::Advanced => advanced(p, &s),
+        Page::Speed => crate::bench_view::page(p, cx),
         Page::About => about(p, cx),
     };
     h_flex()
@@ -935,6 +942,18 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         Some(t!("Dizinlenmiş klasörlerde dosya içerikleri de aranır ve kind:picture, size:>10MB gibi filtreler çalışır")),
         sw("search-index", p, s.search_index, |s, v| s.search_index = v),
     )));
+    // the name index covers NTFS/ReFS drives: Linux has none yet
+    v.push(windows_only(card(
+        p,
+        L::Zap,
+        t!("Hızlı arama dizini"),
+        Some(&name_index_status()),
+        sw("name-index", p, s.name_index, |s, v| s.name_index = v),
+    )));
+    #[cfg(windows)]
+    if s.name_index {
+        v.push(index_exclusions(p, s));
+    }
     v.push(card(
         p,
         L::HardDrive,
@@ -1610,7 +1629,7 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
                 p,
                 L::Activity,
                 t!("Çizim yöntemi").into(),
-                Some(t!("Otomatik: GPU doluyken (oyun, render) arayüz CPU ile çizilir, CPU doluyken GPU ile. Geçiş fark edilmez.").into()),
+                Some(t!("Otomatik: açılışta ekran kartı denetlenir, sorun yoksa arayüz GPU ile çizilir. GPU doluyken (oyun, render) CPU'ya geçer, boşalınca geri döner. Geçiş fark edilmez.").into()),
                 Some(dropdown(
                     "renderer",
                     p,
@@ -1702,8 +1721,8 @@ fn update_card(p: &Palette, s: &Settings) -> AnyElement {
         State::Idle => t!("Güncellemeler GitHub'dan gelir.").to_string(),
         State::Checking => t!("Denetleniyor…").to_string(),
         State::UpToDate => t!("rustyfiles güncel.").to_string(),
-        State::Downloading(v) => format!("{} {v}", t!("İndiriliyor:")),
-        State::Ready(v) => format!("{} {v}. {}", t!("Yeni sürüm hazır:"), t!("Yeniden başlatınca uygulanır.")),
+        State::Downloading(v, pct) => format!("{} {v} · %{pct}", t!("İndiriliyor:")),
+        State::Ready(v) => format!("{} {v}. {}", t!("İndirildi:"), t!("Yeniden başlatınca uygulanır.")),
         State::Failed(e) => format!("{} {e}", t!("Denetlenemedi:")),
     };
     let control = match state {
@@ -1711,20 +1730,78 @@ fn update_card(p: &Palette, s: &Settings) -> AnyElement {
         State::Ready(_) => button("upd-restart", p, t!("Yeniden başlat ve güncelle"), |_, _| {
             std::thread::spawn(crate::installer::restart_to_update);
         }),
-        State::Checking | State::Downloading(_) => div().into_any_element(),
+        State::Checking | State::Downloading(..) => div().into_any_element(),
         _ => button("upd-check", p, t!("Güncellemeleri denetle"), |window, cx| {
             check_updates_now(cx);
             window.refresh();
         }),
     };
     let _ = s;
-    card(p, L::RefreshCw, t!("Güncellemeler"), Some(&text), control)
+    let icon = match state {
+        State::Downloading(..) => L::Download,
+        State::Ready(_) => L::CircleCheck,
+        _ => L::RefreshCw,
+    };
+    // behind the row: a light sweeping while checking, a bar filling while downloading, full when done
+    let tint = p.accent;
+    let layer = match state {
+        State::Checking => Some(
+            glow(tint, 0.22)
+                .w(relative(0.3))
+                .with_animation(
+                    "upd-sweep",
+                    Animation::new(std::time::Duration::from_millis(1200)).repeat().with_easing(ease_in_out),
+                    |el, t| el.left(relative(-0.3 + 1.3 * t)),
+                )
+                .into_any_element(),
+        ),
+        State::Downloading(_, pct) => Some(
+            div()
+                .absolute()
+                .top_0()
+                .bottom_0()
+                .left_0()
+                .w(relative(pct as f32 / 100.0))
+                .overflow_hidden()
+                .bg(tint.opacity(0.18))
+                .child(
+                    // a soft highlight running along the filled part
+                    glow(tint, 0.2)
+                        .w(px(120.))
+                        .with_animation(
+                            "upd-run",
+                            Animation::new(std::time::Duration::from_millis(1000)).repeat(),
+                            |el, t| el.left(relative(-0.2 + 1.2 * t)),
+                        ),
+                )
+                .into_any_element(),
+        ),
+        State::Ready(_) => Some(div().absolute().inset_0().bg(tint.opacity(0.14)).into_any_element()),
+        _ => None,
+    };
+    shell(p)
+        .relative()
+        .overflow_hidden()
+        .when(matches!(state, State::Ready(_)), |d| d.border_color(tint.opacity(0.6)))
+        .children(layer)
+        .child(card_body(p, icon, t!("Güncellemeler").into(), Some(text.into()), Some(control)))
+        .into_any_element()
 }
 
-/// "Check for updates": runs off the UI thread, redraws when it's done.
+/// A soft band of light: transparent at both edges, `alpha` in the middle.
+fn glow(c: Hsla, alpha: f32) -> Div {
+    let half = |from: f32, to: f32| {
+        div().flex_1().h_full().bg(linear_gradient(90., linear_color_stop(c.opacity(from), 0.), linear_color_stop(c.opacity(to), 1.)))
+    };
+    div().absolute().top_0().bottom_0().flex().child(half(0., alpha)).child(half(alpha, 0.))
+}
+
+/// "Check for updates": runs off the UI thread and redraws while it checks and downloads.
 pub(crate) fn check_updates_now(cx: &mut App) {
     cx.spawn(async move |cx| {
-        cx.background_executor().spawn(async { crate::installer::check() }).await;
+        let run = cx.background_executor().spawn(async { crate::installer::check() });
+        crate::installer::redraw_while_busy(cx).await;
+        run.await;
         cx.update(|cx| cx.refresh_windows());
     })
     .detach();
@@ -1889,4 +1966,97 @@ fn pick_into(_window: &mut Window, cx: &mut App, title: &str, target: PickTarget
         });
     })
     .detach();
+}
+
+/// "Local drives' file names are kept in an index … · C:\ 2.1 million entries, 84 MB · E:\ indexing…"
+fn name_index_status() -> String {
+    let mut s = t!("Yerel sürücülerdeki dosya adları bir dizinde tutulur: alt klasörlerde arama milisaniyeler sürer. Dizin arka planda hazırlanır ve güncel tutulur.").to_string();
+    let parts: Vec<String> = rf_win::indexer::status()
+        .into_iter()
+        .map(|(root, state, live, mem)| {
+            let r = root.to_string_lossy().trim_end_matches('\\').to_string();
+            match state {
+                rf_win::indexer::State::Building => format!("{r} {}", t!("hazırlanıyor…")),
+                rf_win::indexer::State::Failed => format!("{r} {}", t!("dizinlenemedi")),
+                rf_win::indexer::State::Ready => {
+                    t!("{root} {n} öğe, {mb} MB").replace("{root}", &r).replace("{n}", &crate::bench_view::count(live as u64)).replace("{mb}", &(mem >> 20).to_string())
+                }
+            }
+        })
+        .collect();
+    if !parts.is_empty() {
+        s.push_str(" · ");
+        s.push_str(&parts.join(" · "));
+    }
+    s
+}
+
+/// The folders left out of the search index: the user's (removable) and the built-in ones.
+#[cfg(windows)]
+fn index_exclusions(p: &Palette, s: &Settings) -> AnyElement {
+    let mut list = v_flex().py_1();
+    for (i, dir) in s.index_excluded.iter().enumerate() {
+        let d = dir.clone();
+        list = list.child(
+            h_flex()
+                .min_h(px(40.))
+                .pl(px(56.))
+                .pr_4()
+                .gap_3()
+                .items_center()
+                .child(Icon::new(L::FolderX).size(px(14.)).text_color(p.text_secondary))
+                .child(div().flex_1().min_w_0().text_sm().text_ellipsis().overflow_hidden().whitespace_nowrap().child(dir.clone()))
+                .child(
+                    div()
+                        .id(("idx-excl-rm", i))
+                        .p_1()
+                        .rounded(theme::RADIUS_SM)
+                        .hover(|st| st.bg(p.pressed))
+                        .child(Icon::new(L::X).size(px(14.)).text_color(p.text_secondary))
+                        .on_click(move |_, _, cx| {
+                            let d = d.clone();
+                            settings::update(cx, |s| s.index_excluded.retain(|e| *e != d));
+                        }),
+                ),
+        );
+    }
+    let defaults = rf_win::nameindex::default_excluded_names().join(", ");
+    shell(p)
+        .child(
+            h_flex()
+                .min_h(px(48.))
+                .pl(px(56.))
+                .pr_4()
+                .py_2()
+                .gap_4()
+                .items_center()
+                .child(
+                    v_flex()
+                        .flex_1()
+                        .min_w_0()
+                        .child(div().text_sm().child(t!("Dizine alınmayan klasörler")))
+                        .child(div().text_xs().text_color(p.text_secondary).child(format!(
+                            "{} {defaults}, Windows. {}",
+                            t!("Her zaman:"),
+                            t!("Bu klasörlerin içinde arama diskte yapılır. Bir klasörü sağ tıklayıp \"Aramada dizine alma\" ile de ekleyebilirsiniz.")
+                        ))),
+                )
+                .child(button("idx-excl-add", p, t!("Klasör ekle…"), |window, cx| {
+                    use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+                    let owner = match HasWindowHandle::window_handle(window).map(|h| h.as_raw()) {
+                        Ok(RawWindowHandle::Win32(h)) => windows::Win32::Foundation::HWND(h.hwnd.get() as *mut _),
+                        _ => windows::Win32::Foundation::HWND::default(),
+                    };
+                    if let Some(dir) = rf_win::dialogs::pick(owner, t!("Dizine alınmayacak klasör"), rf_win::dialogs::Pick::Folder) {
+                        let d = dir.to_string_lossy().trim_end_matches('\\').to_string();
+                        settings::update(cx, |s| {
+                            if !s.index_excluded.iter().any(|e| e.eq_ignore_ascii_case(&d)) {
+                                s.index_excluded.push(d);
+                            }
+                        });
+                    }
+                })),
+        )
+        .when(!s.index_excluded.is_empty(), |d| d.child(div().h(px(1.)).bg(p.divider)).child(list))
+        .into_any_element()
 }

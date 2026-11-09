@@ -285,8 +285,26 @@ pub fn transfer(cx: &mut App, kind: Transfer, sources: Vec<std::path::PathBuf>, 
     transfer_ex(cx, kind, sources, dest, true)
 }
 
+/// Like [`transfer`], then `after` on the UI thread with the items that arrived at the top of
+/// `dest` (new copies, merged folders), e.g. to select them.
+pub fn transfer_then(cx: &mut App, kind: Transfer, sources: Vec<std::path::PathBuf>, dest: std::path::PathBuf, after: impl FnOnce(Vec<std::path::PathBuf>, &mut App) + 'static) {
+    transfer_inner(cx, kind, sources, dest, true, Some(Box::new(after)));
+}
+
 /// `record = false` for undo/redo replays (they must not land on the undo stack again).
 pub fn transfer_ex(cx: &mut App, kind: Transfer, sources: Vec<std::path::PathBuf>, dest: std::path::PathBuf, record: bool) {
+    transfer_inner(cx, kind, sources, dest, record, None);
+}
+
+#[allow(clippy::type_complexity)]
+fn transfer_inner(
+    cx: &mut App,
+    kind: Transfer,
+    sources: Vec<std::path::PathBuf>,
+    dest: std::path::PathBuf,
+    record: bool,
+    after: Option<Box<dyn FnOnce(Vec<std::path::PathBuf>, &mut App)>>,
+) {
     // into a folder inside an archive: add to the archive (copy semantics; RAR/ISO refuse)
     if let Some((archive, inner)) = crate::archive_view::split(&dest) {
         crate::archive_view::add_into(cx, archive, inner, sources);
@@ -299,7 +317,11 @@ pub fn transfer_ex(cx: &mut App, kind: Transfer, sources: Vec<std::path::PathBuf
     let title = format!("{verb}: {} → {}", crate::i18n::items(sources.len()), short(&dest));
     let s = cx.global::<crate::settings::Settings>();
     let (fast, verify, limit) = (s.fast_file_ops, s.copy_verify.engine(), u64::from(s.copy_speed_limit) << 20);
-    start(cx, title, move |t| {
+    let arrived = Arc::new(std::sync::Mutex::new(Vec::<std::path::PathBuf>::new()));
+    let landed = arrived.clone();
+    let top = dest.clone();
+    let on_done: Option<OnDone> = after.map(|f| -> OnDone { Box::new(move |_, cx: &mut App| f(std::mem::take(&mut *arrived.lock().unwrap()), cx)) });
+    start_with(cx, title, move |t| {
         t.set_verify(verify);
         t.limit.store(limit, Ordering::Relaxed);
         // our engine (conflicts asked in one list); Windows' engine when it is turned off
@@ -309,10 +331,92 @@ pub fn transfer_ex(cx: &mut App, kind: Transfer, sources: Vec<std::path::PathBuf
             fileops::transfer_tracked(kind, &sources, &dest, t.clone())
         };
         let pairs = t.results.lock().unwrap().clone();
+        // what now sits directly in the destination: the new item, or the folder a merge went into
+        let mut tops: Vec<std::path::PathBuf> = Vec::new();
+        for (_, dst) in &pairs {
+            if let Some(first) = dst.strip_prefix(&top).ok().and_then(|rel| rel.components().next()) {
+                let p = top.join(first);
+                if !tops.contains(&p) {
+                    tops.push(p);
+                }
+            }
+        }
+        *landed.lock().unwrap() = tops;
         if record && !pairs.is_empty() {
             crate::undo::push(crate::undo::UndoOp::Transferred { kind, pairs });
         }
         r
+    }, on_done);
+}
+
+/// A copy or move cut off by a crash or a shutdown: asked about once the main window is up
+/// (Resume / Discard / Later), one job at a time.
+pub fn offer_resume(cx: &mut App) {
+    let found = cx.background_spawn(async {
+        // let the window settle first; the scan itself is a directory listing
+        std::thread::sleep(std::time::Duration::from_millis(700));
+        rf_win::fastcopy::interrupted()
+    });
+    cx.spawn(async move |cx| {
+        let list = found.await;
+        let Some(job) = list.into_iter().next() else { return };
+        cx.update(|cx| {
+            let Some(w) = cx.active_window().or_else(|| cx.windows().first().copied()) else { return };
+            let _ = w.update(cx, |_, window, cx| ask_resume(job, window, cx));
+        });
+    })
+    .detach();
+}
+
+fn ask_resume(job: rf_win::fastcopy::Interrupted, window: &mut gpui_kit::Window, cx: &mut App) {
+    use crate::prompt::{Button, Kind};
+    let title = match job.kind {
+        Transfer::Copy => t!("Yarıda kalan bir kopyalama var"),
+        Transfer::Move => t!("Yarıda kalan bir taşıma var"),
+    };
+    let what = format!("{} → {}", crate::i18n::items(job.sources.len()), short(&job.dest));
+    let msg = format!(
+        "{what}\n{} / {} {}\n\n{}",
+        job.done.min(job.files),
+        job.files,
+        t!("dosya tamamlandı"),
+        t!("Kaldığı yerden devam edilsin mi? Tamamlanan dosyalar kaynaklarıyla yeniden karşılaştırılır, yarım kalanlar baştan kopyalanır.")
+    );
+    let (j1, j2) = (job.clone(), job.clone());
+    crate::prompt::show(
+        title,
+        Some(msg),
+        None,
+        vec![
+            Button::new(t!("Devam et"), Kind::Primary, move |_, _, cx| {
+                resume_job(cx, j1.clone());
+                offer_resume(cx);
+                Ok(())
+            }),
+            Button::new(t!("Vazgeç"), Kind::Normal, move |_, _, cx| {
+                // what was copied stays where it is
+                rf_win::fastcopy::discard(&j2.journal);
+                offer_resume(cx);
+                Ok(())
+            }),
+            Button::new(t!("Sonra"), Kind::Normal, |_, _, _| Ok(())),
+        ],
+        window,
+        cx,
+    );
+}
+
+/// Carries a cut-off job on in the Status Center, with its original plan.
+pub fn resume_job(cx: &mut App, job: rf_win::fastcopy::Interrupted) {
+    let verb = match job.kind {
+        Transfer::Copy => t!("Kopyalanıyor"),
+        Transfer::Move => t!("Taşınıyor"),
+    };
+    let title = format!("{verb}: {} → {}", crate::i18n::items(job.sources.len()), short(&job.dest));
+    let limit = u64::from(cx.global::<crate::settings::Settings>().copy_speed_limit) << 20;
+    start(cx, title, move |t| {
+        t.limit.store(limit, Ordering::Relaxed);
+        rf_win::fastcopy::resume(&job.journal, t)
     });
 }
 
@@ -493,6 +597,29 @@ pub fn render_button(ops: &Entity<Ops>, p: &Palette, cx: &App) -> AnyElement {
                     .child(div().h_full().rounded_full().bg(p.accent).w(relative(f.clamp(0.05, 1.0)))),
             )
         })
+        .when(running == 0 && matches!(crate::installer::state(), crate::installer::State::Ready(_)), |d| {
+            let dot = div().absolute().top(px(5.)).right(px(5.)).size(px(7.)).rounded_full().bg(p.accent);
+            // a few seconds of pulse when it becomes ready (an endless one would keep drawing frames)
+            let fresh = crate::installer::ready_since().is_some_and(|t| t.elapsed() < std::time::Duration::from_secs(8));
+            if fresh {
+                let ring = p.accent;
+                d.child(dot).child(
+                    div()
+                        .absolute()
+                        .inset_0()
+                        .rounded(theme::RADIUS_SM)
+                        .border_2()
+                        .border_color(ring)
+                        .with_animation(
+                            "sc-pulse",
+                            Animation::new(std::time::Duration::from_millis(1300)).repeat().with_easing(pulsating_between(0.0, 0.9)),
+                            |el, t| el.opacity(t),
+                        ),
+                )
+            } else {
+                d.child(dot)
+            }
+        })
         .when(running > 1, |d| {
             d.child(
                 div()
@@ -533,7 +660,10 @@ pub fn render_flyout(ops: &Entity<Ops>, p: &Palette, top: Pixels, cx: &App) -> O
         list = list.child(render_op(ops, op, p));
     }
     let (close_e, clear_e) = (ops.clone(), ops.clone());
-    let body: AnyElement = if o.ops.is_empty() {
+    let update = update_row(p);
+    let body: AnyElement = if o.ops.is_empty() && update.is_some() {
+        div().into_any_element()
+    } else if o.ops.is_empty() {
         div()
             .py_6()
             .flex()
@@ -600,6 +730,7 @@ pub fn render_flyout(ops: &Entity<Ops>, p: &Palette, top: Pixels, cx: &App) -> O
                                     .child(t!("Tamamlananları temizle")),
                             ),
                     )
+                    .children(update)
                     .child(body),
             )
             .into_any_element(),
@@ -923,7 +1054,10 @@ fn panel(ops: &Entity<Ops>, p: &Palette, cx: &App) -> Div {
         list = list.child(render_op(ops, op, p));
     }
     let clear_e = ops.clone();
-    let body: AnyElement = if o.ops.is_empty() {
+    let update = update_row(p);
+    let body: AnyElement = if o.ops.is_empty() && update.is_some() {
+        div().into_any_element()
+    } else if o.ops.is_empty() {
         div().py_6().flex().justify_center().text_sm().text_color(p.text_secondary).child(t!("Devam eden dosya işlemleri yok")).into_any_element()
     } else {
         div().id("sc-list").max_h(px(460.)).overflow_y_scroll().child(list).into_any_element()
@@ -954,5 +1088,147 @@ fn panel(ops: &Entity<Ops>, p: &Palette, cx: &App) -> Div {
                         .child(t!("Tamamlananları temizle")),
                 ),
         )
+        .children(update)
         .child(body)
+}
+
+/// The app's own update, pinned at the top of the Status Center while it downloads and once it
+/// is ready (`None` otherwise).
+fn update_row(p: &Palette) -> Option<AnyElement> {
+    use crate::installer::State;
+    let (title, detail, pct, ready) = match crate::installer::state() {
+        State::Downloading(v, pct) => (t!("rustyfiles {v} indiriliyor").replace("{v}", &v), format!("%{pct}"), Some(pct), false),
+        State::Ready(v) => (t!("rustyfiles {v} hazır").replace("{v}", &v), t!("Yeniden başlatınca kurulur").to_string(), None, true),
+        _ => return None,
+    };
+    Some(
+        v_flex()
+            .mx_1()
+            .mb_1()
+            .px_3()
+            .py_2p5()
+            .gap_2()
+            .rounded(theme::RADIUS_SM)
+            .bg(p.selection)
+            .border_1()
+            .border_color(p.accent)
+            .child(
+                h_flex()
+                    .gap_3()
+                    .items_center()
+                    .child(Icon::new(if ready { L::RefreshCw } else { L::Download }).size(px(16.)).text_color(p.accent))
+                    .child(
+                        v_flex()
+                            .flex_1()
+                            .min_w_0()
+                            .child(div().text_sm().font_weight(FontWeight::SEMIBOLD).child(title))
+                            .child(div().text_xs().text_color(p.text_secondary).child(detail)),
+                    )
+                    .when(ready, |d| {
+                        d.child(
+                            div()
+                                .id("sc-update-restart")
+                                .px_3()
+                                .py_1()
+                                .rounded(theme::RADIUS_SM)
+                                .bg(p.accent)
+                                .text_color(p.accent_text)
+                                .text_xs()
+                                .font_weight(FontWeight::SEMIBOLD)
+                                .cursor_pointer()
+                                .hover(|s| s.opacity(0.9))
+                                .child(t!("Yeniden başlat"))
+                                .on_click(|_, _, _| {
+                                    std::thread::spawn(crate::installer::restart_to_update);
+                                }),
+                        )
+                    }),
+            )
+            .children(pct.map(|pct| {
+                div().h(px(3.)).w_full().rounded_full().bg(p.pressed).child(div().h_full().rounded_full().bg(p.accent).w(relative((pct as f32 / 100.).clamp(0.02, 1.0))))
+            }))
+            .into_any_element(),
+    )
+}
+
+/// The version whose "update ready" toast was closed (it doesn't come back for that version).
+static TOAST_CLOSED: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
+/// A small card at the bottom of the window once an update is downloaded: the version, Restart
+/// and Later. Slides in once; "Later" (or restarting) hides it for that version.
+pub fn update_toast(p: &Palette, picker: bool) -> Option<AnyElement> {
+    let crate::installer::State::Ready(v) = crate::installer::state() else { return None };
+    // file dialogs of other apps don't get it
+    if picker || TOAST_CLOSED.lock().unwrap().as_deref() == Some(v.as_str()) {
+        return None;
+    }
+    let ver = v.clone();
+    Some(
+        div()
+            .absolute()
+            .bottom(px(44.))
+            .left_0()
+            .right_0()
+            .flex()
+            .justify_center()
+            .child(
+                h_flex()
+                    .id("update-toast")
+                    .gap_3()
+                    .pl_4()
+                    .pr_2()
+                    .py_2()
+                    .items_center()
+                    .rounded(theme::RADIUS)
+                    .bg(p.card_bg)
+                    .border_1()
+                    .border_color(p.accent)
+                    .shadow_lg()
+                    .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
+                    .child(Icon::new(L::RefreshCw).size(px(16.)).text_color(p.accent))
+                    .child(
+                        v_flex()
+                            .child(div().text_sm().font_weight(FontWeight::SEMIBOLD).child(t!("rustyfiles {v} hazır").replace("{v}", &v)))
+                            .child(div().text_xs().text_color(p.text_secondary).child(t!("Yeniden başlatınca kurulur"))),
+                    )
+                    .child(
+                        div()
+                            .id("update-toast-restart")
+                            .ml_2()
+                            .px_3()
+                            .py_1p5()
+                            .rounded(theme::RADIUS_SM)
+                            .bg(p.accent)
+                            .text_color(p.accent_text)
+                            .text_sm()
+                            .font_weight(FontWeight::SEMIBOLD)
+                            .cursor_pointer()
+                            .hover(|s| s.opacity(0.9))
+                            .child(t!("Yeniden başlat"))
+                            .on_click(|_, _, _| {
+                                std::thread::spawn(crate::installer::restart_to_update);
+                            }),
+                    )
+                    .child(
+                        div()
+                            .id("update-toast-later")
+                            .px_3()
+                            .py_1p5()
+                            .rounded(theme::RADIUS_SM)
+                            .text_sm()
+                            .text_color(p.text_secondary)
+                            .cursor_pointer()
+                            .hover(|s| s.bg(p.hover))
+                            .child(t!("Sonra"))
+                            .on_click(move |_, window, _| {
+                                *TOAST_CLOSED.lock().unwrap() = Some(ver.clone());
+                                window.refresh();
+                            }),
+                    )
+                    .with_animation(("update-toast-in", v.len()), Animation::new(std::time::Duration::from_millis(260)).with_easing(ease_out_quint()), |el, t| {
+                        el.opacity(t).mb(px(-12. * (1. - t)))
+                    }),
+            )
+            .into_any_element(),
+    )
 }

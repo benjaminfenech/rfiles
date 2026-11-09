@@ -1160,3 +1160,36 @@ mod tests {
         let _ = std::fs::remove_dir_all(&base);
     }
 }
+
+// ---- Interrupted jobs (upstream 0.3.2: a journal per copy, resumed after a crash). Linux's
+// engine doesn't journal yet: nothing is ever found to resume.
+
+/// A job that was cut off (the app closed or crashed while it ran).
+#[derive(Clone, Debug)]
+pub struct Interrupted {
+    pub journal: PathBuf,
+    pub kind: Transfer,
+    pub verify: Verify,
+    pub sources: Vec<PathBuf>,
+    pub dest: PathBuf,
+    /// Jobs in the plan, and how many were recorded as finished.
+    pub files: usize,
+    pub done: usize,
+}
+
+/// Where job journals go. Linux: not journaled yet.
+pub fn set_journal_dir(_dir: PathBuf) {}
+
+/// Jobs cut off earlier. Linux: none (no journals yet).
+pub fn interrupted() -> Vec<Interrupted> {
+    Vec::new()
+}
+
+pub fn discard(journal: &Path) {
+    let _ = std::fs::remove_file(journal);
+}
+
+/// Carries an interrupted job on. Linux: there are none to resume.
+pub fn resume(_journal: &Path, _tracker: Arc<Tracker>) -> anyhow::Result<bool> {
+    anyhow::bail!("resuming copies isn't available on Linux yet")
+}

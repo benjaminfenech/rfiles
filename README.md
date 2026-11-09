@@ -26,6 +26,19 @@ freeze it.
   <a href="https://discord.gg/K2banZ36zJ"><img alt="Join the Discord" src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white"></a>
 </p>
 
+<p align="center">
+  <a href="https://www.buymeacoffee.com/ozerguzel"><img alt="Buy me a coffee" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="44"></a>
+</p>
+
+<p align="center">
+  <a href="https://alternativeto.net/software/rustyfiles/about/?utm_source=badge&utm_medium=referral">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://alternativeto.net/static/badges/badge-compact-dark.svg">
+      <img alt="rustyfiles on AlternativeTo" src="https://alternativeto.net/static/badges/badge-compact-light.svg" height="54">
+    </picture>
+  </a>
+</p>
+
 Free, no account, no ads. Download, double-click, done: see [Install](#install).
 
 <picture>
@@ -68,6 +81,18 @@ for 5 seconds:
 The window never waits for the folder: re-reading happens off the UI thread, and the update
 itself costs less than one frame at 120 Hz. Measure it yourself with
 `RUSTYFILES_TRACE_LIVE=1` and `RUST_LOG=warn,rf_app=info`.
+
+Frame times while it happens: the same folder scrolled down and back up with the mouse wheel for
+7.7 s, the selection (and so the preview pane) moving every half second, while about 680 files a
+second are renamed in the background. 200 Hz display.
+
+| | median | p95 | p99 | worst |
+|---|--:|--:|--:|--:|
+| Frame cost on the UI thread | 2.1 ms | 4.6 ms | 7.9 ms | 16.8 ms |
+| Time between frames | 3.3 ms | 5.3 ms | 9.9 ms | 17.3 ms |
+
+2,182 frames in 7.7 s; one gap longer than a 60 Hz frame (16.7 ms). Log your own with
+`GPUI_FRAME_LOG=frames.tsv` (one line per frame: its start and its cost, in ms).
 
 ### New tab in an open window
 
@@ -145,7 +170,7 @@ on tabs and pinned folders.
 
 **Archives.** ZIP, 7z, RAR, the tar family and ISO open like folders, password-protected
 ZIP, 7z and RAR included. Add, delete and rename inside ZIP, 7z and tar. Create ZIP, 7z and tar.zst on every core. Reading is
-done by [rarchive](https://github.com/gelenmedya/rarchive), our own pure-Rust engine: it
+done by [rarchive](https://github.com/gelenmedya/rarchive), our own pure-Rust engine (also [on crates.io](https://crates.io/crates/rarchive) for other Rust projects): it
 decodes a 1.3 GB WinRAR archive ten times faster than UnRAR.
 
 **Windows.** Optionally the default file manager: folders, <kbd>Win</kbd>+<kbd>E</kbd>, This PC
