@@ -942,15 +942,14 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         Some(t!("Dizinlenmiş klasörlerde dosya içerikleri de aranır ve kind:picture, size:>10MB gibi filtreler çalışır")),
         sw("search-index", p, s.search_index, |s, v| s.search_index = v),
     )));
-    // the name index covers NTFS/ReFS drives: Linux has none yet
-    v.push(windows_only(card(
+    // the name index covers NTFS/ReFS drives (Linux: the home folder and local data disks)
+    v.push(card(
         p,
         L::Zap,
         t!("Hızlı arama dizini"),
         Some(&name_index_status()),
         sw("name-index", p, s.name_index, |s, v| s.name_index = v),
-    )));
-    #[cfg(windows)]
+    ));
     if s.name_index {
         v.push(index_exclusions(p, s));
     }
@@ -1992,7 +1991,6 @@ fn name_index_status() -> String {
 }
 
 /// The folders left out of the search index: the user's (removable) and the built-in ones.
-#[cfg(windows)]
 fn index_exclusions(p: &Palette, s: &Settings) -> AnyElement {
     let mut list = v_flex().py_1();
     for (i, dir) in s.index_excluded.iter().enumerate() {
@@ -2036,24 +2034,49 @@ fn index_exclusions(p: &Palette, s: &Settings) -> AnyElement {
                         .min_w_0()
                         .child(div().text_sm().child(t!("Dizine alınmayan klasörler")))
                         .child(div().text_xs().text_color(p.text_secondary).child(format!(
-                            "{} {defaults}, Windows. {}",
+                            "{} {defaults}{}. {}",
                             t!("Her zaman:"),
+                            if cfg!(windows) { ", Windows" } else { "" },
                             t!("Bu klasörlerin içinde arama diskte yapılır. Bir klasörü sağ tıklayıp \"Aramada dizine alma\" ile de ekleyebilirsiniz.")
                         ))),
                 )
-                .child(button("idx-excl-add", p, t!("Klasör ekle…"), |window, cx| {
-                    use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-                    let owner = match HasWindowHandle::window_handle(window).map(|h| h.as_raw()) {
-                        Ok(RawWindowHandle::Win32(h)) => windows::Win32::Foundation::HWND(h.hwnd.get() as *mut _),
-                        _ => windows::Win32::Foundation::HWND::default(),
-                    };
-                    if let Some(dir) = rf_win::dialogs::pick(owner, t!("Dizine alınmayacak klasör"), rf_win::dialogs::Pick::Folder) {
-                        let d = dir.to_string_lossy().trim_end_matches('\\').to_string();
-                        settings::update(cx, |s| {
-                            if !s.index_excluded.iter().any(|e| e.eq_ignore_ascii_case(&d)) {
-                                s.index_excluded.push(d);
-                            }
+                .child(button("idx-excl-add", p, t!("Klasör ekle…"), |_window, cx| {
+                    // Linux: the desktop's folder dialog through the portal, on the shell thread
+                    #[cfg(not(windows))]
+                    {
+                        let (tx, rx) = futures::channel::oneshot::channel::<Option<std::path::PathBuf>>();
+                        let title = t!("Dizine alınmayacak klasör").to_string();
+                        rf_win::sta::run(move |owner| {
+                            let _ = tx.send(rf_win::dialogs::pick(owner, &title, rf_win::dialogs::Pick::Folder));
                         });
+                        cx.spawn(async move |cx| {
+                            let Ok(Some(dir)) = rx.await else { return };
+                            let d = dir.to_string_lossy().trim_end_matches('/').to_string();
+                            let _ = cx.update(|cx| {
+                                settings::update(cx, |s| {
+                                    if !d.is_empty() && !s.index_excluded.contains(&d) {
+                                        s.index_excluded.push(d);
+                                    }
+                                })
+                            });
+                        })
+                        .detach();
+                    }
+                    #[cfg(windows)]
+                    {
+                        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+                        let owner = match HasWindowHandle::window_handle(_window).map(|h| h.as_raw()) {
+                            Ok(RawWindowHandle::Win32(h)) => windows::Win32::Foundation::HWND(h.hwnd.get() as *mut _),
+                            _ => windows::Win32::Foundation::HWND::default(),
+                        };
+                        if let Some(dir) = rf_win::dialogs::pick(owner, t!("Dizine alınmayacak klasör"), rf_win::dialogs::Pick::Folder) {
+                            let d = dir.to_string_lossy().trim_end_matches('\\').to_string();
+                            settings::update(cx, |s| {
+                                if !s.index_excluded.iter().any(|e| e.eq_ignore_ascii_case(&d)) {
+                                    s.index_excluded.push(d);
+                                }
+                            });
+                        }
                     }
                 })),
         )

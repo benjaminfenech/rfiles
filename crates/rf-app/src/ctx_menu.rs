@@ -204,17 +204,19 @@ impl FolderView {
             };
             v.push(Item::action(label, icon(L::AtSign), move |w, cx| crate::aliases::edit_dialog(d.clone(), w, cx)));
         }
-        // leave a folder (a build output, a huge cache) out of the search index (Windows: Linux
-        // has no name index yet)
-        if cfg!(windows) && single_dir && cx.global::<crate::settings::Settings>().name_index && crate::archive_view::split(&target_dir).is_none() {
-            let key = target_dir.to_string_lossy().trim_end_matches('\\').to_string();
-            let out = cx.global::<crate::settings::Settings>().index_excluded.iter().any(|e| e.eq_ignore_ascii_case(&key));
+        // leave a folder (a build output, a huge cache) out of the search index (Linux: paths
+        // are case-sensitive)
+        if single_dir && cx.global::<crate::settings::Settings>().name_index && crate::archive_view::split(&target_dir).is_none() {
+            let key = target_dir.to_string_lossy().trim_end_matches(std::path::MAIN_SEPARATOR).to_string();
+            let key = if key.is_empty() { std::path::MAIN_SEPARATOR.to_string() } else { key };
+            let same = |e: &String, k: &str| if cfg!(windows) { e.eq_ignore_ascii_case(k) } else { e == k };
+            let out = cx.global::<crate::settings::Settings>().index_excluded.iter().any(|e| same(e, &key));
             v.push(
                 Item::action(t!("Aramada dizine alma"), icon(L::SearchSlash), move |_, cx| {
                     let key = key.clone();
                     crate::settings::update(cx, |s| {
                         if out {
-                            s.index_excluded.retain(|e| !e.eq_ignore_ascii_case(&key));
+                            s.index_excluded.retain(|e| !same(e, &key));
                         } else {
                             s.index_excluded.push(key);
                         }
