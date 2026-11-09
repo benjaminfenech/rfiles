@@ -257,6 +257,9 @@ pub fn main() {
         let shell_namespace = arg.starts_with("::") || arg.to_ascii_lowercase().starts_with("shell:");
         // a network server root (\\nas) isn't a "directory" to Rust, but we browse its shares
         let server = rf_win::network::server_root(std::path::Path::new(&arg)).is_some();
+        // Linux: network locations (smb://, sftp://…) are mounted by the window
+        #[cfg(unix)]
+        let server = server || rf_win::remote::is_remote(std::path::Path::new(&arg));
         let is_dir = if shell_namespace {
             Some(false)
         } else if server {

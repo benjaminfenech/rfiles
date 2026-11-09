@@ -241,8 +241,25 @@ certificates for the info card.
   prompt), and an eject button on the sidebar row. Tried with a FAT image on a loop device
   (`cargo run -p rf-linux --example udisks -- list | mount <dev> | unmount <dir> | eject <dir>`);
   the sidebar showed it as unmounted; clicking it and the menu items weren't tried by hand.
-- Network: browse mounted gvfs paths (`/run/user/$UID/gvfs`) first; native SMB later.
-- FTP: `suppaftp` instead of WinINet.
+- ~~Network and FTP~~ **done** (2026-11-09), through the desktop's network layer instead of
+  our own SMB/FTP code: `rf-linux` `remote` mounts `smb://`, `sftp://`, `ftp(s)://`, WebDAV,
+  `nfs://`… (and `\\server\share`, `//server/share`) with kio-fuse (`org.kde.KIOFuse`
+  `mountUrl`, on the session bus) or else gvfs (`gio mount`, then its `local path`), and
+  returns the local folder. `FolderView::navigate` (and a view created at such a location:
+  command line, new tab) mounts and goes there, like unmounted drives. kio-fuse can't show
+  KIO's password prompt ("Operation cancelled"), and a refused SMB login shows up as EPERM
+  on the folder: both are `NeedsLogin`, and the app asks for the user name, then the
+  password, and retries with them in the URL (kio-fuse keeps the password out of the path
+  and its messages; logs only get the URL without it). `network_shortcuts` reads network
+  bookmarks from KDE's `user-places.xbel` and GTK's `bookmarks`; pinning a folder inside a
+  mount pins its URL (`remote_url`: kio-fuse `remoteUrl`, gvfs `gio info`), since the local
+  path changes between sessions. rf-linux `ftp` stays a stub: `ftp://` never reaches it.
+  Not done: the address bar still shows the mount's local path (`…/kio-fuse-XXXX/ftp/host`),
+  and `smb://server` share lists depend on the server allowing it. Tried with a local
+  pyftpdlib server (anonymous, then with a login), the app opening
+  `ftp://user:pass@127.0.0.1:2122/pub` from the command line, and the sign-in prompt for
+  the same URL without a login
+  (`cargo run -p rf-linux --example remote -- <url>`).
 - File dialogs: xdg-desktop-portal FileChooser (`ashpd`).
 - Drag out to other apps: depends on GPUI's Linux drag-and-drop support; check first, it may
   need upstream work.

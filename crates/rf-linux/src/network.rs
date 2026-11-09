@@ -31,29 +31,68 @@ pub fn shares(server: &str) -> std::io::Result<Vec<Share>> {
         ),
     )
 }
-/// Folders under `%APPDATA%\Microsoft\Windows\Network Shortcuts` ("Add a network location").
-/// Each is a folder holding `target.lnk`; returns (display name, target).
+/// Linux: the network bookmarks of KDE (`~/.local/share/user-places.xbel`, Dolphin's places)
+/// and GTK (`~/.config/gtk-3.0/bookmarks`): (name, URL). Opening one mounts it
+/// (`remote::mount`).
 pub fn network_shortcuts() -> Vec<(String, PathBuf)> {
-    let Some(dir) = std::env::var_os("APPDATA")
-        .map(|a| PathBuf::from(a).join(r"Microsoft\Windows\Network Shortcuts")) else {
-        return Vec::new();
+    let mut out: Vec<(String, PathBuf)> = Vec::new();
+    let mut add = |name: String, href: &str| {
+        let Some(url) = crate::remote::to_url(href) else { return };
+        if out.iter().any(|(_, u)| u.as_os_str() == url.as_str()) {
+            return;
+        }
+        let name = if name.trim().is_empty() { url.split_once("://").map_or(url.as_str(), |(_, r)| r).trim_end_matches('/').to_string() } else { name };
+        out.push((name, PathBuf::from(url)));
     };
-    let Ok(rd) = std::fs::read_dir(dir) else { return Vec::new() };
-    let mut out: Vec<(String, PathBuf)> = rd
-        .filter_map(|e| e.ok())
-        .filter_map(|e| {
-            let p = e.path();
-            let lnk = p.join("target.lnk");
-            let target = crate::shortcut::resolve(&lnk).ok()?.target;
-            if target.as_os_str().is_empty() {
-                return None;
-            }
-            Some((e.file_name().to_string_lossy().into_owned(), target))
-        })
-        .collect();
+    if let Some(data) = dirs::data_dir()
+        && let Ok(xml) = std::fs::read_to_string(data.join("user-places.xbel"))
+    {
+        for (href, title) in xbel_bookmarks(&xml) {
+            add(title, &href);
+        }
+    }
+    if let Some(cfg) = dirs::config_dir()
+        && let Ok(text) = std::fs::read_to_string(cfg.join("gtk-3.0/bookmarks"))
+    {
+        for line in text.lines() {
+            let (href, name) = line.split_once(' ').unwrap_or((line, ""));
+            add(name.to_string(), href);
+        }
+    }
     out.sort_by(|a, b| rf_core::sort::natural_cmp(&a.0, &b.0));
     out
 }
+
+/// (href, title) of each `<bookmark>` in an XBEL file (enough of XML for KDE's places).
+fn xbel_bookmarks(xml: &str) -> Vec<(String, String)> {
+    let unescape = |s: &str| s.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&apos;", "'").replace("&amp;", "&");
+    xml.split("<bookmark ")
+        .skip(1)
+        .filter_map(|item| {
+            let item = item.split("</bookmark>").next()?;
+            let (_, r) = item.split_once("href=\"")?;
+            let href = unescape(r.split_once('"')?.0);
+            let title = item.split_once("<title>").and_then(|(_, r)| r.split_once("</title>")).map(|(t, _)| unescape(t)).unwrap_or_default();
+            Some((href, title))
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn kde_places() {
+        let xml = r#"<xbel><bookmark href="file:///home/me"><title>Home</title></bookmark>
+            <bookmark href="smb://nas/media"><title>Films &amp; TV</title><info/></bookmark>
+            <bookmark href="remote:/"><title>Network</title></bookmark></xbel>"#;
+        let b = super::xbel_bookmarks(xml);
+        assert_eq!(b.len(), 3);
+        assert_eq!(b[1], ("smb://nas/media".to_string(), "Films & TV".to_string()));
+        // only network ones become shortcuts
+        assert!(crate::remote::to_url(&b[0].0).is_none() && crate::remote::to_url(&b[2].0).is_none());
+    }
+}
+
 /// Windows' own "Map network drive" dialog (drive letter, folder, reconnect at sign-in,
 /// other credentials). Modal to `owner`; returns when it closes.
 pub fn map_drive_dialog(owner: isize) {}

@@ -813,6 +813,9 @@ impl FolderView {
     }
 
     pub fn pin(&mut self, dir: PathBuf, cx: &mut Context<Self>) {
+        // Linux: a network folder by its URL (see Workspace::set_pinned)
+        #[cfg(unix)]
+        let dir = rf_win::remote::remote_url(&dir).map_or(dir, PathBuf::from);
         let current: Vec<PathBuf> = self.places_pinned_paths(cx);
         crate::settings::update(cx, |s| {
             let mut v = s.pinned.clone().unwrap_or(current);
