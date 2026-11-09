@@ -199,6 +199,21 @@ pub fn main() {
         .target(env_logger::Target::Stderr)
         .init();
 
+    // Linux: D-Bus started us to answer "Show in folder" while we are the default file
+    // manager. No window here: each call starts `rustyfiles <folder>` (see rf-linux fm_service).
+    #[cfg(unix)]
+    if std::env::args().nth(1).as_deref() == Some(rf_win::default_fm::SERVICE_ARG) {
+        match std::env::current_exe() {
+            Ok(exe) => {
+                if let Err(e) = rf_win::fm_service::run(&exe) {
+                    log::warn!("{}: {e:#}", rf_win::default_fm::SERVICE);
+                }
+            }
+            Err(e) => log::warn!("{}: {e}", rf_win::default_fm::SERVICE),
+        }
+        return;
+    }
+
     // As default file manager we also receive shell namespaces (Control Panel = "::{…}") and
     // non-folders: hand those back to Explorer so nothing becomes unreachable.
     // The folder check is bounded: an offline network path must not keep the window from

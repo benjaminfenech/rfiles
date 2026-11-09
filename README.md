@@ -275,9 +275,14 @@ For Hyprland's classic `hyprland.conf`, add a rule that floats (and centers) cla
 `directlook`; the rule syntax depends on your Hyprland version
 ([window rules](https://wiki.hypr.land/Configuring/Basics/Window-Rules/)).
 
+**Default file manager.** Settings → Advanced → "Set as default file manager" makes folders
+opened from other apps, and "Show in folder" in browsers, open in rustyfiles (for your user
+only; turning it off brings your previous file manager back). While another file manager is
+running it keeps answering "Show in folder" until it quits.
+
 Not yet: DirectLook outside the window (Wayland has no global hotkeys), the tray icon and
-notifications, being the default file manager, and rustyfiles in other apps' Open/Save
-dialogs; their settings are hidden on Linux until they arrive. Windows-only features (jump
+notifications, and rustyfiles in other apps' Open/Save dialogs; their settings are hidden on
+Linux until they arrive. Windows-only features (jump
 lists, Windows Search, Libraries, the taskbar preview, auto-update) don't appear on Linux.
 
 ## Keyboard
