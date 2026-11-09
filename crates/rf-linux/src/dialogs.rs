@@ -13,9 +13,56 @@ pub enum Pick<'a> {
     /// Save as `default_name`.
     Save { filters: &'a [(&'a str, &'a str)], default_name: &'a str },
 }
-/// Shows the dialog; `None` when cancelled.
+/// Shows the dialog; `None` when cancelled. Linux: the desktop's file chooser through
+/// xdg-desktop-portal (KDE's, GNOME's or GTK's dialog, as the desktop sets it up). Blocks.
 pub fn pick(owner: crate::Opaque, title: &str, kind: Pick<'_>) -> Option<PathBuf> {
-    None
+    use ashpd::desktop::file_chooser::SelectedFiles;
+    let filters = |list: &[(&str, &str)]| -> Vec<_> { list.iter().map(|(label, pats)| portal_filter(label, pats)).collect() };
+    let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/"));
+    let r = futures::executor::block_on(async {
+        let request = match kind {
+            Pick::File { filters: f } => SelectedFiles::open_file().title(title).modal(true).filters(filters(f)).send().await,
+            Pick::Folder => SelectedFiles::open_file().title(title).modal(true).directory(true).send().await,
+            Pick::Save { filters: f, default_name } => {
+                let mut b = SelectedFiles::save_file().title(title).modal(true).current_name(default_name).current_folder(&home)?;
+                for x in filters(f) {
+                    b = b.filter(x);
+                }
+                b.send().await
+            }
+        };
+        request?.response()
+    });
+    match r {
+        Ok(files) => files.uris().first().and_then(|u| uri_path(u.as_str())),
+        Err(ashpd::Error::Response(_)) => None, // cancelled
+        Err(e) => {
+            log::warn!("file chooser portal: {e}");
+            None
+        }
+    }
+}
+
+/// A Windows-style filter ("Pictures", "*.png;*.jpg") as a portal one; patterns match both
+/// cases (the portal's globs are case-sensitive, Windows' aren't).
+fn portal_filter(label: &str, patterns: &str) -> ashpd::desktop::file_chooser::FileFilter {
+    let mut f = ashpd::desktop::file_chooser::FileFilter::new(label);
+    for p in patterns.split(';').map(str::trim).filter(|p| !p.is_empty()) {
+        f = f.glob(&any_case(p));
+    }
+    f
+}
+
+/// `*.png` → `*.[pP][nN][gG]`
+fn any_case(glob: &str) -> String {
+    glob.chars()
+        .map(|c| if c.is_ascii_alphabetic() { format!("[{}{}]", c.to_ascii_lowercase(), c.to_ascii_uppercase()) } else { c.to_string() })
+        .collect()
+}
+
+/// `file:///a%20b` → `/a b`.
+fn uri_path(uri: &str) -> Option<PathBuf> {
+    crate::fm_service::uri_to_path(uri)
 }
 const RUN_VALUE: &str = "rustyfiles";
 
@@ -85,6 +132,12 @@ pub(crate) fn exec_quote(arg: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn globs_match_any_case() {
+        assert_eq!(any_case("*.png"), "*.[pP][nN][gG]");
+        assert_eq!(any_case("*.7z"), "*.7[zZ]");
+    }
 
     #[test]
     fn autostart_entry() {

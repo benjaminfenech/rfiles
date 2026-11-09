@@ -1818,7 +1818,8 @@ enum PickTarget {
     Import,
 }
 
-/// Runs a Windows file dialog on the shell thread and applies the result.
+/// Runs a file dialog (Windows' own; Linux: the desktop's, through the portal) on the shell
+/// thread and applies the result.
 fn pick_into(_window: &mut Window, cx: &mut App, title: &str, target: PickTarget) {
     let title = title.to_string();
     let (tx, rx) = futures::channel::oneshot::channel::<Option<std::path::PathBuf>>();
@@ -1843,7 +1844,8 @@ fn pick_into(_window: &mut Window, cx: &mut App, title: &str, target: PickTarget
         }
         let r = match kind {
             0 => pick(owner, &title, Pick::File { filters: &f(&images) }),
-            1 => pick(owner, &title, Pick::File { filters: &f(&exe) }),
+            // Linux programs have no extension to filter on
+            1 => pick(owner, &title, Pick::File { filters: &if cfg!(windows) { f(&exe) } else { Vec::new() } }),
             2 => pick(owner, &title, Pick::Save { filters: &f(&toml), default_name: "rustyfiles-ayarlar.toml" }),
             _ => pick(owner, &title, Pick::File { filters: &f(&toml) }),
         };
