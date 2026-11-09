@@ -412,7 +412,9 @@ fn speed(label: &str, spec: &Spec, must_reach: f64) {
         }
         let fps = (rounds * frames.len()) as f64 / t.elapsed().as_secs_f64();
         println!("{label} ({mb:.2} MB per frame, {:.0} Mbit/s at 25 fps): {:>2} thread(s): {fps:.1} fps", mb * 8.0 * 25.0, dec.threads());
-        if threads == 0 {
+        // a debug build on a small CI runner is far from real time: the speed is checked in
+        // optimized builds only (`cargo test --release`), printed always
+        if threads == 0 && !cfg!(debug_assertions) {
             assert!(fps > must_reach / 2.0, "too slow: {fps}"); // half the target: other tests run beside this one
         }
     }
