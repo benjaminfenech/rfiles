@@ -761,6 +761,10 @@ impl FolderView {
 
     /// Starts an OLE drag of the selection (to Explorer, the desktop, another tab…).
     pub fn start_drag_out(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
+        // Linux: rows are GPUI drag sources instead (`FolderView::draggable`)
+        if !cfg!(windows) {
+            return;
+        }
         let items = self.selection_paths();
         if items.is_empty() {
             return;
@@ -776,7 +780,7 @@ impl FolderView {
 
     /// Files dropped onto `dest` (a folder row or the current folder background).
     pub fn drop_into(&mut self, dest: PathBuf, paths: &ExternalPaths, cx: &mut Context<Self>) {
-        let sources: Vec<PathBuf> = paths.paths().to_vec();
+        let sources: Vec<PathBuf> = crate::file_drag::take(paths);
         if sources.is_empty() || rf_win::dnd::is_invalid_drop(&sources, &dest) {
             return;
         }
