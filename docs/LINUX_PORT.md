@@ -110,7 +110,7 @@ apps**. Phase 1 is complete; Phase 2 (DirectLook and media) is next.
 | watch | `notify` already uses inotify; just ungate |
 | thumbs | ✅ `xdg_icons`: shared-mime-info (by extension) → the desktop's icon theme per the Icon Theme spec (theme from kdeglobals / GTK settings / gsettings, inherited themes, hicolor, pixmaps), SVGs drawn with resvg. `xdg_thumbs`: the shared `~/.cache/thumbnails` (read and written, `Thumb::MTime` checked, failures in `fail/rustyfiles`), images and SVGs decoded here, other types through the installed `.thumbnailer`s with a 15 s limit. `cargo run -p rf-linux --example icon_lookup` / `--example thumbnail` to check a system |
 | shell::open, open_with, open_terminal | ✅ `xdg-open`; `$TERMINAL` or the first common terminal. "Open with": `xdg_apps` reads the `.desktop` files and `mimeapps.list` (defaults, added / removed associations, parent types via `subclasses`) and launches per the Desktop Entry spec (`%f %F %u %U %i %c %k`, `Terminal=true`); the context menu's "Open with" lists them (default first), the standalone "Open with…" asks the desktop portal's app chooser. `cargo run -p rf-linux --example open_with -- <file>` shows what a system offers |
-| fastcopy, fastdelete, fileops | ✅ rf-win's engine and tests, ported: `copy_file_range` in 8 MB chunks (read/write fallback), modes and times kept, `renameat2(RENAME_NOREPLACE)`, same device = rename. `fileops` is the fallback engine (symlinks copied as links). Extended attributes and ACLs are not copied yet |
+| fastcopy, fastdelete, fileops | ✅ rf-win's engine and tests, ported: `copy_file_range` in 8 MB chunks (read/write fallback), modes and times kept, `renameat2(RENAME_NOREPLACE)`, same device = rename. `fileops` is the fallback engine (symlinks copied as links). Extended attributes and ACLs are not copied yet. Crash-safe job journal and resume (upstream 0.3.2) ported: rf-win's `journal` format with `flock` in place of share modes (a locked journal is a running job) and escaped paths (Linux names can hold tabs, line breaks and non-UTF-8 bytes); big files (64 MB+) resume mid-file from checkpoints (the copy `fdatasync`ed and its length journaled every 2 s, the source's mtime checked on resume) where Windows uses `COPY_FILE_RESTARTABLE`. `examples/crashcopy.rs` cuts a copy off for testing (optional MB/s limit) |
 | recycle | ✅ freedesktop Trash spec, our own: home trash + per-disk `.Trash/$uid` / `.Trash-$uid`, list / restore / empty, undo of a delete. The UI still says "Recycle Bin" (renaming needs new translations) |
 | clipboard | ✅ `x-special/gnome-copied-files`, `text/uri-list` + `application/x-kde-cutselection`, and plain paths. Wayland through data-control (`wl-clipboard-rs`: wlroots compositors, KDE), X11 as the CLIPBOARD owner (`x11rb`); GNOME's Wayland has no data-control, so there copy/paste stays inside rustyfiles. `cargo run -p rf-linux --example clipboard` checks a system |
 | git, hash, encoding, complete | mostly portable: remove `creation_flags(CREATE_NO_WINDOW)` and Windows-path handling |
@@ -325,7 +325,7 @@ new features need checking for Windows-only assumptions the compiler can't see (
 separators, case-insensitive paths, drive letters).
 
 - **0.4.0** (2026-11-09, 52 commits). Linux stand-ins: `fastcopy` journals and resume
-  (`interrupted` finds nothing: Linux's engine doesn't journal yet), `indexer` /
+  (since ported: see the fastcopy row), `indexer` /
   `nameindex` (the NTFS name index: never running, searches walk the disk as before; its
   Settings card and "Leave out of the search index" are hidden), `preview_host::mf_decodes`
   (false: DirectLook decodes 4K on the CPU as before). The speed test (races File Explorer)
@@ -335,7 +335,7 @@ separators, case-insensitive paths, drive letters).
   Downloads in date groups), Sort by Size with measured folders, paste selecting what
   arrived, the `rustdecoder` crate (builds; `search-ms:` links parse too, though nothing on
   Linux sends them). Follow-ups: copy journals and resume
-  in rf-linux's engine; the name index on Linux (ext4/btrfs walk + inotify).
+  in rf-linux's engine (done); the name index on Linux (ext4/btrfs walk + inotify).
 
 ## Packaging
 
