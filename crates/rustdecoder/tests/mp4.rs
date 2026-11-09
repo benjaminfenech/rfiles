@@ -120,6 +120,14 @@ fn camera_file() {
             Codec::Hevc { .. } => "hevc".to_string(),
             Codec::Aac { .. } => "aac".to_string(),
             Codec::Pcm { bits, float, big_endian } => format!("pcm {bits}{} {}", if *float { "f" } else { "" }, if *big_endian { "be" } else { "le" }),
+            Codec::Vp9 { .. } => "vp9".to_string(),
+            Codec::Av1 { .. } => "av1".to_string(),
+            Codec::Opus { .. } => "opus".to_string(),
+            Codec::Vorbis { .. } => "vorbis".to_string(),
+            Codec::Flac { .. } => "flac".to_string(),
+            Codec::Mp3 => "mp3".to_string(),
+            Codec::Ac3 { .. } => "ac3".to_string(),
+            Codec::Eac3 { .. } => "eac3".to_string(),
             Codec::Other => "other".to_string(),
         };
         eprintln!(

@@ -10,6 +10,12 @@ pub mod image;
 pub mod info;
 pub mod markdown;
 pub mod pdf;
+// rustdecoder's own player is Windows only (Direct3D 11, WASAPI): Linux never takes the route
+#[cfg(windows)]
+pub mod rd_video;
+#[cfg(not(windows))]
+#[path = "rd_video_linux.rs"]
+pub mod rd_video;
 pub mod text;
 pub mod video;
 pub mod zoom;
