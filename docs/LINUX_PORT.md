@@ -202,9 +202,19 @@ certificates for the info card.
 
 ### Phase 3: desktop integration (about 2 weeks, can be split)
 
-- Default file manager: install `rustyfiles.desktop`, `xdg-mime default … inode/directory`,
-  and implement the `org.freedesktop.FileManager1` D-Bus interface (`ShowItems`,
-  `ShowFolders`) so "Show in folder" from other apps lands here. Replaces `default_fm`.
+- ~~Default file manager~~ **done** (2026-11-09): Settings → Advanced → "Set as default file
+  manager" (`rf-linux` `default_fm`) writes `rustyfiles.desktop` (`Exec=… %F`), makes it the
+  `inode/directory` default in the user's `mimeapps.list` (and in a desktop-specific one that
+  already decides folders, since that wins), keeping the old default under `[X-rustyfiles]`
+  so turning it off restores it, and installs a D-Bus activation file for
+  `org.freedesktop.FileManager1`, then asks the bus to `ReloadConfig` (it read its service
+  files at start and would otherwise activate Dolphin). D-Bus starts
+  `rustyfiles --file-manager-service` (`fm_service`, no UI): `ShowItems` /
+  `ShowItemProperties` start `rustyfiles /select,<file>`, `ShowFolders` `rustyfiles <folder>`
+  (one per folder), which opens a window or goes to the running one; it exits after 60 s idle.
+  A file manager that is already running keeps the name (Dolphin doesn't allow replacement).
+  Tried end to end in a private bus session with scratch XDG folders
+  (`cargo run -p rf-linux --example default_fm -- enable <exe> | disable | status`).
 - Tray and notifications: StatusNotifierItem (`ksni`) + `notify-rust`.
 - Removable drives and safe removal: UDisks2 over D-Bus (`zbus`) for mount, unmount, eject.
 - Network: browse mounted gvfs paths (`/run/user/$UID/gvfs`) first; native SMB later.

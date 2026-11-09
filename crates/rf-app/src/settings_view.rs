@@ -1614,13 +1614,16 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             ))
             .child(div().pl(px(56.)).pr_4().pb_3().text_xs().text_color(p.text_tertiary).child(live))
             .into_any_element()),
-        // the default file manager and the Open / Save dialogs come to Linux with Phase 3
-        windows_only(section(p, t!("Deneysel"))),
-        windows_only(card(
+        section(p, t!("Deneysel")),
+        card(
             p,
             L::AppWindow,
             t!("Varsayılan dosya yöneticisi olarak ayarla"),
-            Some(t!("Klasörler ve Win+E rustyfiles ile açılır. Yalnızca bu kullanıcı için; istediğiniz an geri alınır.")),
+            Some(if ON_WINDOWS {
+                t!("Klasörler ve Win+E rustyfiles ile açılır. Yalnızca bu kullanıcı için; istediğiniz an geri alınır.")
+            } else {
+                t!("Folders opened from other apps, and \"Show in folder\" in browsers, open in rustyfiles. Applies to this user only; turning it off brings back the previous file manager.")
+            }),
             switch("dfm", p, dfm_on, move |window, _| {
                 let exe = std::env::current_exe().map(|e| e.display().to_string()).unwrap_or_default();
                 std::thread::spawn(move || {
@@ -1633,7 +1636,7 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
                 });
                 window.refresh();
             }),
-        )),
+        ),
     ];
     out.extend(archives.filter(|_| ON_WINDOWS));
     // other apps' Open / Save / folder dialogs show rustyfiles (needs rustyfiles_dialog.dll)
@@ -1665,10 +1668,6 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             window.refresh();
         }),
     )));
-    // the flatten switch stays: on Linux it heads the list without the Experimental title
-    if !ON_WINDOWS {
-        out.push(section(p, t!("Deneysel")));
-    }
     out.extend([
         card(
             p,

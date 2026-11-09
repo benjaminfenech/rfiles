@@ -66,7 +66,7 @@ fn set_in(dir: &Path, name: &str, exe: &Path, args: &[&str], on: bool) -> anyhow
 
 /// One argument of a desktop entry's `Exec=` (Desktop Entry spec: quoted when it has reserved
 /// characters; `"`, `` ` ``, `$` and `\` escaped inside quotes; `%` doubled).
-fn exec_quote(arg: &str) -> String {
+pub(crate) fn exec_quote(arg: &str) -> String {
     let arg = arg.replace('%', "%%");
     if !arg.is_empty() && !arg.chars().any(|c| " \t\n\"'\\><~|&;$*?#()`".contains(c)) {
         return arg;
