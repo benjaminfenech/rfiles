@@ -2,6 +2,16 @@
 //! rf-win's): `cargo run --release -p rf-linux --example search_bench -- <folder> <query> [runs]`.
 //! Prints the index's build time and size, its query times, and per walk run the time to the
 //! first hit and to the last, and the hit count. `HEAVIEST=1` lists the biggest subtrees.
+//! The process's resident memory after the build (and its peak during it) comes from
+//! `/proc/self/status`.
+
+/// (VmRSS, VmHWM) of this process in MB.
+#[cfg(unix)]
+fn rss_mb() -> (u64, u64) {
+    let s = std::fs::read_to_string("/proc/self/status").unwrap_or_default();
+    let kb = |key: &str| s.lines().find_map(|l| l.strip_prefix(key)?.trim().strip_suffix("kB")?.trim().parse::<u64>().ok()).unwrap_or(0);
+    (kb("VmRSS:") >> 10, kb("VmHWM:") >> 10)
+}
 
 #[cfg(unix)]
 fn main() -> anyhow::Result<()> {
@@ -15,7 +25,8 @@ fn main() -> anyhow::Result<()> {
     println!("{} \"{query}\"", root.display());
     let t = Instant::now();
     let ix = rf_linux::nameindex::Index::build(&root, &std::sync::atomic::AtomicBool::new(false));
-    println!("  index build: {:.1?}, {} entries, {} MB", t.elapsed(), ix.live(), ix.memory() >> 20);
+    let (rss, peak) = rss_mb();
+    println!("  index build: {:.1?}, {} entries, {:.1} MB, {} names; process {rss} MB, peak {peak} MB", t.elapsed(), ix.live(), ix.memory() as f64 / 1048576.0, ix.distinct_names());
     if std::env::var_os("HEAVIEST").is_some() {
         for (p, c) in ix.heaviest(25, 3) {
             println!("    {c:>9}  {}", p.display());

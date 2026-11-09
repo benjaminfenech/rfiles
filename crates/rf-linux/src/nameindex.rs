@@ -1,15 +1,16 @@
 //! A name index of whole folders: searching it takes milliseconds where walking the disk takes
 //! seconds to minutes.
 //!
-//! Linux version of upstream's `rf-win/src/nameindex.rs` (rustyfiles 0.4.0), kept in the same
-//! order, function by function, so an upstream change can be carried over by comparing the two
-//! files. It isn't shared with rf-win because the parts that differ run through all of it:
+//! Linux version of upstream's `rf-win/src/nameindex.rs` (rustyfiles 0.4.0, with the name
+//! table of upstream `c8e1e57`), kept in the same order, function by function, so an upstream
+//! change can be carried over by comparing the two files. It isn't shared with rf-win because
+//! the parts that differ run through all of it:
 //!
-//! - **Names are bytes.** The name pool holds each name's raw bytes (Linux names needn't be
+//! - **Names are bytes.** The name table holds each name's raw bytes (Linux names needn't be
 //!   UTF-8); paths are rebuilt from them exactly, and matching reads them lossily.
 //! - **Case-sensitive folders.** Upstream finds a folder by its case-folded name ("Foo" and
-//!   "foo" are one folder on NTFS); here by its exact bytes. Matching a search pattern is still
-//!   case-insensitive (Turkish İ/ı included), as in the disk walk.
+//!   "foo" are one folder on NTFS); here by its exact bytes, that is by its name id. Matching a
+//!   search pattern is still case-insensitive (Turkish İ/ı included), as in the disk walk.
 //! - **Listing** with `read_dir` and the entry's type (no `stat`): hidden = a leading dot,
 //!   symlinks (upstream's reparse points) are listed, never entered.
 //! - **Mounts** inside a root (a FUSE cloud folder in `~`, a network share, another disk) are
@@ -19,25 +20,31 @@
 //! - **Watching**: [`Index::build_with`] / [`Index::refresh_dirs_with`] call back for each
 //!   folder walked, so the indexer can watch exactly the folders it indexes (inotify watches
 //!   one folder at a time).
+//! - **No file ids.** Upstream also keeps each folder's NTFS file id for following the change
+//!   journal (`5bc4945`); Linux follows changes with inotify (`indexer.rs`) and keeps none.
 //!
-//! **Layout.** One node per file or folder, struct-of-arrays: parent id, name offset/length in
-//! one name pool, flags. About 11 bytes plus the name per entry. Node 0 is the root folder
-//! itself. Ids follow the walk, so a folder's entries are adjacent.
+//! **Layout.** One node per file or folder, struct-of-arrays: parent id, name id, flags: 9
+//! bytes per entry. Names are kept once each in a name table, as most of them repeat (a home
+//! folder's `README.md`, `index.js`, `mod.rs`…). Node 0 is the root folder itself. Ids follow
+//! the walk, so a folder's entries are adjacent.
 //!
 //! **Building** walks the root in parallel (nice 10, like the search walk). Workers reserve id
-//! ranges from a counter and hand their listings to the caller, which lays them out by id once
-//! the walk ends.
+//! ranges from a counter, add each folder's names to the shared name table as they list it, and
+//! hand their listings (name ids) to the caller, which lays them out by id once the walk ends.
 //!
-//! **Searching** scans the name pool on all cores: ASCII names are compared case-insensitively
-//! without allocating; names or patterns with other letters go through the same folding the walk
-//! search uses. A hit counts only if no folder above it was removed (and, unless hidden files
-//! are wanted, none is hidden), so removing a folder never has to touch its contents.
+//! **Searching** matches each different name once, then picks the entries carrying a matching
+//! one, both on all cores: ASCII names are compared case-insensitively without allocating; names
+//! or patterns with other letters go through the same folding the walk search uses. A hit counts
+//! only if no folder above it was removed (and, unless hidden files are wanted, none is hidden),
+//! so removing a folder never has to touch its contents.
 //!
 //! **Keeping up** ([`Index::refresh_dirs`]): a changed folder is listed again and compared with
 //! its indexed entries by name: gone ones are marked removed, new ones appended (new folders
 //! walked), the rest updated. [`Index::compact`] drops removed entries and their contents.
 //!
-//! **Saved** to a file ([`Index::save`] / [`Index::load`]) so a start doesn't walk again.
+//! **Saved** to a file ([`Index::save`] / [`Index::load`]) so a start is searchable at once.
+//! Format 2 is read straight into the arrays; format 1 files (a name per entry) convert on
+//! loading.
 
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
@@ -61,32 +68,216 @@ const REMOVED: u8 = 128;
 /// Called with each folder as the walk reaches it.
 pub type OnDir<'a> = Option<&'a (dyn Fn(&Path) + Sync)>;
 
+/// A hash set of ids whose keys live elsewhere (in the index arrays): 4 bytes a slot instead of
+/// a stored key. Open addressing with linear probing; the caller hashes and compares through
+/// the ids, and gives the hash of any id when slots move (growing, removing).
+struct IdTable {
+    slots: Vec<u32>,
+    len: usize,
+}
+
+impl IdTable {
+    fn new() -> Self {
+        IdTable { slots: Vec::new(), len: 0 }
+    }
+
+    fn mask(&self) -> usize {
+        self.slots.len() - 1
+    }
+
+    /// The id stored for `hash` that `is` accepts.
+    fn find(&self, hash: u64, is: impl Fn(u32) -> bool) -> Option<u32> {
+        if self.slots.is_empty() {
+            return None;
+        }
+        let mut at = hash as usize & self.mask();
+        loop {
+            match self.slots[at] {
+                NONE => return None,
+                id if is(id) => return Some(id),
+                _ => at = (at + 1) & self.mask(),
+            }
+        }
+    }
+
+    /// Adds `id` (not already in) under `hash`; `hash_of` rehashes the others when growing.
+    fn insert(&mut self, hash: u64, id: u32, hash_of: impl Fn(u32) -> u64) {
+        if (self.len + 1) * 8 > self.slots.len() * 7 {
+            self.grow((self.len + 1).max(16), &hash_of);
+        }
+        let mut at = hash as usize & self.mask();
+        while self.slots[at] != NONE {
+            at = (at + 1) & self.mask();
+        }
+        self.slots[at] = id;
+        self.len += 1;
+    }
+
+    /// Room for `n` ids (power-of-two slots, at most 7/8 full).
+    fn grow(&mut self, n: usize, hash_of: &impl Fn(u32) -> u64) {
+        let size = (n * 8 / 7 + 1).next_power_of_two().max(16);
+        if size <= self.slots.len() {
+            return;
+        }
+        let old = std::mem::replace(&mut self.slots, vec![NONE; size]);
+        let mask = size - 1;
+        for id in old.into_iter().filter(|&id| id != NONE) {
+            let mut at = hash_of(id) as usize & mask;
+            while self.slots[at] != NONE {
+                at = (at + 1) & mask;
+            }
+            self.slots[at] = id;
+        }
+    }
+
+    /// Takes `id` out (found under `hash`), moving later entries of its run back so lookups
+    /// never stop at a hole.
+    fn remove(&mut self, hash: u64, id: u32, hash_of: impl Fn(u32) -> u64) {
+        if self.slots.is_empty() {
+            return;
+        }
+        let mask = self.mask();
+        let mut at = hash as usize & mask;
+        loop {
+            match self.slots[at] {
+                NONE => return,
+                x if x == id => break,
+                _ => at = (at + 1) & mask,
+            }
+        }
+        self.slots[at] = NONE;
+        self.len -= 1;
+        let mut hole = at;
+        let mut next = (at + 1) & mask;
+        while self.slots[next] != NONE {
+            let home = hash_of(self.slots[next]) as usize & mask;
+            // the entry may fill the hole if its home isn't between the hole and its place
+            let between = if hole <= next { hole < home && home <= next } else { hole < home || home <= next };
+            if !between {
+                self.slots[hole] = self.slots[next];
+                self.slots[next] = NONE;
+                hole = next;
+            }
+            next = (next + 1) & mask;
+        }
+    }
+
+    fn clear(&mut self) {
+        self.slots = Vec::new();
+        self.len = 0;
+    }
+
+    fn memory(&self) -> usize {
+        self.slots.capacity() * 4
+    }
+}
+
 pub struct Index {
     root: PathBuf,
     parent: Vec<u32>,
-    name_off: Vec<u32>,
-    name_len: Vec<u16>,
+    /// Each entry's name, an id into `names`.
+    name_id: Vec<u32>,
     flags: Vec<u8>,
-    names: Vec<u8>,
-    /// Folders by (parent, name hash): finding a folder from a path when it changes.
-    dirs: HashMap<(u32, u64), u32>,
+    names: Names,
+    /// Folders by (parent, name id): finding a folder from a path when it changes.
+    dirs: IdTable,
     removed: usize,
 }
 
-/// One folder's listing from a build worker: entries `base..base + lens.len()`.
+/// Every different name once: raw bytes in one pool, name `k` is `pool[off[k]..off[k + 1]]`.
+/// Ids are unique (two ids never hold the same bytes), so a folder's exact name is its id.
+struct Names {
+    pool: Vec<u8>,
+    off: Vec<u32>,
+    /// Name ids by the hash of their bytes.
+    lookup: IdTable,
+}
+
+impl Names {
+    fn new() -> Self {
+        Names { pool: Vec::new(), off: vec![0], lookup: IdTable::new() }
+    }
+
+    fn len(&self) -> usize {
+        self.off.len() - 1
+    }
+
+    fn get(&self, k: u32) -> &[u8] {
+        &self.pool[self.off[k as usize] as usize..self.off[k as usize + 1] as usize]
+    }
+
+    fn hash(name: &[u8]) -> u64 {
+        // FNV-1a: short names, no allocation, good spread over the table's low bits once mixed
+        let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+        for &b in name {
+            h = (h ^ b as u64).wrapping_mul(0x0000_0100_0000_01b3);
+        }
+        h ^ (h >> 29)
+    }
+
+    /// The id of `name`, if held.
+    fn find(&self, name: &[u8]) -> Option<u32> {
+        self.lookup.find(Self::hash(name), |k| self.get(k) == name)
+    }
+
+    /// The id of `name`, added if new.
+    fn intern(&mut self, name: &[u8]) -> u32 {
+        self.intern_hashed(name, Self::hash(name))
+    }
+
+    /// [`Self::intern`] with `name`'s hash already worked out (outside the walk's lock).
+    fn intern_hashed(&mut self, name: &[u8], h: u64) -> u32 {
+        let (pool, off) = (&self.pool, &self.off);
+        let get = |k: u32| &pool[off[k as usize] as usize..off[k as usize + 1] as usize];
+        if let Some(k) = self.lookup.find(h, |k| get(k) == name) {
+            return k;
+        }
+        let k = self.len() as u32;
+        self.pool.extend_from_slice(name);
+        self.off.push(self.pool.len() as u32);
+        let (pool, off) = (&self.pool, &self.off);
+        self.lookup.insert(h, k, |j| Self::hash(&pool[off[j as usize] as usize..off[j as usize + 1] as usize]));
+        k
+    }
+
+    /// The lookup of names read from a file. A name stored twice keeps its first id: the
+    /// returned map (old id → id kept) is given only then.
+    fn rebuild_lookup(&mut self) -> Option<Vec<u32>> {
+        let (pool, off) = (&self.pool, &self.off);
+        let get = |k: u32| &pool[off[k as usize] as usize..off[k as usize + 1] as usize];
+        let mut t = IdTable::new();
+        t.grow(self.off.len() - 1, &|j| Self::hash(get(j)));
+        let mut remap: Option<Vec<u32>> = None;
+        for k in 0..(self.off.len() - 1) as u32 {
+            let name = get(k);
+            let h = Self::hash(name);
+            match t.find(h, |j| get(j) == name) {
+                None => t.insert(h, k, |j| Self::hash(get(j))),
+                // ids must be unique: folders are found by them
+                Some(first) => remap.get_or_insert_with(|| (0..(off.len() - 1) as u32).collect())[k as usize] = first,
+            }
+        }
+        self.lookup = t;
+        remap
+    }
+
+    fn memory(&self) -> usize {
+        self.pool.capacity() + self.off.capacity() * 4 + self.lookup.memory()
+    }
+
+    fn shrink(&mut self) {
+        self.pool.shrink_to_fit();
+        self.off.shrink_to_fit();
+    }
+}
+
+/// One folder's listing from a build worker: entries `base..base + ids.len()`, their names
+/// already in the shared name table (raw names of a whole tree would be held twice).
 struct Chunk {
     base: u32,
     parent: u32,
-    names: Vec<u8>,
-    lens: Vec<u16>,
+    ids: Vec<u32>,
     flags: Vec<u8>,
-}
-
-fn name_key(name: &[u8]) -> u64 {
-    use std::hash::{Hash, Hasher};
-    let mut h = std::collections::hash_map::DefaultHasher::new();
-    name.hash(&mut h);
-    h.finish()
 }
 
 /// Lists `dir`: (names, lengths, flags) of every entry.
@@ -125,6 +316,7 @@ fn mount_points() -> HashSet<PathBuf> {
 struct Build<'a> {
     next: &'a AtomicU32,
     chunks: &'a Mutex<Vec<Chunk>>,
+    names: &'a Mutex<Names>,
     cancel: &'a AtomicBool,
     mounts: &'a HashSet<PathBuf>,
     on_dir: OnDir<'a>,
@@ -172,6 +364,20 @@ fn walk<'s>(sc: &rayon::Scope<'s>, b: &'s Build<'s>, dir: PathBuf, id: u32) {
         return;
     }
     let base = b.next.fetch_add(lens.len() as u32, Ordering::Relaxed);
+    let ids: Vec<u32> = {
+        // hashed before the lock (8 workers share it), then one lock per folder
+        let mut off = 0usize;
+        let spans: Vec<(usize, usize, u64)> = lens
+            .iter()
+            .map(|&len| {
+                let (o, e) = (off, off + len as usize);
+                off = e;
+                (o, e, Names::hash(&names[o..e]))
+            })
+            .collect();
+        let mut table = b.names.lock().unwrap();
+        spans.iter().map(|&(o, e, h)| table.intern_hashed(&names[o..e], h)).collect()
+    };
     let mut off = 0usize;
     for (i, (&len, f)) in lens.iter().zip(flags.iter_mut()).enumerate() {
         let name = &names[off..off + len as usize];
@@ -189,7 +395,7 @@ fn walk<'s>(sc: &rayon::Scope<'s>, b: &'s Build<'s>, dir: PathBuf, id: u32) {
             }
         }
     }
-    b.chunks.lock().unwrap().push(Chunk { base, parent: id, names, lens, flags });
+    b.chunks.lock().unwrap().push(Chunk { base, parent: id, ids, flags });
 }
 
 fn pool() -> rayon::ThreadPool {
@@ -220,14 +426,33 @@ impl Index {
         self.parent.len() - self.removed
     }
 
-    /// Bytes held (arrays and names).
+    /// Bytes held (arrays, names and lookups). Upstream's figure also counts its folder file
+    /// ids (`b593628`); Linux keeps none.
     pub fn memory(&self) -> usize {
-        self.parent.capacity() * 4 + self.name_off.capacity() * 4 + self.name_len.capacity() * 2 + self.flags.capacity() + self.names.capacity() + self.dirs.capacity() * 24
+        self.parent.capacity() * 4 + self.name_id.capacity() * 4 + self.flags.capacity() + self.names.memory() + self.dirs.memory()
+    }
+
+    /// Different names held (each stored once).
+    pub fn distinct_names(&self) -> usize {
+        self.names.len()
     }
 
     fn name(&self, i: u32) -> &[u8] {
-        let (o, l) = (self.name_off[i as usize] as usize, self.name_len[i as usize] as usize);
-        &self.names[o..o + l]
+        self.names.get(self.name_id[i as usize])
+    }
+
+    /// Gives back what the arrays reserved for growing (after a build or a compaction).
+    fn shrink(&mut self) {
+        self.parent.shrink_to_fit();
+        self.name_id.shrink_to_fit();
+        self.flags.shrink_to_fit();
+        self.names.shrink();
+    }
+
+    fn empty(root: PathBuf) -> Index {
+        let mut names = Names::new();
+        names.intern(b"");
+        Index { root, parent: vec![NONE], name_id: vec![0], flags: vec![DIR], names, dirs: IdTable::new(), removed: 0 }
     }
 
     /// Walks `root` (blocking; `cancel` stops it, returning what was found so far).
@@ -239,49 +464,60 @@ impl Index {
     pub fn build_with(root: &Path, cancel: &AtomicBool, on_dir: OnDir<'_>) -> Index {
         let next = AtomicU32::new(1);
         let chunks = Mutex::new(Vec::new());
+        let mut table = Names::new();
+        table.intern(b"");
+        let names = Mutex::new(table);
         let mounts = mount_points();
-        let b = Build { next: &next, chunks: &chunks, cancel, mounts: &mounts, on_dir };
+        let b = Build { next: &next, chunks: &chunks, names: &names, cancel, mounts: &mounts, on_dir };
         pool().scope(|sc| walk(sc, &b, root.to_path_buf(), 0));
         let total = next.load(Ordering::Relaxed) as usize;
         let mut chunks = chunks.into_inner().unwrap();
         chunks.sort_unstable_by_key(|c| c.base);
-        let mut ix = Index {
-            root: root.to_path_buf(),
-            parent: vec![NONE; total],
-            name_off: vec![0; total],
-            name_len: vec![0; total],
-            flags: vec![REMOVED; total],
-            names: Vec::with_capacity(chunks.iter().map(|c| c.names.len()).sum()),
-            dirs: HashMap::new(),
-            removed: 0,
-        };
-        ix.flags[0] = DIR;
+        let mut ix = Index::empty(root.to_path_buf());
+        ix.names = names.into_inner().unwrap();
+        ix.parent.resize(total, NONE);
+        ix.name_id.resize(total, 0);
+        ix.flags.resize(total, REMOVED);
+        // each chunk's listing goes as soon as it is laid out
         for c in chunks {
-            let mut off = 0usize;
-            for (k, (&len, &f)) in c.lens.iter().zip(&c.flags).enumerate() {
+            for (k, (&id, &f)) in c.ids.iter().zip(&c.flags).enumerate() {
                 let i = c.base as usize + k;
                 ix.parent[i] = c.parent;
-                ix.name_off[i] = ix.names.len() as u32;
-                ix.name_len[i] = len;
+                ix.name_id[i] = id;
                 ix.flags[i] = f;
-                ix.names.extend_from_slice(&c.names[off..off + len as usize]);
-                off += len as usize;
             }
         }
         // ids reserved by a cancelled walk but never filled stay removed
         ix.removed = ix.flags.iter().filter(|&&f| f & REMOVED != 0).count();
         ix.index_dirs();
+        ix.shrink();
         ix
+    }
+
+    /// The key a folder is found by: its parent and its name (exact bytes: its name id).
+    fn dir_hash(parent: u32, name_id: u32) -> u64 {
+        ((name_id as u64).wrapping_mul(0xff51_afd7_ed55_8ccd) ^ (parent as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15)).rotate_left(17)
+    }
+
+    fn dir_hash_of(&self, i: u32) -> u64 {
+        Self::dir_hash(self.parent[i as usize], self.name_id[i as usize])
     }
 
     fn index_dirs(&mut self) {
         self.dirs.clear();
-        for i in 1..self.parent.len() as u32 {
-            let f = self.flags[i as usize];
-            if f & DIR != 0 && f & REMOVED == 0 {
-                self.dirs.insert((self.parent[i as usize], name_key(self.name(i))), i);
-            }
+        let dirs: Vec<u32> = (1..self.parent.len() as u32).filter(|&i| self.flags[i as usize] & (DIR | REMOVED) == DIR).collect();
+        let mut t = IdTable::new();
+        t.grow(dirs.len(), &|i| self.dir_hash_of(i));
+        // the table is big enough: no rehashing while filling it
+        for &i in &dirs {
+            t.insert(self.dir_hash_of(i), i, |_| unreachable!("sized for every folder"));
         }
+        self.dirs = t;
+    }
+
+    /// The folder named `name_id` directly in `parent`.
+    fn child_dir(&self, parent: u32, name_id: u32) -> Option<u32> {
+        self.dirs.find(Self::dir_hash(parent, name_id), |i| self.parent[i as usize] == parent && self.name_id[i as usize] == name_id)
     }
 
     /// The node of `path` (a folder at or under the root), if indexed.
@@ -290,7 +526,7 @@ impl Index {
         let mut id = 0u32;
         for c in rel.components() {
             let std::path::Component::Normal(n) = c else { continue };
-            id = *self.dirs.get(&(id, name_key(n.as_bytes())))?;
+            id = self.child_dir(id, self.names.find(n.as_bytes())?)?;
         }
         Some(id)
     }
@@ -353,8 +589,47 @@ impl Index {
         let ascii = pattern.trim().to_ascii_lowercase();
         let fast = !ascii.is_empty() && ascii.is_ascii() && !ascii.contains(['*', '?']);
         let needle = ascii.as_bytes();
-        let n = self.parent.len();
         let threads = std::thread::available_parallelism().map_or(4, |t| t.get()).clamp(1, 16);
+        // each different name once: which ones match (a bit per name)
+        let names = self.names.len();
+        let mut matched = vec![0u64; names.div_ceil(64)];
+        let any = AtomicBool::new(false);
+        // whole 64-bit words per thread: each owns its part of the bit set
+        let words_per = matched.len().div_ceil(threads).max(1);
+        std::thread::scope(|s| {
+            for (t, out) in matched.chunks_mut(words_per).enumerate() {
+                let (m, any) = (&m, &any);
+                s.spawn(move || {
+                    let lo = t * words_per * 64;
+                    for (w, word) in out.iter_mut().enumerate() {
+                        for b in 0..64 {
+                            let k = lo + w * 64 + b;
+                            if k >= names {
+                                break;
+                            }
+                            let name = self.names.get(k as u32);
+                            let hit = if fast && name.is_ascii() {
+                                name.len() >= needle.len() && name.windows(needle.len()).any(|w| w.eq_ignore_ascii_case(needle))
+                            } else {
+                                m.is_match(&String::from_utf8_lossy(name))
+                            };
+                            if hit {
+                                *word |= 1 << b;
+                            }
+                        }
+                    }
+                    if out.iter().any(|&w| w != 0) {
+                        any.store(true, Ordering::Relaxed);
+                    }
+                });
+            }
+        });
+        if !any.load(Ordering::Relaxed) {
+            return Some(Vec::new());
+        }
+        let matched = &matched;
+        // then the entries carrying one of them
+        let n = self.parent.len();
         let per = n.div_ceil(threads).max(1);
         let found = Mutex::new(Vec::<(usize, Vec<u32>)>::new());
         let stop = AtomicBool::new(false);
@@ -364,7 +639,7 @@ impl Index {
                 if lo >= hi {
                     break;
                 }
-                let (found, stop, m) = (&found, &stop, &m);
+                let (found, stop) = (&found, &stop);
                 s.spawn(move || {
                     let mut hits = Vec::new();
                     for i in lo.max(1)..hi {
@@ -374,13 +649,8 @@ impl Index {
                         if self.flags[i] & REMOVED != 0 {
                             continue;
                         }
-                        let (o, l) = (self.name_off[i] as usize, self.name_len[i] as usize);
-                        let name = &self.names[o..o + l];
-                        let hit = if fast && name.is_ascii() {
-                            name.len() >= needle.len() && name.windows(needle.len()).any(|w| w.eq_ignore_ascii_case(needle))
-                        } else {
-                            m.is_match(&String::from_utf8_lossy(name))
-                        };
+                        let k = self.name_id[i] as usize;
+                        let hit = matched[k / 64] & (1 << (k % 64)) != 0;
                         // the folder searched isn't its own hit (as in the disk walk; upstream
                         // returns it)
                         if hit && Some(i as u32) != under && self.valid(i as u32, include_hidden, under) {
@@ -439,10 +709,10 @@ impl Index {
                     Some(f) if (f & DIR) == (self.flags[k as usize] & DIR) => self.flags[k as usize] = f | (self.flags[k as usize] & MOUNT),
                     // a file became a folder or the other way round: a new entry
                     Some(f) => {
-                        self.remove(*node, k);
+                        self.remove(k);
                         now.insert(name, f);
                     }
-                    None => self.remove(*node, k),
+                    None => self.remove(k),
                 }
             }
             for (name, mut f) in now {
@@ -467,26 +737,31 @@ impl Index {
         }
     }
 
-    fn remove(&mut self, parent: u32, k: u32) {
+    fn remove(&mut self, k: u32) {
         self.flags[k as usize] |= REMOVED;
         self.removed += 1;
         if self.flags[k as usize] & DIR != 0 {
-            let key = (parent, name_key(self.name(k)));
-            if self.dirs.get(&key) == Some(&k) {
-                self.dirs.remove(&key);
-            }
+            let h = self.dir_hash_of(k);
+            let (parent_of, name_id) = (&self.parent, &self.name_id);
+            self.dirs.remove(h, k, |i| Self::dir_hash(parent_of[i as usize], name_id[i as usize]));
         }
     }
 
     fn push(&mut self, parent: u32, name: &[u8], f: u8) -> u32 {
+        let k = self.names.intern(name);
+        self.push_id(parent, k, f)
+    }
+
+    /// [`Self::push`] with a name already in this index's table.
+    fn push_id(&mut self, parent: u32, k: u32, f: u8) -> u32 {
         let id = self.parent.len() as u32;
         self.parent.push(parent);
-        self.name_off.push(self.names.len() as u32);
-        self.name_len.push(name.len().min(u16::MAX as usize) as u16);
+        self.name_id.push(k);
         self.flags.push(f);
-        self.names.extend_from_slice(name);
         if f & DIR != 0 && f & REMOVED == 0 {
-            self.dirs.insert((parent, name_key(name)), id);
+            let h = self.dir_hash_of(id);
+            let (parent_of, name_id) = (&self.parent, &self.name_id);
+            self.dirs.insert(h, id, |i| Self::dir_hash(parent_of[i as usize], name_id[i as usize]));
         }
         id
     }
@@ -494,6 +769,8 @@ impl Index {
     /// Appends `sub`'s entries (not its root) under node `at`.
     fn graft(&mut self, sub: &Index, at: u32) {
         let base = self.parent.len() as u32 - 1;
+        // `sub` has its own name table: each of its names is found in ours once
+        let mut ids = vec![NONE; sub.names.len()];
         for i in 1..sub.parent.len() as u32 {
             let f = sub.flags[i as usize];
             let p = sub.parent[i as usize];
@@ -502,7 +779,11 @@ impl Index {
                 NONE => NONE,
                 p => base + p,
             };
-            let id = self.push(parent, sub.name(i), f);
+            let s = sub.name_id[i as usize] as usize;
+            if ids[s] == NONE {
+                ids[s] = self.names.intern(sub.names.get(s as u32));
+            }
+            let id = self.push_id(parent, ids[s], f);
             debug_assert_eq!(id, base + i);
             if f & REMOVED != 0 {
                 self.removed += 1;
@@ -518,24 +799,18 @@ impl Index {
         // parents come before their children (walk order, appends): one pass decides
         let mut map = vec![NONE; n];
         map[0] = 0;
-        let mut out = Index {
-            root: self.root.clone(),
-            parent: vec![NONE],
-            name_off: vec![0],
-            name_len: vec![0],
-            flags: vec![DIR],
-            names: Vec::with_capacity(self.names.len()),
-            dirs: HashMap::new(),
-            removed: 0,
-        };
+        // the name table stays (a name no longer used costs a few bytes)
+        let names = std::mem::replace(&mut self.names, Names::new());
+        let mut out = Index { root: self.root.clone(), parent: vec![NONE], name_id: vec![0], flags: vec![DIR], names, dirs: IdTable::new(), removed: 0 };
         for i in 1..n {
             let p = self.parent[i];
             if self.flags[i] & REMOVED != 0 || p == NONE || !keep[p as usize] {
                 continue;
             }
             keep[i] = true;
-            map[i] = out.push(map[p as usize], self.name(i as u32), self.flags[i]);
+            map[i] = out.push_id(map[p as usize], self.name_id[i], self.flags[i]);
         }
+        out.shrink();
         *self = out;
     }
 
@@ -557,7 +832,10 @@ impl Index {
     // -------------------------------------------------------------- saving
 
     /// Upstream's format with raw-byte names (not interchangeable with a Windows index).
-    const MAGIC: &'static [u8; 8] = b"RFNIXL\0\x01";
+    /// Version 2: entries (parent, name id, flags), then the name table. Version 1 files (a
+    /// name per entry) are read and converted.
+    const MAGIC: &'static [u8; 8] = b"RFNIXL\0\x02";
+    const MAGIC_V1: &'static [u8; 8] = b"RFNIXL\0\x01";
 
     pub fn save(&self, path: &Path) -> std::io::Result<()> {
         let tmp = path.with_extension("tmp");
@@ -569,58 +847,158 @@ impl Index {
             f.write_all(root)?;
             f.write_all(&(self.parent.len() as u64).to_le_bytes())?;
             f.write_all(&(self.names.len() as u64).to_le_bytes())?;
-            for v in &self.parent {
-                f.write_all(&v.to_le_bytes())?;
-            }
-            for v in &self.name_off {
-                f.write_all(&v.to_le_bytes())?;
-            }
-            for v in &self.name_len {
-                f.write_all(&v.to_le_bytes())?;
-            }
+            f.write_all(&(self.names.pool.len() as u64).to_le_bytes())?;
+            write_u32s(&mut f, &self.parent)?;
+            write_u32s(&mut f, &self.name_id)?;
             f.write_all(&self.flags)?;
-            f.write_all(&self.names)?;
+            write_u32s(&mut f, &self.names.off)?;
+            f.write_all(&self.names.pool)?;
             f.flush()?;
         }
         std::fs::rename(&tmp, path)
     }
 
+    /// Reads an index file straight into its arrays (no second copy of the file in memory).
     pub fn load(path: &Path) -> std::io::Result<Index> {
         let bad = || std::io::Error::new(std::io::ErrorKind::InvalidData, "not an index file");
-        let mut b = Vec::new();
-        std::fs::File::open(path)?.read_to_end(&mut b)?;
-        let mut p = 0usize;
-        let mut take = |n: usize| -> std::io::Result<&[u8]> {
-            let s = b.get(p..p.checked_add(n).ok_or_else(bad)?).ok_or_else(bad)?;
-            p += n;
-            Ok(s)
-        };
-        if take(8)? != Self::MAGIC {
+        let file = std::fs::File::open(path)?;
+        let size = file.metadata()?.len() as usize;
+        let mut f = std::io::BufReader::with_capacity(1 << 20, file);
+        let mut magic = [0u8; 8];
+        f.read_exact(&mut magic).map_err(|_| bad())?;
+        let v1 = &magic == Self::MAGIC_V1;
+        if !v1 && &magic != Self::MAGIC {
             return Err(bad());
         }
-        let rl = u32::from_le_bytes(take(4)?.try_into().unwrap()) as usize;
-        let root = PathBuf::from(OsStr::from_bytes(take(rl)?));
-        let n = u64::from_le_bytes(take(8)?.try_into().unwrap()) as usize;
-        let nl = u64::from_le_bytes(take(8)?.try_into().unwrap()) as usize;
-        let parent: Vec<u32> = take(n.checked_mul(4).ok_or_else(bad)?)?.chunks_exact(4).map(|c| u32::from_le_bytes(c.try_into().unwrap())).collect();
-        let name_off: Vec<u32> = take(n * 4)?.chunks_exact(4).map(|c| u32::from_le_bytes(c.try_into().unwrap())).collect();
-        let name_len: Vec<u16> = take(n * 2)?.chunks_exact(2).map(|c| u16::from_le_bytes(c.try_into().unwrap())).collect();
-        let flags = take(n)?.to_vec();
-        let names = take(nl)?.to_vec();
-        // every name inside the pool, every parent an earlier-or-valid id
-        for i in 0..n {
-            if name_off[i] as usize + name_len[i] as usize > names.len() || (parent[i] != NONE && parent[i] as usize >= n) {
-                return Err(bad());
-            }
+        let rl = read_u32(&mut f)? as usize;
+        // PATH_MAX
+        if rl > 4096 {
+            return Err(bad());
         }
+        let mut root = vec![0u8; rl];
+        f.read_exact(&mut root)?;
+        let root = PathBuf::from(OsStr::from_bytes(&root));
+        let n = read_u64(&mut f)? as usize;
         if n == 0 {
             return Err(bad());
         }
+        if v1 {
+            let nl = read_u64(&mut f)? as usize;
+            if n.checked_mul(11).and_then(|x| x.checked_add(nl)).is_none_or(|x| x > size) {
+                return Err(bad());
+            }
+            return Self::load_v1(&mut f, root, n, nl).map_err(|_| bad());
+        }
+        let k = read_u64(&mut f)? as usize;
+        let pl = read_u64(&mut f)? as usize;
+        // sizes from the header must fit the file before anything that big is allocated
+        if n.checked_mul(9).and_then(|x| x.checked_add(k.checked_add(1)?.checked_mul(4)?)).and_then(|x| x.checked_add(pl)).is_none_or(|x| x > size) {
+            return Err(bad());
+        }
+        let read = |f: &mut std::io::BufReader<std::fs::File>| -> std::io::Result<_> {
+            let parent = read_vec_u32(f, n)?;
+            let name_id = read_vec_u32(f, n)?;
+            let mut flags = vec![0u8; n];
+            f.read_exact(&mut flags)?;
+            let off = read_vec_u32(f, k + 1)?;
+            let mut pool = vec![0u8; pl];
+            f.read_exact(&mut pool)?;
+            Ok((parent, name_id, flags, off, pool))
+        };
+        let (parent, mut name_id, flags, off, pool) = read(&mut f).map_err(|_| bad())?;
+        // every name inside the pool, every id and parent valid
+        if off[0] != 0 || off[k] as usize != pl || off.windows(2).any(|w| w[0] > w[1]) {
+            return Err(bad());
+        }
+        if (0..n).any(|i| name_id[i] as usize >= k || (parent[i] != NONE && parent[i] as usize >= n)) {
+            return Err(bad());
+        }
         let removed = flags.iter().filter(|&&f| f & REMOVED != 0).count();
-        let mut ix = Index { root, parent, name_off, name_len, flags, names, dirs: HashMap::new(), removed };
+        let mut names = Names { pool, off, lookup: IdTable::new() };
+        if let Some(remap) = names.rebuild_lookup() {
+            for id in &mut name_id {
+                *id = remap[*id as usize];
+            }
+        }
+        let mut ix = Index { root, parent, name_id, flags, names, dirs: IdTable::new(), removed };
         ix.index_dirs();
         Ok(ix)
     }
+
+    /// A version 1 file: entries with their own name (offset, length) into a pool.
+    fn load_v1(f: &mut impl Read, root: PathBuf, n: usize, nl: usize) -> std::io::Result<Index> {
+        let bad = || std::io::Error::new(std::io::ErrorKind::InvalidData, "not an index file");
+        let parent = read_vec_u32(f, n)?;
+        let name_off = read_vec_u32(f, n)?;
+        let mut name_len = vec![0u16; n];
+        f.read_exact(as_bytes_mut(&mut name_len))?;
+        if cfg!(target_endian = "big") {
+            name_len.iter_mut().for_each(|x| *x = u16::from_le(*x));
+        }
+        let mut flags = vec![0u8; n];
+        f.read_exact(&mut flags)?;
+        let mut pool = vec![0u8; nl];
+        f.read_exact(&mut pool)?;
+        let mut ix = Index::empty(root);
+        ix.parent = parent;
+        ix.flags = flags;
+        ix.name_id = Vec::with_capacity(n);
+        for i in 0..n {
+            let (o, l) = (name_off[i] as usize, name_len[i] as usize);
+            let name = pool.get(o..o + l).ok_or_else(bad)?;
+            if ix.parent[i] != NONE && ix.parent[i] as usize >= n {
+                return Err(bad());
+            }
+            let id = ix.names.intern(name);
+            ix.name_id.push(id);
+        }
+        ix.removed = ix.flags.iter().filter(|&&f| f & REMOVED != 0).count();
+        ix.index_dirs();
+        ix.shrink();
+        Ok(ix)
+    }
+}
+
+fn read_u32(r: &mut impl Read) -> std::io::Result<u32> {
+    let mut b = [0u8; 4];
+    r.read_exact(&mut b)?;
+    Ok(u32::from_le_bytes(b))
+}
+
+fn read_u64(r: &mut impl Read) -> std::io::Result<u64> {
+    let mut b = [0u8; 8];
+    r.read_exact(&mut b)?;
+    Ok(u64::from_le_bytes(b))
+}
+
+/// The arrays as they are in memory: little-endian on x86-64 and aarch64, the file's order.
+fn as_bytes<T: Copy>(v: &[T]) -> &[u8] {
+    // u8/u16/u32 only: no padding, every bit pattern valid
+    unsafe { std::slice::from_raw_parts(v.as_ptr() as *const u8, std::mem::size_of_val(v)) }
+}
+
+fn as_bytes_mut<T: Copy>(v: &mut [T]) -> &mut [u8] {
+    unsafe { std::slice::from_raw_parts_mut(v.as_mut_ptr() as *mut u8, std::mem::size_of_val(v)) }
+}
+
+/// `v` little-endian (Linux also runs on big-endian machines, unlike upstream's targets).
+fn write_u32s(w: &mut impl Write, v: &[u32]) -> std::io::Result<()> {
+    if cfg!(target_endian = "little") {
+        return w.write_all(as_bytes(v));
+    }
+    for x in v {
+        w.write_all(&x.to_le_bytes())?;
+    }
+    Ok(())
+}
+
+fn read_vec_u32(r: &mut impl Read, n: usize) -> std::io::Result<Vec<u32>> {
+    let mut v = vec![0u32; n];
+    r.read_exact(as_bytes_mut(&mut v))?;
+    if cfg!(target_endian = "big") {
+        v.iter_mut().for_each(|x| *x = u32::from_le(*x));
+    }
+    Ok(v)
 }
 
 #[cfg(test)]
@@ -646,6 +1024,35 @@ mod tests {
         n
     }
 
+    /// `ix` written in format 1 (a name per entry), as the index before the name table saved it.
+    fn write_v1(ix: &Index, file: &Path) {
+        let mut f = std::fs::File::create(file).unwrap();
+        let r = ix.root.as_os_str().as_bytes();
+        let n = ix.parent.len();
+        let mut pool = Vec::new();
+        let (mut offs, mut lens) = (Vec::new(), Vec::new());
+        for i in 0..n as u32 {
+            offs.push(pool.len() as u32);
+            lens.push(ix.name(i).len() as u16);
+            pool.extend_from_slice(ix.name(i));
+        }
+        f.write_all(Index::MAGIC_V1).unwrap();
+        f.write_all(&(r.len() as u32).to_le_bytes()).unwrap();
+        f.write_all(r).unwrap();
+        f.write_all(&(n as u64).to_le_bytes()).unwrap();
+        f.write_all(&(pool.len() as u64).to_le_bytes()).unwrap();
+        for v in [&ix.parent, &offs] {
+            for x in v {
+                f.write_all(&x.to_le_bytes()).unwrap();
+            }
+        }
+        for x in &lens {
+            f.write_all(&x.to_le_bytes()).unwrap();
+        }
+        f.write_all(&ix.flags).unwrap();
+        f.write_all(&pool).unwrap();
+    }
+
     #[test]
     fn builds_and_finds_case_insensitively() {
         let root = tree("find");
@@ -661,6 +1068,8 @@ mod tests {
         // the full path comes back
         let p = ix.search("main", None, false, 10).unwrap();
         assert_eq!(p, [root.join("Proje").join("main.rs")]);
+        // nothing matches: no second pass
+        assert!(ix.search("yokböyle", None, false, 10).unwrap().is_empty());
         std::fs::remove_dir_all(&root).unwrap();
     }
 
@@ -686,10 +1095,24 @@ mod tests {
         let root = tree("bytes");
         let odd = OsStr::from_bytes(b"rapor-\xff\xfe.txt");
         std::fs::write(root.join(odd), b"x").unwrap();
+        let odd_dir = OsStr::from_bytes(b"klas\xf6r");
+        std::fs::create_dir_all(root.join(odd_dir)).unwrap();
+        std::fs::write(root.join(odd_dir).join("içinde.txt"), b"x").unwrap();
         let ix = Index::build(&root, &AtomicBool::new(false));
         let hits = ix.search("rapor-", None, false, 10).unwrap();
         assert_eq!(hits, [root.join(odd)]);
         assert!(hits[0].exists());
+        // through a save in either format, and a folder found by its bytes
+        let file = root.with_extension("bytes.rfidx");
+        let v1 = root.with_extension("bytes1.rfidx");
+        ix.save(&file).unwrap();
+        write_v1(&ix, &v1);
+        for f in [&file, &v1] {
+            let back = Index::load(f).unwrap();
+            assert_eq!(back.search("rapor-", None, false, 10).unwrap(), [root.join(odd)]);
+            assert_eq!(back.search("içinde", Some(&root.join(odd_dir)), false, 10).unwrap(), [root.join(odd_dir).join("içinde.txt")]);
+            std::fs::remove_file(f).unwrap();
+        }
         std::fs::remove_dir_all(&root).unwrap();
     }
 
@@ -715,6 +1138,10 @@ mod tests {
         assert_eq!(back.removed, 0);
         assert_eq!(names(&back.search("rapor", None, false, 10).unwrap()), ["Rapor.pdf", "eski rapor.pdf", "yeni rapor.md"]);
         assert_eq!(back.search("eski", Some(&root.join("Arşiv")), false, 10).unwrap(), [root.join("Arşiv/2026/eski rapor.pdf")]);
+        // still follows changes after compacting (folders found again by name id)
+        std::fs::write(root.join("Arşiv/2026/rapor 3.txt"), b"x").unwrap();
+        back.refresh_dirs(&[root.join("Arşiv/2026")], &AtomicBool::new(false));
+        assert_eq!(names(&back.search("rapor", Some(&root.join("Arşiv")), false, 10).unwrap()), ["eski rapor.pdf", "rapor 3.txt"]);
         std::fs::remove_file(&file).unwrap();
         std::fs::remove_dir_all(&root).unwrap();
     }
@@ -727,6 +1154,10 @@ mod tests {
         ix.refresh_dirs(std::slice::from_ref(&root), &AtomicBool::new(false));
         assert_eq!(ix.search("main", None, false, 10).unwrap(), [root.join("Proje 2/main.rs")]);
         assert!(ix.search("", Some(&root.join("Proje")), false, 10).is_none());
+        // and back: the old name finds the new folder, not the removed one
+        std::fs::rename(root.join("Proje 2"), root.join("Proje")).unwrap();
+        ix.refresh_dirs(std::slice::from_ref(&root), &AtomicBool::new(false));
+        assert_eq!(ix.search("main", Some(&root.join("Proje")), false, 10).unwrap(), [root.join("Proje/main.rs")]);
         std::fs::remove_dir_all(&root).unwrap();
     }
 
@@ -800,8 +1231,106 @@ mod tests {
         let b = std::fs::read(&file).unwrap();
         std::fs::write(&file, &b[..b.len() / 2]).unwrap();
         assert!(Index::load(&file).is_err());
+        std::fs::write(&file, &b[..b.len() - 1]).unwrap();
+        assert!(Index::load(&file).is_err());
+        // a name id past the table
+        let mut c = b.clone();
+        let at = 8 + 4 + ix.root.as_os_str().len() + 24 + ix.parent.len() * 4;
+        c[at..at + 4].copy_from_slice(&u32::MAX.to_le_bytes());
+        std::fs::write(&file, &c).unwrap();
+        assert!(Index::load(&file).is_err());
         std::fs::write(&file, b"RFNIX\0\0\x01rest").unwrap();
         assert!(Index::load(&file).is_err());
+        std::fs::write(&file, b"RFN").unwrap();
+        assert!(Index::load(&file).is_err());
+        std::fs::remove_file(&file).unwrap();
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn id_table_finds_inserts_and_removes_like_a_set() {
+        // keys collide on purpose (hash = id % 37): long runs, wrap-around, holes refilled
+        let hash = |id: u32| (id % 37) as u64 * 0x9e37_79b9;
+        let mut t = IdTable::new();
+        let mut model = std::collections::HashSet::new();
+        let mut x = 12345u32;
+        for step in 0..20_000 {
+            x = x.wrapping_mul(1_103_515_245).wrapping_add(12345);
+            let id = (x >> 8) % 500;
+            if model.contains(&id) && step % 3 != 0 {
+                t.remove(hash(id), id, hash);
+                model.remove(&id);
+            } else if !model.contains(&id) {
+                t.insert(hash(id), id, hash);
+                model.insert(id);
+            }
+            if step % 997 == 0 {
+                for probe in 0..500 {
+                    assert_eq!(t.find(hash(probe), |i| i == probe).is_some(), model.contains(&probe), "step {step}, id {probe}");
+                }
+            }
+        }
+        assert_eq!(t.len, model.len());
+    }
+
+    #[test]
+    fn names_are_stored_once_and_old_files_convert() {
+        let root = tree("names");
+        for d in ["a", "b", "c"] {
+            std::fs::create_dir_all(root.join(d)).unwrap();
+            std::fs::write(root.join(d).join("README.md"), b"x").unwrap();
+        }
+        let ix = Index::build(&root, &AtomicBool::new(false));
+        assert_eq!(names(&ix.search("readme", None, false, 10).unwrap()), ["README.md"; 3]);
+        // "", 3 folder names, README.md and the tree's 8 names: 13, not 16
+        assert_eq!(ix.distinct_names(), 13);
+        // a version 1 file (a name per entry) reads into the same index
+        let file = root.with_extension("v1.rfidx");
+        write_v1(&ix, &file);
+        let back = Index::load(&file).unwrap();
+        assert_eq!(back.distinct_names(), 13);
+        assert_eq!(back.live(), ix.live());
+        assert_eq!(back.search("readme", Some(&root.join("b")), false, 10).unwrap(), [root.join("b").join("README.md")]);
+        // a truncated file is refused, not trusted
+        let bytes = std::fs::read(&file).unwrap();
+        std::fs::write(&file, &bytes[..bytes.len() - 3]).unwrap();
+        assert!(Index::load(&file).is_err());
+        std::fs::remove_file(&file).unwrap();
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn a_name_stored_twice_in_a_file_is_one_name() {
+        // not written by save, but a file could hold it: folders must still be found
+        let root = tree("twice");
+        let ix = Index::build(&root, &AtomicBool::new(false));
+        let file = root.with_extension("twice.rfidx");
+        let r = ix.root.as_os_str().as_bytes();
+        // the table again with every name doubled; entries point at the second copies
+        let k = ix.names.len();
+        let mut pool = ix.names.pool.clone();
+        pool.extend_from_slice(&ix.names.pool);
+        let mut off = ix.names.off.clone();
+        off.extend(ix.names.off[1..].iter().map(|o| o + ix.names.pool.len() as u32));
+        let ids: Vec<u32> = ix.name_id.iter().map(|&i| i + k as u32).collect();
+        let mut f = std::fs::File::create(&file).unwrap();
+        f.write_all(Index::MAGIC).unwrap();
+        f.write_all(&(r.len() as u32).to_le_bytes()).unwrap();
+        f.write_all(r).unwrap();
+        for x in [ix.parent.len(), 2 * k, pool.len()] {
+            f.write_all(&(x as u64).to_le_bytes()).unwrap();
+        }
+        write_u32s(&mut f, &ix.parent).unwrap();
+        write_u32s(&mut f, &ids).unwrap();
+        f.write_all(&ix.flags).unwrap();
+        write_u32s(&mut f, &off).unwrap();
+        f.write_all(&pool).unwrap();
+        drop(f);
+        let mut back = Index::load(&file).unwrap();
+        assert_eq!(back.search("ışık", Some(&root.join("Proje/Çizimler")), false, 10).unwrap(), [root.join("Proje/Çizimler/ışık.png")]);
+        std::fs::write(root.join("Proje/yeni.txt"), b"x").unwrap();
+        back.refresh_dirs(&[root.join("Proje")], &AtomicBool::new(false));
+        assert_eq!(back.search("yeni", None, false, 10).unwrap(), [root.join("Proje/yeni.txt")]);
         std::fs::remove_file(&file).unwrap();
         std::fs::remove_dir_all(&root).unwrap();
     }
