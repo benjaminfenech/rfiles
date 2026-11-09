@@ -290,7 +290,9 @@ WebDAV address, or `\\server\share` in the address bar: rustyfiles opens it as a
 kio-fuse (KDE) or gvfs (GNOME), whichever is installed (`kio-fuse`, or `gvfs` with `gvfs-smb`
 etc.). When the server wants a login, rustyfiles asks for the user name and password. Network
 bookmarks from Dolphin's places and GTK's bookmarks appear under Network in the sidebar;
-pinning a network folder pins its address.
+pinning a network folder pins its address. The address bar shows network folders by their address
+(`smb://server/share/…`); Settings → Files and folders → "Show network folders by their
+address" switches it to where they are mounted (`/run/user/…`).
 
 **Tray and notifications.** Settings → Advanced → "Keep running in the background" leaves an
 icon in the system tray when the last window closes (KDE, Waybar, Noctalia and most bars show

@@ -254,8 +254,13 @@ certificates for the info card.
   bookmarks from KDE's `user-places.xbel` and GTK's `bookmarks`; pinning a folder inside a
   mount pins its URL (`remote_url`: kio-fuse `remoteUrl`, gvfs `gio info`), since the local
   path changes between sessions. rf-linux `ftp` stays a stub: `ftp://` never reaches it.
-  Not done: the address bar still shows the mount's local path (`…/kio-fuse-XXXX/ftp/host`),
-  and `smb://server` share lists depend on the server allowing it. Tried with a local
+  The address bar shows a network folder by its address (setting `address_shows_url`, on by
+  default; Settings → Files and folders): `remote::mount_url` reads it off the mount path
+  (kio-fuse `…/kio-fuse-X/<scheme>/<authority>/…`, gvfs `…/gvfs/smb-share:server=…,share=…`,
+  no D-Bus), the first crumb is the address and leads to the mount's root, and editing the
+  address starts from the URL. Pressing Enter on it reopens the same folder: `mount` looks
+  for kio-fuse's folder of that server first, since kio-fuse would otherwise ask for the
+  password again. `smb://server` share lists depend on the server allowing it. Tried with a local
   pyftpdlib server (anonymous, then with a login), the app opening
   `ftp://user:pass@127.0.0.1:2122/pub` from the command line, and the sign-in prompt for
   the same URL without a login

@@ -41,6 +41,10 @@ pub fn is_remote(p: &Path) -> bool {
 /// Opens the network location `text` (see [`to_url`]) and returns its local folder.
 pub fn mount(text: &str) -> anyhow::Result<PathBuf> {
     let url = to_url(text).ok_or_else(|| anyhow!("{text} is not a network location"))?;
+    // already open (signed in earlier this session): kio-fuse would ask for the password again
+    if let Some(p) = existing_kio_mount(&url) {
+        return Ok(p);
+    }
     let kio = match kio_fuse(&url) {
         Ok(p) => return Ok(p),
         Err(e) if e.is::<Missing>() => e,
@@ -82,6 +86,61 @@ pub fn remote_url(local: &Path) -> Option<String> {
         return String::from_utf8_lossy(&out.stdout).lines().find_map(|l| l.strip_prefix("uri: ")).map(|u| u.trim().to_string());
     }
     None
+}
+
+/// For a folder inside a kio-fuse or gvfs mount: (the mount's network address, the mount's
+/// local folder), worked out from the path alone (no D-Bus call: the address bar asks on
+/// every frame). kio-fuse: `…/kio-fuse-XXXX/smb/nas/media` → `smb://nas`. gvfs:
+/// `…/gvfs/smb-share:server=nas,share=media` → `smb://nas/media`. Other paths: None.
+pub fn mount_url(local: &Path) -> Option<(String, PathBuf)> {
+    use std::path::Component;
+    let run_dir = PathBuf::from(format!("/run/user/{}", unsafe { libc::getuid() }));
+    let rest = local.strip_prefix(&run_dir).ok()?;
+    let mut parts = rest.components().filter_map(|c| match c {
+        Component::Normal(n) => n.to_str(),
+        _ => None,
+    });
+    let top = parts.next()?;
+    if top.starts_with("kio-fuse-") {
+        let scheme = parts.next()?;
+        let authority = parts.next()?;
+        return Some((format!("{scheme}://{authority}"), run_dir.join(top).join(scheme).join(authority)));
+    }
+    if top == "gvfs" {
+        let name = parts.next()?;
+        return Some((gvfs_url(name)?, run_dir.join(top).join(name)));
+    }
+    None
+}
+
+/// A gvfs mount's folder name as its URL: `smb-share:server=nas,share=media,user=me` →
+/// `smb://me@nas/media`, `sftp:host=box,user=me,port=2222` → `sftp://me@box:2222`.
+fn gvfs_url(name: &str) -> Option<String> {
+    let (kind, args) = name.split_once(':')?;
+    let get = |k: &str| args.split(',').find_map(|kv| kv.strip_prefix(k)?.strip_prefix('=')).map(decode);
+    let host = get("host").or_else(|| get("server"))?;
+    let user = get("user").map(|u| format!("{u}@")).unwrap_or_default();
+    let port = get("port").map(|p| format!(":{p}")).unwrap_or_default();
+    let (scheme, path) = match kind {
+        "smb-share" => ("smb", format!("/{}", get("share")?)),
+        "sftp" | "ftp" | "ftps" | "nfs" | "afp-volume" => (if kind == "afp-volume" { "afp" } else { kind }, get("prefix").unwrap_or_default()),
+        "dav" => (if get("ssl").as_deref() == Some("true") { "davs" } else { "dav" }, get("prefix").unwrap_or_default()),
+        _ => return None,
+    };
+    Some(format!("{scheme}://{user}{host}{port}{}", path.trim_end_matches('/')))
+}
+
+/// A folder inside a network mount as its address (`smb://nas/media/Films`); None for
+/// other paths.
+pub fn display_url(local: &Path) -> Option<String> {
+    let (url, root) = mount_url(local)?;
+    let rest = local.strip_prefix(&root).ok()?;
+    let mut out = url;
+    for c in rest.components() {
+        out.push('/');
+        out.push_str(&c.as_os_str().to_string_lossy());
+    }
+    Some(out)
 }
 
 /// The server wants a (different) user name and password: ask, then [`with_login`].
@@ -156,6 +215,31 @@ impl std::fmt::Display for Missing {
     }
 }
 impl std::error::Error for Missing {}
+
+/// The folder of `url` in a kio-fuse mount made earlier, if there is one: kio-fuse keeps
+/// `<scheme>/<user@host>/…` for each server it has opened.
+fn existing_kio_mount(url: &str) -> Option<PathBuf> {
+    let (scheme, rest) = url.split_once("://")?;
+    let (authority, path) = rest.split_once('/').unwrap_or((rest, ""));
+    // the password never appears in kio-fuse's folder names
+    let authority = match authority.rsplit_once('@') {
+        Some((info, host)) => format!("{}@{host}", info.split(':').next().unwrap_or(info)),
+        None => authority.to_string(),
+    };
+    let run_dir = PathBuf::from(format!("/run/user/{}", unsafe { libc::getuid() }));
+    std::fs::read_dir(&run_dir).ok()?.flatten().find_map(|e| {
+        if !e.file_name().to_string_lossy().starts_with("kio-fuse-") {
+            return None;
+        }
+        let server = e.path().join(scheme).join(&authority);
+        // only servers kio-fuse already knows exist here: nothing is fetched to find out
+        if !server.exists() {
+            return None;
+        }
+        let dir = path.split('/').filter(|c| !c.is_empty()).fold(server, |d, c| d.join(decode(c)));
+        std::fs::read_dir(&dir).is_ok().then_some(dir)
+    })
+}
 
 fn kio_fuse(url: &str) -> anyhow::Result<PathBuf> {
     // a long method timeout: the default 25 s isn't enough to type a password
@@ -241,6 +325,26 @@ mod tests {
         assert_eq!(to_url(r"\\?\C:\x"), None);
         assert!(is_remote(Path::new("smb://nas/x")));
         assert!(!is_remote(Path::new("/mnt/x")));
+    }
+
+    #[test]
+    fn mount_paths_as_urls() {
+        let run = format!("/run/user/{}", unsafe { libc::getuid() });
+        let kio = PathBuf::from(format!("{run}/kio-fuse-AbCdEf/smb/10.0.0.9/media/Films"));
+        let (url, root) = mount_url(&kio).unwrap();
+        assert_eq!(url, "smb://10.0.0.9");
+        assert_eq!(root, PathBuf::from(format!("{run}/kio-fuse-AbCdEf/smb/10.0.0.9")));
+        assert_eq!(display_url(&kio).as_deref(), Some("smb://10.0.0.9/media/Films"));
+        let ftp = PathBuf::from(format!("{run}/kio-fuse-AbCdEf/ftp/me@host:2121"));
+        assert_eq!(display_url(&ftp).as_deref(), Some("ftp://me@host:2121"));
+        let g = PathBuf::from(format!("{run}/gvfs/smb-share:server=nas,share=media,user=me/TV"));
+        assert_eq!(display_url(&g).as_deref(), Some("smb://me@nas/media/TV"));
+        let g = PathBuf::from(format!("{run}/gvfs/sftp:host=box,port=2222"));
+        assert_eq!(display_url(&g).as_deref(), Some("sftp://box:2222"));
+        let g = PathBuf::from(format!("{run}/gvfs/dav:host=cloud,ssl=true,prefix=%2Fremote.php%2Fwebdav/x"));
+        assert_eq!(display_url(&g).as_deref(), Some("davs://cloud/remote.php/webdav/x"));
+        assert_eq!(display_url(Path::new("/home/me")), None);
+        assert_eq!(display_url(Path::new(&format!("{run}/kio-fuse-X/smb"))), None);
     }
 
     #[test]

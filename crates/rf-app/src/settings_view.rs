@@ -876,6 +876,14 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
             |s, v| s.drive_names = v,
         ),
     ));
+    #[cfg(unix)]
+    v.push(card(
+        p,
+        L::Network,
+        t!("Show network folders by their address"),
+        Some(t!("smb://server/share in the address bar, instead of where it is mounted (/run/user/…)")),
+        sw("addr-url", p, s.address_shows_url, |s, v| s.address_shows_url = v),
+    ));
 
     v.push(section(p, t!("Davranışlar")));
     v.push(card(
