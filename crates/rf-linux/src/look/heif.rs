@@ -45,7 +45,9 @@ fn child<'a>(data: &'a [u8], kind: &[u8; 4]) -> Option<&'a [u8]> {
 /// The primary image as stored, and how to show it.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Primary {
-    /// Stored size, before `irot`.
+    /// Size before `irot`: the coded size (`ispe`), cut to the clean aperture (`clap`) when
+    /// there is one (HEVC codes whole blocks: libheif 1.23 stores a 60 x 40 image as 64 x 64
+    /// plus a `clap`).
     pub width: u32,
     pub height: u32,
     /// `irot`: anticlockwise quarter turns.
@@ -88,6 +90,7 @@ pub fn primary(data: &[u8]) -> Option<Primary> {
     let mut size = None;
     let mut quarter_turns = 0;
     let mut mirror = None;
+    let mut crop = None;
     for _ in 0..be32(ipma, 4)? {
         let item = if version < 1 {
             at += 2;
@@ -119,11 +122,22 @@ pub fn primary(data: &[u8]) -> Option<Primary> {
                 // anticlockwise quarter turns in the low two bits
                 b"irot" => quarter_turns = p.body.first()? & 3,
                 b"imir" => mirror = Some(p.body.first()? & 1),
+                // width and height as fractions (numerator, denominator), then the offsets
+                b"clap" => {
+                    let frac = |at: usize| -> Option<u32> {
+                        let (n, d) = (be32(p.body, at)?, be32(p.body, at + 4)?);
+                        (d != 0).then(|| ((n as u64 + d as u64 / 2) / d as u64) as u32)
+                    };
+                    crop = Some((frac(0)?, frac(8)?));
+                }
                 _ => {}
             }
         }
     }
-    let (width, height) = size?;
+    let (mut width, mut height) = size?;
+    if let Some((w, h)) = crop.filter(|&(w, h)| w > 0 && h > 0) {
+        (width, height) = (w.min(width), h.min(height));
+    }
     (width > 0 && height > 0).then_some(Primary {
         width,
         height,
@@ -282,6 +296,13 @@ mod tests {
         let full = heif(None);
         assert_eq!(primary_size(&full[..full.len() / 2]), None);
         assert_eq!(primary_size(b"not a heif file"), None);
+    }
+
+    /// libheif 1.23's HEIC of testdata/small.png: coded as 64 x 64, its `clap` cuts it to 60 x 40.
+    #[test]
+    fn the_clean_aperture_is_the_size() {
+        let data = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/padded.heic")).unwrap();
+        assert_eq!(primary_size(&data), Some((60, 40)));
     }
 
     #[test]
