@@ -319,7 +319,7 @@ the hybrid GPU/CPU renderer, critical-error-dialog suppression, `keep_gdiplus_al
 ## Packaging
 
 **Arch** (2026-11-09): `packaging/arch/PKGBUILD` builds `rustyfiles-git` from the GitHub
-repo's latest commit (`pkgver` from `git describe`: `0.3.0.r95.gabc1234`). Both binaries go
+repo's latest commit (`pkgver`: the workspace version, commit count and commit, `0.3.0.r96.g8a667b8`; the GitHub repo has no tags). Both binaries go
 to `/usr/lib/rustyfiles/` (DirectLook is looked up next to rustyfiles, and `current_exe`
 resolves the `/usr/bin/rustyfiles` symlink), plus `packaging/linux/rustyfiles.desktop`
 (`Exec=rustyfiles %U`: launchers pass `file://` URIs, which the app now decodes, and
