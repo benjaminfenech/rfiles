@@ -260,7 +260,14 @@ certificates for the info card.
   `ftp://user:pass@127.0.0.1:2122/pub` from the command line, and the sign-in prompt for
   the same URL without a login
   (`cargo run -p rf-linux --example remote -- <url>`).
-- File dialogs: xdg-desktop-portal FileChooser (`ashpd`).
+- ~~File dialogs~~ **done** (2026-11-09): `dialogs::pick` (Settings: background image,
+  code editor, import / export settings) shows the desktop's chooser through the
+  xdg-desktop-portal FileChooser (`ashpd` `file_chooser`, blocking on the shell worker
+  thread). Windows-style filters become portal globs that match either case; the code
+  editor pick has no filter on Linux (programs have no `.exe`). Tried with the GTK portal on
+  Hyprland: the save dialog came up with the name, folder and filter
+  (`cargo run -p rf-linux --example pick -- open | folder | save`). rustyfiles *as* other
+  apps' file dialog (rf-dialog) is still not ported: that would be a portal backend.
 - Drag out to other apps: depends on GPUI's Linux drag-and-drop support; check first, it may
   need upstream work.
 
