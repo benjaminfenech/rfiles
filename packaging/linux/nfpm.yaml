@@ -1,0 +1,108 @@
+# rustyfiles as .deb and .rpm, from binaries already built (see build-packages.sh, which sets
+# the RF_… placeholders below). One file for both formats: nfpm (https://nfpm.goreleaser.com).
+name: rustyfiles
+arch: ${RF_ARCH}
+platform: linux
+version: ${RF_VERSION}
+release: 1
+section: utils
+priority: optional
+maintainer: Benjamin Fenech <benjamin@fenech.dev>
+description: |-
+  Fast file manager with tabs, dual panes and previews.
+  Tabs, dual panes, a column view, DirectLook previews (images, PDFs, video, text,
+  archives), archives as folders, tags, git status, network locations and removable drives.
+vendor: rustyfiles
+homepage: https://github.com/benjaminfenech/rustyfiles-linux
+license: MIT
+
+contents:
+  # DirectLook is found next to rustyfiles: both live in /usr/lib/rustyfiles
+  - src: ${RF_BIN_DIR}/rustyfiles
+    dst: /usr/lib/rustyfiles/rustyfiles
+    file_info: { mode: 0755 }
+  - src: ${RF_BIN_DIR}/directlook
+    dst: /usr/lib/rustyfiles/directlook
+    file_info: { mode: 0755 }
+  - src: /usr/lib/rustyfiles/rustyfiles
+    dst: /usr/bin/rustyfiles
+    type: symlink
+  - src: packaging/linux/rustyfiles.desktop
+    dst: /usr/share/applications/rustyfiles.desktop
+  - src: packaging/linux/io.github.benjaminfenech.rustyfiles.metainfo.xml
+    dst: /usr/share/metainfo/io.github.benjaminfenech.rustyfiles.metainfo.xml
+  - src: crates/rf-app/assets/rustyfiles.svg
+    dst: /usr/share/icons/hicolor/scalable/apps/rustyfiles.svg
+  - src: crates/rf-app/assets/rustyfiles.png
+    dst: /usr/share/icons/hicolor/256x256/apps/rustyfiles.png
+  - src: LICENSE
+    dst: /usr/share/doc/rustyfiles/copyright
+    packager: deb
+  - src: LICENSE
+    dst: /usr/share/licenses/rustyfiles/LICENSE
+    packager: rpm
+    type: license
+
+# The binaries link libxcb, libxkbcommon and (DirectLook) ALSA; GPUI loads Wayland, EGL,
+# Vulkan and fontconfig at run time, so those are listed by hand.
+overrides:
+  deb:
+    depends:
+      - libc6 (>= ${RF_GLIBC})
+      - libgcc-s1
+      - libasound2 | libasound2t64
+      - libxcb1
+      - libxkbcommon0
+      - libxkbcommon-x11-0
+      - libwayland-client0
+      - libwayland-egl1
+      - libegl1
+      - libvulkan1
+      - libfontconfig1
+      - libfreetype6
+      - hicolor-icon-theme
+    recommends:
+      - xdg-desktop-portal
+      - udisks2
+      - poppler-utils
+      - ffmpeg
+    suggests:
+      - libavif-bin
+      - libheif-examples
+      - kio-fuse
+      - gvfs-backends
+      - git
+  rpm:
+    # library names rather than package names: Fedora and openSUSE call the packages
+    # differently, both resolve these
+    depends:
+      - libasound.so.2()(64bit)
+      - libxcb.so.1()(64bit)
+      - libxkbcommon.so.0()(64bit)
+      - libxkbcommon-x11.so.0()(64bit)
+      - libwayland-client.so.0()(64bit)
+      - libwayland-egl.so.1()(64bit)
+      - libEGL.so.1()(64bit)
+      - libvulkan.so.1()(64bit)
+      - libfontconfig.so.1()(64bit)
+      - libfreetype.so.6()(64bit)
+      - hicolor-icon-theme
+    recommends:
+      - xdg-desktop-portal
+      - udisks2
+      - poppler-utils
+      - (ffmpeg or ffmpeg-free)
+    suggests:
+      - libavif-tools
+      - libheif-tools
+      - kio-fuse
+      - gvfs-smb
+      - git
+
+rpm:
+  group: Applications/System
+  summary: Fast file manager with tabs, dual panes and previews
+  compression: zstd
+
+deb:
+  compression: zstd

@@ -276,6 +276,20 @@ makepkg -si
 Run `makepkg -si` there again to update. The package lists optional extras (PDF previews,
 video formats, network locations, drives…); `pacman -Qi rustyfiles-git` shows them.
 
+**Debian, Ubuntu, Fedora, openSUSE:** every commit to `main` builds a `.deb` and an `.rpm`
+(x86_64 and aarch64; Debian 12+, Ubuntu 22.04+, current Fedora and openSUSE). Download
+`rustyfiles-linux-x86_64` (or `-arm64`) from the latest
+[Linux packages](https://github.com/benjaminfenech/rustyfiles-linux/actions/workflows/linux-packages.yml)
+run (needs a GitHub login), unzip it and install the one for your system:
+
+```bash
+sudo apt install ./rustyfiles_*.deb   # Debian / Ubuntu
+sudo dnf install ./rustyfiles-*.rpm   # Fedora (openSUSE: sudo zypper install ./rustyfiles-*.rpm)
+```
+
+To build the packages yourself: build as below, then run `packaging/linux/build-packages.sh`
+(needs [nfpm](https://nfpm.goreleaser.com)); they land in `dist/`.
+
 **Other distributions:** build from source. You need [Rust](https://rustup.rs) 1.95 or newer,
 a C compiler, and these libraries:
 
