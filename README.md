@@ -7,10 +7,12 @@
 > **This is the Linux port of rustyfiles**, a fork of
 > [gelenmedya/rustyfiles](https://github.com/gelenmedya/rustyfiles). The same code builds for
 > **Windows or Linux**: Windows builds are the original app, unchanged, and Linux builds swap the
-> Windows layer for a Linux one. The port is early: browsing works, copying and trash don't
-> yet. See [Linux](#linux) for how to build it and [docs/LINUX_PORT.md](docs/LINUX_PORT.md) for
-> what's done and what's next. The download, website and Discord links below belong to the
-> original project, and its releases are Windows only.
+> Windows layer for a Linux one. Browsing, file operations, the trash, previews and drives
+> work on Linux; download a .deb, .rpm, Arch package or Flatpak from
+> [this fork's releases](https://github.com/benjaminfenech/rustyfiles-linux/releases) (see
+> [Linux](#linux)), and [docs/LINUX_PORT.md](docs/LINUX_PORT.md) for what's done and what's
+> next. The download, website and Discord links below belong to the original project, and its
+> releases are Windows only.
 
 rustyfiles is a file manager for Windows, written from scratch in Rust. It is meant to replace
 File Explorer for everyday work: tabs, dual panes, archives you open like folders, and a
