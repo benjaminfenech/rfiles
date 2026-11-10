@@ -416,7 +416,11 @@ mod tests {
         eprintln!("selection after {took:?}");
         // the wait ends with the selection, not at its limit
         assert!(took < Duration::from_secs(5), "{took:?}");
+        // the shell names the long path; the temp folder may come as a short (8.3) one (GitHub's
+        // runners: C:\Users\RUNNER~1): compare what both resolve to, before the folder goes
+        let real = |p: &Path| std::fs::canonicalize(p).map(|c| c.to_string_lossy().to_lowercase()).unwrap_or_else(|_| p.to_string_lossy().to_lowercase());
+        let (got, want) = (got.as_deref().map(|p| real(p)), Some(real(file.as_path())));
         let _ = std::fs::remove_dir_all(&dir);
-        assert_eq!(got.as_deref().map(|p| p.to_string_lossy().to_lowercase()), Some(file.to_string_lossy().to_lowercase()));
+        assert_eq!(got, want);
     }
 }

@@ -513,11 +513,15 @@ static ADDRESS_URL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBoo
 
 /// Linux: whether the address bar shows network folders as their address (Settings → Files
 /// and folders), readable without an `App`.
+// used by the Linux build only
+#[cfg_attr(windows, allow(dead_code))]
 pub fn address_shows_url() -> bool {
     ADDRESS_URL.load(Ordering::Relaxed)
 }
 
 /// How drives are named (Settings → Files and folders), readable without an `App`.
+// used by the Linux build only
+#[cfg_attr(windows, allow(dead_code))]
 pub fn drive_names() -> DriveNames {
     match DRIVE_NAMES.load(Ordering::Relaxed) {
         1 => DriveNames::MountPoint,
