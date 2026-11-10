@@ -459,6 +459,16 @@ release; a tagged build is versioned with the tag alone (`0.6.0`). Upstream's `r
 to an hour for it and creates it only if it never appears. Not done: an apt/dnf repository
 (COPR, OBS).
 
+**Making a release** (2026-11-11): put the new tag in `packaging/linux/RELEASE` and its notes
+in `packaging/linux/release-notes.md`, in a PR. When it lands on `main`,
+`linux-release.yml` creates the tag at that commit and a draft release with the notes,
+builds and attaches every package, then publishes the release; a failed build leaves the
+draft (run the workflow by hand with the tag to finish it). A tag pushed by CI's token
+doesn't start upstream's Windows `release.yml`, so these releases are Linux only. Tags are
+`v<upstream version>-linux.<n>` (`v0.5.2-linux.1`): they don't clash with upstream's tags,
+and the packages sort right (`0.5.2~linux.1` comes before the `0.5.2+git…` builds from
+`main` after it, and before `0.6.0~linux.1`).
+
 **Flatpak** (2026-11-11): `packaging/flatpak/io.github.benjaminfenech.rustyfiles.yml`
 (Freedesktop 26.08, rust-stable; `linux-packages.yml` builds a bundle per architecture in
 Flathub's CI image, and releases attach them). A file manager can't live in a tight

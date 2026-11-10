@@ -1,34 +1,83 @@
 name: Linux release
 
-# Push a tag like v0.6.0: builds the Linux packages (.deb, .rpm and Flatpak for x86_64 and
-# aarch64, the Arch package) and attaches them to that tag's GitHub release. release.yml (upstream's, for
-# Windows) runs on the same tag and creates the release; this waits for it, and creates the
-# release itself only if it never appears. Run it by hand to (re)attach a tag's packages.
+# Builds the Linux packages (.deb, .rpm and Flatpak for x86_64 and aarch64, the Arch package)
+# for a tag and attaches them to that tag's GitHub release.
+#
+# To release: change packaging/linux/RELEASE to the new tag (v0.5.2-linux.1) and
+# packaging/linux/release-notes.md to its notes, in a PR. When it lands on main this creates
+# the tag and a draft release, builds and attaches the packages, then publishes it. If a
+# build fails, the draft stays: run this by hand with the tag once it's fixed. (A tag pushed from here
+# doesn't start other workflows, so everything happens in this one.)
+#
+# A tag pushed by hand works too: upstream's release.yml (Windows, Velopack) runs on it and
+# creates the release, so this waits up to an hour for it, and creates it only if it never
+# appears. Run it by hand with a tag to (re)attach that tag's packages.
 on:
   push:
+    branches: [main]
+    paths: ["packaging/linux/RELEASE"]
     tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
-        description: Tag to build and attach to (e.g. v0.6.0)
+        description: Tag to build and attach to (e.g. v0.5.2-linux.1)
         required: true
 
 permissions:
   contents: write
 
 jobs:
+  tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.t.outputs.tag }}
+      created: ${{ steps.t.outputs.created }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag (and release) to build
+        id: t
+        run: |
+          created=false
+          if [[ -n "${{ inputs.tag }}" ]]; then
+            tag="${{ inputs.tag }}"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            tag="$GITHUB_REF_NAME"
+          else
+            # a RELEASE change on main: a new tag here, with its release and notes
+            tag=$(tr -d '[:space:]' < packaging/linux/RELEASE)
+            [[ $tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "RELEASE: '$tag' isn't a tag like v0.5.2-linux.1" >&2; exit 1; }
+            if gh api "repos/$GH_REPO/git/ref/tags/$tag" >/dev/null 2>&1; then
+              echo "$tag exists already: nothing to release"
+              tag=""
+            else
+              # the tag first (a draft release has none until it's published), then the
+              # release as a draft: it's published once the packages are attached
+              gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$tag" -f sha="$GITHUB_SHA" >/dev/null
+              gh release create "$tag" --draft --verify-tag --title "rustyfiles ${tag#v}" \
+                --notes-file packaging/linux/release-notes.md
+              created=true
+            fi
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "created=$created" >> "$GITHUB_OUTPUT"
+
   packages:
+    needs: tag
+    if: needs.tag.outputs.tag != ''
     uses: ./.github/workflows/linux-packages.yml
     with:
-      ref: ${{ inputs.tag || github.ref_name }}
+      ref: ${{ needs.tag.outputs.tag }}
 
   publish:
-    needs: packages
+    needs: [tag, packages]
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ inputs.tag || github.ref_name }}
+      TAG: ${{ needs.tag.outputs.tag }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -36,15 +85,17 @@ jobs:
           path: dist
           merge-multiple: true
       - name: Wait for the release
+        if: needs.tag.outputs.created != 'true'
         run: |
-          # the Windows build takes about 25 minutes before it publishes
+          # a hand-pushed tag: the Windows build takes about 25 minutes before it publishes
           for _ in $(seq 60); do
             gh release view "$TAG" >/dev/null 2>&1 && exit 0
             sleep 60
           done
           echo "no release for $TAG after an hour: creating it"
           gh release create "$TAG" --verify-tag --title "rustyfiles ${TAG#v}" --notes "Linux packages for $TAG."
-      - name: Attach the packages
+      - name: Attach the packages and publish
         run: |
           ls -l dist
           gh release upload "$TAG" dist/* --clobber
+          gh release edit "$TAG" --draft=false
