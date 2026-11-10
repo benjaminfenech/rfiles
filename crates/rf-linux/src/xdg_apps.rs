@@ -93,10 +93,7 @@ fn localized(e: &HashMap<String, String>, key: &str) -> Option<String> {
 }
 
 fn in_path(prog: &str) -> bool {
-    if prog.starts_with('/') {
-        return Path::new(prog).is_file();
-    }
-    std::env::var_os("PATH").is_some_and(|p| std::env::split_paths(&p).any(|d| d.join(prog).is_file()))
+    crate::sandbox::in_path(prog)
 }
 
 fn parse_app(id: String, path: &Path) -> Option<App> {
@@ -448,7 +445,7 @@ pub fn command_lines(app: &App, files: &[PathBuf]) -> Vec<Vec<String>> {
 pub fn launch(app: &App, files: &[PathBuf]) -> anyhow::Result<()> {
     for line in command_lines(app, files) {
         let Some((prog, args)) = line.split_first() else { continue };
-        crate::shell::spawn_detached(std::process::Command::new(prog).args(args)).map_err(|e| anyhow::anyhow!("{}: {e}", app.name))?;
+        crate::shell::spawn_detached(crate::sandbox::launch(prog).args(args)).map_err(|e| anyhow::anyhow!("{}: {e}", app.name))?;
     }
     Ok(())
 }

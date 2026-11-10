@@ -1,7 +1,7 @@
 name: Linux release
 
-# Push a tag like v0.6.0: builds the Linux packages (.deb, .rpm for x86_64 and aarch64, the
-# Arch package) and attaches them to that tag's GitHub release. release.yml (upstream's, for
+# Push a tag like v0.6.0: builds the Linux packages (.deb, .rpm and Flatpak for x86_64 and
+# aarch64, the Arch package) and attaches them to that tag's GitHub release. release.yml (upstream's, for
 # Windows) runs on the same tag and creates the release; this waits for it, and creates the
 # release itself only if it never appears. Run it by hand to (re)attach a tag's packages.
 on:

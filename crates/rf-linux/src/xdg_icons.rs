@@ -222,7 +222,7 @@ pub fn current_theme_name() -> String {
             .find_map(|f| ini_value(&config.join(f), "Settings", "gtk-icon-theme-name"))
     };
     let gnome = || {
-        let out = std::process::Command::new("gsettings").args(["get", "org.gnome.desktop.interface", "icon-theme"]).output().ok()?;
+        let out = crate::sandbox::tool("gsettings", &[]).args(["get", "org.gnome.desktop.interface", "icon-theme"]).output().ok()?;
         let v = String::from_utf8(out.stdout).ok()?.trim().trim_matches('\'').to_string();
         (out.status.success() && !v.is_empty()).then_some(v)
     };

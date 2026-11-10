@@ -1,8 +1,8 @@
 name: Linux packages
 
 # .deb and .rpm for x86_64 and aarch64, built on Ubuntu 22.04 so they run on glibc 2.35 and
-# newer (Debian 12+, Ubuntu 22.04+, Fedora, openSUSE), and the Arch package from
-# packaging/arch/PKGBUILD. Each package is installed in a clean container before it's
+# newer (Debian 12+, Ubuntu 22.04+, Fedora, openSUSE), the Arch package from
+# packaging/arch/PKGBUILD, and a Flatpak bundle for x86_64 and aarch64. Each package is installed in a clean container before it's
 # uploaded as an artifact. linux-release.yml runs this for a tag and attaches the packages.
 on:
   push:
@@ -103,4 +103,42 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: rustyfiles-linux-arch-x86_64
+          path: dist/*
+
+  flatpak:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-26.08
+      # flatpak-builder's sandbox (bubblewrap) needs it
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - name: Build
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          version=$(packaging/linux/version.sh)
+          flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          # the image has the Platform and Sdk; only the Rust extension is missing
+          flatpak install -y --noninteractive flathub org.freedesktop.Sdk.Extension.rust-stable//26.08
+          flatpak-builder --disable-rofiles-fuse --force-clean \
+            --repo=repo build-flatpak packaging/flatpak/io.github.benjaminfenech.rustyfiles.yml
+          mkdir dist
+          # installing the bundle fetches the runtime from Flathub
+          flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
+            repo "dist/rustyfiles-$version.${{ matrix.arch }}.flatpak" io.github.benjaminfenech.rustyfiles
+          ls -l dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rustyfiles-linux-flatpak-${{ matrix.arch }}
           path: dist/*

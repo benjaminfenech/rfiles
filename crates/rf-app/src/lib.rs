@@ -271,6 +271,9 @@ pub(crate) fn start_mark(step: &str) {
 }
 
 pub fn main() {
+    // Flatpak: the host's XDG folders (trash, settings, apps), before any thread starts
+    #[cfg(unix)]
+    rf_win::sandbox::adopt_host_dirs();
     start_mark("main");
     // Velopack (installer / updater): first, it may run an install hook and exit
     installer::startup();

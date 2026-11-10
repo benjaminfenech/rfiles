@@ -174,7 +174,7 @@ fn parse_ppm(data: &[u8]) -> anyhow::Result<Bgra> {
 
 impl Pdf {
     pub fn open(path: &Path, password: Option<&str>) -> anyhow::Result<Pdf> {
-        let mut cmd = Command::new("pdfinfo");
+        let mut cmd = crate::sandbox::tool("pdfinfo", &[]);
         cmd.arg("-box").args(["-f", "1", "-l", "2147483647"]);
         with_password(&mut cmd, password);
         cmd.arg(path_arg(path));
@@ -219,7 +219,7 @@ impl Pdf {
         let height = ((width as f32) * ph / pw.max(1.0)).round().max(1.0) as u32;
         let longer = width.max(height).min(MAX_WIDTH * 4);
         let page = (index + 1).to_string();
-        let mut cmd = Command::new("pdftoppm");
+        let mut cmd = crate::sandbox::tool("pdftoppm", &[]);
         cmd.args(["-f", &page, "-l", &page, "-singlefile", "-scale-to"])
             .arg(longer.to_string());
         with_password(&mut cmd, self.password.as_deref());

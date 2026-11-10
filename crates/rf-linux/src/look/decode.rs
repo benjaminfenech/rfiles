@@ -275,7 +275,7 @@ fn heif_tools(path: &Path, ext: &str, bytes: &[u8], max_side: u32) -> anyhow::Re
         let out = dir.join("out.png");
         let mut last: Option<anyhow::Error> = None;
         for (prog, args) in tools {
-            let mut cmd = Command::new(prog);
+            let mut cmd = crate::sandbox::tool(prog, &[]);
             cmd.args(*args).arg(path_arg(path)).arg(&out);
             match run(cmd, TOOL_TIMEOUT) {
                 Err(e) if e.is::<NotInstalled>() => continue,
@@ -309,7 +309,7 @@ fn heif_tools(path: &Path, ext: &str, bytes: &[u8], max_side: u32) -> anyhow::Re
 fn avifdec_transforms() -> bool {
     static ANSWER: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *ANSWER.get_or_init(|| {
-        let mut cmd = Command::new("avifdec");
+        let mut cmd = crate::sandbox::tool("avifdec", &[]);
         cmd.arg("--version");
         let ran = run(cmd, Duration::from_secs(5)).ok();
         let text = ran.map(|r| String::from_utf8_lossy(&r.stdout).into_owned()).unwrap_or_default();

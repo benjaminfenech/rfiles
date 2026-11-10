@@ -221,6 +221,11 @@ pub fn native_separators(p: std::path::PathBuf) -> std::path::PathBuf {
 /// The app id window rules match on Linux (Wayland `app_id`, X11 `WM_CLASS`); Windows keeps
 /// its own taskbar identity (`rf_win::window::set_app_id`).
 pub fn app_id(name: &str) -> Option<String> {
+    // Flatpak: the main window carries the app id, which names its desktop entry (icon, dock)
+    #[cfg(unix)]
+    if let Some(id) = rf_win::sandbox::flatpak_id().filter(|_| name == "rustyfiles") {
+        return Some(id.to_string());
+    }
     (!cfg!(windows)).then(|| name.to_string())
 }
 

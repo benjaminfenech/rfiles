@@ -1,0 +1,81 @@
+# rustyfiles as a Flatpak. Build and install from the repository root with:
+#
+#   flatpak-builder --user --install --force-clean build-flatpak \
+#     packaging/flatpak/io.github.benjaminfenech.rustyfiles.yml
+#
+# A file manager works on the user's own files, apps and settings, so this sandbox is wide
+# open on purpose: the whole host filesystem, and `flatpak-spawn --host` (the
+# org.freedesktop.Flatpak name) to run host apps, terminals and tools (git, ffmpeg, poppler,
+# avif/heif tools, gio, thumbnailers). rf-linux's `sandbox` module does the rest.
+id: io.github.benjaminfenech.rustyfiles
+runtime: org.freedesktop.Platform
+runtime-version: "26.08"
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: rustyfiles
+rename-desktop-file: rustyfiles.desktop
+rename-icon: rustyfiles
+
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # DirectLook's audio (ALSA, which the runtime routes to PulseAudio / PipeWire)
+  - --socket=pulseaudio
+  # FTP and other network locations
+  - --share=network
+  - --filesystem=host
+  # other Flatpak apps' desktop entries and icons ("Open with")
+  - --filesystem=/var/lib/flatpak:ro
+  # GVfs (smb://, sftp://) mounts
+  - --filesystem=xdg-run/gvfs
+  - --filesystem=xdg-run/gvfsd
+  - --talk-name=org.gtk.vfs.*
+  # host programs
+  - --talk-name=org.freedesktop.Flatpak
+  # mounting and ejecting drives
+  - --system-talk-name=org.freedesktop.UDisks2
+  # notifications, the tray icon
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.kde.StatusNotifierWatcher
+  # "Show in folder" from other apps when rustyfiles is the default file manager
+  - --own-name=org.freedesktop.FileManager1
+
+modules:
+  - name: rustyfiles
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      env:
+        CARGO_HOME: /run/build/rustyfiles/cargo
+        CARGO_TARGET_DIR: /run/build/rustyfiles/target
+      # cargo downloads the crates (Flathub would need them listed as sources instead)
+      build-args:
+        - --share=network
+    build-commands:
+      - cargo build --locked --release -p rf-app --bins
+      # DirectLook is found next to rustyfiles
+      - install -Dm755 target/release/rustyfiles /app/lib/rustyfiles/rustyfiles
+      - install -Dm755 target/release/directlook /app/lib/rustyfiles/directlook
+      - install -dm755 /app/bin
+      - ln -s /app/lib/rustyfiles/rustyfiles /app/bin/rustyfiles
+      - install -Dm644 packaging/linux/rustyfiles.desktop /app/share/applications/rustyfiles.desktop
+      - install -Dm644 packaging/linux/io.github.benjaminfenech.rustyfiles.metainfo.xml
+        /app/share/metainfo/io.github.benjaminfenech.rustyfiles.metainfo.xml
+      - install -Dm644 crates/rf-app/assets/rustyfiles.svg /app/share/icons/hicolor/scalable/apps/rustyfiles.svg
+      - install -Dm644 crates/rf-app/assets/rustyfiles.png /app/share/icons/hicolor/256x256/apps/rustyfiles.png
+      - install -Dm644 LICENSE /app/share/licenses/rustyfiles/LICENSE
+    sources:
+      - type: dir
+        path: ../..
+        skip:
+          - target
+          - dist
+          - build-flatpak
+          - .flatpak-builder
+          - .claude
+          - packaging/arch/src
+          - packaging/arch/pkg
+          - packaging/arch/rustyfiles

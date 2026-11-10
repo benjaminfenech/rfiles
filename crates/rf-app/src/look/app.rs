@@ -93,6 +93,8 @@ fn handle(msg: Msg, cx: &mut App) {
 
 /// directlook.exe
 pub fn main() {
+    #[cfg(unix)]
+    rf_win::sandbox::adopt_host_dirs();
     crate::install_panic_log();
     rf_win::shell::suppress_critical_error_dialogs();
     rf_win::thumbs::keep_gdiplus_alive();

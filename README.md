@@ -289,6 +289,18 @@ sudo apt install ./rustyfiles_*.deb   # Debian / Ubuntu
 sudo dnf install ./rustyfiles-*.rpm   # Fedora (openSUSE: sudo zypper install ./rustyfiles-*.rpm)
 ```
 
+**Any distribution (Flatpak):** each release also has a `.flatpak` bundle (x86_64 and
+aarch64). Installing it fetches the runtime from Flathub:
+
+```bash
+flatpak install --user ./rustyfiles-*.x86_64.flatpak
+```
+
+The Flatpak can see your whole filesystem and runs your apps, terminals and tools (git,
+ffmpeg, poppler) on the host, so it behaves like the native packages, with the same
+settings. For a quick search shortcut, bind `flatpak run io.github.benjaminfenech.rustyfiles --quick-search`.
+To build it yourself: `flatpak-builder --user --install --force-clean build-flatpak packaging/flatpak/io.github.benjaminfenech.rustyfiles.yml`.
+
 To build the packages yourself: build as below, then run `packaging/linux/build-packages.sh`
 (needs [nfpm](https://nfpm.goreleaser.com)); they land in `dist/`.
 
