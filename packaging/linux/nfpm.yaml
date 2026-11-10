@@ -1,5 +1,5 @@
 # rustyfiles as .deb and .rpm, from binaries already built (see build-packages.sh, which sets
-# the variables below). One file for both formats: nfpm (https://nfpm.goreleaser.com).
+# the RF_… placeholders below). One file for both formats: nfpm (https://nfpm.goreleaser.com).
 name: rustyfiles
 arch: ${RF_ARCH}
 platform: linux

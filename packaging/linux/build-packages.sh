@@ -27,9 +27,14 @@ esac
 # the newest glibc symbol the binaries use: the oldest glibc they run on
 glibc=$(objdump -T "$bin_dir/rustyfiles" "$bin_dir/directlook" | grep -oE 'GLIBC_[0-9.]+' | sed 's/GLIBC_//' | sort -Vu | tail -n1)
 
+# nfpm expands environment variables in only some fields (not file paths): fill them in here
 mkdir -p dist
-export RF_VERSION=$version RF_ARCH=$arch RF_BIN_DIR=$bin_dir RF_GLIBC=$glibc
+config=$(mktemp --suffix=.yaml)
+trap 'rm -f "$config"' EXIT
+sed -e "s|\${RF_VERSION}|$version|g" -e "s|\${RF_ARCH}|$arch|g" \
+  -e "s|\${RF_BIN_DIR}|$bin_dir|g" -e "s|\${RF_GLIBC}|$glibc|g" packaging/linux/nfpm.yaml >"$config"
+if grep -n '\${RF_' "$config"; then echo "unfilled variable in nfpm.yaml" >&2; exit 1; fi
 for fmt in deb rpm; do
-  nfpm package --config packaging/linux/nfpm.yaml --packager "$fmt" --target dist/
+  nfpm package --config "$config" --packager "$fmt" --target dist/
 done
 ls -l dist/
