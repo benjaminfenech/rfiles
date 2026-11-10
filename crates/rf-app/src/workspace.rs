@@ -135,6 +135,10 @@ pub struct Workspace {
     sidebar_rail: bool,
     /// The full sidebar shown over the content while the pointer is on the rail (or on it).
     rail_peek: [bool; 2],
+    /// The colour the window shows behind the rail (Mica's wallpaper tint), read off the screen
+    /// when the full sidebar opens over the content: painted with it, the sidebar looks like the
+    /// docked one instead of a neutral grey slab over a tinted window.
+    rail_peek_bg: Option<Hsla>,
     preview_w: f32,
     /// Debounced settings write after a pane resize.
     _width_save: Option<Task<()>>,
@@ -170,24 +174,26 @@ impl Global for OpenWorkspaces {}
 /// A second launch forwarded its argument: open it as a tab in the most recent live window
 /// and bring that window up; with no window left, open a new one.
 /// Taskbar jump list: "New window" / "New tab" and the pinned folders. Rewritten only when the
-/// pins change; test runs (several instances) leave the user's list alone.
+/// pins or the language change; test runs (several instances) leave the user's list alone.
 fn update_jump_list(places: &crate::places::Places) {
-    static LAST: std::sync::Mutex<Option<Vec<(String, PathBuf)>>> = std::sync::Mutex::new(None);
+    static LAST: std::sync::Mutex<Option<(Vec<(String, PathBuf)>, [&'static str; 3])>> = std::sync::Mutex::new(None);
     if !places.loaded || std::env::var_os("RUSTYFILES_MULTI_INSTANCE").is_some() {
         return;
     }
-    let pins: Vec<(String, PathBuf)> = places.pinned.iter().map(|p| (p.title.clone(), p.path.clone())).collect();
+    // in the UI language, as the sidebar shows them (a default pin's title is its Turkish name)
+    let pins: Vec<(String, PathBuf)> = places.pinned.iter().map(|p| (crate::i18n::td(&p.title), p.path.clone())).collect();
+    let labels = [t!("Yeni pencere"), t!("Yeni sekme"), t!("Sabitlenenler")];
     {
         let mut last = LAST.lock().unwrap();
-        if last.as_ref() == Some(&pins) {
+        if last.as_ref() == Some(&(pins.clone(), labels)) {
             return;
         }
-        *last = Some(pins.clone());
+        *last = Some((pins.clone(), labels));
     }
     let Ok(exe) = std::env::current_exe() else { return };
     std::thread::spawn(move || {
-        let tasks = [(t!("Yeni pencere"), rf_win::jumplist::NEW_WINDOW_ARG), (t!("Yeni sekme"), "")];
-        if let Err(e) = rf_win::jumplist::set(&exe, &tasks, t!("Sabitlenenler"), &pins) {
+        let tasks = [(labels[0], rf_win::jumplist::NEW_WINDOW_ARG), (labels[1], "")];
+        if let Err(e) = rf_win::jumplist::set(&exe, &tasks, labels[2], &pins) {
             log::warn!("jump list: {e:#}");
         }
     });
@@ -225,6 +231,14 @@ pub fn release_mount(root: &std::path::Path, cx: &mut App) {
 }
 
 /// Whether any app window (not a menu / flyout popup) is still open.
+/// The open main windows (not Settings, DirectLook or popups).
+pub fn main_windows(cx: &App) -> Vec<AnyWindowHandle> {
+    let open = cx.windows();
+    cx.try_global::<OpenWorkspaces>()
+        .map(|g| open.into_iter().filter(|w| g.0.iter().any(|(h, ws)| ws.upgrade().is_some() && w.window_id() == h.window_id())).collect())
+        .unwrap_or_default()
+}
+
 pub fn any_main_window(cx: &App) -> bool {
     let open = cx.windows();
     cx.try_global::<OpenWorkspaces>()
@@ -234,6 +248,10 @@ pub fn any_main_window(cx: &App) -> bool {
 /// A second launch's message that asks for a file to be shown selected in its folder
 /// (`rustyfiles /select,<file>`, like Explorer).
 pub const SELECT_PREFIX: &str = "\u{1}select:";
+
+/// A file to select in the window that just opened its folder ("Show in folder" from another app,
+/// see rf_win::shell_window): selected in place, or its folder opened when no window shows it.
+pub const SELECT_HERE_PREFIX: &str = "\u{1}select-here:";
 
 /// A second launch on a shell folder (a phone, Network…) reaches the running window as this
 /// prefix plus the folder's parsing name (and, in a saved session, a tab and its name).
@@ -270,6 +288,39 @@ pub fn parse_launch(msg: &str) -> (Location, Option<String>) {
     if m.is_empty() { (Location::Home, None) } else { (Location::Path(PathBuf::from(m)), None) }
 }
 
+/// Selects `file` in the newest window whose current tab shows its folder (and brings that window
+/// forward); false when none does.
+fn select_in_open_folder(file: &std::path::Path, cx: &mut App) -> bool {
+    let (Some(dir), Some(name)) = (file.parent(), file.file_name()) else { return false };
+    // Windows paths compare without case; Linux names are case-sensitive
+    let key = |p: &std::path::Path| {
+        let k = p.to_string_lossy().trim_end_matches(['\\', '/']).to_string();
+        if cfg!(windows) { k.to_lowercase() } else { k }
+    };
+    let want = key(dir);
+    let name = name.to_string_lossy().into_owned();
+    let list = cx.try_global::<OpenWorkspaces>().map(|g| g.0.clone()).unwrap_or_default();
+    for (handle, ws) in list.into_iter().rev() {
+        let Some(ws) = ws.upgrade() else { continue };
+        let view = ws.read(cx).active_view();
+        let here = matches!(view.read(cx).location(), Location::Path(p) if key(p) == want);
+        if !here {
+            continue;
+        }
+        let name = name.clone();
+        if handle
+            .update(cx, |_, window, cx| {
+                view.update(cx, |v, cx| v.select_now(name, cx));
+                window.activate_window();
+            })
+            .is_ok()
+        {
+            return true;
+        }
+    }
+    false
+}
+
 /// The `/select,` file of the first launch, picked up by the first window.
 pub static START_SELECT: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
 
@@ -294,8 +345,18 @@ pub fn route_ipc(msg: String, cx: &mut App) {
         }
         None => {}
     }
+    if let Some(file) = msg.strip_prefix(SELECT_HERE_PREFIX) {
+        if !select_in_open_folder(std::path::Path::new(file), cx) {
+            route_ipc(format!("{SELECT_PREFIX}{file}"), cx);
+        }
+        return;
+    }
     if msg.trim() == rf_win::jumplist::NEW_WINDOW_ARG {
         crate::open_main_window(Some(Location::Home), None, None, cx);
+        return;
+    }
+    if msg.trim() == crate::quick_search::LAUNCH_ARG {
+        crate::quick_search::toggle(cx);
         return;
     }
     let (loc, select) = parse_launch(&msg);
@@ -456,6 +517,8 @@ impl Workspace {
         .detach();
 
         cx.observe_global::<crate::settings::Settings>(|this, cx| {
+            // the language may have changed: the jump list follows
+            update_jump_list(this.places.read(cx));
             let s = cx.global::<crate::settings::Settings>();
             // a file dialog keeps its own preview state (shown by default)
             if this.picker.is_none() {
@@ -518,6 +581,7 @@ impl Workspace {
             sidebar_w: prefs.sidebar_width.clamp(SIDEBAR_MIN, SIDEBAR_MAX),
             sidebar_rail: prefs.sidebar_rail,
             rail_peek: [false; 2],
+            rail_peek_bg: None,
             preview_w: prefs.preview_width.clamp(PREVIEW_MIN, PREVIEW_MAX),
             _width_save: None,
             palette: None,
@@ -3035,6 +3099,10 @@ fn expand_env(s: &str) -> String {
 
 impl Render for Workspace {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        {
+            static FIRST: std::sync::Once = std::sync::Once::new();
+            FIRST.call_once(|| crate::start_mark("first render"));
+        }
         // Shortcuts (Ctrl+T, Ctrl+W, …) only reach elements on the focus path: with nothing
         // focused (a window opened from a desktop icon, a closed popup took focus with it) they
         // would do nothing. The current folder takes focus back.
@@ -3119,7 +3187,7 @@ impl Render for Workspace {
                 .left_0()
                 .h_full()
                 .w(px(self.sidebar_w))
-                .bg(Hsla { a: 1., ..p.content_bg })
+                .bg(self.rail_peek_bg.unwrap_or(Hsla { a: 1., ..p.content_bg }))
                 .border_r_1()
                 .border_color(p.border)
                 .rounded_r(theme::RADIUS)
@@ -3444,8 +3512,17 @@ impl Render for Workspace {
                             .child(s)
                             .child(resize_handle("sidebar-resize", ResizeSidebar, false))
                             // on the rail, hovering opens the full sidebar over the content
-                            .on_hover(cx.listener(|this, h: &bool, _, cx| {
+                            .on_hover(cx.listener(|this, h: &bool, window, cx| {
                                 if this.sidebar_rail && this.rail_peek[0] != *h {
+                                    if *h && !this.rail_peek[1] {
+                                        // before the sidebar covers it: a column near the rail's
+                                        // left edge, clear of the icons
+                                        let s = window.scale_factor();
+                                        let height = f32::from(window.viewport_size().height);
+                                        let at = |v: f32| (v * s) as i32;
+                                        this.rail_peek_bg = rf_win::window::screen_color(crate::look::window::hwnd_of(window), at(3.), at(110.), at(height - 60.))
+                                            .map(|[r, g, b]| Hsla::from(gpui_kit::rgb(u32::from(r) << 16 | u32::from(g) << 8 | u32::from(b))));
+                                    }
                                     this.rail_peek[0] = *h;
                                     cx.notify();
                                 }

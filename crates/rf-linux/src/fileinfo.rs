@@ -102,3 +102,14 @@ mod tests {
         let _ = std::fs::remove_file(&p);
     }
 }
+
+/// Whether Windows treats the file as downloaded (its Zone.Identifier stream). Linux has no
+/// such mark (browsers don't block what they download): never.
+pub fn zone_blocked(_path: &Path) -> bool {
+    false
+}
+
+/// Removes the downloaded mark. Linux: there is none.
+pub fn unblock(_path: &Path) -> std::io::Result<()> {
+    Ok(())
+}

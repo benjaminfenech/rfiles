@@ -134,6 +134,11 @@ fn open_window(pipe: File, req: Request, cx: &mut App) {
             rf_win::window::set_owner(hwnd, owner);
         }
         rf_win::window::bring_to_front(hwnd);
+        if owner != 0 {
+            // setting the owner did not move us above it (see raise_above_owner)
+            dialog_log(&format!("app picker: shown, above its owner: {:?}", rf_win::window::is_above(hwnd, owner)));
+            raise_off_thread(hwnd);
+        }
         let pipe = pipe.borrow_mut().take();
         cx.new(|cx| {
             let mut ws = Workspace::new(Some(start), None, window, cx);
@@ -182,8 +187,46 @@ fn open_window(pipe: File, req: Request, cx: &mut App) {
             "app picker: owner 0x{owner:x}, in front: {}, {retries} retries in {waited} ms",
             hwnd != 0 && rf_win::window::is_foreground(hwnd)
         ));
+        // Chrome: the picker is in front at first, yet users find it behind Chrome afterwards.
+        // For the next 10 s, every change of what is in front, whether the picker still has its
+        // owner and lies above it: which window takes over, and when, is in the log.
+        let mut last = String::new();
+        let mut lines = 0;
+        let mut t = waited;
+        while hwnd != 0 && t < 10_000 && lines < 20 {
+            cx.background_executor().timer(std::time::Duration::from_millis(100)).await;
+            t += 100;
+            if !rf_win::window::exists(hwnd) {
+                dialog_log(&format!("app picker: closed at {t} ms"));
+                break;
+            }
+            // For the first seconds, whoever puts the app back over the picker (the app's own
+            // activation, a late show) is answered: the picker goes back above it.
+            if owner != 0 && t <= 3_000 && rf_win::window::is_above(hwnd, owner) == Some(false) {
+                dialog_log(&format!("app picker at {t} ms: under its owner again, raised"));
+                raise_off_thread(hwnd);
+            }
+            let front = rf_win::window::foreground();
+            let state = format!(
+                "front {}, picker's owner 0x{:x}, picker above its owner: {:?}",
+                if front == hwnd { "picker".to_string() } else { rf_win::window::describe(front) },
+                rf_win::window::owner_of(hwnd),
+                if owner != 0 { rf_win::window::is_above(hwnd, owner) } else { None },
+            );
+            if state != last {
+                dialog_log(&format!("app picker at {t} ms: {state}"));
+                last = state;
+                lines += 1;
+            }
+        }
     })
     .detach();
+}
+
+/// Raises the picker above its owner on a short-lived thread: the owner moves with it, and a
+/// hung owner would block the caller (measured: 7.7 s), here the whole file manager.
+fn raise_off_thread(hwnd: isize) {
+    let _ = std::thread::Builder::new().name("picker-raise".into()).spawn(move || rf_win::window::raise_above_owner(hwnd));
 }
 
 /// The selected entries of the current folder, with whether each is a folder.

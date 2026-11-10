@@ -3241,7 +3241,7 @@ dependencies = [
 [[package]]
 name = "gpui-pre-windows"
 version = "0.3.11"
-source = "git+https://github.com/gelenmedya/gpui-pre-windows?rev=e8170e2d338ef63fd8d85e877f60b7995ba9a713#e8170e2d338ef63fd8d85e877f60b7995ba9a713"
+source = "git+https://github.com/gelenmedya/gpui-pre-windows?rev=0f1a52a05c0de7fbc9e3647ecaa7b0426d2de385#0f1a52a05c0de7fbc9e3647ecaa7b0426d2de385"
 dependencies = [
  "accesskit",
  "accesskit_windows",
@@ -3285,11 +3285,11 @@ checksum = "99b18b06f5026b3d312488eacfdddbe78f82b4bf32bb2d2bc3186e31e552b797"
 
 [[package]]
 name = "gpui-windows-shim"
-version = "0.4.0"
+version = "0.5.2"
 
 [[package]]
 name = "gpustress"
-version = "0.4.0"
+version = "0.5.2"
 dependencies = [
  "windows 0.62.2",
 ]
@@ -6630,7 +6630,7 @@ dependencies = [
 
 [[package]]
 name = "rf-app"
-version = "0.4.0"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6660,6 +6660,7 @@ dependencies = [
  "syntect",
  "toml 0.9.12+spec-1.1.0",
  "ttf-parser",
+ "ureq",
  "velopack",
  "windows 0.62.2",
  "windows-registry 0.6.1",
@@ -6667,7 +6668,7 @@ dependencies = [
 
 [[package]]
 name = "rf-archive"
-version = "0.4.0"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "bzip2",
@@ -6691,7 +6692,7 @@ dependencies = [
 
 [[package]]
 name = "rf-core"
-version = "0.4.0"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "chardetng",
@@ -6709,7 +6710,7 @@ dependencies = [
 
 [[package]]
 name = "rf-dialog"
-version = "0.4.0"
+version = "0.5.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -6719,7 +6720,7 @@ dependencies = [
 
 [[package]]
 name = "rf-linux"
-version = "0.4.0"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "ashpd",
@@ -6749,11 +6750,12 @@ dependencies = [
  "wl-clipboard-rs",
  "x11rb",
  "zbus",
+ "zip 9.3.0",
 ]
 
 [[package]]
 name = "rf-player"
-version = "0.4.0"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "cpal",
@@ -6770,7 +6772,7 @@ dependencies = [
 
 [[package]]
 name = "rf-win"
-version = "0.4.0"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "crc32fast",
@@ -6793,6 +6795,7 @@ dependencies = [
  "windows 0.62.2",
  "windows-core 0.62.2",
  "windows-registry 0.6.1",
+ "zip 9.3.0",
 ]
 
 [[package]]
@@ -6956,7 +6959,7 @@ dependencies = [
 
 [[package]]
 name = "rustdecoder"
-version = "0.4.0"
+version = "0.5.2"
 dependencies = [
  "crc32fast",
  "flate2",

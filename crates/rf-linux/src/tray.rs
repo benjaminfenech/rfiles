@@ -19,6 +19,8 @@ pub enum TrayEvent {
     /// Click on the icon (or "Open" in its menu).
     Open,
     NewWindow,
+    /// "Settings" in its menu.
+    Settings,
     Quit,
 }
 
@@ -28,6 +30,8 @@ pub struct Labels {
     pub tooltip: String,
     pub open: String,
     pub new_window: String,
+    /// Empty: no such item.
+    pub settings: String,
     pub quit: String,
 }
 
@@ -132,12 +136,13 @@ impl ksni::Tray for Item {
         let item = |label: &str, e: TrayEvent| {
             StandardItem { label: label.replace('_', "__"), activate: Box::new(move |_: &mut Self| fire(e)), ..Default::default() }.into()
         };
-        vec![
-            item(&self.labels.open, TrayEvent::Open),
-            item(&self.labels.new_window, TrayEvent::NewWindow),
-            MenuItem::Separator,
-            item(&self.labels.quit, TrayEvent::Quit),
-        ]
+        let mut v = vec![item(&self.labels.open, TrayEvent::Open), item(&self.labels.new_window, TrayEvent::NewWindow)];
+        if !self.labels.settings.is_empty() {
+            v.push(item(&self.labels.settings, TrayEvent::Settings));
+        }
+        v.push(MenuItem::Separator);
+        v.push(item(&self.labels.quit, TrayEvent::Quit));
+        v
     }
     /// The bar restarted or isn't there yet: keep the icon, it registers again when it is.
     fn watcher_offline(&self, _reason: ksni::OfflineReason) -> bool {

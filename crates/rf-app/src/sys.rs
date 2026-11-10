@@ -261,6 +261,8 @@ pub fn work_area_of(hwnd: isize, window: &gpui_kit::Window, cx: &gpui_kit::App) 
 
 /// Moves and resizes a window (logical px). Linux: only the size (Wayland apps can't place
 /// themselves; a floating window keeps its place, a tiled one ignores both).
+// Windows resizes DirectLook after the update instead (see look/window.rs)
+#[cfg_attr(windows, allow(dead_code))]
 pub fn set_window_rect(hwnd: isize, r: [f32; 4], window: &mut gpui_kit::Window) {
     #[cfg(windows)]
     rf_win::look::win::set_rect(hwnd, r, window.scale_factor());

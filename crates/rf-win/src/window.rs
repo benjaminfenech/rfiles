@@ -108,6 +108,21 @@ pub fn set_owner(hwnd: isize, owner: isize) {
     }
 }
 
+/// Puts `hwnd` above the window that owns it, without activating anything.
+///
+/// An owner set after the window exists (`set_owner`) does not move it: our picker could be the
+/// window in front and still lie under the app that asked for it (seen with WhatsApp: you click
+/// the disabled app, it beeps, and only then does the picker come up). Raised to the top this way
+/// (no SWP_NOOWNERZORDER), Windows places the owner right under it. Moving the owner waits for
+/// the owner's thread: call it on a thread of its own, so a hung app can't hold ours.
+pub fn raise_above_owner(hwnd: isize) {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{HWND_TOP, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SetWindowPos};
+    unsafe {
+        let _ = SetWindowPos(HWND(hwnd as *mut _), Some(HWND_TOP), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    }
+}
+
 /// Gives the foreground back to `owner` (another app's window) while we still hold it: when our
 /// window closes, Windows would otherwise activate whatever window comes next.
 pub fn hand_foreground(owner: isize) {
@@ -172,4 +187,109 @@ pub fn bring_to_front(hwnd: isize) {
 /// Whether `hwnd` is the window in front (has the keyboard).
 pub fn is_foreground(hwnd: isize) -> bool {
     unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow().0 as isize == hwnd }
+}
+
+/// The colour on screen down a column of `hwnd`'s client area: `x` and `y0..y1` in client
+/// pixels. The median of each channel, so icons and markers crossing the column don't count.
+/// What the user sees there, Mica's wallpaper tint included, which the app can't know otherwise.
+pub fn screen_color(hwnd: isize, x: i32, y0: i32, y1: i32) -> Option<[u8; 3]> {
+    use windows::Win32::Foundation::{HWND, POINT};
+    use windows::Win32::Graphics::Gdi::{
+        BI_RGB, BITMAPINFO, BITMAPINFOHEADER, BitBlt, ClientToScreen, CreateCompatibleBitmap, CreateCompatibleDC, DIB_RGB_COLORS, DeleteDC, DeleteObject, GetDC, GetDIBits, ReleaseDC, SRCCOPY, SelectObject,
+    };
+    let h = (y1 - y0).max(0);
+    if h == 0 {
+        return None;
+    }
+    unsafe {
+        let mut p = POINT { x, y: y0 };
+        if !ClientToScreen(HWND(hwnd as *mut _), &mut p).as_bool() {
+            return None;
+        }
+        let screen = GetDC(None);
+        let mem = CreateCompatibleDC(Some(screen));
+        let bmp = CreateCompatibleBitmap(screen, 1, h);
+        let old = SelectObject(mem, bmp.into());
+        let copied = BitBlt(mem, 0, 0, 1, h, Some(screen), p.x, p.y, SRCCOPY).is_ok();
+        let mut info = BITMAPINFO {
+            bmiHeader: BITMAPINFOHEADER { biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32, biWidth: 1, biHeight: -h, biPlanes: 1, biBitCount: 32, biCompression: BI_RGB.0, ..Default::default() },
+            ..Default::default()
+        };
+        let mut px = vec![0u32; h as usize];
+        let rows = if copied { GetDIBits(mem, bmp, 0, h as u32, Some(px.as_mut_ptr().cast()), &mut info, DIB_RGB_COLORS) } else { 0 };
+        SelectObject(mem, old);
+        let _ = DeleteObject(bmp.into());
+        let _ = DeleteDC(mem);
+        ReleaseDC(None, screen);
+        if rows <= 0 {
+            return None;
+        }
+        let median = |shift: u32| {
+            let mut v: Vec<u8> = px.iter().map(|c| (c >> shift) as u8).collect();
+            v.sort_unstable();
+            v[v.len() / 2]
+        };
+        Some([median(16), median(8), median(0)])
+    }
+}
+
+/// A window for a log line: handle, process, class and title.
+pub fn describe(hwnd: isize) -> String {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{GetClassNameW, GetWindowTextW, GetWindowThreadProcessId};
+    if hwnd == 0 {
+        return "none".into();
+    }
+    unsafe {
+        let h = HWND(hwnd as *mut _);
+        let mut pid = 0u32;
+        GetWindowThreadProcessId(h, Some(&mut pid));
+        let exe = crate::tasklist::exe_of(pid).and_then(|p| p.file_name().map(|n| n.to_string_lossy().into_owned())).unwrap_or_else(|| "?".into());
+        let mut class = [0u16; 128];
+        let n = GetClassNameW(h, &mut class);
+        let mut title = [0u16; 128];
+        let t = GetWindowTextW(h, &mut title);
+        format!(
+            "0x{hwnd:x} {exe}[{pid}] {} '{}'",
+            String::from_utf16_lossy(&class[..n.max(0) as usize]),
+            String::from_utf16_lossy(&title[..t.max(0) as usize])
+        )
+    }
+}
+
+/// The window that owns `hwnd` (0 when none).
+pub fn owner_of(hwnd: isize) -> isize {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{GW_OWNER, GetWindow};
+    unsafe { GetWindow(HWND(hwnd as *mut _), GW_OWNER).map_or(0, |h| h.0 as isize) }
+}
+
+/// Whether `a` lies above `b` in the z-order (`None` when either isn't a top-level window).
+pub fn is_above(a: isize, b: isize) -> Option<bool> {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{GW_HWNDNEXT, GetTopWindow, GetWindow};
+    unsafe {
+        let mut h = GetTopWindow(None).ok()?;
+        for _ in 0..10_000 {
+            let v = h.0 as isize;
+            if v == a {
+                return Some(true);
+            }
+            if v == b {
+                return Some(false);
+            }
+            h = GetWindow(HWND(h.0), GW_HWNDNEXT).ok()?;
+        }
+        None
+    }
+}
+
+/// Whether `hwnd` is still a window.
+pub fn exists(hwnd: isize) -> bool {
+    unsafe { windows::Win32::UI::WindowsAndMessaging::IsWindow(Some(windows::Win32::Foundation::HWND(hwnd as *mut _))).as_bool() }
+}
+
+/// The window in front (0 when none).
+pub fn foreground() -> isize {
+    unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow().0 as isize }
 }

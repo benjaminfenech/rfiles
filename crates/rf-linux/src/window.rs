@@ -48,3 +48,41 @@ pub fn bring_to_front(hwnd: isize) {}
 pub fn is_foreground(hwnd: isize) -> bool {
     false
 }
+
+// ---- Window z-order and lookup (upstream, after a1d7ca3): the Open/Save dialog picker keeps
+// itself above the app that asked for it. Linux has no rf-dialog (no injected picker) and
+// Wayland doesn't let apps inspect other windows: answers that keep those paths idle.
+
+/// Whether `a` lies above `b` in the z-order. Linux: unknown.
+pub fn is_above(_a: isize, _b: isize) -> Option<bool> {
+    None
+}
+
+/// Whether `hwnd` is still a window. Linux: no foreign windows are tracked.
+pub fn exists(_hwnd: isize) -> bool {
+    false
+}
+
+/// The window in front (0 when none). Linux: not known to apps.
+pub fn foreground() -> isize {
+    0
+}
+
+/// A window for a log line.
+pub fn describe(hwnd: isize) -> String {
+    format!("window {hwnd:#x}")
+}
+
+/// The window that owns `hwnd` (0 when none).
+pub fn owner_of(_hwnd: isize) -> isize {
+    0
+}
+
+/// Raises `hwnd` above its owner. Linux: the compositor stacks windows.
+pub fn raise_above_owner(_hwnd: isize) {}
+
+/// The colour on screen down a column of `hwnd`'s client area. Linux: apps can't read the
+/// screen (Wayland), so the app's own colours are used.
+pub fn screen_color(_hwnd: isize, _x: i32, _y0: i32, _y1: i32) -> Option<[u8; 3]> {
+    None
+}

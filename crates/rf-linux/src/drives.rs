@@ -115,6 +115,18 @@ fn kind_of(fs: &str, src: &str, point: &Path) -> Option<DriveKind> {
     Some(DriveKind::Fixed)
 }
 
+/// Whether reading `path` may take seconds: a network share, a FUSE mount (kio-fuse and gvfs
+/// network places, sshfs, cloud drives: reading may download), or a removable or optical disk.
+/// DirectLook opens such files off the UI thread. Reads `/proc/self/mountinfo`, no disk access.
+pub fn slow_to_read(path: &Path) -> bool {
+    // the innermost mount holding the path
+    let Some((point, fs, src)) = mounts().into_iter().filter(|(m, _, _)| path.starts_with(m)).max_by_key(|(m, _, _)| m.components().count()) else {
+        return false;
+    };
+    // fuseblk is a local disk through FUSE (ntfs-3g, exfat-fuse): as quick as any disk
+    (fs.starts_with("fuse") && fs != "fuseblk") || matches!(kind_of(&fs, &src, &point), Some(DriveKind::Network | DriveKind::Removable | DriveKind::Optical))
+}
+
 /// (total, free for the user) bytes of the filesystem holding `p`.
 fn space(p: &Path) -> Option<(u64, u64)> {
     use std::os::unix::ffi::OsStrExt;
@@ -274,6 +286,20 @@ pub fn seek_penalty(path: &Path) -> Option<bool> {
 
 #[cfg(test)]
 mod tests {
+
+    /// The system disk and the home folder read quickly; a FUSE network mount, if one is
+    /// mounted here, does not.
+    #[test]
+    fn local_disks_are_not_slow() {
+        assert!(!slow_to_read(Path::new("/")));
+        assert!(!slow_to_read(Path::new("/usr/bin")));
+        for (point, fs, _) in mounts() {
+            if fs == "fuse.kio-fuse" || fs == "fuse.gvfsd-fuse" || fs == "cifs" {
+                assert!(slow_to_read(&point.join("x")), "{} ({fs})", point.display());
+            }
+        }
+    }
+
     use super::*;
 
     #[test]

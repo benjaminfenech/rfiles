@@ -306,6 +306,18 @@ pub fn apps_for(mime: &str) -> Vec<&'static App> {
     out
 }
 
+/// Every visible app, whether or not it opens files (the quick search's "Apps"), by name.
+pub(crate) fn launchable() -> Vec<&'static App> {
+    let mut v: Vec<&App> = apps().values().filter(|a| !a.no_display).collect();
+    v.sort_by_key(|a| a.name.to_lowercase());
+    v
+}
+
+/// The app with desktop file ID `id`.
+pub(crate) fn by_id(id: &str) -> Option<&'static App> {
+    apps().get(id)
+}
+
 /// Every visible app that opens files, by name (for "Choose another app").
 pub fn all_apps() -> Vec<&'static App> {
     let mut v: Vec<&App> = apps().values().filter(|a| !a.no_display && a.takes_files()).collect();
