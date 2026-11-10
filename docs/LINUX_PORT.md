@@ -401,6 +401,26 @@ separators, case-insensitive paths, drive letters).
   from 21.5 to 18.6 MB; the old file converts in 0.06 s. A warm-cache build takes longer
   (interning under one lock); a real walk is disk-bound, seconds, at nice 10.
 
+- **main @ f25a485** (2026-11-10, 64 commits after a1d7ca3). Ported: folder views patched with
+  what changed instead of listed again (`watch::watch_dir_changes` names the changed entries
+  from inotify, a lost event or the folder itself asks for a full listing;
+  `listing::stat_entry` reads one entry as the listing would), the quick search's ranked index
+  search (`nameindex::search_ranked`, and hidden folders count only above the folder searched,
+  as upstream), `drives::slow_to_read` (network, FUSE except `fuseblk`, removable and optical
+  mounts: DirectLook opens those off the UI thread), SHA-384 and `process_age_ms`
+  (`/proc/self/stat`). Shared with rf-win through `#[path]`, as they have no Windows code:
+  `hash`, `apppkg` (MSIX, APK, IPA and NuGet info cards), `elf` (DirectLook's card for Linux
+  programs) and `design` (CorelDRAW, Illustrator, Krita… embedded previews). Quick search
+  (Alt+Space on Windows): Wayland has no global hotkeys, so `hotkey` holds nothing and Settings
+  says to bind `rustyfiles --quick-search` in the desktop (a running rustyfiles takes it over);
+  apps come from the `.desktop` files (`apps`, icons drawn from them), bookmarks from the
+  Chromium family's `~/.config` profiles (Chrome, Chromium, Edge, Brave, Vivaldi). The tray
+  menu got "Settings". Stand-ins: `taskbar_progress` (a later step could use the Unity
+  LauncherEntry D-Bus API), `shell_window`, Zone.Identifier "Unblock" (never blocked), Media
+  Foundation events, the Open/Save dialog's z-order checks. DirectLook's own tray card stays
+  hidden. Fixed for Linux: opening a file in an already open folder compared paths without
+  case.
+
 ## Packaging
 
 **Arch** (2026-11-09): `packaging/arch/PKGBUILD` builds `rustyfiles-git` from the GitHub

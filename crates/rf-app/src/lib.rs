@@ -53,6 +53,7 @@ mod tags;
 mod undo;
 mod preview;
 mod properties_view;
+mod quick_search;
 mod recycle_view;
 mod theme;
 mod workspace;
@@ -116,6 +117,7 @@ pub(crate) fn dialog_dll() -> Option<String> {
     let dst = dir.join(rf_win::dialog_reg::DLL_NAME);
     if !dst.exists() {
         std::fs::create_dir_all(&dir).ok()?;
+        grant_app_packages(&dir);
         let part = dir.join("rustyfiles_dialog.dll.part");
         std::fs::copy(&src, &part).ok()?;
         std::fs::rename(&part, &dst).ok()?;
@@ -129,6 +131,50 @@ pub(crate) fn dialog_dll() -> Option<String> {
         }
     }
     Some(dst.display().to_string())
+}
+
+/// Packaged apps' file pickers run in PickerHost.exe, which can only load the registered DLL if
+/// app packages may read it; LocalAppData gives them no access, and the failed load makes the
+/// picker fail (Snipping Tool crashed on Save as). Read and execute for ALL APPLICATION PACKAGES
+/// and ALL RESTRICTED APPLICATION PACKAGES, inherited by the files copied in after.
+#[cfg(not(windows))]
+fn grant_app_packages(_dir: &std::path::Path) {}
+
+#[cfg(windows)]
+fn grant_app_packages(dir: &std::path::Path) {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    let _ = std::process::Command::new("icacls")
+        .arg(dir)
+        .args(["/grant", "*S-1-15-2-1:(OI)(CI)(RX)", "*S-1-15-2-2:(OI)(CI)(RX)"])
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
+}
+
+// Windows only: Windows ACLs, read with icacls
+#[cfg(all(test, windows))]
+mod grant_tests {
+    #[test]
+    fn app_packages_can_read_the_dialog_folder() {
+        let dir = std::env::temp_dir().join(format!("rf-grant-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        super::grant_app_packages(&dir);
+        let file = dir.join("rustyfiles_dialog.dll");
+        std::fs::write(&file, b"x").unwrap();
+        // the file copied in after inherits the grant; SDDL (SIDs, not localized names):
+        // AC is ALL APPLICATION PACKAGES, S-1-15-2-2 ALL RESTRICTED APPLICATION PACKAGES
+        let saved = std::env::temp_dir().join(format!("rf-grant-{}.acl", std::process::id()));
+        std::process::Command::new("icacls").arg(&file).arg("/save").arg(&saved).output().unwrap();
+        let raw = std::fs::read(&saved).unwrap();
+        let words: Vec<u16> = raw.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
+        let sddl = String::from_utf16_lossy(&words);
+        let _ = std::fs::remove_file(&saved);
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(sddl.contains("(A;ID;0x1200a9;;;AC)"), "{sddl}");
+        assert!(sddl.contains("(A;ID;0x1200a9;;;S-1-15-2-2)"), "{sddl}");
+    }
 }
 
 /// Opens a rustyfiles window. `start = None` restores the session (first window) or opens Home.
@@ -153,7 +199,8 @@ pub fn open_main_window(
 /// Quits now, or once running copy/move/delete operations finish (closing the window must not
 /// cut a copy in half). A window opened meanwhile (second launch) cancels the quit.
 pub(crate) fn quit_when_idle(cx: &mut App) {
-    let running = |cx: &App| cx.try_global::<status_center::OpsGlobal>().map_or(0, |g| g.0.read(cx).running());
+    // (an app or file the quick search is still starting counts as running work)
+    let running = |cx: &App| cx.try_global::<status_center::OpsGlobal>().map_or(0, |g| g.0.read(cx).running()) + quick_search::launching();
     if running(cx) == 0 {
         save_and_quit(cx);
         return;
@@ -214,7 +261,17 @@ fn shell_place_bounded(arg: &str, limit: std::time::Duration) -> Option<rf_win::
 }
 
 /// rustyfiles'ın girişi.
+/// Start-up timing (`RUSTYFILES_TRACE_START=1`, logged at info): milliseconds since the process
+/// was created, at the steps before the first window.
+pub(crate) fn start_mark(step: &str) {
+    static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    if *ON.get_or_init(|| std::env::var_os("RUSTYFILES_TRACE_START").is_some()) {
+        eprintln!("start: {step} at {} ms", rf_win::process_age_ms());
+    }
+}
+
 pub fn main() {
+    start_mark("main");
     // Velopack (installer / updater): first, it may run an install hook and exit
     installer::startup();
     // the id Velopack gives the Start menu / taskbar shortcuts: a pin survives updates
@@ -227,7 +284,9 @@ pub fn main() {
     // GPU/CPU switches at info level.
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn,gpui_windows=info"))
         .target(env_logger::Target::Stderr)
+        .format_timestamp_millis()
         .init();
+    start_mark("logging");
 
     // Linux: D-Bus started us to answer "Show in folder" while we are the default file
     // manager. No window here: each call starts `rustyfiles <folder>` (see rf-linux fm_service).
@@ -256,6 +315,12 @@ pub fn main() {
     let pick = (std::env::args().nth(1).as_deref() == Some("--pick")).then(|| std::env::args().nth(2)).flatten();
     // `--bar-preview`: our taskbar, as an ordinary window (see taskbar_preview)
     let bar_preview = cfg!(windows) && std::env::args().nth(1).as_deref() == Some("--bar-preview");
+    // `--quick-search`: the quick search window, as its hotkey opens it (a shortcut of the
+    // user's own can run this)
+    let quick_search = std::env::args().nth(1).as_deref() == Some(quick_search::LAUNCH_ARG);
+    if bar_preview {
+        quick_search::disable_hotkey();
+    }
     let arg = std::env::args().nth(1).map(|a| a.trim().trim_matches('"').to_string()).filter(|a| !a.is_empty());
     // Linux: launchers pass file:// URIs (the desktop entry's %U, which lets smb://… in too)
     #[cfg(unix)]
@@ -263,7 +328,7 @@ pub fn main() {
         Some(p) => p.to_string_lossy().into_owned(),
         None => a,
     });
-    let arg = arg.filter(|_| !open_look_settings && pick.is_none() && !bar_preview);
+    let arg = arg.filter(|_| !open_look_settings && pick.is_none() && !bar_preview && !quick_search);
     // jump list task "New window"
     let new_window = arg.as_deref() == Some(rf_win::jumplist::NEW_WINDOW_ARG);
     let arg = arg.filter(|_| !new_window);
@@ -376,11 +441,32 @@ pub fn main() {
         )
     });
 
+    // "Show in folder" from other apps (SHOpenFolderAndSelectItems: Telegram, browsers) while we
+    // are the default file manager: Windows opens the folder through our verb and names the
+    // file afterwards, to a window it finds in its window list (see rf_win::shell_window). The
+    // folder opens at once; the file, if one comes, is selected in it.
+    const SHELL_SELECT_WAIT: std::time::Duration = std::time::Duration::from_secs(4);
+    let shell_select = match &start {
+        Some(Location::Path(dir)) if select.is_none() && std::env::var_os("RUSTYFILES_MULTI_INSTANCE").is_none() && rf_win::default_fm::is_enabled(rf_win::default_fm::CLASSES) => {
+            let (tx, rx) = std::sync::mpsc::channel();
+            let dir = dir.clone();
+            std::thread::spawn(move || {
+                let _ = tx.send(rf_win::shell_window::wait_for_select(&dir, SHELL_SELECT_WAIT));
+            });
+            Some(rx)
+        }
+        _ => None,
+    };
+    let shell_selected = move |rx: std::sync::mpsc::Receiver<Option<PathBuf>>| {
+        rx.recv_timeout(SHELL_SELECT_WAIT + std::time::Duration::from_secs(1)).ok().flatten().map(|f| format!("{}{}", workspace::SELECT_HERE_PREFIX, f.display()))
+    };
+
     // Single instance: a second launch opens its folder as a tab in the running window.
     let message = match &start {
         _ if open_look_settings => look::ipc::ToApp::OpenSettings.encode(),
         _ if pick.is_some() => format!("{}{}", picker::PICK_PREFIX, pick.as_deref().unwrap_or_default()),
         _ if new_window => rf_win::jumplist::NEW_WINDOW_ARG.to_string(),
+        _ if quick_search => quick_search::LAUNCH_ARG.to_string(),
         _ if select.is_some() => format!("{}{}", workspace::SELECT_PREFIX, select.as_deref().unwrap_or_default()),
         Some(Location::Path(p)) => p.to_string_lossy().into_owned(),
         Some(Location::RecycleBin) => "shell:RecycleBinFolder".to_string(),
@@ -398,20 +484,37 @@ pub fn main() {
         None
     } else {
         match rf_win::single_instance::acquire(&message) {
-            rf_win::single_instance::Role::Forwarded => return,
+            rf_win::single_instance::Role::Forwarded => {
+                // the folder is on its way to the running window; the file to select follows
+                if let Some(msg) = shell_select.and_then(shell_selected) {
+                    rf_win::single_instance::send_to("rustyfiles", &msg);
+                }
+                return;
+            }
             rf_win::single_instance::Role::Primary(guard) => Some(guard),
         }
     };
     let (ipc_tx, ipc_rx) = futures::channel::mpsc::unbounded::<String>();
+    if let Some(rx) = shell_select {
+        let tx = ipc_tx.clone();
+        std::thread::spawn(move || {
+            if let Some(msg) = shell_selected(rx) {
+                let _ = tx.unbounded_send(msg);
+            }
+        });
+    }
     if !multi {
         rf_win::single_instance::serve(move |m| {
             let _ = ipc_tx.unbounded_send(m);
         });
     }
 
+    start_mark("before the app");
     gpui_kit::application().with_assets(gpui_kit::assets::AllAssets).run(move |cx| {
+        start_mark("app running");
         gpui_kit::init(cx);
         cx.set_global(settings::Settings::load());
+        start_mark("settings loaded");
         rf_core::sort::set_turkish_collation(rf_win::encoding::user_locale_is_turkish());
         // eski kod sayfalı metinlerin tahmini: Türkçe olmayan sistemde Türkçe ipucu verilmez
         if !rf_win::encoding::user_locale_is_turkish() {
@@ -421,13 +524,24 @@ pub fn main() {
         cx.set_global(tags::load());
         let ops = cx.new(status_center::Ops::new);
         // the Status Center flyout is its own Acrylic window, opened/closed with `open`
-        cx.observe(&ops, |ops, cx| status_center::sync_popup(&ops, cx)).detach();
+        cx.observe(&ops, |ops, cx| {
+            status_center::sync_popup(&ops, cx);
+            status_center::sync_taskbar(&ops, cx);
+        })
+        .detach();
         cx.set_global(status_center::OpsGlobal(ops));
         actions::bind(cx);
         actions::bind_user(cx);
         keymap_editor::init(cx);
         if let Some(page) = &settings_arg {
-            settings_view::open_page(if page == "speed" { settings_view::Page::Speed } else { settings_view::Page::Look }, cx);
+            settings_view::open_page(
+                match page.as_str() {
+                    "speed" => settings_view::Page::Speed,
+                    "general" => settings_view::Page::General,
+                    _ => settings_view::Page::Look,
+                },
+                cx,
+            );
         }
         // copies and moves keep a crash-safe journal there (see rf_win::fastcopy)
         if let Some(d) = settings::app_dir() {
@@ -443,9 +557,14 @@ pub fn main() {
             Some(pipe) => picker::begin(pipe, cx),
             #[cfg(windows)]
             None if bar_preview => taskbar_preview::open(cx),
+            // started for the quick search only: no main window (it quits when that closes,
+            // unless running in the background)
+            None if quick_search => quick_search::toggle(cx),
             None => {
                 installer::count_start(cx);
+                start_mark("opening the window");
                 open_main_window(if open_look_settings { Some(Location::Settings) } else { start }, None, bounds, cx);
+                start_mark("window opened");
                 // a copy or move cut off last time: ask to carry it on
                 status_center::offer_resume(cx);
             }
@@ -484,6 +603,7 @@ pub fn main() {
         // linger invisibly and swallow every later launch through the single-instance pipe).
         // With "run in the background" on, the app stays in the notification area instead.
         background::init(cx);
+        quick_search::init(cx);
         // GPUI would quit by itself when the last window closes (QuitMode::Default on Windows):
         // that cut running copies in half and makes background mode impossible. We decide.
         cx.set_quit_mode(gpui_kit::QuitMode::Explicit);

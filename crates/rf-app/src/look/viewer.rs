@@ -73,6 +73,10 @@ pub enum ThemeChoice {
     Light,
 }
 
+/// What a viewer's [`Viewer::loader`] opened off the UI thread, handed back through
+/// [`Viewer::take_loaded`].
+pub type Loaded = Box<dyn std::any::Any + Send>;
+
 /// Görüntüleyicinin pencereye bildirdikleri.
 #[derive(Clone, Debug)]
 pub struct Prepared {
@@ -107,6 +111,14 @@ pub trait Viewer: 'static {
     fn name(&self) -> &'static str;
     fn priority(&self) -> i32;
     fn can_handle(&self, f: &Probe) -> bool;
+    /// The slow part of opening a file (a container's index, a PDF's pages). For a file on a
+    /// network drive or another slow place it runs off the UI thread and its result reaches
+    /// [`Viewer::take_loaded`] before [`Viewer::prepare`]; elsewhere `prepare` does the work
+    /// itself. Viewers that only start background work in `prepare` need none.
+    fn loader(&self) -> Option<fn(&Probe) -> Loaded> {
+        None
+    }
+    fn take_loaded(&mut self, _loaded: Loaded) {}
     fn prepare(&mut self, f: &Probe, cx: &mut App) -> Prepared;
     fn render(&mut self, window: &mut Window, cx: &mut App) -> AnyElement;
     fn more_menu(&self) -> Vec<MoreItem> {
@@ -159,6 +171,12 @@ mod tests {
         assert_eq!(pick(&probe("rapor.pdf", b"%PDF-1.7\n")).name(), "pdf");
         // a PDF with the wrong extension is still a PDF
         assert_eq!(pick(&probe("rapor.dat", b"%PDF-1.4\n")).name(), "pdf");
+        // design files: the picture saved inside them; an Illustrator file that is a PDF is a PDF
+        assert_eq!(pick(&probe("afis.cdr", b"PK\x03\x04\x14\0\0\x08")).name(), "image");
+        assert_eq!(pick(&probe("logo.ai", b"%PDF-1.6\n%")).name(), "pdf");
+        assert_eq!(pick(&probe("logo.eps", b"\xC5\xD0\xD3\xC6\x20\0\0\0")).name(), "image");
+        // a macOS "._" sidecar named like a design is not one
+        assert_eq!(pick(&probe("._afis.cdr", b"\0\x05\x16\x07\0\x02\0\0")).name(), "hex");
     }
 
     /// `.ts` hem TypeScript hem MPEG-TS: içerik karar verir (188 baytlık paketlerde 0x47 eşitleme baytı).

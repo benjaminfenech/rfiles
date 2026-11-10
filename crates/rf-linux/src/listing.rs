@@ -81,10 +81,33 @@ fn ms(t: std::io::Result<std::time::SystemTime>) -> i64 {
 /// `REPARSE_POINT`, like a Windows junction or symlink.
 pub(crate) fn to_entry(de: &std::fs::DirEntry) -> Option<Entry> {
     let name = de.file_name();
-    let name = name.to_string_lossy();
     let link = de.file_type().ok()?.is_symlink();
     let meta = if link { std::fs::metadata(de.path()).or_else(|_| de.metadata()) } else { de.metadata() };
-    let meta = meta.ok()?;
+    entry_from(&name.to_string_lossy(), link, &meta.ok()?)
+}
+
+/// The entry `name` in `dir` as [`list_dir`] would list it (the same fields): `Ok(None)` when
+/// there is no such entry (deleted, renamed away), `Err` when it can't be told (no access, the
+/// folder itself gone…).
+pub fn stat_entry(dir: &Path, name: &str) -> Result<Option<Entry>, ListError> {
+    if name.is_empty() || name == "." || name == ".." || name.contains('/') {
+        return Err(ListError::InvalidName);
+    }
+    let path = dir.join(name);
+    let lmeta = match std::fs::symlink_metadata(&path) {
+        Ok(m) => m,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            // the entry is gone; the folder too?
+            return if dir.is_dir() { Ok(None) } else { Err(ListError::NotFound) };
+        }
+        Err(e) => return Err(e.into()),
+    };
+    let link = lmeta.file_type().is_symlink();
+    let meta = if link { std::fs::metadata(&path).unwrap_or(lmeta) } else { lmeta };
+    Ok(entry_from(name, link, &meta))
+}
+
+fn entry_from(name: &str, link: bool, meta: &std::fs::Metadata) -> Option<Entry> {
     let is_dir = meta.is_dir();
     let mut a = 0;
     if is_dir {
@@ -101,7 +124,7 @@ pub(crate) fn to_entry(de: &std::fs::DirEntry) -> Option<Entry> {
     }
     let kind = if is_dir { EntryKind::Dir } else { EntryKind::File };
     Some(Entry::new(
-        &name,
+        name,
         kind,
         if is_dir { 0 } else { meta.len() },
         ms(meta.modified()),
@@ -143,5 +166,25 @@ mod tests {
     fn missing_dir() {
         let r = list_dir(Path::new("/definitely/not/here/rf"), 100, &|| false, &mut |_| {});
         assert!(matches!(r, Err(ListError::NotFound)));
+    }
+
+    /// One entry read alone matches what the listing gives for it; a missing name is `None`.
+    #[test]
+    fn stat_entry_matches_the_listing() {
+        let dir = std::env::temp_dir().join(format!("rf-stat-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("sub")).unwrap();
+        std::fs::write(dir.join("a.txt"), b"hello").unwrap();
+        std::os::unix::fs::symlink(dir.join("sub"), dir.join("link")).unwrap();
+        let mut all = Vec::new();
+        list_dir(&dir, 100, &|| false, &mut |b| all.extend(b)).unwrap();
+        for e in &all {
+            let one = stat_entry(&dir, &e.name).unwrap().expect("there");
+            assert_eq!((one.name.as_ref(), one.size, one.attrs, one.modified_ms), (e.name.as_ref(), e.size, e.attrs, e.modified_ms));
+        }
+        assert!(stat_entry(&dir, "gone.txt").unwrap().is_none());
+        assert!(matches!(stat_entry(&dir, "x/y"), Err(ListError::InvalidName)));
+        assert!(matches!(stat_entry(&dir.join("no-such-folder"), "a.txt"), Err(ListError::NotFound)));
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }

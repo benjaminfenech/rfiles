@@ -128,3 +128,20 @@ pub fn reposition(rect: crate::RECT) {}
 pub fn mf_decodes(_codec: &str) -> bool {
     false
 }
+
+/// Events from Media Foundation's player (Windows). Linux: that player doesn't exist here
+/// (`is_playable` says no), so none come.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MediaEvent {
+    /// Playback was started or paused.
+    Playing(bool),
+    /// The picture was double-clicked.
+    DoubleClick,
+}
+
+pub fn set_media_events(_f: impl Fn(MediaEvent) + Send + 'static) {}
+
+/// Plays if paused, pauses if playing. Linux: no Media Foundation player.
+pub fn media_toggle() -> Option<bool> {
+    None
+}

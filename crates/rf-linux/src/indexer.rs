@@ -326,6 +326,21 @@ pub fn search(pattern: &str, under: &Path, include_hidden: bool, max: usize) -> 
     ix.as_ref()?.search(pattern, Some(under), include_hidden, max)
 }
 
+/// [`search`] with the best matches first ([`Index::search_ranked`]): `rank` scores a name.
+pub fn search_ranked(pattern: &str, under: &Path, include_hidden: bool, max: usize, rank: &(dyn Fn(&str) -> Option<i32> + Sync)) -> Option<Vec<(i32, PathBuf)>> {
+    let slot = {
+        let g = service().lock();
+        let s = g.as_ref()?;
+        // the innermost root (a data disk mounted inside the home folder)
+        s.slots.iter().filter(|s| under.starts_with(&s.root)).max_by_key(|s| s.root.components().count()).cloned()?
+    };
+    if slot.state.load(Ordering::Relaxed) != State::Ready as u8 {
+        return None;
+    }
+    let ix = slot.index.read();
+    ix.as_ref()?.search_ranked(pattern, Some(under), include_hidden, max, rank)
+}
+
 /// (root, state, live entries, bytes in memory) per root.
 pub fn status() -> Vec<(PathBuf, State, usize, usize)> {
     let g = service().lock();

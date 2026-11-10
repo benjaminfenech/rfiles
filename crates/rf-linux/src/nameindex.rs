@@ -535,13 +535,17 @@ impl Index {
     /// whether `under` (if given) is one of them.
     fn valid(&self, mut i: u32, hidden: bool, under: Option<u32>) -> bool {
         let mut inside = under.is_none_or(|u| u == 0);
+        // hidden folders count below the search's folder only: searching inside a hidden folder
+        // (one the user opened) finds what is in it
+        let mut above_under = false;
         while i != 0 && i != NONE {
             let f = self.flags[i as usize];
-            if f & REMOVED != 0 || (!hidden && f & HIDDEN != 0) {
-                return false;
-            }
             if Some(i) == under {
                 inside = true;
+                above_under = true;
+            }
+            if f & REMOVED != 0 || (!hidden && !above_under && f & HIDDEN != 0) {
+                return false;
             }
             i = self.parent[i as usize];
         }
@@ -563,10 +567,10 @@ impl Index {
         p
     }
 
-    /// Entries under `under` (the root when `None`) whose name matches `pattern` (substring, or
-    /// a glob with `*` / `?`), at most `max`, in index order. `None` when `under` isn't indexed.
-    pub fn search(&self, pattern: &str, under: Option<&Path>, include_hidden: bool, max: usize) -> Option<Vec<PathBuf>> {
-        let under = match under {
+    /// The node `under` names (`None` inside: the root); `None` outside: a folder the index
+    /// leaves out, another mount, or a folder it doesn't have (the disk is walked then).
+    fn under_node(&self, under: Option<&Path>) -> Option<Option<u32>> {
+        Some(match under {
             Some(p) => {
                 // inside a folder the index leaves out: not ours to answer (the disk is walked)
                 if p.ancestors().take_while(|a| a.starts_with(&self.root) && *a != self.root.as_path()).any(skipped) {
@@ -584,7 +588,11 @@ impl Index {
                 Some(node)
             }
             None => None,
-        };
+        })
+    }
+
+    /// Which different names match `pattern` (a bit per name id), and whether any does.
+    fn name_matches(&self, pattern: &str) -> (Vec<u64>, bool) {
         let m = Matcher::new(pattern);
         let ascii = pattern.trim().to_ascii_lowercase();
         let fast = !ascii.is_empty() && ascii.is_ascii() && !ascii.contains(['*', '?']);
@@ -624,9 +632,18 @@ impl Index {
                 });
             }
         });
-        if !any.load(Ordering::Relaxed) {
+        (matched, any.load(Ordering::Relaxed))
+    }
+
+    /// Entries under `under` (the root when `None`) whose name matches `pattern` (substring, or
+    /// a glob with `*` / `?`), at most `max`, in index order. `None` when `under` isn't indexed.
+    pub fn search(&self, pattern: &str, under: Option<&Path>, include_hidden: bool, max: usize) -> Option<Vec<PathBuf>> {
+        let under = self.under_node(under)?;
+        let (matched, any) = self.name_matches(pattern);
+        if !any {
             return Some(Vec::new());
         }
+        let threads = std::thread::available_parallelism().map_or(4, |t| t.get()).clamp(1, 16);
         let matched = &matched;
         // then the entries carrying one of them
         let n = self.parent.len();
@@ -667,6 +684,77 @@ impl Index {
         let mut parts = found.into_inner().unwrap();
         parts.sort_unstable_by_key(|p| p.0);
         Some(parts.into_iter().flat_map(|p| p.1).take(max).map(|i| self.path(i)).collect())
+    }
+
+    /// Like [`Self::search`], but the best matches first whatever their place in the index:
+    /// `rank` scores a matching name (None: not wanted), the best names are kept, and their
+    /// entries come back best first (shallower paths first among equals), at most `max`.
+    pub fn search_ranked(&self, pattern: &str, under: Option<&Path>, include_hidden: bool, max: usize, rank: &(dyn Fn(&str) -> Option<i32> + Sync)) -> Option<Vec<(i32, PathBuf)>> {
+        let under = self.under_node(under)?;
+        let (matched, any) = self.name_matches(pattern);
+        if !any {
+            return Some(Vec::new());
+        }
+        // score the matching names, keep the best few hundred (a common fragment matches tens
+        // of thousands; the best are what is shown)
+        const KEEP_NAMES: usize = 600;
+        let mut scored: Vec<(i32, u32)> = Vec::new();
+        for (w, &word) in matched.iter().enumerate() {
+            let mut bits = word;
+            while bits != 0 {
+                let b = bits.trailing_zeros() as usize;
+                bits &= bits - 1;
+                let k = (w * 64 + b) as u32;
+                if let Some(sc) = rank(&String::from_utf8_lossy(self.names.get(k))) {
+                    scored.push((sc, k));
+                }
+            }
+        }
+        if scored.is_empty() {
+            return Some(Vec::new());
+        }
+        scored.sort_unstable_by(|a, b| b.0.cmp(&a.0));
+        scored.truncate(KEEP_NAMES);
+        let score_of: HashMap<u32, i32> = scored.iter().map(|&(sc, k)| (k, sc)).collect();
+        let threads = std::thread::available_parallelism().map_or(4, |t| t.get()).clamp(1, 16);
+        let n = self.parent.len();
+        let per = n.div_ceil(threads).max(1);
+        let found = Mutex::new(Vec::<(i32, u32, u32)>::new());
+        std::thread::scope(|s| {
+            for t in 0..threads {
+                let (lo, hi) = (t * per, ((t + 1) * per).min(n));
+                if lo >= hi {
+                    break;
+                }
+                let (found, score_of) = (&found, &score_of);
+                s.spawn(move || {
+                    let mut hits = Vec::new();
+                    for i in lo.max(1)..hi {
+                        if self.flags[i] & REMOVED != 0 {
+                            continue;
+                        }
+                        let Some(&sc) = score_of.get(&self.name_id[i]) else { continue };
+                        if self.valid(i as u32, include_hidden, under) {
+                            hits.push((sc, self.depth(i as u32), i as u32));
+                        }
+                    }
+                    found.lock().unwrap().extend(hits);
+                });
+            }
+        });
+        let mut hits = found.into_inner().unwrap();
+        hits.sort_unstable_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2)));
+        Some(hits.into_iter().take(max).map(|(sc, _, i)| (sc, self.path(i))).collect())
+    }
+
+    /// How many folders above `i` (the root's children: 1).
+    fn depth(&self, mut i: u32) -> u32 {
+        let mut d = 0;
+        while i != 0 && i != NONE {
+            d += 1;
+            i = self.parent[i as usize];
+        }
+        d
     }
 
     /// Re-reads `dirs` (folders that changed): entries gone from a folder are marked removed,
@@ -1018,6 +1106,29 @@ mod tests {
         root
     }
 
+    /// The ranked search returns the best names first, whatever their place in the index, and
+    /// shallower paths first among equals.
+    #[test]
+    fn ranked_search_puts_the_best_first() {
+        let root = tree("ranked");
+        for i in 0..50 {
+            std::fs::write(root.join(format!("eski rapor {i}.txt")), b"x").unwrap();
+        }
+        std::fs::create_dir_all(root.join("a/b")).unwrap();
+        std::fs::write(root.join("a/b/rapor"), b"x").unwrap();
+        std::fs::write(root.join("a/rapor"), b"x").unwrap();
+        let ix = Index::build(&root, &AtomicBool::new(false));
+        let rank = |name: &str| {
+            let n = name.to_lowercase();
+            if n == "rapor" { Some(1000) } else if n.starts_with("rapor") { Some(800) } else if n.contains("rapor") { Some(400) } else { None }
+        };
+        let got = ix.search_ranked("rapor", None, false, 3, &rank).unwrap();
+        assert_eq!(got[0].1, root.join("a").join("rapor"));
+        assert_eq!(got[1].1, root.join("a").join("b").join("rapor"));
+        assert_eq!(got[2].0, 800); // Rapor.pdf
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
     fn names(v: &[PathBuf]) -> Vec<String> {
         let mut n: Vec<String> = v.iter().map(|p| p.file_name().unwrap().to_string_lossy().into_owned()).collect();
         n.sort();
@@ -1194,6 +1305,8 @@ mod tests {
         let ix = Index::build(&root, &AtomicBool::new(false));
         assert!(!names(&ix.search("gizli", None, false, 10).unwrap()).contains(&"rapor gizli.txt".to_string()));
         assert!(names(&ix.search("gizli", None, true, 10).unwrap()).contains(&"rapor gizli.txt".to_string()));
+        // searching inside the hidden folder the user opened finds what is in it
+        assert_eq!(names(&ix.search("rapor", Some(&secret), false, 10).unwrap()), ["rapor gizli.txt"]);
         // the link is a name, not a second copy of the tree
         assert_eq!(names(&ix.search("main", None, false, 10).unwrap()), ["main.rs"]);
         assert_eq!(names(&ix.search("geri", None, false, 10).unwrap()), ["geri"]);

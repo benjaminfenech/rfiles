@@ -84,6 +84,16 @@ pub struct Versus {
     pub windows_ms: Option<f64>,
     pub bytes: u64,
     pub files: u64,
+    /// CPU time of each side (medians, ms) and the private memory it took on top (MB). Results
+    /// saved before these were measured have none.
+    #[serde(default)]
+    pub ours_cpu_ms: Option<f64>,
+    #[serde(default)]
+    pub windows_cpu_ms: Option<f64>,
+    #[serde(default)]
+    pub ours_mb: Option<f64>,
+    #[serde(default)]
+    pub windows_mb: Option<f64>,
 }
 
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
@@ -97,6 +107,11 @@ pub struct Engines {
     /// Searching the test folders by name (ms, entries looked at).
     pub search_ms: Option<f64>,
     pub search_entries: u64,
+    /// The search's CPU time (ms) and extra memory (MB).
+    #[serde(default)]
+    pub search_cpu_ms: Option<f64>,
+    #[serde(default)]
+    pub search_mb: Option<f64>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -286,6 +301,7 @@ fn our_copy(sources: &[PathBuf], dest: &Path) -> anyhow::Result<()> {
 
 fn versus(runs: usize, scratch: &Path, ours: &dyn Fn(&Path) -> anyhow::Result<()>, windows: &dyn Fn(&Path) -> anyhow::Result<()>, cancel: &AtomicBool) -> Versus {
     let (mut a, mut b) = (Vec::new(), Vec::new());
+    let (mut ac, mut bc, mut am, mut bm) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
     for r in 0..runs {
         if cancel.load(Ordering::Relaxed) {
             break;
@@ -296,9 +312,13 @@ fn versus(runs: usize, scratch: &Path, ours: &dyn Fn(&Path) -> anyhow::Result<()
             if std::fs::create_dir_all(&dest).is_err() {
                 continue;
             }
-            match time(|| f(&dest)) {
-                Ok(ms) => [&mut a, &mut b][which].push(ms),
-                Err(e) => log::warn!("bench: {} failed: {e:#}", if which == 0 { "ours" } else { "windows" }),
+            match rf_win::bench::measure_in_process(|| f(&dest)) {
+                (Ok(()), cost) => {
+                    [&mut a, &mut b][which].push(cost.ms);
+                    [&mut ac, &mut bc][which].push(cost.cpu_ms);
+                    [&mut am, &mut bm][which].push(cost.extra_mb);
+                }
+                (Err(e), _) => log::warn!("bench: {} failed: {e:#}", if which == 0 { "ours" } else { "windows" }),
             }
             let _ = std::fs::remove_dir_all(&dest);
         }
@@ -308,11 +328,99 @@ fn versus(runs: usize, scratch: &Path, ours: &dyn Fn(&Path) -> anyhow::Result<()
             break;
         }
     }
-    Versus { ours_ms: median(a), windows_ms: median(b), ..Default::default() }
+    Versus { ours_ms: median(a), windows_ms: median(b), ours_cpu_ms: median(ac), windows_cpu_ms: median(bc), ours_mb: median(am), windows_mb: median(bm), ..Default::default() }
 }
 
 /// Runs `plan`. `progress` is called from this thread; `cancel` stops between steps.
+// ------------------------------------------------------------------ Files' session
+
+/// Files remembers the tabs open when its last window closed and opens them again on start
+/// ("continue where you left off"). Every window the test opens and closes would become the
+/// user's "last session" (their next Files start showing an rf-bench folder), and each test start
+/// would also restore the previous test's tab. For the test, Files starts without a session;
+/// afterwards the user's two settings are written back as they were (also when the test fails
+/// or is cancelled: on drop), and again a few seconds later in case Files saved late.
+struct FilesSession {
+    path: PathBuf,
+    saved: Vec<(&'static str, Option<serde_json::Value>)>,
+}
+
+const FILES_SESSION_KEYS: [&str; 3] = ["ContinueLastSessionOnStartUp", "LastSessionTabList", "LastSessionSelectedTabIndex"];
+
+impl FilesSession {
+    fn settings_path() -> Option<PathBuf> {
+        let base = PathBuf::from(std::env::var_os("LOCALAPPDATA")?).join("Packages");
+        // the Store package (Files_1y0xx7n9077q4) or a sideloaded one (FilesStable_…, FilesPreview_…)
+        std::fs::read_dir(&base)
+            .ok()?
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.starts_with("Files")))
+            .map(|p| p.join("LocalState").join("settings").join("user_settings.json"))
+            .find(|p| p.is_file())
+    }
+
+    fn read(path: &Path) -> Option<serde_json::Map<String, serde_json::Value>> {
+        let text = std::fs::read_to_string(path).ok()?;
+        match serde_json::from_str(text.trim_start_matches('\u{feff}')).ok()? {
+            serde_json::Value::Object(m) => Some(m),
+            _ => None,
+        }
+    }
+
+    /// Files' own layout: two-space indent, CRLF.
+    fn write(path: &Path, m: &serde_json::Map<String, serde_json::Value>) -> std::io::Result<()> {
+        let text = serde_json::to_string_pretty(m).map_err(std::io::Error::other)?.replace('\n', "\r\n");
+        let tmp = path.with_extension("json.rf-bench");
+        std::fs::write(&tmp, text)?;
+        std::fs::rename(&tmp, path)
+    }
+
+    fn begin() -> Option<Self> {
+        let path = Self::settings_path()?;
+        let mut m = Self::read(&path)?;
+        let saved = FILES_SESSION_KEYS.iter().map(|&k| (k, m.get(k).cloned())).collect();
+        m.insert("ContinueLastSessionOnStartUp".into(), serde_json::Value::Bool(false));
+        if let Err(e) = Self::write(&path, &m) {
+            log::warn!("bench: Files settings not changed: {e}");
+            return None;
+        }
+        log::info!("bench: Files starts without its last session during the test");
+        Some(Self { path, saved })
+    }
+
+    fn restore(path: &Path, saved: &[(&'static str, Option<serde_json::Value>)]) -> bool {
+        let Some(mut m) = Self::read(path) else { return false };
+        if saved.iter().all(|(k, v)| m.get(*k) == v.as_ref()) {
+            return true;
+        }
+        for (k, v) in saved {
+            match v {
+                Some(v) => m.insert((*k).into(), v.clone()),
+                None => m.remove(*k),
+            };
+        }
+        Self::write(path, &m).is_ok()
+    }
+}
+
+impl Drop for FilesSession {
+    fn drop(&mut self) {
+        if !Self::restore(&self.path, &self.saved) {
+            log::warn!("bench: Files settings could not be put back");
+        }
+        let (path, saved) = (self.path.clone(), std::mem::take(&mut self.saved));
+        std::thread::spawn(move || {
+            for _ in 0..3 {
+                std::thread::sleep(Duration::from_secs(5));
+                Self::restore(&path, &saved);
+            }
+        });
+    }
+}
+
 pub fn run(plan: &Plan, progress: &dyn Fn(Progress), cancel: &AtomicBool) -> anyhow::Result<Results> {
+    let _files_session = if plan.apps.iter().any(|a| a.kind == AppKind::Files) { FilesSession::begin() } else { None };
     let root = bench_dir();
     std::fs::create_dir_all(&root)?;
     prepare_rustyfiles_settings()?;
@@ -418,9 +526,10 @@ pub fn run(plan: &Plan, progress: &dyn Fn(Progress), cancel: &AtomicBool) -> any
         }
         step("search".into());
         let q = rf_win::search::SearchQuery { root: root.clone(), pattern: "file 0999".into(), include_hidden: false, max_results: 50_000 };
-        let t = Instant::now();
-        if let Ok(s) = rf_win::search::search(&q, &|| false, &mut |_| {}) {
-            engines.search_ms = Some(t.elapsed().as_secs_f64() * 1000.0);
+        if let (Ok(s), cost) = rf_win::bench::measure_in_process(|| rf_win::search::search(&q, &|| false, &mut |_| {})) {
+            engines.search_ms = Some(cost.ms);
+            engines.search_cpu_ms = Some(cost.cpu_ms);
+            engines.search_mb = Some(cost.extra_mb);
             engines.search_entries = s.entries_scanned as u64;
         }
     }
@@ -435,4 +544,128 @@ pub fn run(plan: &Plan, progress: &dyn Fn(Progress), cancel: &AtomicBool) -> any
 /// The last results, if a test was run before.
 pub fn last_results() -> Option<Results> {
     serde_json::from_slice(&std::fs::read(bench_dir().join("results.json")).ok()?).ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The engine comparison reports what each side cost: a real copy of 300 small files with
+    /// our engine and with Windows' (in this process), both measured.
+    #[test]
+    fn engine_comparison_reports_cpu_and_memory() {
+        let root = std::env::temp_dir().join(format!("rf-bench-cost-{}", std::process::id()));
+        let src = root.join("src");
+        std::fs::create_dir_all(&src).unwrap();
+        for i in 0..300 {
+            std::fs::write(src.join(format!("f{i}.bin")), vec![7u8; 8192]).unwrap();
+        }
+        let scratch = root.join("scratch");
+        std::fs::create_dir_all(&scratch).unwrap();
+        let s = [src.clone()];
+        let v = versus(1, &scratch, &|d| our_copy(&s, d), &|d| rf_win::bench::shell_copy_quiet(&s, d), &AtomicBool::new(false));
+        assert!(v.ours_ms.is_some() && v.windows_ms.is_some(), "{v:?}");
+        assert!(v.ours_cpu_ms.is_some_and(|c| c >= 0.0) && v.windows_cpu_ms.is_some_and(|c| c > 0.0), "{v:?}");
+        assert!(v.ours_mb.is_some_and(|m| m >= 0.0) && v.windows_mb.is_some_and(|m| m >= 0.0), "{v:?}");
+        eprintln!("{v:?}");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// Files' session settings are put back exactly, other settings Files changed meanwhile kept.
+    #[test]
+    fn files_session_is_put_back() {
+        let dir = std::env::temp_dir().join(format!("rf-files-session-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("user_settings.json");
+        std::fs::write(&path, "{\r\n  \"ShowShelfPane\": false,\r\n  \"ContinueLastSessionOnStartUp\": true,\r\n  \"LastSessionTabList\": [\r\n    \"C:\\\\Users\"\r\n  ]\r\n}").unwrap();
+        let mut m = FilesSession::read(&path).unwrap();
+        let saved: Vec<_> = FILES_SESSION_KEYS.iter().map(|&k| (k, m.get(k).cloned())).collect();
+        // what the test leaves: Files' own writes of the bench tabs, plus an unrelated change
+        m.insert("ContinueLastSessionOnStartUp".into(), false.into());
+        m.insert("LastSessionTabList".into(), serde_json::json!(["C:\\rf-bench 1000"]));
+        m.insert("LastSessionSelectedTabIndex".into(), 0.into());
+        m.insert("ShowShelfPane".into(), true.into());
+        FilesSession::write(&path, &m).unwrap();
+        assert!(FilesSession::restore(&path, &saved));
+        let back = FilesSession::read(&path).unwrap();
+        assert_eq!(back["ContinueLastSessionOnStartUp"], true);
+        assert_eq!(back["LastSessionTabList"], serde_json::json!(["C:\\Users"]));
+        assert!(!back.contains_key("LastSessionSelectedTabIndex"));
+        assert_eq!(back["ShowShelfPane"], true);
+        assert!(std::fs::read_to_string(&path).unwrap().contains("\r\n  \"ShowShelfPane\""));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Results saved by 0.5.0 (no cost fields) still load.
+    #[test]
+    fn older_results_still_load() {
+        let old = r#"{"ours_ms":1.0,"windows_ms":2.0,"bytes":0,"files":0}"#;
+        let v: Versus = serde_json::from_str(old).unwrap();
+        assert_eq!(v.ours_cpu_ms, None);
+    }
+}
+
+#[cfg(test)]
+mod files_live {
+    /// Opens the 1 000-file folder in Files (when installed) through the real test and checks that
+    /// Files' session settings are the user's again afterwards. Opens windows: run by hand
+    /// (`cargo test -p rf-app --lib files_live -- --ignored`).
+    #[test]
+    #[ignore]
+    fn files_session_survives_a_real_test() {
+        let Some(files) = rf_win::bench::detect().into_iter().find(|a| a.kind == rf_win::bench::AppKind::Files) else { return };
+        let path = super::FilesSession::settings_path().unwrap();
+        let before = super::FilesSession::read(&path).unwrap();
+        let plan = super::Plan { apps: vec![files], open: vec![super::OpenTest::Files1k], copy: false, engines: false };
+        let r = super::run(&plan, &|_| {}, &std::sync::atomic::AtomicBool::new(false)).unwrap();
+        eprintln!("{:?}", r.open[0].apps[0].median().map(|m| (m.settled_ms, m.shared)));
+        std::thread::sleep(std::time::Duration::from_secs(17));
+        let after = super::FilesSession::read(&path).unwrap();
+        for k in super::FILES_SESSION_KEYS {
+            assert_eq!(before.get(k), after.get(k), "{k}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod live_100k {
+    /// The 100 000-file folder: rustyfiles from scratch, rustyfiles already running (a copy with
+    /// the test's own settings, kept running in the background: its first start is the warm-up
+    /// run, then each start hands the folder to it, as README measures), Explorer and Files.
+    /// Never touches the user's copy: skipped while any other rustyfiles runs. Opens windows: run
+    /// by hand (`cargo test -p rf-app --lib live_100k -- --ignored --nocapture`), then end the
+    /// test's copy (it stays in the background).
+    #[test]
+    #[ignore]
+    fn open_100k() {
+        use rf_win::bench::{App, AppKind};
+        let fresh = super::rustyfiles_app();
+        let others = std::process::Command::new("tasklist").args(["/FI", "IMAGENAME eq rustyfiles.exe", "/NH"]).output().map(|o| String::from_utf8_lossy(&o.stdout).contains("rustyfiles.exe")).unwrap_or(true);
+        assert!(!others, "a rustyfiles is running: the warm runs would go to it");
+        let cfg = super::bench_dir().join("rustyfiles-warm");
+        std::fs::create_dir_all(&cfg).unwrap();
+        std::fs::write(cfg.join("settings.toml"), "restore_session = false
+run_in_background = true
+auto_update = false
+star_asked = true
+starts = 1
+search_index = false
+name_index = false
+directlook_enabled = false
+").unwrap();
+        let warm = App {
+            kind: AppKind::Rustyfiles,
+            exe: fresh.exe.clone(),
+            env: vec![("RUSTYFILES_CONFIG_DIR".into(), cfg.to_string_lossy().into_owned()), ("RUSTYFILES_MUTE".into(), "1".into())],
+        };
+        let mut apps = vec![fresh, warm];
+        apps.extend(rf_win::bench::detect().into_iter().filter(|a| matches!(a.kind, AppKind::Explorer | AppKind::Files)));
+        let names = ["rustyfiles, from scratch", "rustyfiles, already running", "File Explorer", "Files"];
+        let plan = super::Plan { apps, open: vec![super::OpenTest::Files100k], copy: false, engines: false };
+        let r = super::run(&plan, &|_| {}, &std::sync::atomic::AtomicBool::new(false)).unwrap();
+        for (name, a) in names.iter().zip(&r.open[0].apps) {
+            let runs: Vec<String> = a.runs.iter().map(|x| format!("{:.0}{}{}", x.settled_ms, if x.shared { "*" } else { "" }, if x.timed_out { "!" } else { "" })).collect();
+            eprintln!("{name}: median {:?} ms; window {:?} ms; runs [{}] {:?}", a.median().map(|m| m.settled_ms.round()), a.median().map(|m| m.window_ms.round()), runs.join(", "), a.error);
+        }
+    }
 }

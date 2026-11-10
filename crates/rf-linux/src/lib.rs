@@ -20,6 +20,7 @@ pub struct RECT {
     pub bottom: i32,
 }
 pub mod accent;
+pub mod apps;
 pub mod cert;
 pub mod clipboard;
 pub mod complete;
@@ -37,7 +38,15 @@ pub mod fileops;
 pub mod foldersize;
 pub mod sysparams;
 pub mod git;
+// Shared with rf-win as they are (no Windows code in them): upstream's fixes arrive with each sync
+#[path = "../../rf-win/src/hash.rs"]
 pub mod hash;
+#[path = "../../rf-win/src/apppkg.rs"]
+pub mod apppkg;
+#[path = "../../rf-win/src/elf.rs"]
+pub mod elf;
+#[path = "../../rf-win/src/design.rs"]
+pub mod design;
 pub mod journal;
 pub mod known;
 pub mod libraries;
@@ -52,6 +61,7 @@ pub mod fileactions;
 pub mod fileinfo;
 /// Linux only: org.freedesktop.FileManager1 ("Show in folder") while we are the default.
 pub mod fm_service;
+pub mod hotkey;
 pub mod udisks;
 pub mod indexer;
 pub mod nameindex;
@@ -64,9 +74,11 @@ pub mod recycle;
 pub mod search;
 pub mod shell;
 pub mod shellfolder;
+pub mod shell_window;
 pub mod shortcut;
 pub mod single_instance;
 pub mod sta;
+pub mod taskbar_progress;
 pub mod removal;
 pub mod rotate;
 pub mod thumbs;
@@ -82,4 +94,32 @@ pub mod xdg_icons;
 pub mod xdg_thumbs;
 pub use drives::{Drive, DriveKind, list_drives};
 pub use known::{KnownFolder, known_folders};
-pub use listing::{ListError, list_dir};
+pub use listing::{ListError, list_dir, stat_entry};
+
+/// Milliseconds since this process was created (start-up timing): `/proc/self/stat`'s start
+/// time (clock ticks after boot) against the boot clock.
+pub fn process_age_ms() -> u64 {
+    let Ok(stat) = std::fs::read_to_string("/proc/self/stat") else { return 0 };
+    // the command name may hold spaces and parentheses: fields count from the last ')'
+    let Some(start) = stat.rsplit_once(')').and_then(|(_, rest)| rest.split_whitespace().nth(19)).and_then(|f| f.parse::<u64>().ok()) else {
+        return 0;
+    };
+    // SAFETY: plain calls filling a local struct
+    let (ticks, now) = unsafe {
+        let mut ts: libc::timespec = std::mem::zeroed();
+        libc::clock_gettime(libc::CLOCK_BOOTTIME, &mut ts);
+        (libc::sysconf(libc::_SC_CLK_TCK).max(1) as u64, ts.tv_sec as u64 * 1000 + ts.tv_nsec as u64 / 1_000_000)
+    };
+    now.saturating_sub(start * 1000 / ticks)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn process_age_is_plausible() {
+        let a = super::process_age_ms();
+        assert!(a > 0 && a < 3_600_000, "{a} ms");
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        assert!(super::process_age_ms() >= a + 40);
+    }
+}
