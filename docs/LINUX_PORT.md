@@ -435,7 +435,21 @@ optdepend: poppler, libavif, libheif, ffmpeg, kio-fuse / gvfs-smb, udisks2,
 xdg-desktop-portal, git. The default-file-manager entry (same name, in the user's data dir)
 uses the installed icon when there is one. Not done: an AUR upload (needs an AUR account),
 Flatpak (needs portal support for everything outside the sandbox, which Phase 3 mostly
-uses), Debian/Fedora packages.
+uses).
+
+**Debian / Fedora** (2026-11-10): `packaging/linux/nfpm.yaml` describes one package for
+both formats, with the same layout as the Arch one; `packaging/linux/build-packages.sh` runs
+[nfpm](https://nfpm.goreleaser.com) on binaries already built and writes `dist/`. Version:
+`0.5.2+git300.gabc1234` (workspace version, commit count, commit). The
+`linux-packages.yml` workflow builds both on Ubuntu 22.04 (x86_64 and aarch64 runners), so
+they need glibc 2.35+ (the .deb's `libc6 (>= …)` is the newest glibc symbol the binaries
+use), installs each in a clean `debian:12` / `fedora:latest` container and checks that
+`ldd` finds every library, then uploads them as artifacts (on `main`, on PRs that touch
+the packaging, by hand). The .rpm depends on library names (`libEGL.so.1()(64bit)`…)
+rather than package names, so Fedora and openSUSE both resolve it; the .deb accepts
+`libasound2 | libasound2t64` (Ubuntu 24.04's rename). GPUI loads Wayland, EGL, Vulkan and
+fontconfig at run time, so those are listed by hand. Not done: publishing them as GitHub
+release downloads or in an apt/dnf repository (COPR, OBS).
 
 ## Testing
 
