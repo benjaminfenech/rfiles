@@ -448,8 +448,16 @@ use), installs each in a clean `debian:12` / `fedora:latest` container and check
 the packaging, by hand). The .rpm depends on library names (`libEGL.so.1()(64bit)`…)
 rather than package names, so Fedora and openSUSE both resolve it; the .deb accepts
 `libasound2 | libasound2t64` (Ubuntu 24.04's rename). GPUI loads Wayland, EGL, Vulkan and
-fontconfig at run time, so those are listed by hand. Not done: publishing them as GitHub
-release downloads or in an apt/dnf repository (COPR, OBS).
+fontconfig at run time, so those are listed by hand.
+
+**Releases** (2026-11-11): `linux-packages.yml` also builds the PKGBUILD in an
+`archlinux:base-devel` container (`RUSTYFILES_SOURCE` points makepkg at the checkout
+instead of GitHub) and installs it, and it can be called with a `ref`.
+`linux-release.yml` runs it for a pushed `v*` tag and attaches every package to that tag's
+release; a tagged build is versioned with the tag alone (`0.6.0`). Upstream's `release.yml`
+(Windows, Velopack) runs on the same tag and creates the release, so the Linux job waits up
+to an hour for it and creates it only if it never appears. Not done: an apt/dnf repository
+(COPR, OBS), Flatpak.
 
 ## Testing
 

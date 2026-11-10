@@ -1,16 +1,23 @@
 name: Linux packages
 
 # .deb and .rpm for x86_64 and aarch64, built on Ubuntu 22.04 so they run on glibc 2.35 and
-# newer (Debian 12+, Ubuntu 22.04+, Fedora, openSUSE). Each package is installed in a clean
-# Debian / Fedora container before it's uploaded as an artifact.
+# newer (Debian 12+, Ubuntu 22.04+, Fedora, openSUSE), and the Arch package from
+# packaging/arch/PKGBUILD. Each package is installed in a clean container before it's
+# uploaded as an artifact. linux-release.yml runs this for a tag and attaches the packages.
 on:
   push:
     branches: [main]
   pull_request:
     paths:
-      - "packaging/linux/**"
+      - "packaging/**"
       - ".github/workflows/linux-packages.yml"
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: The tag or commit to build
+        type: string
+        required: true
 
 env:
   NFPM_VERSION: "2.48.0"
@@ -29,6 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.ref }}
           # the version counts commits
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
@@ -63,4 +71,36 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: rustyfiles-linux-${{ matrix.nfpm_arch }}
+          path: dist/*
+
+  arch:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      # git before checkout: without it, checkout downloads a tarball (no history for pkgver)
+      - name: Update and install git
+        run: pacman -Syu --noconfirm --needed git
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - name: Build with makepkg
+        run: |
+          # makepkg doesn't run as root; -s installs the dependencies through sudo
+          useradd -m builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+          git config --system --add safe.directory '*'
+          chown -R builder: .
+          cd packaging/arch
+          sudo -u builder env RUSTYFILES_SOURCE="git+file://$GITHUB_WORKSPACE#commit=$(git rev-parse HEAD)" \
+            makepkg -s --noconfirm
+      - name: Install and check
+        run: |
+          pacman -U --noconfirm packaging/arch/rustyfiles-git-[0-9]*.pkg.tar.zst
+          if ldd /usr/lib/rustyfiles/rustyfiles /usr/lib/rustyfiles/directlook | grep "not found"; then exit 1; fi
+          test -L /usr/bin/rustyfiles && test -f /usr/share/applications/rustyfiles.desktop
+          mkdir dist && cp packaging/arch/rustyfiles-git-[0-9]*.pkg.tar.zst dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rustyfiles-linux-arch-x86_64
           path: dist/*

@@ -1,0 +1,50 @@
+name: Linux release
+
+# Push a tag like v0.6.0: builds the Linux packages (.deb, .rpm for x86_64 and aarch64, the
+# Arch package) and attaches them to that tag's GitHub release. release.yml (upstream's, for
+# Windows) runs on the same tag and creates the release; this waits for it, and creates the
+# release itself only if it never appears. Run it by hand to (re)attach a tag's packages.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to build and attach to (e.g. v0.6.0)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  packages:
+    uses: ./.github/workflows/linux-packages.yml
+    with:
+      ref: ${{ inputs.tag || github.ref_name }}
+
+  publish:
+    needs: packages
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: rustyfiles-linux-*
+          path: dist
+          merge-multiple: true
+      - name: Wait for the release
+        run: |
+          # the Windows build takes about 25 minutes before it publishes
+          for _ in $(seq 60); do
+            gh release view "$TAG" >/dev/null 2>&1 && exit 0
+            sleep 60
+          done
+          echo "no release for $TAG after an hour: creating it"
+          gh release create "$TAG" --verify-tag --title "rustyfiles ${TAG#v}" --notes "Linux packages for $TAG."
+      - name: Attach the packages
+        run: |
+          ls -l dist
+          gh release upload "$TAG" dist/* --clobber
