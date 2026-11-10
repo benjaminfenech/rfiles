@@ -39,7 +39,8 @@ optdepends=(
 provides=("$_name")
 conflicts=("$_name")
 options=('!lto')
-source=("$_name::git+$url.git")
+# CI builds a given checkout instead: RUSTYFILES_SOURCE='git+file:///path#commit=<sha>'
+source=("$_name::${RUSTYFILES_SOURCE:-git+$url.git}")
 sha256sums=('SKIP')
 
 pkgver() {
