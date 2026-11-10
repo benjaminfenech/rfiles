@@ -457,7 +457,30 @@ instead of GitHub) and installs it, and it can be called with a `ref`.
 release; a tagged build is versioned with the tag alone (`0.6.0`). Upstream's `release.yml`
 (Windows, Velopack) runs on the same tag and creates the release, so the Linux job waits up
 to an hour for it and creates it only if it never appears. Not done: an apt/dnf repository
-(COPR, OBS), Flatpak.
+(COPR, OBS).
+
+**Flatpak** (2026-11-11): `packaging/flatpak/io.github.benjaminfenech.rustyfiles.yml`
+(Freedesktop 26.08, rust-stable; `linux-packages.yml` builds a bundle per architecture in
+Flathub's CI image, and releases attach them). A file manager can't live in a tight
+sandbox, so it has `--filesystem=host`, `org.freedesktop.Flatpak` (host commands),
+UDisks2, GVfs, notifications, the tray watcher and `FileManager1`. rf-linux's `sandbox`
+module makes it act like a native install: at startup `adopt_host_dirs` points the XDG
+folders back at the host's (trash, mimeapps.list, bookmarks, user dirs, thumbnails and
+rustyfiles' settings are the same files), adds the host's and Flatpak's data dirs
+(`/run/host/usr/share`, the Flatpak exports) for desktop entries and icons, and moves
+`TMPDIR` to `$XDG_RUNTIME_DIR/app/<id>` (host tools write their output there). `tool()`
+runs git, gio, gsettings, poppler, avif/heif tools and thumbnailers on the host through
+`flatpak-spawn --host --watch-bus` (a timeout's kill ends the host process too) when the
+host has them, else the sandbox's: the runtime has its own ffmpeg, gio and gsettings, but
+they see the sandbox (no GVfs mounts, a private settings store, fewer codecs). rf-player
+does the same for ffmpeg/ffprobe. `launch()` starts apps,
+terminals, xdg-open and the IDE on the host without `--watch-bus` (they outlive
+rustyfiles). A program neither side has still fails with `NotFound`, so the "not
+installed" paths are unchanged. Desktop entries rustyfiles writes (default file manager,
+its D-Bus service, autostart) run `flatpak run --command=… <id>`; the main window's
+Wayland app id is the Flatpak id (its desktop entry); the tray registers without its own
+`StatusNotifierItem-…` name (the sandbox can't own it). The build downloads crates with
+network access; Flathub would need `cargo-sources.json` instead.
 
 ## Testing
 

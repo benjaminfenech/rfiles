@@ -33,6 +33,35 @@ const READ_THROUGH_SECS: f64 = 2.0;
 /// Most audio channels passed on (the player mixes down to the device's).
 const MAX_CHANNELS: u32 = 8;
 
+/// `ffmpeg` / `ffprobe`. Inside Flatpak, the host's when it has one (the user's own build,
+/// with its codecs), else the runtime's (rf-linux's `sandbox::tool` does the same for the
+/// other tools); `--watch-bus` ends it with flatpak-spawn, so dropping a [`Proc`] stops it
+/// there too.
+fn tool(prog: &str) -> Command {
+    let on_host = |p: &str| {
+        static SEEN: std::sync::Mutex<Vec<(String, bool)>> = std::sync::Mutex::new(Vec::new());
+        let mut seen = SEEN.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some((_, known)) = seen.iter().find(|(q, _)| q == p) {
+            return *known;
+        }
+        let found = Command::new("flatpak-spawn")
+            .args(["--host", "sh", "-c", "command -v -- \"$1\" >/dev/null", "sh", p])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .is_ok_and(|s| s.success());
+        seen.push((p.to_string(), found));
+        found
+    };
+    if cfg!(unix) && Path::new("/.flatpak-info").exists() && on_host(prog) {
+        let mut c = Command::new("flatpak-spawn");
+        c.args(["--host", "--watch-bus", prog]);
+        return c;
+    }
+    Command::new(prog)
+}
+
 /// A running `ffmpeg`, killed when dropped.
 struct Proc {
     child: Child,
@@ -41,7 +70,7 @@ struct Proc {
 
 impl Proc {
     fn spawn(args: &[String], path: &Path, seek: f64) -> std::io::Result<Proc> {
-        let mut cmd = Command::new("ffmpeg");
+        let mut cmd = tool("ffmpeg");
         cmd.args(["-nostdin", "-hide_banner", "-loglevel", "error"]);
         if seek > 0.0 {
             // before -i: a fast seek to the keyframe before, then decoded up to `seek` exactly
@@ -272,7 +301,7 @@ pub fn open(path: &Path) -> anyhow::Result<SharedSource> {
 
 impl FfmpegSource {
     pub fn open(path: &Path) -> anyhow::Result<FfmpegSource> {
-        let out = Command::new("ffprobe")
+        let out = tool("ffprobe")
             .args([
                 "-v",
                 "error",

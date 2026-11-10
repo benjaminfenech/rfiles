@@ -306,7 +306,27 @@ pub fn render(p: &Palette, cx: &mut App) -> AnyElement {
 }
 
 /// What a desktop shortcut runs to open the quick search (Linux has no global hotkey).
-const QS_COMMAND: &str = "rustyfiles --quick-search";
+/// The command a desktop shortcut runs for quick search (Linux).
+#[cfg_attr(windows, allow(dead_code))]
+fn qs_command() -> &'static str {
+    static CMD: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    CMD.get_or_init(|| {
+        #[cfg(unix)]
+        if let Some(id) = rf_win::sandbox::flatpak_id() {
+            return format!("flatpak run {id} --quick-search");
+        }
+        "rustyfiles --quick-search".to_string()
+    })
+}
+
+#[cfg_attr(windows, allow(dead_code))]
+fn qs_command_desc() -> &'static str {
+    static DESC: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    DESC.get_or_init(|| {
+        let c = qs_command();
+        format!("Add a shortcut in your desktop's keyboard settings that runs `{c}` (Hyprland: bind = ALT, SPACE, exec, {c})")
+    })
+}
 
 /// Quick search: on/off, its shortcut (recorded like the keyboard shortcuts), web engine,
 /// bookmarks.
@@ -360,8 +380,8 @@ fn quick_search_cards(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement
                 p,
                 L::Keyboard,
                 t!("Kısayol"),
-                Some("Add a shortcut in your desktop's keyboard settings that runs `rustyfiles --quick-search` (Hyprland: bind = ALT, SPACE, exec, rustyfiles --quick-search)"),
-                button("qs-copy-command", p, "Copy command", |_, cx| cx.write_to_clipboard(gpui_kit::ClipboardItem::new_string(QS_COMMAND.to_string()))),
+                Some(qs_command_desc()),
+                button("qs-copy-command", p, "Copy command", |_, cx| cx.write_to_clipboard(gpui_kit::ClipboardItem::new_string(qs_command().to_string()))),
             )
         },
         card(

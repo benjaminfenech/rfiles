@@ -13,14 +13,7 @@ for b in rustyfiles directlook; do
   [[ -x $bin_dir/$b ]] || { echo "missing $bin_dir/$b: build with cargo build --release -p rf-app --bins" >&2; exit 1; }
 done
 
-# The workspace version plus the commit count and commit (no git tags in this repo), the
-# same scheme as the Arch package: 0.5.2+git300.gabc1234
-ver=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)
-version="$ver+git$(git rev-list --count HEAD).g$(git rev-parse --short=7 HEAD)"
-# a release (HEAD is tagged v…): the tag's version alone
-if tag=$(git describe --exact-match --tags --match 'v[0-9]*' HEAD 2>/dev/null); then
-  version=${tag#v}
-fi
+version=$(packaging/linux/version.sh)
 
 case $(uname -m) in
   x86_64) arch=amd64 ;;

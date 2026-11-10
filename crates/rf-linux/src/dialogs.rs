@@ -105,7 +105,7 @@ fn set_in(dir: &Path, name: &str, exe: &Path, args: &[&str], on: bool) -> anyhow
         };
     }
     std::fs::create_dir_all(dir)?;
-    let exec = std::iter::once(exe.to_string_lossy().into_owned()).chain(args.iter().map(|a| a.to_string())).map(|a| exec_quote(&a)).collect::<Vec<_>>().join(" ");
+    let exec = std::iter::once(crate::sandbox::exec_for(&exe.to_string_lossy())).chain(args.iter().map(|a| exec_quote(a))).collect::<Vec<_>>().join(" ");
     let text = format!("[Desktop Entry]\nType=Application\nName={name}\nExec={exec}\nX-GNOME-Autostart-enabled=true\n");
     std::fs::write(&file, text)?;
     Ok(())

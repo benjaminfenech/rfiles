@@ -80,7 +80,7 @@ pub fn remote_url(local: &Path) -> Option<String> {
         return reply.body().deserialize::<String>().ok();
     }
     if rest.starts_with("gvfs/") {
-        let mut c = std::process::Command::new("gio");
+        let mut c = crate::sandbox::tool("gio", &[]);
         c.args(["info", "-a", "standard::name", s]);
         let out = crate::tool::run(c, Duration::from_secs(10)).ok()?;
         return String::from_utf8_lossy(&out.stdout).lines().find_map(|l| l.strip_prefix("uri: ")).map(|u| u.trim().to_string());
@@ -266,9 +266,8 @@ fn kio_fuse(url: &str) -> anyhow::Result<PathBuf> {
 
 fn gvfs(url: &str) -> anyhow::Result<PathBuf> {
     use crate::tool::{NotInstalled, run};
-    use std::process::Command;
     let gio = |args: &[&str]| {
-        let mut c = Command::new("gio");
+        let mut c = crate::sandbox::tool("gio", &[]);
         c.args(args);
         c
     };

@@ -70,7 +70,8 @@ fn run(cmd: Cmd, icon: &mut Option<Handle<Item>>) {
             Some(h) => {
                 h.update(|i| i.labels = labels);
             }
-            None => match (Item { labels }).spawn() {
+            // Flatpak can't own the per-process StatusNotifierItem-… name: register without it
+            None => match (Item { labels }).disable_dbus_name(crate::sandbox::is_flatpak()).spawn() {
                 Ok(h) => *icon = Some(h),
                 // no tray host (GNOME without the extension): background mode still works
                 Err(e) => log::info!("tray icon: {e}"),

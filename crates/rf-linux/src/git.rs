@@ -103,12 +103,8 @@ pub fn repo_root(dir: &Path) -> Option<PathBuf> {
     dir.ancestors().find(|a| a.join(".git").exists()).map(Path::to_path_buf)
 }
 fn git_cmd(root: &Path) -> Command {
-    let mut c = Command::new("git");
-    c.arg("--no-optional-locks")
-        .current_dir(root)
-        .env("GIT_OPTIONAL_LOCKS", "0")
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .stdin(Stdio::null());
+    let mut c = crate::sandbox::tool("git", &[("GIT_OPTIONAL_LOCKS", "0"), ("GIT_TERMINAL_PROMPT", "0")]);
+    c.arg("--no-optional-locks").current_dir(root).stdin(Stdio::null());
     c
 }
 /// Runs `git status` for the repository at `repo_root` (use [`repo_root`] to find it).

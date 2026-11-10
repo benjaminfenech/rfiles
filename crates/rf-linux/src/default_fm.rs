@@ -161,8 +161,13 @@ fn without_default(text: &str, mime: &str, id: &str) -> String {
 // ---- the registration ----
 
 fn desktop_entry(exe: &str) -> String {
-    let exe = crate::dialogs::exec_quote(exe);
-    let icon = if icon_installed() { "rustyfiles" } else { "system-file-manager" };
+    let exe = crate::sandbox::exec_for(exe);
+    // inside Flatpak the icon is exported under the app id
+    let icon = match crate::sandbox::flatpak_id() {
+        Some(id) => id,
+        None if icon_installed() => "rustyfiles",
+        None => "system-file-manager",
+    };
     format!(
         "[Desktop Entry]\nType=Application\nName=rustyfiles\nGenericName=File Manager\nComment=Browse files and folders\n\
          Exec={exe} %U\nIcon={icon}\nTerminal=false\nCategories=System;FileTools;FileManager;\n\
@@ -181,7 +186,7 @@ fn icon_installed() -> bool {
 }
 
 fn service_entry(exe: &str) -> String {
-    format!("[D-BUS Service]\nName={SERVICE}\nExec={} {SERVICE_ARG}\n", crate::dialogs::exec_quote(exe))
+    format!("[D-BUS Service]\nName={SERVICE}\nExec={} {SERVICE_ARG}\n", crate::sandbox::exec_for(exe))
 }
 
 /// Asks the session bus to read its service files again: it read them when it started, maybe
@@ -283,6 +288,10 @@ pub fn registered_exe(classes_root: &str) -> Option<PathBuf> {
 /// rebuilt elsewhere) would leave folders opening nowhere: point it at `current`. True when it
 /// re-registered.
 pub fn heal(current: &str, classes_root: &str) -> bool {
+    // inside Flatpak the entry runs `flatpak run`, which doesn't move
+    if crate::sandbox::is_flatpak() {
+        return false;
+    }
     match registered_exe(classes_root) {
         Some(old) if !old.exists() && Path::new(current).exists() => enable(current, classes_root).is_ok(),
         _ => false,

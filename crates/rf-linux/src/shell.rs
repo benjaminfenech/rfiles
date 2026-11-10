@@ -22,7 +22,7 @@ pub(crate) fn spawn_detached(cmd: &mut std::process::Command) -> std::io::Result
 fn exec(path: &Path, verb: Option<&str>, args: Option<&str>) -> anyhow::Result<()> {
     match verb {
         None => {
-            spawn_detached(std::process::Command::new("xdg-open").arg(path))
+            spawn_detached(crate::sandbox::launch("xdg-open").arg(path))
                 .map_err(|e| anyhow::anyhow!("xdg-open: {e}"))
         }
         Some(v) => anyhow::bail!("rf-linux: the `{v}` verb is not implemented on Linux yet"),
@@ -56,7 +56,7 @@ pub fn open_terminal(dir: &Path) -> anyhow::Result<()> {
             .map(String::from),
     );
     for t in &candidates {
-        if spawn_detached(std::process::Command::new(t).current_dir(dir)).is_ok() {
+        if spawn_detached(crate::sandbox::launch(t).current_dir(dir)).is_ok() {
             return Ok(());
         }
     }

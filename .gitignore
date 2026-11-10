@@ -5,3 +5,7 @@
 /notes/
 /rustyfilescom/
 /dist/
+# flatpak-builder
+/build-flatpak/
+/.flatpak-builder/
+/repo/

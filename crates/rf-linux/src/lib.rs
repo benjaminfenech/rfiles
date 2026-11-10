@@ -66,6 +66,7 @@ pub mod udisks;
 pub mod indexer;
 pub mod nameindex;
 pub mod remote;
+pub mod sandbox;
 pub mod jumplist;
 pub mod wsearch;
 pub mod preview_host;

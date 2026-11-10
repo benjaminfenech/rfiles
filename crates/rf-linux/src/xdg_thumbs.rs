@@ -143,10 +143,7 @@ fn thumbnailers() -> &'static HashMap<String, String> {
 }
 
 fn in_path(prog: &str) -> bool {
-    if prog.contains('/') {
-        return Path::new(prog).is_file();
-    }
-    std::env::var_os("PATH").is_some_and(|p| std::env::split_paths(&p).any(|d| d.join(prog).is_file()))
+    crate::sandbox::in_path(prog)
 }
 
 /// Splits an `Exec` line into arguments (double quotes group), with `%i %u %o %s %%` filled in.
@@ -203,7 +200,7 @@ fn external(path: &Path, uri: &str, mime: &str, px: u32) -> Result<RgbaImage, No
     let args = exec_args(exec, path, uri, &out, px);
     let Some((prog, rest)) = args.split_first() else { return Err(NoThumb::Unsupported) };
     let fail = |e: anyhow::Error| NoThumb::Failed(e);
-    let mut child = std::process::Command::new(prog)
+    let mut child = crate::sandbox::tool(prog, &[])
         .args(rest)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())

@@ -2941,10 +2941,14 @@ pub fn open_in_ide(dir: PathBuf, ide: String) {
             }
             #[cfg(not(windows))]
             {
-                std::process::Command::new("code").arg(".").current_dir(&dir).spawn()
+                rf_win::sandbox::launch("code").arg(".").current_dir(&dir).spawn()
             }
         } else {
-            std::process::Command::new(&ide).arg(&dir).spawn()
+            #[cfg(windows)]
+            let mut c = std::process::Command::new(&ide);
+            #[cfg(not(windows))]
+            let mut c = rf_win::sandbox::launch(&ide);
+            c.arg(&dir).spawn()
         };
         if let Err(e) = r {
             log::warn!("open in editor: {e}");

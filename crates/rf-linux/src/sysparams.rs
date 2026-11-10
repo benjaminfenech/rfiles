@@ -10,7 +10,7 @@
 pub fn client_area_animation() -> bool {
     static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *ON.get_or_init(|| {
-        std::process::Command::new("gsettings")
+        crate::sandbox::tool("gsettings", &[])
             .args(["get", "org.gnome.desktop.interface", "enable-animations"])
             .stderr(std::process::Stdio::null())
             .output()
