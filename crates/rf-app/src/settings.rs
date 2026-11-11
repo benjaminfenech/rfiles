@@ -251,15 +251,6 @@ pub enum WebSearch {
     Yandex,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[serde(rename_all = "lowercase")]
-pub enum RendererPref {
-    #[default]
-    Auto,
-    Gpu,
-    Cpu,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -274,10 +265,9 @@ pub struct Settings {
     pub sidebar_rail: bool,
     /// Pane widths (drag the pane edge to resize).
     pub sidebar_width: f32,
-    /// Sidebar sections the user turned off ("drives", "cloud", "libraries", "network", "tags").
+    /// Sidebar sections the user turned off ("drives", "cloud", "network", "tags").
     pub sidebar_hidden: Vec<String>,
     pub preview_width: f32,
-    pub renderer: RendererPref,
     pub restore_session: bool,
     /// Last session's tab locations ("" = Home).
     pub session_tabs: Vec<String>,
@@ -289,7 +279,7 @@ pub struct Settings {
     /// Closing the last window keeps rfiles in the notification area (Files' "leave app
     /// running in the background"): the next window opens instantly.
     pub run_in_background: bool,
-    /// Status bar: listing time and the GPU/CPU renderer badge (developer info).
+    /// Status bar: how long the folder took to list (developer info).
     pub show_perf_info: bool,
     /// A notification when a long operation finishes while rfiles is not in front.
     pub notify_long_ops: bool,
@@ -378,7 +368,6 @@ pub struct Settings {
     pub copy_verify: CopyVerify,
     /// Copy speed limit in MB/s (0 = none).
     pub copy_speed_limit: u32,
-    pub show_libraries: bool,
     /// Double-clicking a ZIP/7z/tar opens it like a folder (read-only).
     pub browse_archives: bool,
     /// Our own name index of the local drives: searching in subfolders takes milliseconds.
@@ -419,7 +408,6 @@ impl Default for Settings {
             sidebar_width: 232.,
             sidebar_hidden: Vec::new(),
             preview_width: 300.,
-            renderer: RendererPref::Auto,
             restore_session: true,
             session_tabs: Vec::new(),
             session_active: 0,
@@ -479,7 +467,6 @@ impl Default for Settings {
             fast_file_ops: true,
             copy_verify: CopyVerify::Off,
             copy_speed_limit: 0,
-            show_libraries: false,
             browse_archives: true,
             name_index: true,
             index_excluded: Vec::new(),
@@ -639,7 +626,6 @@ impl Settings {
         ANIM.store(self.animations as u8, Ordering::Relaxed);
         DRIVE_NAMES.store(self.drive_names as u8, Ordering::Relaxed);
         ADDRESS_URL.store(self.address_shows_url, Ordering::Relaxed);
-        gpui_windows::SMOOTH_SCROLL.store(self.smooth_scroll, Ordering::Relaxed);
         THEME.store(
             match self.theme {
                 ThemePref::System => 0,
@@ -648,15 +634,6 @@ impl Settings {
             },
             Ordering::Relaxed,
         );
-        // An explicit RFILES_RENDERER env var wins (debugging).
-        if std::env::var_os("RFILES_RENDERER").is_none() {
-            use gpui_windows::hybrid::{RendererMode, set_mode};
-            set_mode(match self.renderer {
-                RendererPref::Auto => RendererMode::Auto,
-                RendererPref::Gpu => RendererMode::Gpu,
-                RendererPref::Cpu => RendererMode::Cpu,
-            });
-        }
     }
 
     pub fn save(&self) {

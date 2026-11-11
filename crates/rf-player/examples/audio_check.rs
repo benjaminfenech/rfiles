@@ -1,9 +1,9 @@
-//! WASAPI çıkışını elle denemek: `cargo run --release -p rf-player --example wasapi_check -- <ses dosyası>`
+//! Ses çıkışını (ALSA, cpal) elle denemek: `cargo run --release -p rf-player --example audio_check -- <ses dosyası>`
 //! (sessiz bir dosyayla çalıştırın).
 
 fn main() -> anyhow::Result<()> {
     let path = std::env::args().nth(1).expect("dosya");
-    let sink = rf_player::wasapi_sink()?;
+    let sink = rf_player::cpal_sink()?;
     println!("aygıt: {} Hz, {} kanal", sink.sample_rate(), sink.channels());
     let mut p = rf_player::Player::new(rf_player::open(std::path::Path::new(&path))?, sink);
     p.play();

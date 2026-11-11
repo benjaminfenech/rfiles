@@ -8,91 +8,15 @@
 //! session while the child runs. The child is never started through a shell.
 
 use std::ffi::OsString;
-#[cfg(windows)]
-use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
-#[cfg(windows)]
-use windows::Win32::Foundation::ERROR_SUCCESS;
-#[cfg(windows)]
-use windows::Win32::System::Registry::{
-    HKEY, HKEY_LOCAL_MACHINE, KEY_QUERY_VALUE, KEY_WOW64_32KEY, KEY_WOW64_64KEY, REG_SAM_FLAGS, RegCloseKey,
-    RegOpenKeyExW, RegQueryValueExW,
-};
-#[cfg(windows)]
-use windows::core::PCWSTR;
 
 use super::{Cancelled, CompressCtx, CompressStats, Progress, collect};
 
-#[cfg(windows)]
-const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-
-#[cfg(windows)]
-fn wide(s: &str) -> Vec<u16> {
-    s.encode_utf16().chain(std::iter::once(0)).collect()
-}
-
-/// Reads a `REG_SZ` / `REG_EXPAND_SZ` value under HKLM (`None` name = the key's default value).
-#[cfg(windows)]
-fn reg_string(subkey: &str, value: Option<&str>, view: REG_SAM_FLAGS) -> Option<String> {
-    unsafe {
-        let sub = wide(subkey);
-        let mut key = HKEY::default();
-        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(sub.as_ptr()), None, KEY_QUERY_VALUE | view, &mut key)
-            != ERROR_SUCCESS
-        {
-            return None;
-        }
-        let name = value.map(wide);
-        let name_ptr = name.as_ref().map(|n| PCWSTR(n.as_ptr())).unwrap_or(PCWSTR::null());
-        let mut size = 0u32;
-        let mut out = None;
-        if RegQueryValueExW(key, name_ptr, None, None, None, Some(&mut size)) == ERROR_SUCCESS && size >= 2 {
-            let mut buf = vec![0u16; size as usize / 2 + 1];
-            let mut got = size;
-            if RegQueryValueExW(key, name_ptr, None, None, Some(buf.as_mut_ptr().cast()), Some(&mut got))
-                == ERROR_SUCCESS
-            {
-                let n = (got as usize / 2).min(buf.len());
-                let s = String::from_utf16_lossy(&buf[..n]);
-                let s = s.trim_end_matches('\0').trim().trim_matches('"').to_string();
-                if !s.is_empty() {
-                    out = Some(s);
-                }
-            }
-        }
-        let _ = RegCloseKey(key);
-        out
-    }
-}
-
-/// `Rar.exe` candidates in lookup order (existence is checked by the caller).
-#[cfg(windows)]
-fn candidates() -> Vec<PathBuf> {
-    let mut dirs: Vec<PathBuf> = Vec::new();
-    let mut push_exe = |exe: Option<String>| {
-        if let Some(p) = exe.and_then(|e| Path::new(&e).parent().map(Path::to_path_buf)) {
-            dirs.push(p);
-        }
-    };
-    for view in [KEY_WOW64_64KEY, KEY_WOW64_32KEY] {
-        push_exe(reg_string(r"SOFTWARE\WinRAR", Some("exe64"), view));
-        push_exe(reg_string(r"SOFTWARE\WinRAR", Some("exe32"), view));
-        push_exe(reg_string(r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\WinRAR.exe", None, view));
-    }
-    for var in ["ProgramFiles", "ProgramFiles(x86)"] {
-        if let Some(pf) = std::env::var_os(var) {
-            dirs.push(Path::new(&pf).join("WinRAR"));
-        }
-    }
-    dirs.into_iter().map(|d| d.join("Rar.exe")).collect()
-}
-
 /// The `rar` console tool on `PATH` (RARLAB's Linux build, e.g. the AUR `rar` package).
-#[cfg(unix)]
 fn candidates() -> Vec<PathBuf> {
     std::env::var_os("PATH")
         .map(|p| std::env::split_paths(&p).map(|d| d.join("rar")).collect())
@@ -312,11 +236,6 @@ trait NoConsole {
 }
 
 impl NoConsole for Command {
-    #[cfg(windows)]
-    fn no_console_window(&mut self) -> &mut Self {
-        self.creation_flags(CREATE_NO_WINDOW)
-    }
-    #[cfg(not(windows))]
     fn no_console_window(&mut self) -> &mut Self {
         self
     }

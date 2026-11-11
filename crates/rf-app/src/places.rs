@@ -189,12 +189,8 @@ pub struct Places {
     pub cloud: Vec<Pinned>,
     pub pinned: Vec<Pinned>,
     pub recent: Vec<Recent>,
-    pub libraries: Vec<rf_linux::libraries::Library>,
     /// Network locations ("Add a network location" shortcuts): (name, target).
     pub network: Vec<(String, std::path::PathBuf)>,
-    /// Devices under This PC that are not drives (MTP phones, cameras): browsed as shell
-    /// folders.
-    pub devices: Vec<rf_linux::shellfolder::ShellChild>,
     pub loaded: bool,
     _task: Option<Task<()>>,
 }
@@ -202,7 +198,7 @@ pub struct Places {
 impl Places {
     pub fn new(cx: &mut Context<Self>) -> Self {
         let mut this =
-            Self { drives: Vec::new(), cloud: Vec::new(), pinned: Vec::new(), recent: Vec::new(), libraries: Vec::new(), network: Vec::new(), devices: Vec::new(), loaded: false, _task: None };
+            Self { drives: Vec::new(), cloud: Vec::new(), pinned: Vec::new(), recent: Vec::new(), network: Vec::new(), loaded: false, _task: None };
         this.refresh(cx);
         // Notice drives appearing/disappearing (USB, network mappings) without any shell hooks.
         cx.spawn(async move |this, cx| {
@@ -221,33 +217,6 @@ impl Places {
                     }
                 }
             }
-        })
-        .detach();
-        // Phones come and go without a drive letter: ask the shell now and then. Off the UI
-        // thread, and the list is only replaced when it changed. Not while no window is in front
-        // of the user (minimised, or another app active): enumerating This PC loads shell
-        // extensions and can touch the drives; the look happens again when one comes back.
-        cx.spawn(async move |this, cx| loop {
-            if !rf_linux::window::app_in_front() {
-                cx.background_executor().timer(std::time::Duration::from_secs(5)).await;
-                if this.upgrade().is_none() {
-                    break;
-                }
-                continue;
-            }
-            let found = cx.background_spawn(async move { rf_linux::shellfolder::devices() }).await;
-            let alive = this
-                .update(cx, |p, cx| {
-                    if p.devices != found {
-                        p.devices = found;
-                        cx.notify();
-                    }
-                })
-                .is_ok();
-            if !alive {
-                break;
-            }
-            cx.background_executor().timer(std::time::Duration::from_secs(5)).await;
         })
         .detach();
         this
@@ -280,18 +249,16 @@ impl Places {
             drives.extend(rf_linux::drives::unmounted_drives());
             let recent = load_recent(14);
             let cloud = load_cloud_and_wsl();
-            let libraries = rf_linux::libraries::list();
             let network = rf_linux::network::network_shortcuts();
-            (pinned, drives, recent, cloud, libraries, network)
+            (pinned, drives, recent, cloud, network)
         });
         self._task = Some(cx.spawn(async move |this, cx| {
-            let (pinned, drives, recent, cloud, libraries, network) = work.await;
+            let (pinned, drives, recent, cloud, network) = work.await;
             let _ = this.update(cx, |p, cx| {
                 p.pinned = pinned;
                 p.drives = drives;
                 p.recent = recent;
                 p.cloud = cloud;
-                p.libraries = libraries;
                 p.network = network;
                 p.loaded = true;
                 cx.notify();

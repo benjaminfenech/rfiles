@@ -4,13 +4,11 @@
 //! The file is only read; the saved copy goes to the temp folder and is deleted.
 
 /// This process's resident memory in MB (`/proc/self/status`).
-#[cfg(unix)]
 fn rss_mb() -> f64 {
     let s = std::fs::read_to_string("/proc/self/status").unwrap_or_default();
     s.lines().find_map(|l| l.strip_prefix("VmRSS:")?.trim().strip_suffix("kB")?.trim().parse::<f64>().ok()).unwrap_or(0.0) / 1024.0
 }
 
-#[cfg(unix)]
 fn main() -> anyhow::Result<()> {
     use std::path::PathBuf;
     use std::time::Instant;
@@ -49,7 +47,3 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(not(unix))]
-fn main() {
-    eprintln!("this example is for Linux");
-}

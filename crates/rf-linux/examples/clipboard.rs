@@ -2,7 +2,6 @@
 //! `cargo run -p rf-linux --example clipboard -- copy|cut <file>… [seconds]` puts files on it
 //! (and keeps serving for `seconds`, default 10); `… -- show` prints what is there.
 
-#[cfg(unix)]
 fn main() -> anyhow::Result<()> {
     use rf_linux::clipboard::*;
     use rf_linux::fileops::Transfer;
@@ -30,7 +29,3 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(not(unix))]
-fn main() {
-    eprintln!("this example is for the Linux build (rf-linux)");
-}

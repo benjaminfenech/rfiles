@@ -29,7 +29,6 @@ mod about;
 mod ops;
 mod places;
 mod settings;
-mod shell_view;
 mod select_box;
 mod settings_view;
 mod shelf_view;
@@ -176,9 +175,8 @@ pub fn main() {
     rf_linux::shell::suppress_critical_error_dialogs();
     // before any shell icon/thumbnail work: see keep_gdiplus_alive (loader-lock deadlock)
     rf_linux::thumbs::keep_gdiplus_alive();
-    // Logs go to stderr; override with RUST_LOG. The hybrid renderer (gpui_windows) logs its
-    // GPU/CPU switches at info level.
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn,gpui_windows=info"))
+    // Logs go to stderr; override with RUST_LOG.
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn"))
         .target(env_logger::Target::Stderr)
         .format_timestamp_millis()
         .init();

@@ -1,7 +1,6 @@
 //! Makes a thumbnail (or the icon when there is none) and saves it as PNG:
 //! `cargo run -p rf-linux --example thumbnail -- <file> [size] [out.png]`
 
-#[cfg(unix)]
 fn main() -> anyhow::Result<()> {
     let mut a = std::env::args().skip(1);
     let file = a.next().expect("file");
@@ -19,7 +18,3 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(not(unix))]
-fn main() {
-    eprintln!("this example is for the Linux build (rf-linux)");
-}

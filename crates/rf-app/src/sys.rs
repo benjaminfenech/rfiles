@@ -1,8 +1,5 @@
-//! Small input and system queries that differ per platform. On Windows these are the same
-//! Win32 calls the app always made; on Linux GPUI owns the input state: the modifier keys come
-//! from the window's events, and the global cursor position doesn't exist (Wayland).
-
-pub type Rect = rf_linux::RECT;
+//! Small input and system queries. GPUI owns the input state: the modifier keys come from the
+//! window's events, and the global cursor position doesn't exist (Wayland).
 
 /// Mouse position in screen pixels. Linux (Wayland) has no global cursor position: (0, 0).
 pub fn cursor_pos() -> (i32, i32) {
@@ -95,14 +92,6 @@ fn fc_family(pattern: &str) -> Option<String> {
     let s = String::from_utf8(out.stdout).ok()?;
     let first = s.split(',').next()?.trim();
     (!first.is_empty()).then(|| first.to_string())
-}
-
-/// Whether menus, flyouts and dropdowns open as their own popup windows instead of being drawn
-/// inside the app window: never. Wayland can't place a window at the cursor, and tiling window
-/// managers (Hyprland, Sway, i3…) would tile a popup window next to the app. (The popup-window
-/// code still behind this goes with the gpui-windows shim.)
-pub fn separate_popups() -> bool {
-    false
 }
 
 /// Inserts a zero-width space after every path separator, so a long path can wrap there.

@@ -1,5 +1,4 @@
 //! Tries the UDisks2 calls: `list | mount <device> | unmount <mount point> | eject <mount point>`.
-#[cfg(unix)]
 fn main() -> anyhow::Result<()> {
     use rf_linux::udisks;
     use std::path::Path;
@@ -28,5 +27,3 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(not(unix))]
-fn main() {}

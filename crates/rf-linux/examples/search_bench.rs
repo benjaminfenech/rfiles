@@ -6,14 +6,12 @@
 //! `/proc/self/status`.
 
 /// (VmRSS, VmHWM) of this process in MB.
-#[cfg(unix)]
 fn rss_mb() -> (u64, u64) {
     let s = std::fs::read_to_string("/proc/self/status").unwrap_or_default();
     let kb = |key: &str| s.lines().find_map(|l| l.strip_prefix(key)?.trim().strip_suffix("kB")?.trim().parse::<u64>().ok()).unwrap_or(0);
     (kb("VmRSS:") >> 10, kb("VmHWM:") >> 10)
 }
 
-#[cfg(unix)]
 fn main() -> anyhow::Result<()> {
     use std::path::PathBuf;
     use std::time::{Duration, Instant};
@@ -67,7 +65,3 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(not(unix))]
-fn main() {
-    eprintln!("this example is for Linux");
-}

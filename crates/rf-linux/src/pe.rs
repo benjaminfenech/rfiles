@@ -7,7 +7,6 @@
 use std::io::Read;
 use std::path::Path;
 
-
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct PeInfo {
     /// "x64", "x86", "ARM64"…
@@ -63,19 +62,6 @@ fn version_strings(_path: &Path, _out: &mut PeInfo) {}
 
 #[cfg(test)]
 mod tests {
-    #[cfg(windows)]
-    #[test]
-    fn reads_notepad() {
-        let p = std::path::Path::new(r"C:\Windows\System32\notepad.exe");
-        if !p.exists() {
-            return;
-        }
-        let i = super::info(p).expect("notepad is a PE image");
-        assert_ne!(i.arch, "?");
-        assert!(i.version.is_some());
-        assert!(i.company.as_deref().unwrap_or("").contains("Microsoft"), "{i:?}");
-    }
-
     #[test]
     fn non_pe_is_none() {
         assert_eq!(super::machine(b"hello"), None);

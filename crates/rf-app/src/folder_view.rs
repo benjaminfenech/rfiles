@@ -211,10 +211,6 @@ enum Msg {
     View(View),
     /// Search hits: entries plus their parent folders.
     Hits(Vec<Entry>, Vec<Arc<std::path::Path>>),
-    /// Shell folder items (a phone, Network…): entries plus what the shell knows about each.
-    Shell(Vec<Entry>, Vec<rf_linux::shellfolder::ShellChild>),
-    /// The shell's own name for the folder being listed.
-    ShellName(String),
     Done(Result<usize, String>),
 }
 
@@ -257,8 +253,6 @@ pub struct FolderView {
     pub history: History,
     /// Set by the workspace while this view is one of two panes.
     pub(crate) dual: bool,
-    /// (library file, default save folder) of the library being shown (paste/new item target).
-    pub(crate) library_save: Option<(PathBuf, PathBuf)>,
     places: Entity<Places>,
     pub(crate) images: Entity<ImageCache>,
     pub view_mode: ViewMode,
@@ -276,10 +270,6 @@ pub struct FolderView {
     pub(crate) entries: Vec<Entry>,
     /// Search mode only: parent folder of each entry (aligned with `entries`).
     parents: Vec<Arc<std::path::Path>>,
-    /// Shell folders only: what the shell knows about each entry (aligned with `entries`).
-    pub(crate) shell_items: Vec<rf_linux::shellfolder::ShellChild>,
-    /// Shell folders only: the shell's name for the folder (when the location carries none).
-    shell_title: Option<String>,
     visible: Vec<u32>,
     /// The entries in sort order, for the sort and the entries generation it was made with.
     sorted_cache: Option<(SortSpec, u64, Arc<Vec<u32>>)>,
@@ -406,7 +396,6 @@ impl FolderView {
         let mut this = Self {
             history: History::new(location),
             dual: false,
-            library_save: None,
             places,
             images,
             view_mode: match prefs.default_view {
@@ -428,8 +417,6 @@ impl FolderView {
             entries_gen: 0,
             cloud_cache: Default::default(),
             parents: Vec::new(),
-            shell_items: Vec::new(),
-            shell_title: None,
             visible: Vec::new(),
             sort: SortSpec {
                 key: prefs.default_sort,
@@ -521,13 +508,6 @@ impl FolderView {
                 return format!("{} {}", crate::t!("Etiket:"), crate::i18n::td(&d.name));
             }
         }
-        if let Location::Shell { name, .. } = self.location() {
-            if name.is_empty() {
-                if let Some(t) = &self.shell_title {
-                    return t.clone();
-                }
-            }
-        }
         if let Location::Path(p) = self.location() {
             if let Some(l) = rf_linux::localized::folder_label(p, None) {
                 return l.to_string();
@@ -546,8 +526,6 @@ impl FolderView {
             Location::RecycleBin => L::Trash,
             Location::Search { .. } => L::Search,
             Location::Tag(_) => L::Tag,
-            Location::Library { .. } => L::Library,
-            Location::Shell { .. } => L::Usb,
             Location::DiskUsage(_) => L::ChartPie,
             Location::Path(p) if rf_linux::network::server_root(p).is_some() => L::Server,
             // the archive itself or a folder inside it (name check only: no disk access here)
@@ -1025,8 +1003,6 @@ impl FolderView {
             self.entries.clear();
             self.entries_gen += 1;
             self.parents.clear();
-            self.shell_items.clear();
-            self.shell_title = None;
             self.visible.clear();
             self.selected.clear();
             self.cursor = None;
@@ -1046,94 +1022,6 @@ impl FolderView {
             }));
         }
 
-        if let Location::Library { file, .. } = self.location().clone() {
-            self.library_save = self
-                .places
-                .read(cx)
-                .libraries
-                .iter()
-                .find(|l| l.file == file)
-                .and_then(|l| l.default_save.clone().or_else(|| l.folders.first().cloned()))
-                .map(|d| (file.clone(), d));
-            self.loading = true;
-            self.load_started = Instant::now();
-            let generation = self.generation;
-            let cancel = self.cancel.clone();
-            let (tx, mut rx) = mpsc::unbounded::<Msg>();
-            std::thread::Builder::new()
-                .name("rf-library".into())
-                .spawn(move || {
-                    let Some(lib) = rf_linux::libraries::load(&file) else {
-                        let _ = tx.unbounded_send(Msg::Done(Err("Kütüphane açılamadı".into())));
-                        return;
-                    };
-                    let mut total = 0usize;
-                    let mut last_err = None;
-                    for dir in &lib.folders {
-                        let parent: Arc<std::path::Path> = dir.as_path().into();
-                        let r = rf_linux::list_dir(dir, 512, &|| cancel.load(Ordering::Relaxed), &mut |b| {
-                            let ps = vec![parent.clone(); b.len()];
-                            let _ = tx.unbounded_send(Msg::Hits(b, ps));
-                        });
-                        match r {
-                            Ok(n) => total += n,
-                            Err(e) => last_err = Some(e.to_string()),
-                        }
-                    }
-                    let res = if total == 0 { last_err.map_or(Ok(0), Err) } else { Ok(total) };
-                    let _ = tx.unbounded_send(Msg::Done(res));
-                })
-                .ok();
-            self._load_task = Some(cx.spawn(async move |this, cx| {
-                let mut msgs = Vec::new();
-                while let Some(m) = rx.next().await {
-                    msgs.push(m);
-                }
-                let _ = this.update(cx, |v, cx| v.apply(generation, msgs, cx));
-            }));
-            cx.notify();
-            return;
-        }
-        if let Location::Shell { parsing, .. } = self.location().clone() {
-            self.loading = true;
-            self.load_started = Instant::now();
-            let generation = self.generation;
-            let cancel = self.cancel.clone();
-            let (tx, mut rx) = mpsc::unbounded::<Msg>();
-            std::thread::Builder::new()
-                .name("rf-shell-list".into())
-                .spawn(move || {
-                    use rf_linux::shellfolder as sf;
-                    if let Some(n) = sf::display_name(&parsing) {
-                        let _ = tx.unbounded_send(Msg::ShellName(n));
-                    }
-                    let r = sf::list(&parsing, &|| cancel.load(Ordering::Relaxed), &mut |batch| {
-                        let es = batch
-                            .iter()
-                            .map(|c| {
-                                let kind = if c.is_folder { rf_core::EntryKind::Dir } else { rf_core::EntryKind::File };
-                                Entry::new(&c.name, kind, c.size.unwrap_or(0), c.modified_ms.unwrap_or(0), 0, 0)
-                            })
-                            .collect();
-                        let _ = tx.unbounded_send(Msg::Shell(es, batch));
-                    });
-                    let _ = tx.unbounded_send(Msg::Done(r.map_err(|e| format!("{e:#}"))));
-                })
-                .ok();
-            self._load_task = Some(cx.spawn(async move |this, cx| {
-                while let Some(first) = rx.next().await {
-                    let mut msgs = vec![first];
-                    while let Ok(m) = rx.try_recv() {
-                        msgs.push(m);
-                    }
-                    if this.update(cx, |v, cx| v.apply(generation, msgs, cx)).is_err() {
-                        break;
-                    }
-                }
-            }));
-            cx.notify();
-            return;
-        }
         if let Location::Tag(id) = self.location().clone() {
             let paths = cx.global::<crate::tags::Tags>().0.paths_with(id);
             self.loading = true;
@@ -1354,12 +1242,6 @@ impl FolderView {
                     self.entries_gen += 1;
                     self.parents.extend(ps);
                 }
-                Msg::Shell(es, items) => {
-                    self.entries.extend(es);
-                    self.entries_gen += 1;
-                    self.shell_items.extend(items);
-                }
-                Msg::ShellName(n) => self.shell_title = Some(n),
                 Msg::Done(r) => {
                     done = true;
                     self.loading = false;
@@ -1443,7 +1325,7 @@ impl FolderView {
                         p.extend(b)
                     }
                 }
-                Msg::Hits(..) | Msg::Shell(..) | Msg::ShellName(_) => {}
+                Msg::Hits(..) => {}
                 Msg::Done(Err(e)) if e.contains("bulunamadı") => {
                     // The folder we are showing was deleted/renamed away: step up.
                     self.soft_pending = None;
@@ -2505,14 +2387,11 @@ impl FolderView {
 
     /// Results from many folders (search, tag): entries carry their own parent folder.
     pub fn is_search(&self) -> bool {
-        matches!(self.location(), Location::Search { .. } | Location::Tag(_) | Location::Library { .. })
+        matches!(self.location(), Location::Search { .. } | Location::Tag(_))
     }
 
     /// Folder containing entry `ei` (differs per entry in search results).
     pub(crate) fn parent_of(&self, ei: u32) -> Option<&std::path::Path> {
-        if matches!(self.location(), Location::Shell { .. }) {
-            return self.shell_items.get(ei as usize)?.fs_path.as_deref()?.parent();
-        }
         match self.parents.get(ei as usize) {
             Some(p) => Some(p),
             None => self.location().path(),
@@ -2540,10 +2419,6 @@ impl FolderView {
     }
 
     pub(crate) fn path_of(&self, ei: u32) -> Option<PathBuf> {
-        if matches!(self.location(), Location::Shell { .. }) {
-            // only items that are real files have a path; a phone's items have none
-            return self.shell_items.get(ei as usize)?.fs_path.clone();
-        }
         Some(self.parent_of(ei)?.join(&*self.entries.get(ei as usize)?.name))
     }
 
@@ -2638,53 +2513,7 @@ impl FolderView {
 
     // ---------- opening ----------
 
-    /// Shell folders (phones…): opens what only the shell can open. Returns false for items
-    /// that are real files or folders (they go the ordinary way through `path_of`).
-    fn open_shell_entry(&mut self, ei: u32, cx: &mut Context<Self>) -> bool {
-        let Some(child) = self.shell_items.get(ei as usize).cloned() else { return true };
-        let loc = if child.is_folder {
-            match &child.fs_path {
-                Some(p) if p.extension().is_some_and(|x| x.eq_ignore_ascii_case("library-ms")) => {
-                    Location::Library { file: p.clone(), name: child.name.clone() }
-                }
-                Some(_) => return false,
-                // a network computer (`\nas`) is a path to us, the shell lists its shares
-                None if child.parsing.starts_with(r"\\") => Location::Path(PathBuf::from(&child.parsing)),
-                None => Location::Shell { parsing: child.parsing.clone(), name: child.name.clone() },
-            }
-        } else {
-            if child.fs_path.is_some() {
-                return false;
-            }
-            // an item on a phone: the shell fetches it and opens it with its default app
-            let parsing = child.parsing;
-            std::thread::spawn(move || {
-                if let Err(e) = rf_linux::shellfolder::open(&parsing) {
-                    log::warn!("open {parsing}: {e:#}");
-                }
-            });
-
-            return true;
-        };
-        if cx.global::<crate::settings::Settings>().open_folders_in_new_tab {
-            cx.emit(FolderEvent::OpenInNewTab(loc));
-        } else {
-            self.navigate(loc, cx);
-        }
-        true
-    }
-
-    /// The selected items of a shell folder, in list order.
-    pub(crate) fn selection_shell(&self) -> Vec<rf_linux::shellfolder::ShellChild> {
-        let mut v: Vec<u32> = self.selected.iter().copied().collect();
-        v.sort_unstable();
-        v.into_iter().filter_map(|i| self.shell_items.get(i as usize).cloned()).collect()
-    }
-
     fn open_entry(&mut self, ei: u32, cx: &mut Context<Self>) {
-        if matches!(self.location(), Location::Shell { .. }) && self.open_shell_entry(ei, cx) {
-            return;
-        }
         let Some(path) = self.path_of(ei) else { return };
         let e = &self.entries[ei as usize];
         let browse = !e.is_dir()
@@ -3445,16 +3274,6 @@ impl FolderView {
                     )
                     .relative()
                     .children(self.render_marquee(p))
-                    .on_drag_move::<ExternalPaths>(cx.listener(|this, ev: &DragMoveEvent<ExternalPaths>, _, cx| {
-                        if let Some(dir) = this.current_dir() {
-                            let paths: Vec<PathBuf> = crate::file_drag::peek(ev.drag(cx));
-                            let t = rf_linux::dnd::default_transfer(&paths, &dir, false, false);
-                            gpui_windows::dnd_hint::set(match t {
-                                rf_linux::fileops::Transfer::Move => gpui_windows::dnd_hint::MOVE,
-                                rf_linux::fileops::Transfer::Copy => gpui_windows::dnd_hint::COPY,
-                            });
-                        }
-                    }))
                     .on_drop(cx.listener(|this, paths: &ExternalPaths, _, cx| {
                         if let Some(dir) = this.current_dir() {
                             this.drop_into(dir, paths, cx);
@@ -3476,7 +3295,6 @@ impl FolderView {
         let pinned = places.pinned.clone();
         let drives = places.drives.clone();
         let recent = places.recent.clone();
-        let devices = places.devices.clone();
         let card = |id: ElementId| {
             v_flex()
                 .id(id)
@@ -3565,23 +3383,6 @@ impl FolderView {
             );
         }
 
-        // phones and cameras (not drives): none connected = no group at all
-        let has_devices = !devices.is_empty();
-        let mut device_grid = div().grid().grid_cols(tile_cols(avail, 240., 340., 12.)).gap_3();
-        for (i, d) in devices.into_iter().enumerate() {
-            let loc = Location::Shell { parsing: d.parsing.clone(), name: d.name.clone() };
-            device_grid = device_grid.child(
-                card(("device", i).into())
-                    .child(
-                        h_flex()
-                            .gap_3()
-                            .items_center()
-                            .child(Icon::new(L::Usb).size(px(28.)).text_color(p.text_secondary))
-                            .child(div().flex_1().min_w_0().text_sm().overflow_hidden().text_ellipsis().whitespace_nowrap().child(d.name)),
-                    )
-                    .on_click(cx.listener(move |this, _, _, cx| this.navigate(loc.clone(), cx))),
-            );
-        }
 
         let has_recent = !recent.is_empty();
         let mut recent_list = v_flex().gap_0p5().max_w(px(900.));
@@ -3662,7 +3463,6 @@ impl FolderView {
                     .child(div().h_2())
                     .child(section(t!("Sürücüler")))
                     .child(drive_grid)
-                    .when(has_devices, |d| d.child(div().h_2()).child(section(t!("Cihazlar"))).child(device_grid))
                     .when(has_recent, |d| d.child(div().h_2()).child(section(t!("Son kullanılanlar"))))
                     .child(recent_list),
             )

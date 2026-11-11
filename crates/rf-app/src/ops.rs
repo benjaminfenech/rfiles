@@ -138,33 +138,10 @@ fn bg(name: &'static str, f: impl FnOnce() -> anyhow::Result<bool> + Send + 'sta
 
 impl FolderView {
     pub fn current_dir(&self) -> Option<PathBuf> {
-        if let rf_core::Location::Library { file, .. } = self.location() {
-            // new items / paste go to the library's default save folder
-            return self.library_save_dir(file);
-        }
         self.location().path().map(|p| p.to_path_buf())
     }
 
-    /// Default save folder of a library (resolved in the background by `Places`).
-    fn library_save_dir(&self, file: &std::path::Path) -> Option<PathBuf> {
-        self.library_save.as_ref().filter(|(f, _)| f == file).map(|(_, d)| d.clone())
-    }
-
-    /// A shell folder (a phone…) is read-only here: says so and returns true.
-    pub(crate) fn shell_read_only(&self, cx: &mut Context<Self>) -> bool {
-        let shell = matches!(self.location(), rf_core::Location::Shell { .. });
-        if shell {
-            crate::shell_view::read_only_notice(cx);
-        }
-        shell
-    }
-
     pub fn copy_to_clipboard(&mut self, kind: Transfer, _window: &mut Window, cx: &mut Context<Self>) {
-        if matches!(self.location(), rf_core::Location::Shell { .. }) {
-            // items of a phone: copied out with the shell's engine; cut becomes copy
-            crate::shell_view::copy_items(cx, self.selection_shell());
-            return;
-        }
         let paths = self.selection_paths();
         if paths.is_empty() {
             return;
@@ -242,18 +219,12 @@ impl FolderView {
     }
 
     pub fn paste(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.shell_read_only(cx) {
-            return;
-        }
         let Some(dir) = self.current_dir() else { return };
         self.paste_to(dir, window, cx);
     }
 
     /// Ctrl+Shift+V: paste into the selected folder (falls back to the current one).
     pub fn paste_into_selected(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.shell_read_only(cx) {
-            return;
-        }
         let target = if self.selected_is_single_dir() { self.selection_paths().into_iter().next() } else { None };
         match target.or_else(|| self.current_dir()) {
             Some(dir) => self.paste_to(dir, window, cx),
@@ -308,9 +279,6 @@ impl FolderView {
     /// Deletes the selection, asking first per Settings → "Confirm before deleting".
     pub fn delete_selected(&mut self, permanent: bool, window: &mut Window, cx: &mut Context<Self>) {
         use crate::settings::DeletePref;
-        if self.shell_read_only(cx) {
-            return;
-        }
         let paths = self.selection_paths();
         if paths.is_empty() {
             return;
@@ -375,9 +343,6 @@ impl FolderView {
     }
 
     pub fn create_new(&mut self, folder: bool, cx: &mut Context<Self>) {
-        if self.shell_read_only(cx) {
-            return;
-        }
         let Some(dir) = self.current_dir() else { return };
         // inside an archive: a folder entry, or an empty text file added to it
         if let Some((archive, inner)) = crate::archive_view::split(&dir) {
@@ -462,9 +427,6 @@ impl FolderView {
     }
 
     pub fn begin_rename(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.shell_read_only(cx) {
-            return;
-        }
         let Some(ei) = self.cursor_entry() else { return };
         let e = self.entry(ei);
         // Extensions hidden: edit only the name and keep the extension (as Explorer does)
