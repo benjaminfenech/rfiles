@@ -375,7 +375,7 @@ impl Workspace {
                 if text.trim().to_lowercase().starts_with("shell:") {
                     // resolve in the background (shell namespace), then navigate
                     let t = text.trim().to_string();
-                    let work = cx.background_spawn(async move { rf_win::shell::resolve_shell_path(&t) });
+                    let work = cx.background_spawn(async move { rf_linux::shell::resolve_shell_path(&t) });
                     cx.spawn_in(window, async move |this, cx| {
                         if let Some(p) = work.await {
                             let _ = this.update_in(cx, |ws, window, cx| ws.navigate(Location::Path(p), window, cx));
@@ -616,7 +616,7 @@ impl Workspace {
             FolderEvent::ToOtherPane(kind, paths) => {
                 if let Some(other) = this.other_pane(emitter) {
                     let dest = match other.read(cx).location() {
-                        Location::Path(p) if !rf_win::ftp::is_ftp(p) && rf_win::network::server_root(p).is_none() => Some(p.clone()),
+                        Location::Path(p) if !rf_linux::ftp::is_ftp(p) && rf_linux::network::server_root(p).is_none() => Some(p.clone()),
                         _ => None,
                     };
                     if let Some(dest) = dest {
@@ -880,10 +880,10 @@ impl Workspace {
         // List on a worker (can stall on network/optical drives); the shell thread only shows the menu.
         let listing = cx.background_spawn(async move {
             let mut entries: Vec<(String, PathBuf)> = match &dir {
-                None => rf_win::list_drives().into_iter().map(|d| (crate::places::drive_name(&d), d.root)).collect(),
+                None => rf_linux::list_drives().into_iter().map(|d| (crate::places::drive_name(&d), d.root)).collect(),
                 Some(d) => {
                     let mut v = Vec::new();
-                    let _ = rf_win::list_dir(d, 4096, &|| false, &mut |b| {
+                    let _ = rf_linux::list_dir(d, 4096, &|| false, &mut |b| {
                         for e in b {
                             if e.is_dir() && !e.is_hidden() {
                                 v.push((e.name.to_string(), d.join(&*e.name)));
@@ -979,7 +979,7 @@ impl Workspace {
         let win = window.window_handle();
         let work = cx.background_spawn({
             let root = root.clone();
-            async move { if eject { rf_win::udisks::eject(&root) } else { rf_win::udisks::unmount(&root) } }
+            async move { if eject { rf_linux::udisks::eject(&root) } else { rf_linux::udisks::unmount(&root) } }
         });
         cx.spawn(async move |this, cx| {
             let r = work.await;
@@ -1126,7 +1126,7 @@ impl Workspace {
             ShelfEvent::Transfer(kind, items) => {
                 let dest = match self.active_tab().read(cx).location() {
                     Location::Path(p)
-                        if !rf_win::ftp::is_ftp(p) && rf_win::network::server_root(p).is_none() =>
+                        if !rf_linux::ftp::is_ftp(p) && rf_linux::network::server_root(p).is_none() =>
                     {
                         Some(p.clone())
                     }
@@ -1134,7 +1134,7 @@ impl Workspace {
                 };
                 if let Some(dest) = dest {
                     crate::status_center::transfer(cx, *kind, items.clone(), dest);
-                    if *kind == rf_win::fileops::Transfer::Move {
+                    if *kind == rf_linux::fileops::Transfer::Move {
                         // moved items leave their old place; the shelf is done with them
                         self.shelf.update(cx, |s, cx| s.clear(cx));
                     }
@@ -1241,22 +1241,22 @@ impl Workspace {
     fn toggle_compact(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let Some(hwnd) = Self::hwnd(window) else { return };
         if let Some(r) = self.compact.take() {
-            rf_win::window::set_min_size(hwnd, None);
-            rf_win::window::place(hwnd, r.rect);
+            rf_linux::window::set_min_size(hwnd, None);
+            rf_linux::window::place(hwnd, r.rect);
             if r.maximized {
-                rf_win::window::maximize(hwnd);
+                rf_linux::window::maximize(hwnd);
             }
             if !r.topmost {
-                let _ = rf_win::window::set_topmost(hwnd, false);
+                let _ = rf_linux::window::set_topmost(hwnd, false);
             }
         } else {
-            let Some((rect, maximized)) = rf_win::window::rect(hwnd) else { return };
+            let Some((rect, maximized)) = rf_linux::window::rect(hwnd) else { return };
             // restore to the normal (not maximized) rectangle later
             let normal = if maximized { None } else { Some(rect) };
-            let topmost = rf_win::window::is_topmost(hwnd);
+            let topmost = rf_linux::window::is_topmost(hwnd);
             let scale = window.scale_factor();
             let (w, h) = ((COMPACT_W * scale) as i32, (COMPACT_H * scale) as i32);
-            rf_win::window::set_min_size(hwnd, Some((COMPACT_MIN.0, COMPACT_MIN.1)));
+            rf_linux::window::set_min_size(hwnd, Some((COMPACT_MIN.0, COMPACT_MIN.1)));
             // keep the top-right corner where it was: the overlay hugs the side it came from
             let (right, top) = (rect[2], rect[1].max(0));
             let restore = normal.unwrap_or_else(|| {
@@ -1264,8 +1264,8 @@ impl Workspace {
                 let o = |v: Pixels| (f32::from(v) * scale) as i32;
                 [o(b.origin.x), o(b.origin.y), o(b.origin.x + b.size.width), o(b.origin.y + b.size.height)]
             });
-            rf_win::window::place(hwnd, [right - w, top, right, top + h]);
-            let _ = rf_win::window::set_topmost(hwnd, true);
+            rf_linux::window::place(hwnd, [right - w, top, right, top + h]);
+            let _ = rf_linux::window::set_topmost(hwnd, true);
             self.compact = Some(CompactRestore { rect: restore, maximized, topmost });
         }
         cx.notify();
@@ -1276,8 +1276,8 @@ impl Workspace {
         if let Ok(h) = window.window_handle() {
             if let RawWindowHandle::Win32(w) = h.as_raw() {
                 let hwnd = w.hwnd.get();
-                let on = !rf_win::window::is_topmost(hwnd);
-                if let Err(e) = rf_win::window::set_topmost(hwnd, on) {
+                let on = !rf_linux::window::is_topmost(hwnd);
+                if let Err(e) = rf_linux::window::set_topmost(hwnd, on) {
                     log::warn!("always on top: {e}");
                 }
             }
@@ -1306,13 +1306,13 @@ impl Workspace {
             return;
         }
         let expanded = expand_env(text.trim());
-        if !rf_win::complete::completable(&expanded) {
+        if !rf_linux::complete::completable(&expanded) {
             self.clear_suggestions();
             cx.notify();
             return;
         }
         let hidden = cx.global::<crate::settings::Settings>().show_hidden;
-        let work = cx.background_spawn(async move { rf_win::complete::complete_dirs(&expanded, 8, hidden) });
+        let work = cx.background_spawn(async move { rf_linux::complete::complete_dirs(&expanded, 8, hidden) });
         self._addr_task = Some(cx.spawn(async move |this, cx| {
             let list = work.await;
             let _ = this.update(cx, |ws, cx| {
@@ -1422,8 +1422,8 @@ impl Workspace {
     fn begin_address_edit(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let text = match self.active_tab().read(cx).location() {
             // Linux: a network folder as its address (typing it back mounts the same folder)
-            Location::Path(p) if crate::settings::address_shows_url() && rf_win::remote::display_url(p).is_some() => {
-                rf_core::history::redact_credentials(&rf_win::remote::display_url(p).unwrap_or_default())
+            Location::Path(p) if crate::settings::address_shows_url() && rf_linux::remote::display_url(p).is_some() => {
+                rf_core::history::redact_credentials(&rf_linux::remote::display_url(p).unwrap_or_default())
             }
             Location::Path(p) => p.to_string_lossy().into_owned(),
             Location::Search { root, .. } => root.to_string_lossy().into_owned(),
@@ -1732,7 +1732,7 @@ impl Workspace {
             })),
             Item::action(t!("Terminalde aç"), MenuIcon::Lucide(L::SquareTerminal), with(|_, p, _, _| {
                 std::thread::spawn(move || {
-                    let _ = rf_win::shell::open_terminal(&p);
+                    let _ = rf_linux::shell::open_terminal(&p);
                 });
             })),
             // our Properties window (a drive gets its own page there)
@@ -1744,7 +1744,7 @@ impl Workspace {
         let mut items = items;
         // a mounted drive can be unmounted, a stick or disc ejected
         if let Some(d) = self.places.read(cx).drives.iter().find(|d| d.root == path && !places::unmounted(d)) {
-            use rf_win::DriveKind;
+            use rf_linux::DriveKind;
             let system = ["/", "/home", "/boot", "/efi", "/usr", "/var"].iter().any(|s| d.root == Path::new(s));
             let removable = matches!(d.kind, DriveKind::Removable | DriveKind::Optical);
             if d.source.starts_with("/dev/") && !system {
@@ -1781,7 +1781,7 @@ impl Workspace {
     fn set_pinned(&mut self, path: PathBuf, pin: bool, cx: &mut Context<Self>) {
         // Linux: a folder on a network mount is pinned by its URL (the mount's local path
         // changes between sessions; opening the URL mounts it again)
-        let path = rf_win::remote::remote_url(&path).map_or(path, PathBuf::from);
+        let path = rf_linux::remote::remote_url(&path).map_or(path, PathBuf::from);
         let mut list = self.current_pins(cx);
         if !pin {
             list.retain(|p| *p != path);
@@ -2042,7 +2042,7 @@ impl Workspace {
         let writable_sel = has_sel && !matches!(tab.location(), Location::Shell { .. });
         let preview_open = self.preview_open;
         let filter_on = self.filter_bar;
-        let paste_ok = in_folder && rf_win::clipboard::has_files();
+        let paste_ok = in_folder && rf_linux::clipboard::has_files();
 
         let cmd = |id: &'static str, icon: L, tip: &'static str, enabled: bool, cx: &mut Context<Self>, run: fn(&mut Self, &mut Window, &mut Context<Self>)| {
             div()
@@ -2100,10 +2100,10 @@ impl Workspace {
             .child(drop("cb-new", L::CirclePlus, Some("Yeni"), "Yeni öğe", in_folder, cx, |_, _| crate::ctx_menu::BarMenu::New))
             .child(sep())
             .child(cmd("cb-cut", L::Scissors, "Kes  (Ctrl+X)", writable_sel, cx, |this, w, cx| {
-                this.with_tab(cx, |v, cx| v.copy_to_clipboard(rf_win::fileops::Transfer::Move, w, cx))
+                this.with_tab(cx, |v, cx| v.copy_to_clipboard(rf_linux::fileops::Transfer::Move, w, cx))
             }))
             .child(cmd("cb-copy", L::Copy, "Kopyala  (Ctrl+C)", has_sel, cx, |this, w, cx| {
-                this.with_tab(cx, |v, cx| v.copy_to_clipboard(rf_win::fileops::Transfer::Copy, w, cx))
+                this.with_tab(cx, |v, cx| v.copy_to_clipboard(rf_linux::fileops::Transfer::Copy, w, cx))
             }))
             .child(cmd("cb-paste", L::ClipboardPaste, "Yapıştır  (Ctrl+V)", paste_ok, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.paste(w, cx))
@@ -2466,7 +2466,7 @@ impl Workspace {
         let shown = |k: &str| !hidden.iter().any(|h| h == k);
         // Linux: network shares go under Network, with the network locations (Windows keeps
         // mapped drives with the others, as Explorer does)
-        let (shares, drives): (Vec<_>, Vec<_>) = drives.into_iter().partition(|d| d.kind == rf_win::DriveKind::Network);
+        let (shares, drives): (Vec<_>, Vec<_>) = drives.into_iter().partition(|d| d.kind == rf_linux::DriveKind::Network);
         let drives = if shown("drives") { drives } else { Vec::new() };
         if !drives.is_empty() {
             col = col.child(header(t!("Sürücüler")));
@@ -2765,9 +2765,9 @@ fn tooltip_text(id: &str) -> &'static str {
 pub fn open_in_ide(dir: PathBuf, ide: String) {
     std::thread::spawn(move || {
         let r = if ide.is_empty() {
-            rf_win::sandbox::launch("code").arg(".").current_dir(&dir).spawn()
+            rf_linux::sandbox::launch("code").arg(".").current_dir(&dir).spawn()
         } else {
-            let mut c = rf_win::sandbox::launch(&ide);
+            let mut c = rf_linux::sandbox::launch(&ide);
             c.arg(&dir).spawn()
         };
         if let Err(e) = r {
@@ -2778,11 +2778,11 @@ pub fn open_in_ide(dir: PathBuf, ide: String) {
 
 fn drop_files(paths: &ExternalPaths, dest: PathBuf, cx: &mut App) {
     let sources: Vec<PathBuf> = crate::file_drag::take(paths);
-    if sources.is_empty() || rf_win::dnd::is_invalid_drop(&sources, &dest) {
+    if sources.is_empty() || rf_linux::dnd::is_invalid_drop(&sources, &dest) {
         return;
     }
     let (ctrl, shift) = (crate::sys::ctrl_down(), crate::sys::shift_down());
-    let kind = rf_win::dnd::default_transfer(&sources, &dest, ctrl, shift);
+    let kind = rf_linux::dnd::default_transfer(&sources, &dest, ctrl, shift);
     crate::status_center::transfer(cx, kind, sources, dest);
 }
 
@@ -2828,7 +2828,7 @@ fn breadcrumbs(path: &Path) -> Vec<(String, Location)> {
     let mut comps: Box<dyn Iterator<Item = std::path::Component>> = Box::new(path.components());
     // Linux: a network folder starts at its address ("smb://nas") rather than /run/user/…
     if crate::settings::address_shows_url()
-        && let Some((url, root)) = rf_win::remote::mount_url(path)
+        && let Some((url, root)) = rf_linux::remote::mount_url(path)
         && let Ok(rest) = path.strip_prefix(&root)
     {
         out.push((rf_core::history::redact_credentials(&url), Location::Path(root.clone())));
@@ -2850,7 +2850,7 @@ fn breadcrumbs(path: &Path) -> Vec<(String, Location)> {
             }
             continue;
         }
-        let label = match rf_win::localized::folder_label(&acc, None) {
+        let label = match rf_linux::localized::folder_label(&acc, None) {
             Some(l) => l.to_string(),
             None => rf_core::history::redact_credentials(comp.as_os_str().to_string_lossy().trim_end_matches('\\')),
         };
@@ -2980,7 +2980,7 @@ impl Render for Workspace {
             use raw_window_handle::{HasWindowHandle, RawWindowHandle};
             if let Ok(h) = window.window_handle() {
                 if let RawWindowHandle::Win32(w) = h.as_raw() {
-                    rf_win::window::set_dark_mode(w.hwnd.get(), p.dark);
+                    rf_linux::window::set_dark_mode(w.hwnd.get(), p.dark);
                 }
             }
         }
@@ -3165,10 +3165,10 @@ impl Render for Workspace {
             // Windows' own dialogs (credentials, reconnect at sign-in); the drive list notices
             // the new / removed drive by itself
             .on_action(cx.listener(|_, _: &MapNetworkDrive, window, _| {
-                rf_win::network::map_drive_dialog(Self::hwnd(window).unwrap_or(0))
+                rf_linux::network::map_drive_dialog(Self::hwnd(window).unwrap_or(0))
             }))
             .on_action(cx.listener(|_, _: &DisconnectNetworkDrive, window, _| {
-                rf_win::network::disconnect_drive_dialog(Self::hwnd(window).unwrap_or(0))
+                rf_linux::network::disconnect_drive_dialog(Self::hwnd(window).unwrap_or(0))
             }))
             .on_action(cx.listener(|this, _: &GoForward, _, cx| this.with_tab(cx, |v, cx| v.forward(cx))))
             .on_action(cx.listener(|this, _: &GoUp, _, cx| this.with_tab(cx, |v, cx| v.up(cx))))
@@ -3263,7 +3263,7 @@ impl Render for Workspace {
             .on_action(cx.listener(|this, _: &OpenTerminal, _, cx| {
                 if let Some(dir) = this.active_tab().read(cx).location().path().map(Path::to_path_buf) {
                     std::thread::spawn(move || {
-                        let _ = rf_win::shell::open_terminal(&dir);
+                        let _ = rf_linux::shell::open_terminal(&dir);
                     });
                 }
             }))
@@ -3306,7 +3306,7 @@ impl Render for Workspace {
                                         let s = window.scale_factor();
                                         let height = f32::from(window.viewport_size().height);
                                         let at = |v: f32| (v * s) as i32;
-                                        this.rail_peek_bg = rf_win::window::screen_color(crate::look::window::hwnd_of(window), at(3.), at(110.), at(height - 60.))
+                                        this.rail_peek_bg = rf_linux::window::screen_color(crate::look::window::hwnd_of(window), at(3.), at(110.), at(height - 60.))
                                             .map(|[r, g, b]| Hsla::from(gpui_kit::rgb(u32::from(r) << 16 | u32::from(g) << 8 | u32::from(b))));
                                     }
                                     this.rail_peek[0] = *h;

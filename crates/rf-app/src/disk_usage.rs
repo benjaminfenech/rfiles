@@ -1,5 +1,5 @@
 //! Disk usage page (Location::DiskUsage): where the space under a folder or drive goes.
-//! The walk is [`rf_win::diskusage`] (below-normal priority, closing the tab stops it); this
+//! The walk is [`rf_linux::diskusage`] (below-normal priority, closing the tab stops it); this
 //! file draws the result: the current folder's children as a list, biggest first, and as a
 //! squarified treemap (folders show their own children inside them, one level deep).
 
@@ -11,7 +11,7 @@ use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 use rf_core::format;
 use rf_core::treemap::{Rect, squarify};
-use rf_win::diskusage::{DiskScan, DiskTree, Metric};
+use rf_linux::diskusage::{DiskScan, DiskTree, Metric};
 
 use crate::fluent_menu::{self, Item, Menu, MenuIcon};
 use crate::icons;

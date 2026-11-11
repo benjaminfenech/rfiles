@@ -1,8 +1,5 @@
 //! rfiles ve DirectLook'un ortak kodu; iki program da bu kütüphaneyi kullanır.
 
-// Linux: rf-linux mirrors rf-win's API, so the code below uses it under rf-win's name.
-extern crate rf_linux as rf_win;
-
 mod actions;
 mod aliases;
 mod background;
@@ -143,7 +140,7 @@ fn save_and_quit(cx: &mut App) {
     // then catches up instead of walking the drives; bounded, quitting must not hang on it
     let (tx, rx) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
-        rf_win::indexer::stop();
+        rf_linux::indexer::stop();
         let _ = tx.send(());
     });
     let _ = rx.recv_timeout(std::time::Duration::from_secs(2));
@@ -165,20 +162,20 @@ fn is_dir_bounded(p: PathBuf, limit: std::time::Duration) -> Option<bool> {
 pub(crate) fn start_mark(step: &str) {
     static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     if *ON.get_or_init(|| std::env::var_os("RFILES_TRACE_START").is_some()) {
-        eprintln!("start: {step} at {} ms", rf_win::process_age_ms());
+        eprintln!("start: {step} at {} ms", rf_linux::process_age_ms());
     }
 }
 
 pub fn main() {
     // Flatpak: the host's XDG folders (trash, settings, apps), before any thread starts
-    rf_win::sandbox::adopt_host_dirs();
+    rf_linux::sandbox::adopt_host_dirs();
     // rfiles was rustyfiles before: old variables and folders
     renamed::adopt_old_name();
     start_mark("main");
     install_panic_log();
-    rf_win::shell::suppress_critical_error_dialogs();
+    rf_linux::shell::suppress_critical_error_dialogs();
     // before any shell icon/thumbnail work: see keep_gdiplus_alive (loader-lock deadlock)
-    rf_win::thumbs::keep_gdiplus_alive();
+    rf_linux::thumbs::keep_gdiplus_alive();
     // Logs go to stderr; override with RUST_LOG. The hybrid renderer (gpui_windows) logs its
     // GPU/CPU switches at info level.
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn,gpui_windows=info"))
@@ -189,14 +186,14 @@ pub fn main() {
 
     // Linux: D-Bus started us to answer "Show in folder" while we are the default file
     // manager. No window here: each call starts `rfiles <folder>` (see rf-linux fm_service).
-    if std::env::args().nth(1).as_deref() == Some(rf_win::default_fm::SERVICE_ARG) {
+    if std::env::args().nth(1).as_deref() == Some(rf_linux::default_fm::SERVICE_ARG) {
         match std::env::current_exe() {
             Ok(exe) => {
-                if let Err(e) = rf_win::fm_service::run(&exe) {
-                    log::warn!("{}: {e:#}", rf_win::default_fm::SERVICE);
+                if let Err(e) = rf_linux::fm_service::run(&exe) {
+                    log::warn!("{}: {e:#}", rf_linux::default_fm::SERVICE);
                 }
             }
-            Err(e) => log::warn!("{}: {e}", rf_win::default_fm::SERVICE),
+            Err(e) => log::warn!("{}: {e}", rf_linux::default_fm::SERVICE),
         }
         return;
     }
@@ -209,7 +206,7 @@ pub fn main() {
     let quick_search = std::env::args().nth(1).as_deref() == Some(quick_search::LAUNCH_ARG);
     let arg = std::env::args().nth(1).map(|a| a.trim().trim_matches('"').to_string()).filter(|a| !a.is_empty());
     // Linux: launchers pass file:// URIs (the desktop entry's %U, which lets smb://… in too)
-    let arg = arg.map(|a| match a.starts_with("file://").then(|| rf_win::fm_service::uri_to_path(&a)).flatten() {
+    let arg = arg.map(|a| match a.starts_with("file://").then(|| rf_linux::fm_service::uri_to_path(&a)).flatten() {
         Some(p) => p.to_string_lossy().into_owned(),
         None => a,
     });
@@ -243,7 +240,7 @@ pub fn main() {
         start = Some(loc);
     } else if let Some(arg) = arg {
         // network locations (smb://, sftp://…) are mounted by the window
-        let remote = rf_win::remote::is_remote(std::path::Path::new(&arg));
+        let remote = rf_linux::remote::is_remote(std::path::Path::new(&arg));
         // bounded: an offline network path must not keep the window from appearing for the
         // whole SMB timeout. Undecided after 2 s = treat as a (slow) folder.
         let is_dir = if remote { Some(true) } else { is_dir_bounded(PathBuf::from(&arg), std::time::Duration::from_secs(2)) };
@@ -252,9 +249,9 @@ pub fn main() {
         if is_dir == Some(false) && !archive {
             // a file goes to its own default app; should that be us, it comes straight back:
             // never ping-pong, it is then shown here (its folder, with the file selected)
-            if !rf_win::default_fm::forwarded_recently(&arg) {
-                rf_win::default_fm::note_forward(&arg);
-                let _ = rf_win::shell::open(std::path::Path::new(&arg));
+            if !rf_linux::default_fm::forwarded_recently(&arg) {
+                rf_linux::default_fm::note_forward(&arg);
+                let _ = rf_linux::shell::open(std::path::Path::new(&arg));
                 return;
             }
             let p = PathBuf::from(&arg);
@@ -278,16 +275,16 @@ pub fn main() {
         // re-point it here, or other apps can't open any folder. Not from test instances.
         if std::env::var_os("RFILES_CONFIG_DIR").is_none() {
             if let Ok(me) = std::env::current_exe() {
-                if rf_win::default_fm::heal(&me.display().to_string(), rf_win::default_fm::CLASSES) {
+                if rf_linux::default_fm::heal(&me.display().to_string(), rf_linux::default_fm::CLASSES) {
                     log::warn!("default file manager re-registered to {}", me.display());
                 }
-                if rf_win::default_fm::add_archives(&me.display().to_string(), rf_win::default_fm::CLASSES) {
+                if rf_linux::default_fm::add_archives(&me.display().to_string(), rf_linux::default_fm::CLASSES) {
                     log::warn!("default file manager: archive registration updated");
                 }
             }
         }
         DEFAULT_FM.store(
-            rf_win::default_fm::is_enabled(rf_win::default_fm::CLASSES),
+            rf_linux::default_fm::is_enabled(rf_linux::default_fm::CLASSES),
             std::sync::atomic::Ordering::Relaxed,
         )
     });
@@ -312,14 +309,14 @@ pub fn main() {
     let _instance = if multi {
         None
     } else {
-        match rf_win::single_instance::acquire(&message) {
-            rf_win::single_instance::Role::Forwarded => return,
-            rf_win::single_instance::Role::Primary(guard) => Some(guard),
+        match rf_linux::single_instance::acquire(&message) {
+            rf_linux::single_instance::Role::Forwarded => return,
+            rf_linux::single_instance::Role::Primary(guard) => Some(guard),
         }
     };
     let (ipc_tx, ipc_rx) = futures::channel::mpsc::unbounded::<String>();
     if !multi {
-        rf_win::single_instance::serve(move |m| {
+        rf_linux::single_instance::serve(move |m| {
             let _ = ipc_tx.unbounded_send(m);
         });
     }
@@ -330,9 +327,9 @@ pub fn main() {
         gpui_kit::init(cx);
         cx.set_global(settings::Settings::load());
         start_mark("settings loaded");
-        rf_core::sort::set_turkish_collation(rf_win::encoding::user_locale_is_turkish());
+        rf_core::sort::set_turkish_collation(rf_linux::encoding::user_locale_is_turkish());
         // eski kod sayfalı metinlerin tahmini: Türkçe olmayan sistemde Türkçe ipucu verilmez
-        if !rf_win::encoding::user_locale_is_turkish() {
+        if !rf_linux::encoding::user_locale_is_turkish() {
             rf_core::textload::set_locale_hint(None);
         }
         settings::apply_component_theme(cx);
@@ -357,13 +354,13 @@ pub fn main() {
                 cx,
             );
         }
-        // copies and moves keep a crash-safe journal there (see rf_win::fastcopy)
+        // copies and moves keep a crash-safe journal there (see rf_linux::fastcopy)
         if let Some(d) = settings::app_dir() {
-            rf_win::fastcopy::set_journal_dir(d.join("jobs"));
+            rf_linux::fastcopy::set_journal_dir(d.join("jobs"));
         }
         // folder sizes survive a restart (shown at once, measured again when asked for)
         if let Some(d) = settings::local_data_dir() {
-            rf_win::foldersize::shared_cache().persist(d.join("foldersizes.bin"));
+            rf_linux::foldersize::shared_cache().persist(d.join("foldersizes.bin"));
         }
         let bounds = restored_bounds(cx);
         if quick_search {

@@ -57,11 +57,11 @@ pub enum CopyVerify {
 }
 
 impl CopyVerify {
-    pub fn engine(self) -> rf_win::fastcopy::Verify {
+    pub fn engine(self) -> rf_linux::fastcopy::Verify {
         match self {
-            CopyVerify::Off => rf_win::fastcopy::Verify::Off,
-            CopyVerify::Quick => rf_win::fastcopy::Verify::Quick,
-            CopyVerify::Full => rf_win::fastcopy::Verify::Full,
+            CopyVerify::Off => rf_linux::fastcopy::Verify::Off,
+            CopyVerify::Quick => rf_linux::fastcopy::Verify::Quick,
+            CopyVerify::Full => rf_linux::fastcopy::Verify::Full,
         }
     }
 }
@@ -169,7 +169,6 @@ pub struct MenuPrefs {
     pub open_in_new_tab: bool,
     pub open_in_new_window: bool,
     pub copy_path: bool,
-    pub create_shortcut: bool,
     pub pin: bool,
     pub compress: bool,
     pub tags: bool,
@@ -185,7 +184,6 @@ impl Default for MenuPrefs {
             open_in_new_tab: true,
             open_in_new_window: true,
             copy_path: true,
-            create_shortcut: true,
             pin: true,
             compress: true,
             tags: true,
@@ -383,8 +381,6 @@ pub struct Settings {
     pub show_libraries: bool,
     /// Double-clicking a ZIP/7z/tar opens it like a folder (read-only).
     pub browse_archives: bool,
-    /// Search through the Windows Search index (contents, AQS) where the folder is indexed.
-    pub search_index: bool,
     /// Our own name index of the local drives: searching in subfolders takes milliseconds.
     pub name_index: bool,
     /// Folders left out of the name index (searching inside them walks the disk).
@@ -403,10 +399,8 @@ pub struct Settings {
     pub directlook_enabled: bool,
 
     // ---- Quick search (quick_search.rs)
-    /// A global shortcut opens the quick search: apps, files, bookmarks, the web.
+    /// The quick search: apps, files, bookmarks, the web (a desktop shortcut opens it).
     pub quick_search: bool,
-    /// Its shortcut, in GPUI's syntax ("alt-space").
-    pub quick_search_keys: String,
     pub web_search: WebSearch,
     /// Chrome's and Edge's bookmarks are searched too (read on this PC only).
     pub quick_search_bookmarks: bool,
@@ -487,7 +481,6 @@ impl Default for Settings {
             copy_speed_limit: 0,
             show_libraries: false,
             browse_archives: true,
-            search_index: true,
             name_index: true,
             index_excluded: Vec::new(),
             ide_button: IdePref::GitRepos,
@@ -495,7 +488,6 @@ impl Default for Settings {
             show_flatten: false,
             directlook_enabled: true,
             quick_search: true,
-            quick_search_keys: "alt-space".into(),
             web_search: WebSearch::Google,
             quick_search_bookmarks: true,
         }
@@ -537,7 +529,7 @@ pub fn animations() -> bool {
     match ANIM.load(Ordering::Relaxed) {
         x if x == AnimPref::On as u8 => true,
         x if x == AnimPref::Off as u8 => false,
-        _ => rf_win::sysparams::client_area_animation(),
+        _ => rf_linux::sysparams::client_area_animation(),
     }
 }
 
@@ -636,7 +628,6 @@ impl Settings {
         crate::i18n::set(self.language);
         crate::aliases::set(self.folder_aliases.clone());
         crate::background::sync_tray(self.run_in_background);
-        crate::quick_search::sync(self);
         rf_core::format::set_date_style(match self.date_format {
             DatePref::Application => rf_core::format::DateStyle::Relative,
             DatePref::System => rf_core::format::DateStyle::Local,
@@ -807,7 +798,7 @@ fn sync_name_index(on: bool, excluded: &[String]) {
         let changed = e.as_deref() != Some(excluded);
         if changed {
             *e = Some(excluded.to_vec());
-            rf_win::nameindex::set_excluded(&excluded.iter().map(std::path::PathBuf::from).collect::<Vec<_>>());
+            rf_linux::nameindex::set_excluded(&excluded.iter().map(std::path::PathBuf::from).collect::<Vec<_>>());
         }
         changed
     };
@@ -818,7 +809,7 @@ fn sync_name_index(on: bool, excluded: &[String]) {
         return;
     }
     if !on {
-        std::thread::spawn(rf_win::indexer::stop);
+        std::thread::spawn(rf_linux::indexer::stop);
         return;
     }
     let delay = if was == 0 { 5 } else { 0 };
@@ -839,8 +830,8 @@ fn sync_name_index(on: bool, excluded: &[String]) {
         // RFILES_INDEX_ROOTS="E:\;F:\" picks the roots (testing; Linux: "/data;/home/me")
         let roots = match std::env::var("RFILES_INDEX_ROOTS") {
             Ok(v) => v.split(';').filter(|s| !s.is_empty()).map(std::path::PathBuf::from).collect(),
-            Err(_) => rf_win::indexer::local_roots(),
+            Err(_) => rf_linux::indexer::local_roots(),
         };
-        rf_win::indexer::start(roots, dir);
+        rf_linux::indexer::start(roots, dir);
     });
 }

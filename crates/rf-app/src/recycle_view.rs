@@ -8,7 +8,7 @@ use gpui_kit::component::{Icon, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 use rf_core::format;
-use rf_win::recycle::RecycleItem;
+use rf_linux::recycle::RecycleItem;
 
 use crate::theme::{self, Palette};
 
@@ -30,8 +30,8 @@ impl RecycleView {
     pub fn reload(&mut self, cx: &mut Context<Self>) {
         self.loading = true;
         let work = cx.background_spawn(async move {
-            rf_win::shell::ensure_com();
-            rf_win::recycle::list().unwrap_or_default()
+            rf_linux::shell::ensure_com();
+            rf_linux::recycle::list().unwrap_or_default()
         });
         self._task = Some(cx.spawn(async move |this, cx| {
             let mut items = work.await;
@@ -50,7 +50,7 @@ impl RecycleView {
     fn run(&mut self, cx: &mut Context<Self>, f: impl FnOnce() -> anyhow::Result<()> + Send + 'static) {
         self.busy = true;
         let work = cx.background_spawn(async move {
-            rf_win::shell::ensure_com();
+            rf_linux::shell::ensure_com();
             if let Err(e) = f() {
                 log::warn!("recycle: {e:#}");
             }
@@ -66,13 +66,13 @@ impl RecycleView {
     fn restore_selected(&mut self, cx: &mut Context<Self>) {
         let items: Vec<RecycleItem> = self.selected.iter().filter_map(|&i| self.items.get(i).cloned()).collect();
         if !items.is_empty() {
-            self.run(cx, move || rf_win::recycle::restore(&items));
+            self.run(cx, move || rf_linux::recycle::restore(&items));
         }
     }
 
     fn empty_bin(&mut self, cx: &mut Context<Self>) {
         // confirm = true → Windows asks the user first
-        self.run(cx, || rf_win::recycle::empty(true));
+        self.run(cx, || rf_linux::recycle::empty(true));
     }
 }
 

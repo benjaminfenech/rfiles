@@ -35,13 +35,13 @@ pub fn adopt_old_integration() {
         return;
     }
     let Ok(exe) = std::env::current_exe() else { return };
-    if rf_win::default_fm::adopt_renamed("rustyfiles.desktop", &exe.to_string_lossy(), rf_win::default_fm::CLASSES) {
+    if rf_linux::default_fm::adopt_renamed("rustyfiles.desktop", &exe.to_string_lossy(), rf_linux::default_fm::CLASSES) {
         log::info!("default file manager: now rfiles.desktop (was rustyfiles.desktop)");
     }
-    if rf_win::dialogs::adopt_renamed_autostart("rustyfiles", &exe) {
+    if rf_linux::dialogs::adopt_renamed_autostart("rustyfiles", &exe) {
         log::info!("start at login: now rfiles.desktop (was rustyfiles.desktop)");
     }
-    if rf_win::dialogs::repoint_autostart("DirectLook", &exe.with_file_name("directlook")) {
+    if rf_linux::dialogs::repoint_autostart("DirectLook", &exe.with_file_name("directlook")) {
         log::info!("DirectLook's start at login: now this install's directlook");
     }
 }

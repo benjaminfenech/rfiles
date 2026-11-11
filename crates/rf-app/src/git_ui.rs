@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 
 use gpui_kit::assets::IconName as L;
 use gpui_kit::*;
-use rf_win::git::{self, CheckoutMode};
+use rf_linux::git::{self, CheckoutMode};
 
 use crate::fluent_menu::{self, Item, Menu, MenuIcon};
 use crate::folder_view::FolderView;

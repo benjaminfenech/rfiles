@@ -13,7 +13,7 @@ use gpui_kit::assets::IconName as L;
 use gpui_kit::component::{Icon, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
-use rf_win::fileops::{self, Tracker, Transfer};
+use rf_linux::fileops::{self, Tracker, Transfer};
 
 use crate::theme::{self, Palette};
 
@@ -62,7 +62,7 @@ impl Global for OpsGlobal {}
 enum Ev {
     Progress(u32, u32, Option<String>),
     /// The copy thread asks about names that already exist and waits for the reply.
-    Ask(Vec<rf_win::fastcopy::Conflict>, crate::conflict_dialog::Reply),
+    Ask(Vec<rf_linux::fastcopy::Conflict>, crate::conflict_dialog::Reply),
     Done(Result<bool, String>),
 }
 
@@ -109,8 +109,8 @@ impl Ops {
 
     /// What the taskbar buttons show: the running operations' progress, yellow when all are
     /// paused, red while a failure is unseen.
-    fn taskbar(&self) -> rf_win::taskbar_progress::State {
-        use rf_win::taskbar_progress::State;
+    fn taskbar(&self) -> rf_linux::taskbar_progress::State {
+        use rf_linux::taskbar_progress::State;
         let run: Vec<&OpState> = self.ops.iter().filter(|o| o.phase == OpPhase::Running).collect();
         let Some(v) = self.overall() else { return State::None };
         if run.iter().all(|o| o.total == 0) {
@@ -209,7 +209,7 @@ pub fn start_with(
     std::thread::Builder::new()
         .name("rf-op".into())
         .spawn(move || {
-            rf_win::shell::ensure_com();
+            rf_linux::shell::ensure_com();
             let r = work(tracker).map_err(|e| format!("{e:#}"));
             let _ = tx.unbounded_send(Ev::Done(r));
         })
@@ -343,7 +343,7 @@ fn transfer_inner(
         t.limit.store(limit, Ordering::Relaxed);
         // our engine (conflicts asked in one list); Windows' engine when it is turned off
         let r = if fast {
-            rf_win::fastcopy::transfer(kind, &sources, &dest, t.clone())
+            rf_linux::fastcopy::transfer(kind, &sources, &dest, t.clone())
         } else {
             fileops::transfer_tracked(kind, &sources, &dest, t.clone())
         };
@@ -372,7 +372,7 @@ pub fn offer_resume(cx: &mut App) {
     let found = cx.background_spawn(async {
         // let the window settle first; the scan itself is a directory listing
         std::thread::sleep(std::time::Duration::from_millis(700));
-        rf_win::fastcopy::interrupted()
+        rf_linux::fastcopy::interrupted()
     });
     cx.spawn(async move |cx| {
         let list = found.await;
@@ -385,7 +385,7 @@ pub fn offer_resume(cx: &mut App) {
     .detach();
 }
 
-fn ask_resume(job: rf_win::fastcopy::Interrupted, window: &mut gpui_kit::Window, cx: &mut App) {
+fn ask_resume(job: rf_linux::fastcopy::Interrupted, window: &mut gpui_kit::Window, cx: &mut App) {
     use crate::prompt::{Button, Kind};
     let title = match job.kind {
         Transfer::Copy => t!("Yarıda kalan bir kopyalama var"),
@@ -412,7 +412,7 @@ fn ask_resume(job: rf_win::fastcopy::Interrupted, window: &mut gpui_kit::Window,
             }),
             Button::new(t!("Vazgeç"), Kind::Normal, move |_, _, cx| {
                 // what was copied stays where it is
-                rf_win::fastcopy::discard(&j2.journal);
+                rf_linux::fastcopy::discard(&j2.journal);
                 offer_resume(cx);
                 Ok(())
             }),
@@ -424,7 +424,7 @@ fn ask_resume(job: rf_win::fastcopy::Interrupted, window: &mut gpui_kit::Window,
 }
 
 /// Carries a cut-off job on in the Status Center, with its original plan.
-pub fn resume_job(cx: &mut App, job: rf_win::fastcopy::Interrupted) {
+pub fn resume_job(cx: &mut App, job: rf_linux::fastcopy::Interrupted) {
     let verb = match job.kind {
         Transfer::Copy => t!("Kopyalanıyor"),
         Transfer::Move => t!("Taşınıyor"),
@@ -433,7 +433,7 @@ pub fn resume_job(cx: &mut App, job: rf_win::fastcopy::Interrupted) {
     let limit = u64::from(cx.global::<crate::settings::Settings>().copy_speed_limit) << 20;
     start(cx, title, move |t| {
         t.limit.store(limit, Ordering::Relaxed);
-        rf_win::fastcopy::resume(&job.journal, t)
+        rf_linux::fastcopy::resume(&job.journal, t)
     });
 }
 
@@ -564,7 +564,7 @@ pub fn delete_ex(cx: &mut App, paths: Vec<std::path::PathBuf>, permanent: bool, 
     start(cx, title, move |t| {
         // permanent: our parallel delete (the shell takes what it can't); recycle bin: the shell
         let r = if permanent && fast {
-            rf_win::fastdelete::delete_permanent(&paths, t.clone(), rf_win::fastdelete::threads_for(&paths))
+            rf_linux::fastdelete::delete_permanent(&paths, t.clone(), rf_linux::fastdelete::threads_for(&paths))
         } else {
             fileops::delete_tracked(&paths, permanent, t.clone())
         };
@@ -581,7 +581,7 @@ pub fn delete_ex(cx: &mut App, paths: Vec<std::path::PathBuf>, permanent: bool, 
 /// Puts the operations' progress on every main window's taskbar button (when it changed by a
 /// tenth of a percent or more).
 pub fn sync_taskbar(ops: &Entity<Ops>, cx: &mut App) {
-    use rf_win::taskbar_progress::State;
+    use rf_linux::taskbar_progress::State;
     thread_local! {
         static LAST: std::cell::Cell<(State, usize)> = const { std::cell::Cell::new((State::None, 0)) };
     }
@@ -601,7 +601,7 @@ pub fn sync_taskbar(ops: &Entity<Ops>, cx: &mut App) {
         let _ = w.update(cx, |_, window, _| {
             use raw_window_handle::{HasWindowHandle, RawWindowHandle};
             if let Ok(RawWindowHandle::Win32(h)) = HasWindowHandle::window_handle(window).map(|h| h.as_raw()) {
-                rf_win::taskbar_progress::set(h.hwnd.get(), state);
+                rf_linux::taskbar_progress::set(h.hwnd.get(), state);
             }
         });
     }
@@ -978,7 +978,7 @@ fn open_popup(ops: &Entity<Ops>, owner: AnyWindowHandle, cx: &mut App) -> Option
         use raw_window_handle::{HasWindowHandle, RawWindowHandle};
         if let Ok(h) = w.window_handle() {
             if let RawWindowHandle::Win32(h) = h.as_raw() {
-                rf_win::window::set_dark_mode(h.hwnd.get(), dark);
+                rf_linux::window::set_dark_mode(h.hwnd.get(), dark);
             }
         }
         cx.new(|cx| ScView::new(ops, w, cx))

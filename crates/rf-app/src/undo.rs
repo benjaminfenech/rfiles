@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use gpui_kit::*;
 use parking_lot::Mutex;
-use rf_win::fileops::Transfer;
+use rf_linux::fileops::Transfer;
 
 #[derive(Debug, Clone)]
 pub enum UndoOp {
@@ -45,7 +45,7 @@ pub fn undo(cx: &mut App) {
         UndoOp::Renamed { from, to } => {
             let name = from.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
             crate::status_center::start(cx, format!("{} {name}", t!("Geri alınıyor: yeniden adlandırma →")), move |_| {
-                rf_win::fileops::rename(&to, &name)
+                rf_linux::fileops::rename(&to, &name)
             });
         }
         UndoOp::Created { path } => crate::status_center::delete_ex(cx, vec![path], false, false),
@@ -68,12 +68,12 @@ pub fn undo(cx: &mut App) {
             let n = pairs.len();
             crate::status_center::start(cx, format!("{} {}", t!("Geri dönüşüm kutusundan geri yükleniyor:"), crate::i18n::items(n)), move |_| {
                 let wanted: Vec<String> = pairs.iter().map(|(_, bin)| bin.to_string_lossy().to_lowercase()).collect();
-                let items: Vec<_> = rf_win::recycle::list()?
+                let items: Vec<_> = rf_linux::recycle::list()?
                     .into_iter()
                     .filter(|it| wanted.contains(&it.parsing_path.to_lowercase()))
                     .collect();
                 anyhow::ensure!(!items.is_empty(), t!("öğeler geri dönüşüm kutusunda bulunamadı"));
-                rf_win::recycle::restore(&items)?;
+                rf_linux::recycle::restore(&items)?;
                 Ok(true)
             });
         }
@@ -93,7 +93,7 @@ pub fn redo(cx: &mut App) {
         UndoOp::Renamed { from, to } => {
             let name = to.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
             crate::status_center::start(cx, format!("{} {name}", t!("Yineleniyor: yeniden adlandırma →")), move |_| {
-                rf_win::fileops::rename(&from, &name)
+                rf_linux::fileops::rename(&from, &name)
             });
         }
         UndoOp::Created { .. } => {}

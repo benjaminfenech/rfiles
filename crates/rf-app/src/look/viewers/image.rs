@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use gpui_kit::component::{h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
-use rf_win::thumbs::Bgra;
+use rf_linux::thumbs::Bgra;
 
 use super::zoom;
 use crate::look::viewer::{MoreItem, Prepared, Probe, ThemeChoice, Viewer};
@@ -43,17 +43,17 @@ impl Viewer for ImageViewer {
     }
     fn can_handle(&self, f: &Probe) -> bool {
         // design files (CorelDRAW, EPS, Krita…): the picture saved inside them
-        f.is_file() && (EXTENSIONS.contains(&f.ext.as_str()) || rf_win::design::sniff(&f.ext, &f.head))
+        f.is_file() && (EXTENSIONS.contains(&f.ext.as_str()) || rf_linux::design::sniff(&f.ext, &f.head))
     }
     fn prepare(&mut self, f: &Probe, cx: &mut App) -> Prepared {
         let name = super::file_name(&f.path);
-        let dims = rf_win::look::decode::dimensions(&f.path);
+        let dims = rf_linux::look::decode::dimensions(&f.path);
         let path = f.path.clone();
         self.view = Some(cx.new(|cx| ImageView::new(path, dims, cx)));
         let (w, h) = dims.map_or((800.0, 600.0), |(w, h)| (w as f32, h as f32));
         let title = match dims {
             // (a design file's picture is its preview, not the design's size)
-            _ if rf_win::design::is_design_ext(&f.ext) => name,
+            _ if rf_linux::design::is_design_ext(&f.ext) => name,
             Some((w, h)) => format!("{w}×{h}: {name}"),
             None => name,
         };
@@ -153,7 +153,7 @@ struct Ready {
     frames: Vec<Arc<RenderImage>>,
 }
 
-fn ready(d: rf_win::look::decode::Decoded) -> Ready {
+fn ready(d: rf_linux::look::decode::Decoded) -> Ready {
     let has_alpha = d.frames.first().is_some_and(|(b, _)| b.data.chunks_exact(4).any(|p| p[3] < 255));
     let delays = d.frames.iter().map(|(_, ms)| *ms).collect();
     let frames = d.frames.into_iter().filter_map(|(b, _)| render_image_owned(b)).collect();
@@ -223,7 +223,7 @@ impl ImageView {
         .detach();
         // önce kabuk küçük resmi (çoğunlukla önbellekte, anında)
         let p = path.clone();
-        let thumb = cx.background_spawn(async move { rf_win::thumbs::get_image(&p, 256, rf_win::thumbs::Kind::Thumbnail).ok() });
+        let thumb = cx.background_spawn(async move { rf_linux::thumbs::get_image(&p, 256, rf_linux::thumbs::Kind::Thumbnail).ok() });
         v._tasks.push(cx.spawn(async move |this, cx| {
             if let Some(t) = thumb.await {
                 let _ = this.update(cx, |v, cx| {
@@ -234,7 +234,7 @@ impl ImageView {
                 });
             }
         }));
-        let full = cx.background_spawn(async move { rf_win::look::decode::decode_full(&path, MAX_SIDE).map(ready) });
+        let full = cx.background_spawn(async move { rf_linux::look::decode::decode_full(&path, MAX_SIDE).map(ready) });
         v._tasks.push(cx.spawn(async move |this, cx| {
             let r = full.await;
             let _ = this.update(cx, |v, cx| v.loaded(r, cx));

@@ -5,9 +5,9 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use gpui_kit::*;
-use rf_win::look::hook::{HookHandle, LookEvent};
-use rf_win::look::keys::LookAction;
-use rf_win::look::target::TargetKind;
+use rf_linux::look::hook::{HookHandle, LookEvent};
+use rf_linux::look::keys::LookAction;
+use rf_linux::look::target::TargetKind;
 
 use super::{LookManager, ShowOpts};
 use crate::look::config::LookSettings;
@@ -104,7 +104,7 @@ struct HookMsg {
 }
 
 pub fn quicklook_running() -> bool {
-    rf_win::look::win::process_running("QuickLook.exe")
+    rf_linux::look::win::process_running("QuickLook.exe")
 }
 
 /// Ayara göre kancayı başlatır ya da durdurur (açılışta ve ayar değişince).
@@ -127,14 +127,14 @@ pub fn sync(cx: &mut App) {
 
 fn start(cx: &mut App) {
     let (tx, mut rx) = futures::channel::mpsc::unbounded::<HookMsg>();
-    let hook = rf_win::look::hook::start(move |ev| {
+    let hook = rf_linux::look::hook::start(move |ev| {
         // önizleme penceremiz öndeyse tuşları pencere kendisi işler
         if ev.target == TargetKind::None {
             return;
         }
-        rf_win::shell::ensure_com();
+        rf_linux::shell::ensure_com();
         let path = match ev.action {
-            LookAction::Toggle | LookAction::SelectionMoved => rf_win::look::target::selected_path(ev.target, ev.hwnd),
+            LookAction::Toggle | LookAction::SelectionMoved => rf_linux::look::target::selected_path(ev.target, ev.hwnd),
             _ => None,
         };
         let _ = tx.unbounded_send(HookMsg { ev, path });
@@ -203,8 +203,8 @@ fn watch_selection(cx: &mut App) {
             let Some((kind, hwnd)) = src else { break };
             let path = cx
                 .background_spawn(async move {
-                    rf_win::shell::ensure_com();
-                    rf_win::look::target::selected_path(kind, hwnd)
+                    rf_linux::shell::ensure_com();
+                    rf_linux::look::target::selected_path(kind, hwnd)
                 })
                 .await;
             if let Some(p) = path {
@@ -234,7 +234,7 @@ mod tests {
     /// Kanca tuşu yutmaz: Explorer/masaüstü Enter'ı kendisi açar; biz açarsak dosya iki kez açılır.
     #[test]
     fn enter_in_explorer_only_closes() {
-        use rf_win::look::target::TargetKind;
+        use rf_linux::look::target::TargetKind;
         assert!(!super::opens_on_enter(TargetKind::Explorer));
         assert!(!super::opens_on_enter(TargetKind::Desktop));
         assert!(super::opens_on_enter(TargetKind::None));

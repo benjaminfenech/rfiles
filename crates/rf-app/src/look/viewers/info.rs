@@ -37,7 +37,7 @@ impl Viewer for InfoCard {
         let (exists, is_dir) = (f.exists, f.is_dir);
         self.view = Some(cx.new(|cx| InfoView::new(path, exists, is_dir, images, cx)));
         // (up to ten lines for a package, seven for an ELF file)
-        let h = if f.exists && !f.is_dir && rf_win::apppkg::kind_of(&f.path).is_some() {
+        let h = if f.exists && !f.is_dir && rf_linux::apppkg::kind_of(&f.path).is_some() {
             380.0
         } else if f.exists && !f.is_dir && f.head.starts_with(b"ELF") {
             300.0
@@ -71,14 +71,14 @@ pub struct InfoView {
     /// Sürücü kökü: (boş, toplam, etiket).
     drive: Option<(u64, u64, String)>,
     /// Programs and libraries: version resource and architecture.
-    pe: Option<rf_win::pe::PeInfo>,
+    pe: Option<rf_linux::pe::PeInfo>,
     /// Certificate files: subject, issuer, validity.
-    cert: Option<rf_win::cert::CertInfo>,
+    cert: Option<rf_linux::cert::CertInfo>,
     /// App packages (MSIX, APK, IPA, NuGet): what the package says, and its icon.
-    app: Option<(rf_win::apppkg::Kind, rf_win::apppkg::AppInfo)>,
+    app: Option<(rf_linux::apppkg::Kind, rf_linux::apppkg::AppInfo)>,
     app_icon: Option<Arc<RenderImage>>,
     /// Linux / Android / embedded programs and libraries.
-    elf: Option<rf_win::elf::ElfInfo>,
+    elf: Option<rf_linux::elf::ElfInfo>,
     cancel: Arc<AtomicBool>,
 }
 
@@ -123,7 +123,7 @@ impl InfoView {
         let mut v = Self { path, exists, entry, images, folder: None, drive: None, pe: None, cert: None, app: None, app_icon: None, elf: None, cancel: Default::default() };
         if is_dir && is_drive_root(&v.path) {
             let root = v.path.clone();
-            let task = cx.background_spawn(async move { rf_win::volume::volume_info(&root).ok() });
+            let task = cx.background_spawn(async move { rf_linux::volume::volume_info(&root).ok() });
             cx.spawn(async move |this, cx| {
                 if let Some(i) = task.await {
                     let _ = this.update(cx, |v, cx| {
@@ -137,7 +137,7 @@ impl InfoView {
             v.count_folder(cx);
         } else if exists && has_ext(&v.path, &["cer", "crt", "der", "pem"]) {
             let file = v.path.clone();
-            let task = cx.background_spawn(async move { rf_win::cert::info(&file) });
+            let task = cx.background_spawn(async move { rf_linux::cert::info(&file) });
             cx.spawn(async move |this, cx| {
                 if let Some(i) = task.await {
                     let _ = this.update(cx, |v, cx| {
@@ -147,11 +147,11 @@ impl InfoView {
                 }
             })
             .detach();
-        } else if exists && rf_win::apppkg::kind_of(&v.path).is_some() {
+        } else if exists && rf_linux::apppkg::kind_of(&v.path).is_some() {
             let file = v.path.clone();
             let task = cx.background_spawn(async move {
-                let (kind, mut info) = rf_win::apppkg::info(&file)?;
-                let icon = info.icon_png.take().and_then(|b| rf_win::apppkg::icon(&b, 256));
+                let (kind, mut info) = rf_linux::apppkg::info(&file)?;
+                let icon = info.icon_png.take().and_then(|b| rf_linux::apppkg::icon(&b, 256));
                 Some((kind, info, icon))
             });
             cx.spawn(async move |this, cx| {
@@ -166,7 +166,7 @@ impl InfoView {
             .detach();
         } else if exists && !is_dir && !is_pe_ext(&v.path) && maybe_elf(&v.path) {
             let file = v.path.clone();
-            let task = cx.background_spawn(async move { rf_win::elf::is_elf(&file).then(|| rf_win::elf::info(&file)).flatten() });
+            let task = cx.background_spawn(async move { rf_linux::elf::is_elf(&file).then(|| rf_linux::elf::info(&file)).flatten() });
             cx.spawn(async move |this, cx| {
                 if let Some(i) = task.await {
                     let _ = this.update(cx, |v, cx| {
@@ -178,7 +178,7 @@ impl InfoView {
             .detach();
         } else if exists && is_pe_ext(&v.path) {
             let file = v.path.clone();
-            let task = cx.background_spawn(async move { rf_win::pe::info(&file) });
+            let task = cx.background_spawn(async move { rf_linux::pe::info(&file) });
             cx.spawn(async move |this, cx| {
                 if let Some(i) = task.await {
                     let _ = this.update(cx, |v, cx| {
@@ -289,11 +289,11 @@ impl Render for InfoView {
         }
         if let Some((kind, a)) = &self.app {
             let kind = match kind {
-                rf_win::apppkg::Kind::Msix => t!("Windows uygulama paketi"),
-                rf_win::apppkg::Kind::MsixBundle => t!("Windows uygulama paketi grubu"),
-                rf_win::apppkg::Kind::Apk => t!("Android uygulaması"),
-                rf_win::apppkg::Kind::Ipa => t!("iOS uygulaması"),
-                rf_win::apppkg::Kind::Nuget => t!("NuGet paketi"),
+                rf_linux::apppkg::Kind::Msix => t!("Windows uygulama paketi"),
+                rf_linux::apppkg::Kind::MsixBundle => t!("Windows uygulama paketi grubu"),
+                rf_linux::apppkg::Kind::Apk => t!("Android uygulaması"),
+                rf_linux::apppkg::Kind::Ipa => t!("iOS uygulaması"),
+                rf_linux::apppkg::Kind::Nuget => t!("NuGet paketi"),
             };
             lines.push(line(&p, t!("Tür"), kind.to_string()));
             if let Some(n) = &a.name {
@@ -323,7 +323,7 @@ impl Render for InfoView {
             }
         }
         if let Some(e) = &self.elf {
-            use rf_win::elf::Kind as K;
+            use rf_linux::elf::Kind as K;
             let kind = match e.kind {
                 K::Executable => t!("program"),
                 K::Shared => t!("paylaşılan kitaplık"),

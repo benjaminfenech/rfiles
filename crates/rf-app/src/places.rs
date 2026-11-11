@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use gpui_kit::assets::IconName as L;
 use gpui_kit::*;
-use rf_win::{Drive, DriveKind, KnownFolder};
+use rf_linux::{Drive, DriveKind, KnownFolder};
 
 /// Linux: the drive's name as Settings → Files and folders → "Show drives as" asks (there are
 /// no drive letters).
@@ -77,36 +77,10 @@ pub struct Recent {
     pub is_dir: bool,
 }
 
-/// Windows' own "recent items" (%APPDATA%\Microsoft\Windows\Recent\*.lnk), newest first.
-fn load_recent(limit: usize) -> Vec<Recent> {
-    let Some(dir) = dirs::data_dir().map(|d| d.join("Microsoft").join("Windows").join("Recent")) else {
-        return Vec::new();
-    };
-    let Ok(rd) = std::fs::read_dir(&dir) else { return Vec::new() };
-    let mut links: Vec<(std::time::SystemTime, PathBuf)> = rd
-        .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().is_some_and(|x| x.eq_ignore_ascii_case("lnk")))
-        .filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path())))
-        .collect();
-    links.sort_by(|a, b| b.0.cmp(&a.0));
-    let mut out: Vec<Recent> = Vec::new();
-    for (t, link) in links.into_iter().take(limit * 3) {
-        let Ok(info) = rf_win::shortcut::resolve(&link) else { continue };
-        if info.target.as_os_str().is_empty() || out.iter().any(|r| r.target == info.target) {
-            continue;
-        }
-        let Ok(meta) = std::fs::metadata(&info.target) else { continue };
-        out.push(Recent {
-            name: info.target.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
-            target: info.target,
-            used_ms: t.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0),
-            is_dir: meta.is_dir(),
-        });
-        if out.len() >= limit {
-            break;
-        }
-    }
-    out
+/// Recently used files for Home's Recent section: none yet (the desktop's list,
+/// `~/.local/share/recently-used.xbel`, isn't read yet).
+fn load_recent(_limit: usize) -> Vec<Recent> {
+    Vec::new()
 }
 
 /// Cloud folders (OneDrive, Dropbox, iCloud, Google Drive) and WSL distributions.
@@ -148,12 +122,12 @@ pub struct Places {
     pub cloud: Vec<Pinned>,
     pub pinned: Vec<Pinned>,
     pub recent: Vec<Recent>,
-    pub libraries: Vec<rf_win::libraries::Library>,
+    pub libraries: Vec<rf_linux::libraries::Library>,
     /// Network locations ("Add a network location" shortcuts): (name, target).
     pub network: Vec<(String, std::path::PathBuf)>,
     /// Devices under This PC that are not drives (MTP phones, cameras): browsed as shell
     /// folders.
-    pub devices: Vec<rf_win::shellfolder::ShellChild>,
+    pub devices: Vec<rf_linux::shellfolder::ShellChild>,
     pub loaded: bool,
     _task: Option<Task<()>>,
 }
@@ -165,11 +139,11 @@ impl Places {
         this.refresh(cx);
         // Notice drives appearing/disappearing (USB, network mappings) without any shell hooks.
         cx.spawn(async move |this, cx| {
-            let mut mask = rf_win::drives::drive_mask();
+            let mut mask = rf_linux::drives::drive_mask();
             let mut recheck = false;
             loop {
                 cx.background_executor().timer(std::time::Duration::from_secs(3)).await;
-                let now = rf_win::drives::drive_mask();
+                let now = rf_linux::drives::drive_mask();
                 // after a change, look once more on the next tick: a new stick's file system
                 // shows up in UDisks a moment after its device does
                 if now != mask || recheck {
@@ -187,14 +161,14 @@ impl Places {
         // of the user (minimised, or another app active): enumerating This PC loads shell
         // extensions and can touch the drives; the look happens again when one comes back.
         cx.spawn(async move |this, cx| loop {
-            if !rf_win::window::app_in_front() {
+            if !rf_linux::window::app_in_front() {
                 cx.background_executor().timer(std::time::Duration::from_secs(5)).await;
                 if this.upgrade().is_none() {
                     break;
                 }
                 continue;
             }
-            let found = cx.background_spawn(async move { rf_win::shellfolder::devices() }).await;
+            let found = cx.background_spawn(async move { rf_linux::shellfolder::devices() }).await;
             let alive = this
                 .update(cx, |p, cx| {
                     if p.devices != found {
@@ -215,7 +189,7 @@ impl Places {
     pub fn refresh(&mut self, cx: &mut Context<Self>) {
         let user_pins = cx.try_global::<crate::settings::Settings>().and_then(|s| s.pinned.clone());
         let work = cx.background_spawn(async move {
-            let known = rf_win::known_folders();
+            let known = rf_linux::known_folders();
             let pinned = match user_pins {
                 None => known
                     .into_iter()
@@ -234,13 +208,13 @@ impl Places {
                     .collect(),
             };
             #[allow(unused_mut)]
-            let mut drives = rf_win::list_drives();
+            let mut drives = rf_linux::list_drives();
             // Linux: connected but not mounted (opening one mounts it)
-            drives.extend(rf_win::drives::unmounted_drives());
+            drives.extend(rf_linux::drives::unmounted_drives());
             let recent = load_recent(14);
             let cloud = load_cloud_and_wsl();
-            let libraries = rf_win::libraries::list();
-            let network = rf_win::network::network_shortcuts();
+            let libraries = rf_linux::libraries::list();
+            let network = rf_linux::network::network_shortcuts();
             (pinned, drives, recent, cloud, libraries, network)
         });
         self._task = Some(cx.spawn(async move |this, cx| {
@@ -274,7 +248,7 @@ pub fn known_icon(k: KnownFolder) -> L {
 /// Linux: a connected drive that isn't mounted yet (its `root` is the device; opening it
 /// mounts it). Never on Windows.
 pub fn unmounted(d: &Drive) -> bool {
-    return rf_win::drives::is_unmounted(d);
+    return rf_linux::drives::is_unmounted(d);
 }
 
 pub fn drive_icon(d: &Drive) -> L {
@@ -290,7 +264,7 @@ pub fn drive_icon(d: &Drive) -> L {
 mod tests {
     use super::linux_drive_name;
     use crate::settings::DriveNames::*;
-    use rf_win::Drive;
+    use rf_linux::Drive;
 
     fn drive(root: &str, source: &str, label: &str) -> Drive {
         Drive {
@@ -298,7 +272,7 @@ mod tests {
             letter: '\0',
             label: label.into(),
             source: source.into(),
-            kind: rf_win::DriveKind::Fixed,
+            kind: rf_linux::DriveKind::Fixed,
             total: 0,
             free: 0,
             fs: String::new(),

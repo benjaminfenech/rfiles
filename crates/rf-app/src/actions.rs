@@ -33,7 +33,6 @@ gpui_kit::actions!(
         CutItems,
         PasteItems,
         PasteIntoSelected,
-        PasteShortcut,
         DeleteItems,
         DeletePermanently,
         RenameItem,
@@ -194,7 +193,7 @@ fn bind_layout_shifted(cx: &mut App) {
     ];
     let mut bindings = Vec::new();
     for (vk, action) in wanted {
-        let Some(ch) = rf_win::keys::shifted_char(vk) else { continue };
+        let Some(ch) = rf_linux::keys::shifted_char(vk) else { continue };
         // AZERTY: Shift+& gives "1"; binding ctrl-1 would steal a plain ctrl+digit shortcut
         if ch.chars().any(|c| c.is_alphanumeric()) {
             continue;

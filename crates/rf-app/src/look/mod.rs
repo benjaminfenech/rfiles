@@ -96,7 +96,7 @@ impl LookManager {
         if m.active.is_some_and(|h| !alive.contains(&h)) {
             m.active = None;
         }
-        rf_win::look::hook::set_own_windows(hwnds);
+        rf_linux::look::hook::set_own_windows(hwnds);
     }
 
     pub fn show(path: PathBuf, opts: ShowOpts, cx: &mut App) {
@@ -121,7 +121,7 @@ impl LookManager {
         let s = cx.global::<LookSettings>().clone();
         let work = rect(crate::sys::work_area_at_cursor(cx));
         // a file in a slow place (a network drive) opens off the UI thread, in the window
-        let slow = rf_win::drives::slow_to_read(&path);
+        let slow = rf_linux::drives::slow_to_read(&path);
         let (viewer, prepared): (Box<dyn viewer::Viewer>, _) =
             if slow { (Box::new(window::Opening), window::Opening::prepared(&path)) } else { window::prepare_viewer(&path, cx) };
         let size = geometry::fit(prepared.preferred, work, prepared.fit_ratio);
@@ -149,9 +149,9 @@ impl LookManager {
         let show_in_taskbar = s.look_show_in_taskbar;
         match cx.open_window(options, move |window, cx| {
             let hwnd = window::hwnd_of(window);
-            rf_win::look::win::set_show_in_taskbar(hwnd, show_in_taskbar);
+            rf_linux::look::win::set_show_in_taskbar(hwnd, show_in_taskbar);
             if topmost {
-                rf_win::look::win::set_topmost(hwnd, true);
+                rf_linux::look::win::set_topmost(hwnd, true);
             }
             cx.new(|cx| LookWindow::new(path, topmost, viewer, prepared, window, cx))
         }) {
@@ -203,8 +203,8 @@ impl LookManager {
 
     pub fn run_and_close(cx: &mut App) {
         if let Some(p) = Self::current_path(cx) {
-            rf_win::sta::run(move |_| {
-                if let Err(e) = rf_win::shell::open(&p) {
+            rf_linux::sta::run(move |_| {
+                if let Err(e) = rf_linux::shell::open(&p) {
                     log::warn!("look run: {e:#}");
                 }
             });

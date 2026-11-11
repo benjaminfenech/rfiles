@@ -1,4 +1,4 @@
-//! Shared cache of shell icons and thumbnails. Misses are queued to rf-win's low-priority
+//! Shared cache of shell icons and thumbnails. Misses are queued to rf-linux's low-priority
 //! worker pool; rows render a symbol fallback until the real image arrives.
 
 use std::collections::HashMap;
@@ -10,7 +10,7 @@ use futures::StreamExt;
 use futures::channel::mpsc;
 use gpui_kit::*;
 use rf_core::Entry;
-use rf_win::thumbs::{Bgra, Kind, Request, Response, ThumbPool, has_unique_icon};
+use rf_linux::thumbs::{Bgra, Kind, Request, Response, ThumbPool, has_unique_icon};
 
 enum Slot {
     Pending,

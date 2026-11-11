@@ -1,13 +1,12 @@
-//! rf-linux: Linux platform layer. Same modules and functions as rf-win, so rf-app can use
-//! either one as `platform`. Many functions are still stubs (see docs/LINUX_PORT.md).
+//! rf-linux: rfiles' platform layer (files, drives, trash, icons, thumbnails, the desktop).
+//! It began as a copy of upstream's Windows layer (rf-win) with the same modules and
+//! functions; the Windows-only ones are being removed (see docs/LINUX_PORT.md).
 //!
 //! Every function here may block (disk, network, shell extensions). Never call them on the UI thread.
-// Generated from rf-win's public API by a one-off stub generator, then edited by hand.
-// Functions return safe defaults until they get a Linux implementation.
 #![cfg(unix)]
 #![allow(unused)]
 
-/// Stands in for Windows handles (HWND and friends) in signatures shared with rf-win.
+/// Stands in for Windows handles (HWND and friends) in signatures kept from rf-win.
 pub type Opaque = isize;
 
 /// Screen rectangle with the same field names as Windows' `RECT`, so rf-app can build one
@@ -26,7 +25,6 @@ pub mod clipboard;
 pub mod complete;
 pub mod ctxmenu;
 pub mod default_fm;
-pub mod dialog_reg;
 pub mod dialogs;
 pub mod diskusage;
 pub mod dnd;
@@ -56,30 +54,22 @@ pub mod fileactions;
 pub mod fileinfo;
 /// Linux only: org.freedesktop.FileManager1 ("Show in folder") while we are the default.
 pub mod fm_service;
-pub mod hotkey;
 pub mod udisks;
 pub mod indexer;
 pub mod nameindex;
 pub mod remote;
-pub mod compat;
 pub mod folder_custom;
 pub mod security;
-pub mod signature;
 pub mod sandbox;
-pub mod jumplist;
-pub mod wsearch;
 pub mod preview_host;
 pub mod props;
 pub mod recycle;
 pub mod search;
 pub mod shell;
 pub mod shellfolder;
-pub mod shell_window;
-pub mod shortcut;
 pub mod single_instance;
 pub mod sta;
 pub mod taskbar_progress;
-pub mod removal;
 pub mod rotate;
 pub mod thumbs;
 /// Linux only: running command-line tools.

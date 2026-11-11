@@ -292,7 +292,7 @@ pub fn render(p: &Palette, cx: &mut App) -> AnyElement {
 fn qs_command() -> &'static str {
     static CMD: std::sync::OnceLock<String> = std::sync::OnceLock::new();
     CMD.get_or_init(|| {
-        if let Some(id) = rf_win::sandbox::flatpak_id() {
+        if let Some(id) = rf_linux::sandbox::flatpak_id() {
             return format!("flatpak run {id} --quick-search");
         }
         "rfiles --quick-search".to_string()
@@ -477,11 +477,10 @@ fn general(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         None,
         move || {
             type Set = fn(&mut Settings, bool);
-            let rows: [(&str, bool, Set); 9] = [
+            let rows: [(&str, bool, Set); 8] = [
                 (t!("Yeni sekmede aç"), m.open_in_new_tab, |s, v| s.menu.open_in_new_tab = v),
                 (t!("Yeni pencerede aç"), m.open_in_new_window, |s, v| s.menu.open_in_new_window = v),
                 (t!("Öğe yolunu kopyala"), m.copy_path, |s, v| s.menu.copy_path = v),
-                (t!("Kısayol oluştur"), m.create_shortcut, |s, v| s.menu.create_shortcut = v),
                 (t!("Kenar çubuğuna sabitle"), m.pin, |s, v| s.menu.pin = v),
                 (t!("Sıkıştır / Çıkar"), m.compress, |s, v| s.menu.compress = v),
                 (t!("Etiketler"), m.tags, |s, v| s.menu.tags = v),
@@ -1486,7 +1485,7 @@ mod ext_tests {
 }
 
 fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
-    let start_on = rf_win::dialogs::starts_with_windows();
+    let start_on = rf_linux::dialogs::starts_with_windows();
     let dfm_on = crate::DEFAULT_FM.load(std::sync::atomic::Ordering::Relaxed);
     let mut out = vec![
         link_row(p, "export", L::Upload, t!("Ayarları dışa aktar"), None, |window, cx| pick_into(window, cx, t!("Ayarları dışa aktar"), PickTarget::Export)),
@@ -1494,7 +1493,7 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         link_row(p, "edit-file", L::FilePen, t!("Ayar dosyasını düzenle"), Some(t!("settings.toml metin düzenleyicide açılır")), |_, _| {
             if let Some(path) = settings::path() {
                 std::thread::spawn(move || {
-                    let _ = rf_win::shell::open(&path);
+                    let _ = rf_linux::shell::open(&path);
                 });
             }
         }),
@@ -1505,7 +1504,7 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             None,
             switch("start-win", p, start_on, move |window, _| {
                 if let Ok(exe) = std::env::current_exe() {
-                    if let Err(e) = rf_win::dialogs::set_start_with_windows(&exe, !start_on) {
+                    if let Err(e) = rf_linux::dialogs::set_start_with_windows(&exe, !start_on) {
                         log::warn!("start with Windows: {e}");
                     }
                 }
@@ -1580,12 +1579,12 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             switch("dfm", p, dfm_on, move |window, _| {
                 let exe = std::env::current_exe().map(|e| e.display().to_string()).unwrap_or_default();
                 std::thread::spawn(move || {
-                    let classes = rf_win::default_fm::CLASSES;
-                    let r = if dfm_on { rf_win::default_fm::disable(classes) } else { rf_win::default_fm::enable(&exe, classes) };
+                    let classes = rf_linux::default_fm::CLASSES;
+                    let r = if dfm_on { rf_linux::default_fm::disable(classes) } else { rf_linux::default_fm::enable(&exe, classes) };
                     if let Err(e) = r {
                         log::warn!("default file manager: {e:#}");
                     }
-                    crate::DEFAULT_FM.store(rf_win::default_fm::is_enabled(classes), std::sync::atomic::Ordering::Relaxed);
+                    crate::DEFAULT_FM.store(rf_linux::default_fm::is_enabled(classes), std::sync::atomic::Ordering::Relaxed);
                 });
                 window.refresh();
             }),
@@ -1605,7 +1604,7 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
 
 fn open_url(url: &'static str) {
     std::thread::spawn(move || {
-        let _ = rf_win::shell::open(std::path::Path::new(url));
+        let _ = rf_linux::shell::open(std::path::Path::new(url));
     });
 }
 
@@ -1643,7 +1642,7 @@ fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
         link_row(p, "open-log", L::FolderOpen, t!("Kayıt ve ayar klasörünü aç"), settings::app_dir().map(|d| d.display().to_string()).as_deref(), |_, _| {
             if let Some(d) = settings::app_dir() {
                 std::thread::spawn(move || {
-                    let _ = rf_win::shell::open(&d);
+                    let _ = rf_linux::shell::open(&d);
                 });
             }
         }),
@@ -1705,8 +1704,8 @@ fn pick_into(_window: &mut Window, cx: &mut App, title: &str, target: PickTarget
         PickTarget::Export => 2,
         PickTarget::Import => 3,
     };
-    rf_win::sta::run(move |owner| {
-        use rf_win::dialogs::{Pick, pick};
+    rf_linux::sta::run(move |owner| {
+        use rf_linux::dialogs::{Pick, pick};
         fn f(v: &[(String, String)]) -> Vec<(&str, &str)> {
             v.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect()
         }
@@ -1754,14 +1753,14 @@ fn pick_into(_window: &mut Window, cx: &mut App, title: &str, target: PickTarget
 /// "Local drives' file names are kept in an index … · C:\ 2.1 million entries, 84 MB · E:\ indexing…"
 fn name_index_status() -> String {
     let mut s = t!("Yerel sürücülerdeki dosya adları bir dizinde tutulur: alt klasörlerde arama milisaniyeler sürer. Dizin arka planda hazırlanır ve güncel tutulur.").to_string();
-    let parts: Vec<String> = rf_win::indexer::status()
+    let parts: Vec<String> = rf_linux::indexer::status()
         .into_iter()
         .map(|(root, state, live, mem)| {
             let r = root.to_string_lossy().trim_end_matches('\\').to_string();
             match state {
-                rf_win::indexer::State::Building => format!("{r} {}", t!("hazırlanıyor…")),
-                rf_win::indexer::State::Failed => format!("{r} {}", t!("dizinlenemedi")),
-                rf_win::indexer::State::Ready => {
+                rf_linux::indexer::State::Building => format!("{r} {}", t!("hazırlanıyor…")),
+                rf_linux::indexer::State::Failed => format!("{r} {}", t!("dizinlenemedi")),
+                rf_linux::indexer::State::Ready => {
                     t!("{root} {n} öğe, {mb} MB").replace("{root}", &r).replace("{n}", &crate::disk_usage::count(live as u64)).replace("{mb}", &(mem >> 20).to_string())
                 }
             }
@@ -1802,7 +1801,7 @@ fn index_exclusions(p: &Palette, s: &Settings) -> AnyElement {
                 ),
         );
     }
-    let defaults = rf_win::nameindex::default_excluded_names().join(", ");
+    let defaults = rf_linux::nameindex::default_excluded_names().join(", ");
     shell(p)
         .child(
             h_flex()
@@ -1829,8 +1828,8 @@ fn index_exclusions(p: &Palette, s: &Settings) -> AnyElement {
                     {
                         let (tx, rx) = futures::channel::oneshot::channel::<Option<std::path::PathBuf>>();
                         let title = t!("Dizine alınmayacak klasör").to_string();
-                        rf_win::sta::run(move |owner| {
-                            let _ = tx.send(rf_win::dialogs::pick(owner, &title, rf_win::dialogs::Pick::Folder));
+                        rf_linux::sta::run(move |owner| {
+                            let _ = tx.send(rf_linux::dialogs::pick(owner, &title, rf_linux::dialogs::Pick::Folder));
                         });
                         cx.spawn(async move |cx| {
                             let Ok(Some(dir)) = rx.await else { return };

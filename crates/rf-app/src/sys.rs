@@ -2,7 +2,7 @@
 //! Win32 calls the app always made; on Linux GPUI owns the input state: the modifier keys come
 //! from the window's events, and the global cursor position doesn't exist (Wayland).
 
-pub type Rect = rf_win::RECT;
+pub type Rect = rf_linux::RECT;
 
 /// Mouse position in screen pixels. Linux (Wayland) has no global cursor position: (0, 0).
 pub fn cursor_pos() -> (i32, i32) {
@@ -126,7 +126,7 @@ pub fn native_separators(p: std::path::PathBuf) -> std::path::PathBuf {
 /// The app id window rules match (Wayland `app_id`, X11 `WM_CLASS`).
 pub fn app_id(name: &str) -> Option<String> {
     // Flatpak: the main window carries the app id, which names its desktop entry (icon, dock)
-    if let Some(id) = rf_win::sandbox::flatpak_id().filter(|_| name == "rfiles") {
+    if let Some(id) = rf_linux::sandbox::flatpak_id().filter(|_| name == "rfiles") {
         return Some(id.to_string());
     }
     Some(name.to_string())
