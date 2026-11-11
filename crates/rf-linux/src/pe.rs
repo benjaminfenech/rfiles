@@ -16,6 +16,12 @@ pub struct PeInfo {
     pub product: Option<String>,
     pub company: Option<String>,
     pub description: Option<String>,
+    pub product_version: Option<String>,
+    pub copyright: Option<String>,
+    pub original_filename: Option<String>,
+    pub language: Option<String>,
+    pub trademarks: Option<String>,
+    pub internal_name: Option<String>,
 }
 
 fn machine_name(m: u16) -> &'static str {
