@@ -584,3 +584,10 @@ next to an installed copy of the old name changes nothing. Saved shortcuts namin
 `rustyfiles::` actions still load. The .deb and .rpm replace and conflict with `rustyfiles`
 (rpm: Obsoletes), the Arch package `rustyfiles-git`; the metainfo has `<replaces>` for the
 old id. Flatpak can't carry an install over between ids: the old one is uninstalled by hand.
+
+## Windows removed
+
+2026-11-11, in steps. **CI** first: the Windows `test` job (`windows-latest`: tests and a
+release build, about 25 minutes) and upstream's Velopack `release.yml` are gone; the
+"Protect main" ruleset now requires only the `linux` check. The Linux release no longer
+waits for a Windows release on a hand-pushed tag: it creates the release itself.

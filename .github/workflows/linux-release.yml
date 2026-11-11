@@ -9,9 +9,8 @@ name: Linux release
 # build fails, the draft stays: run this by hand with the tag once it's fixed. (A tag pushed from here
 # doesn't start other workflows, so everything happens in this one.)
 #
-# A tag pushed by hand works too: upstream's release.yml (Windows, Velopack) runs on it and
-# creates the release, so this waits up to an hour for it, and creates it only if it never
-# appears. Run it by hand with a tag to (re)attach that tag's packages.
+# A tag pushed by hand works too: its release is created here if it doesn't exist. Run it by
+# hand with a tag to (re)attach that tag's packages.
 on:
   push:
     branches: [main]
@@ -84,16 +83,11 @@ jobs:
           pattern: rfiles-*
           path: dist
           merge-multiple: true
-      - name: Wait for the release
+      - name: The release
         if: needs.tag.outputs.created != 'true'
         run: |
-          # a hand-pushed tag: the Windows build takes about 25 minutes before it publishes
-          for _ in $(seq 60); do
-            gh release view "$TAG" >/dev/null 2>&1 && exit 0
-            sleep 60
-          done
-          echo "no release for $TAG after an hour: creating it"
-          gh release create "$TAG" --verify-tag --title "rfiles ${TAG#v}" --notes "Linux packages for $TAG."
+          # a hand-pushed tag (or a run by hand): its release, if there isn't one yet
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --verify-tag --title "rfiles ${TAG#v}" --notes "rfiles $TAG."
       - name: Attach the packages and publish
         run: |
           ls -l dist
