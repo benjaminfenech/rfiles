@@ -19,7 +19,7 @@ The Linux port of [rustyfiles](https://github.com/gelenmedya/rustyfiles), built 
 | Arch, CachyOS, Manjaro | `rustyfiles-git-…-x86_64.pkg.tar.zst` | `sudo pacman -U ./rustyfiles-git-*.pkg.tar.zst` |
 | Any distribution | `rustyfiles-….x86_64.flatpak` / `.aarch64.flatpak` | `flatpak install --user ./rustyfiles-*.flatpak` |
 
-Installing over 0.5.2-linux.1 upgrades it in place, and your settings stay. The Flatpak fetches its runtime from Flathub on first install.
+Installing a .deb, .rpm or Arch package over 0.5.2-linux.1 upgrades it in place, and your settings stay. For the Flatpak, add `--reinstall` if it says the app is already installed; it fetches its runtime from Flathub on first install.
 
 Optional extras for previews and drives: poppler (PDFs), libavif / libheif tools (AVIF, HEIC), FFmpeg (older video formats), udisks2 (mounting drives), kio-fuse or gvfs (network locations), git (git status). The [README](https://github.com/benjaminfenech/rustyfiles-linux#optional-extras) lists the package names for each distribution.
 
