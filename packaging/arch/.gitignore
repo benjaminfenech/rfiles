@@ -1,5 +1,5 @@
 # makepkg's working files
-/rustyfiles/
+/rfiles/
 /src/
 /pkg/
 *.pkg.tar.*

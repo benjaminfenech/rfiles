@@ -1,4 +1,4 @@
-//! Persistent user settings (%APPDATA%\rustyfiles\settings.toml) as a GPUI global.
+//! Persistent user settings (%APPDATA%\rfiles\settings.toml) as a GPUI global.
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU8, Ordering};
@@ -288,12 +288,12 @@ pub struct Settings {
     pub pinned: Option<Vec<PathBuf>>,
     /// Folder aliases: `@name` in the address box (Files' folder aliases).
     pub folder_aliases: std::collections::BTreeMap<String, PathBuf>,
-    /// Closing the last window keeps rustyfiles in the notification area (Files' "leave app
+    /// Closing the last window keeps rfiles in the notification area (Files' "leave app
     /// running in the background"): the next window opens instantly.
     pub run_in_background: bool,
     /// Status bar: listing time and the GPU/CPU renderer badge (developer info).
     pub show_perf_info: bool,
-    /// A notification when a long operation finishes while rustyfiles is not in front.
+    /// A notification when a long operation finishes while rfiles is not in front.
     pub notify_long_ops: bool,
     /// Updates (GitHub Releases) are looked for and downloaded in the background.
     pub auto_update: bool,
@@ -306,7 +306,7 @@ pub struct Settings {
     pub adaptive_offered: bool,
     pub show_extensions: bool,
     /// Custom shortcuts: keystroke → action, e.g. `"ctrl-k" = "NewFolder"` (names as in the
-    /// command palette's actions; `rustyfiles::` prefix optional). Applied at startup.
+    /// command palette's actions; `rfiles::` prefix optional). Applied at startup.
     pub keybindings: std::collections::BTreeMap<String, String>,
     /// Last window placement: [x, y, width, height, maximized (0/1)].
     pub window: Option<[f32; 5]>,
@@ -399,7 +399,7 @@ pub struct Settings {
     pub show_flatten: bool,
 
     // ---- DirectLook (Hızlı Bakış, ayrı program): ayarları kendi dosyasında (`look::config`)
-    /// DirectLook kullanılsın mı (kapalıyken rustyfiles onu başlatmaz, Boşluk bir şey yapmaz).
+    /// DirectLook kullanılsın mı (kapalıyken rfiles onu başlatmaz, Boşluk bir şey yapmaz).
     pub directlook_enabled: bool,
 
     // ---- Quick search (quick_search.rs)
@@ -659,8 +659,8 @@ impl Settings {
             },
             Ordering::Relaxed,
         );
-        // An explicit RUSTYFILES_RENDERER env var wins (debugging).
-        if std::env::var_os("RUSTYFILES_RENDERER").is_none() {
+        // An explicit RFILES_RENDERER env var wins (debugging).
+        if std::env::var_os("RFILES_RENDERER").is_none() {
             use gpui_windows::hybrid::{RendererMode, set_mode};
             set_mode(match self.renderer {
                 RendererPref::Auto => RendererMode::Auto,
@@ -759,21 +759,21 @@ mod tests {
     }
 }
 
-/// Where data that can be rebuilt lives (remembered folder sizes): `%LOCALAPPDATA%\rustyfiles`,
-/// or `RUSTYFILES_CONFIG_DIR` when set, so test copies keep their data apart.
+/// Where data that can be rebuilt lives (remembered folder sizes): `%LOCALAPPDATA%\rfiles`,
+/// or `RFILES_CONFIG_DIR` when set, so test copies keep their data apart.
 pub fn local_data_dir() -> Option<std::path::PathBuf> {
-    if let Some(d) = std::env::var_os("RUSTYFILES_CONFIG_DIR").filter(|d| !d.is_empty()) {
+    if let Some(d) = std::env::var_os("RFILES_CONFIG_DIR").filter(|d| !d.is_empty()) {
         return Some(std::path::PathBuf::from(d));
     }
-    dirs::data_local_dir().map(|d| d.join("rustyfiles"))
+    dirs::data_local_dir().map(|d| d.join("rfiles"))
 }
 
-/// `%APPDATA%\rustyfiles`, or `RUSTYFILES_CONFIG_DIR` when set (portable use, tests).
+/// `%APPDATA%\rfiles`, or `RFILES_CONFIG_DIR` when set (portable use, tests).
 pub fn app_dir() -> Option<std::path::PathBuf> {
-    if let Some(d) = std::env::var_os("RUSTYFILES_CONFIG_DIR").filter(|d| !d.is_empty()) {
+    if let Some(d) = std::env::var_os("RFILES_CONFIG_DIR").filter(|d| !d.is_empty()) {
         return Some(std::path::PathBuf::from(d));
     }
-    dirs::config_dir().map(|d| d.join("rustyfiles"))
+    dirs::config_dir().map(|d| d.join("rfiles"))
 }
 
 #[cfg(test)]
@@ -796,7 +796,7 @@ yeni_alan = 3").unwrap();
 /// so it never competes with opening the window.
 fn sync_name_index(on: bool, excluded: &[String]) {
     use std::sync::atomic::{AtomicU8, Ordering};
-    // DirectLook reads these settings too: the index is rustyfiles' (a second indexer would walk
+    // DirectLook reads these settings too: the index is rfiles' (a second indexer would walk
     // every drive again and write the same index files)
     if crate::background::DIRECTLOOK_PROCESS.load(Ordering::Relaxed) {
         return;
@@ -827,22 +827,22 @@ fn sync_name_index(on: bool, excluded: &[String]) {
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_secs(delay));
         // extra instances (tests, the speed test's) leave it to the main one
-        // (RUSTYFILES_INDEX=1 indexes there too, for testing)
-        let extra = std::env::var_os("RUSTYFILES_MULTI_INSTANCE").is_some() && std::env::var_os("RUSTYFILES_INDEX").is_none();
-        if STATE.load(Ordering::Relaxed) != 2 || std::env::var_os("RUSTYFILES_NO_INDEX").is_some() || extra {
+        // (RFILES_INDEX=1 indexes there too, for testing)
+        let extra = std::env::var_os("RFILES_MULTI_INSTANCE").is_some() && std::env::var_os("RFILES_INDEX").is_none();
+        if STATE.load(Ordering::Relaxed) != 2 || std::env::var_os("RFILES_NO_INDEX").is_some() || extra {
             return;
         }
         // a copy with its own settings folder (tests, portable) keeps its index there too
-        let dir = match std::env::var_os("RUSTYFILES_CONFIG_DIR").filter(|d| !d.is_empty()) {
+        let dir = match std::env::var_os("RFILES_CONFIG_DIR").filter(|d| !d.is_empty()) {
             Some(cfg) => std::path::PathBuf::from(cfg).join("index"),
             #[cfg(windows)]
-            None => std::env::var_os("LOCALAPPDATA").map_or_else(std::env::temp_dir, std::path::PathBuf::from).join("rustyfiles").join("index"),
-            // Linux: the cache folder (`~/.cache/rustyfiles/index`, never indexed itself)
+            None => std::env::var_os("LOCALAPPDATA").map_or_else(std::env::temp_dir, std::path::PathBuf::from).join("rfiles").join("index"),
+            // Linux: the cache folder (`~/.cache/rfiles/index`, never indexed itself)
             #[cfg(not(windows))]
-            None => dirs::cache_dir().unwrap_or_else(std::env::temp_dir).join("rustyfiles").join("index"),
+            None => dirs::cache_dir().unwrap_or_else(std::env::temp_dir).join("rfiles").join("index"),
         };
-        // RUSTYFILES_INDEX_ROOTS="E:\;F:\" picks the roots (testing; Linux: "/data;/home/me")
-        let roots = match std::env::var("RUSTYFILES_INDEX_ROOTS") {
+        // RFILES_INDEX_ROOTS="E:\;F:\" picks the roots (testing; Linux: "/data;/home/me")
+        let roots = match std::env::var("RFILES_INDEX_ROOTS") {
             Ok(v) => v.split(';').filter(|s| !s.is_empty()).map(std::path::PathBuf::from).collect(),
             Err(_) => rf_win::indexer::local_roots(),
         };

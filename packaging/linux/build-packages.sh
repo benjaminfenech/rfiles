@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds rustyfiles_<version>_<arch>.deb and rustyfiles-<version>.<arch>.rpm into dist/ from
+# Builds rfiles_<version>_<arch>.deb and rfiles-<version>.<arch>.rpm into dist/ from
 # binaries already built with `cargo build --release -p rf-app --bins`.
 #
 #   packaging/linux/build-packages.sh [target/release]
@@ -9,7 +9,7 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 bin_dir=${1:-${CARGO_TARGET_DIR:-target}/release}
-for b in rustyfiles directlook; do
+for b in rfiles directlook; do
   [[ -x $bin_dir/$b ]] || { echo "missing $bin_dir/$b: build with cargo build --release -p rf-app --bins" >&2; exit 1; }
 done
 
@@ -22,7 +22,7 @@ case $(uname -m) in
 esac
 
 # the newest glibc symbol the binaries use: the oldest glibc they run on
-glibc=$(objdump -T "$bin_dir/rustyfiles" "$bin_dir/directlook" | grep -oE 'GLIBC_[0-9.]+' | sed 's/GLIBC_//' | sort -Vu | tail -n1)
+glibc=$(objdump -T "$bin_dir/rfiles" "$bin_dir/directlook" | grep -oE 'GLIBC_[0-9.]+' | sed 's/GLIBC_//' | sort -Vu | tail -n1)
 
 # nfpm expands environment variables in only some fields (not file paths): fill them in here
 mkdir -p dist

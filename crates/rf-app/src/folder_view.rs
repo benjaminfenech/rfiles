@@ -3935,7 +3935,7 @@ pub(crate) fn open_in_background(path: PathBuf, cx: &mut App) {
         // FTP: download to a temp copy, then open that
         let path = if rf_win::ftp::is_ftp(&path) {
             let name = path.file_name().map(|n| n.to_os_string()).unwrap_or_default();
-            let dir = std::env::temp_dir().join("rustyfiles-ftp");
+            let dir = std::env::temp_dir().join("rfiles-ftp");
             let _ = std::fs::create_dir_all(&dir);
             let local = dir.join(name);
             if let Err(e) = rf_win::ftp::download(&path.to_string_lossy(), &local) {
@@ -4126,10 +4126,10 @@ impl Render for FolderView {
 #[allow(dead_code)]
 fn _assert_category_used(_: Category) {}
 
-/// `RUSTYFILES_TRACE_LIVE=1`: log listing and live-update timings (benchmarks).
+/// `RFILES_TRACE_LIVE=1`: log listing and live-update timings (benchmarks).
 fn trace_live() -> bool {
     static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    *ON.get_or_init(|| std::env::var_os("RUSTYFILES_TRACE_LIVE").is_some())
+    *ON.get_or_init(|| std::env::var_os("RFILES_TRACE_LIVE").is_some())
 }
 
 /// A block device (`/dev/sdb1`): an unmounted drive in the sidebar.

@@ -1,7 +1,7 @@
-"""Builds crates/rf-app/assets/rustyfiles.ico (and rustyfiles.png) from the SVG logo.
+"""Builds crates/rf-app/assets/rustyfiles.ico (and rfiles.png) from the SVG logo.
 
-Every icon size is rendered from vector (no downscaling): rustyfiles.svg for 32 px and up,
-rustyfiles-small.svg (no glow / rim light, larger bolt) for 16–24 px, which is what the
+Every icon size is rendered from vector (no downscaling): rfiles.svg for 32 px and up,
+rfiles-small.svg (no glow / rim light, larger bolt) for 16–24 px, which is what the
 taskbar and Explorer show. Rendering uses headless Chrome or Edge (transparent background);
 packing uses Pillow. Usage: python tools/make_icon.py
 """
@@ -13,8 +13,8 @@ import tempfile
 from PIL import Image
 
 ASSETS = os.path.join(os.path.dirname(__file__), "..", "crates", "rf-app", "assets")
-BIG = os.path.join(ASSETS, "rustyfiles.svg")
-SMALL = os.path.join(ASSETS, "rustyfiles-small.svg")
+BIG = os.path.join(ASSETS, "rfiles.svg")
+SMALL = os.path.join(ASSETS, "rfiles-small.svg")
 SIZES = [16, 20, 24, 32, 40, 48, 64, 128, 256]
 SMALL_MAX = 24
 
@@ -68,7 +68,7 @@ def main():
         # each size is its own rendering (Pillow keeps appended images whose size matches)
         # plain BMP frames: every Windows API and tool reads them (some choke on PNG frames)
         biggest.save(out, sizes=[(s, s) for s in SIZES], append_images=images[:-1], bitmap_format="bmp")
-        biggest.save(os.path.join(ASSETS, "rustyfiles.png"))
+        biggest.save(os.path.join(ASSETS, "rfiles.png"))
         print("wrote", os.path.abspath(out))
     finally:
         shutil.rmtree(work, ignore_errors=True)

@@ -177,7 +177,7 @@ impl Global for OpenWorkspaces {}
 /// pins or the language change; test runs (several instances) leave the user's list alone.
 fn update_jump_list(places: &crate::places::Places) {
     static LAST: std::sync::Mutex<Option<(Vec<(String, PathBuf)>, [&'static str; 3])>> = std::sync::Mutex::new(None);
-    if !places.loaded || std::env::var_os("RUSTYFILES_MULTI_INSTANCE").is_some() {
+    if !places.loaded || std::env::var_os("RFILES_MULTI_INSTANCE").is_some() {
         return;
     }
     // in the UI language, as the sidebar shows them (a default pin's title is its Turkish name)
@@ -246,7 +246,7 @@ pub fn any_main_window(cx: &App) -> bool {
 }
 
 /// A second launch's message that asks for a file to be shown selected in its folder
-/// (`rustyfiles /select,<file>`, like Explorer).
+/// (`rfiles /select,<file>`, like Explorer).
 pub const SELECT_PREFIX: &str = "\u{1}select:";
 
 /// A file to select in the window that just opened its folder ("Show in folder" from another app,
@@ -255,7 +255,7 @@ pub const SELECT_HERE_PREFIX: &str = "\u{1}select-here:";
 
 /// A second launch on a shell folder (a phone, Network…) reaches the running window as this
 /// prefix plus the folder's parsing name (and, in a saved session, a tab and its name).
-pub const SHELL_PREFIX: &str = "rustyfiles-shell:";
+pub const SHELL_PREFIX: &str = "rfiles-shell:";
 
 /// How a tab is kept in the saved session: a folder's path, a search's folder, the Recycle Bin
 /// and shell folders (a phone…) by name; other places come back as Home ("").
@@ -3234,12 +3234,12 @@ impl Render for Workspace {
                 .text_xs()
                 .text_color(p.text_secondary)
                 .child(Icon::new(L::Star).size(px(12.)).text_color(p.accent))
-                .child(div().flex_1().child(t!("rustyfiles işinize yarıyor mu? GitHub'da bir yıldız, başkalarının da bulmasına yardım eder.")))
+                .child(div().flex_1().child(t!("rfiles işinize yarıyor mu? GitHub'da bir yıldız, başkalarının da bulmasına yardım eder.")))
                 .child(action("star-yes", t!("Yıldız ver"), true))
                 .child(action("star-no", t!("Bir daha gösterme"), false))
         });
         // Taskbar title follows the active folder.
-        let title = format!("{} — rustyfiles", self.active_tab().read(cx).title(cx));
+        let title = format!("{} — rfiles", self.active_tab().read(cx).title(cx));
         if title != self.last_title {
             window.set_window_title(&title);
             self.last_title = title;

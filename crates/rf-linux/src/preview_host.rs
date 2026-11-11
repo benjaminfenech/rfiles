@@ -37,7 +37,7 @@ thread_local! {
 }
 /// Automated UI tests set this: a test must never make a sound.
 fn muted_for_tests() -> bool {
-    std::env::var_os("RUSTYFILES_MUTE").is_some()
+    std::env::var_os("RFILES_MUTE").is_some()
 }
 /// Whether `path` is audio / video our own player tries (Media Foundation decides in the end).
 /// Linux has no Media Foundation player: rf-player plays these itself (with FFmpeg for what

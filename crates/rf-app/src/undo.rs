@@ -1,4 +1,4 @@
-//! Undo (Ctrl+Z) and redo (Ctrl+Y) for operations done in rustyfiles. The shell's own undo
+//! Undo (Ctrl+Z) and redo (Ctrl+Y) for operations done in rfiles. The shell's own undo
 //! stack is not scriptable, so we record what each operation did and run the inverse.
 
 use crate::t;

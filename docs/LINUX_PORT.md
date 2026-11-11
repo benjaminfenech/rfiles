@@ -1,5 +1,13 @@
 # Porting rustyfiles to Linux
 
+> [!NOTE]
+> **History.** This is the log of porting [rustyfiles](https://github.com/gelenmedya/rustyfiles)
+> to Linux, from 2026-11-08 to 2026-11-11. The port then stopped following rustyfiles (the
+> last merge was its 0.6.0, upstream's work having become Windows features) and was renamed
+> **rfiles**: the repository is `benjaminfenech/rfiles`, detached from the fork network. The
+> log below keeps the old name, commands and sync steps as they were. What changed with the
+> rename is under [The rename to rfiles](#the-rename-to-rfiles) at the end.
+
 Status: **Phase 0 done** (2026-11-08): the workspace builds and its tests pass on Linux, and
 `cargo run -p rf-app --bin rustyfiles` opens the window and browses folders. Phases 1–3 are
 still to do. Plan written against `f28d4ac`.
@@ -328,6 +336,9 @@ the hybrid GPU/CPU renderer, critical-error-dialog suppression, `keep_gdiplus_al
 
 ## Upstream syncs
 
+**Ended at 0.6.0** (2026-11-11): rfiles no longer merges rustyfiles. A cross-platform fix
+can still be cherry-picked from it. The steps below are how the syncs were done.
+
 Merge `upstream/main` into a `sync/upstream-<version>` branch (merge commit, never squash).
 New `rf-win` API that the app calls needs a Linux counterpart in `rf-linux` (the build says
 which); new `rf-win` examples get the `support/<name>_win.rs` wrapper with a stub `main`;
@@ -546,3 +557,30 @@ network access; Flathub would need `cargo-sources.json` instead.
 
 Already checked: the git dependencies (`gelenmedya/rarchive`, the `storytold/filmcraft`
 codecs) compile on Linux unchanged.
+
+## The rename to rfiles
+
+2026-11-11. The repository was detached from the fork network and renamed
+`benjaminfenech/rustyfiles-linux` → `benjaminfenech/rfiles` (GitHub redirects the old URL).
+In the code, "rustyfiles" became "rfiles" everywhere it names this app: the `rfiles`
+binary (DirectLook keeps its name), the Wayland app id, `~/.config/rfiles` (and the data and
+cache folders), `RFILES_*` variables, the single-instance socket, the tray and
+notifications, `rfiles.desktop`, the icons, the metainfo and Flatpak id
+`io.github.benjaminfenech.rfiles`, the packages (`rfiles`, `rfiles-git`), the `rfiles::`
+action namespace, and the UI text in every language. Kept: links and credit to rustyfiles
+(`gelenmedya/rustyfiles`, `rustyfiles.com`), the Windows layer (`rf-win`, `rf-dialog`,
+`rustyfiles.ico` / `.rc`, the speed test's `AppKind::Rustyfiles`), upstream's winget
+manifests and design docs, this log, and the `[X-rustyfiles]` mimeapps.list group (it holds
+the file manager to restore, so turning the default off still works after the rename).
+
+Taking over an install of the old name (`rf-app/src/renamed.rs`): at start, `RUSTYFILES_*`
+variables count as `RFILES_*`, and `~/.config/rustyfiles`, `~/.local/share/rustyfiles` and
+`~/.cache/rustyfiles` move to `…/rfiles` when the new folder doesn't exist (not for test
+copies, `RFILES_CONFIG_DIR`). Then `default_fm::adopt_renamed` makes `rfiles.desktop` the
+default file manager where `rustyfiles.desktop` was (the remembered previous one is kept),
+`dialogs::adopt_renamed_autostart` moves the login entry, and `repoint_autostart` fixes
+DirectLook's: each only when the old entry's program no longer exists, so a source build
+next to an installed copy of the old name changes nothing. Saved shortcuts naming
+`rustyfiles::` actions still load. The .deb and .rpm replace and conflict with `rustyfiles`
+(rpm: Obsoletes), the Arch package `rustyfiles-git`; the metainfo has `<replaces>` for the
+old id. Flatpak can't carry an install over between ids: the old one is uninstalled by hand.

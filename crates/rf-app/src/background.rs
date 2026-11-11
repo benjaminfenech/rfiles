@@ -22,15 +22,15 @@ pub fn quitting() -> bool {
 
 fn labels() -> rf_win::tray::Labels {
     rf_win::tray::Labels {
-        tooltip: "rustyfiles".into(),
-        open: t!("rustyfiles'ı aç").into(),
+        tooltip: "rfiles".into(),
+        open: t!("rfiles'ı aç").into(),
         new_window: t!("Yeni pencere").into(),
         settings: t!("Ayarlar").into(),
         quit: t!("Çıkış").into(),
     }
 }
 
-/// Bu süreç DirectLook: rustyfiles'ın bildirim alanı simgesi gösterilmez (DirectLook'un kendisi var).
+/// Bu süreç DirectLook: rfiles'ın bildirim alanı simgesi gösterilmez (DirectLook'un kendisi var).
 pub static DIRECTLOOK_PROCESS: AtomicBool = AtomicBool::new(false);
 
 /// Settings changed: the tray icon is there exactly while background mode is on.
@@ -94,7 +94,7 @@ fn on_tray(e: rf_win::tray::TrayEvent, cx: &mut App) {
     }
 }
 
-/// An operation ended: notify when it was long and rustyfiles is not in front.
+/// An operation ended: notify when it was long and rfiles is not in front.
 pub fn op_finished(ops: &Entity<Ops>, id: u64, cx: &mut App) {
     if !cx.global::<crate::settings::Settings>().notify_long_ops {
         return;

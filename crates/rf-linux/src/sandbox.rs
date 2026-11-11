@@ -1,5 +1,5 @@
 //! Running inside Flatpak. The sandbox has its own `/usr`, `/tmp` and XDG folders, but
-//! rustyfiles is a file manager: it works on the user's own files, trash, settings and apps.
+//! rfiles is a file manager: it works on the user's own files, trash, settings and apps.
 //! So with `--filesystem=host` it uses the host's XDG folders ([`adopt_host_dirs`]) and runs
 //! host programs (apps, terminals, git, ffmpeg, poppler, gio, thumbnailers) through
 //! `flatpak-spawn --host` ([`tool`], [`launch`]). Outside Flatpak all of this is a no-op.
@@ -30,7 +30,7 @@ pub fn is_flatpak() -> bool {
 
 /// Inside Flatpak: points the XDG folders back at the host's (Flatpak gives the app its own
 /// under `~/.var/app`), so the trash, `mimeapps.list`, bookmarks, user folders, thumbnails and
-/// rustyfiles' own settings are the same as a native install's; adds the host's and its
+/// rfiles' own settings are the same as a native install's; adds the host's and its
 /// Flatpak apps' data folders (desktop entries, icons) ahead of the sandbox's; and moves
 /// temporary files to a folder the host can see too (host tools write their output there).
 ///
@@ -120,7 +120,7 @@ fn host_command(prog: &OsStr, envs: &[(&str, &str)], watch: bool) -> Command {
     let mut c = Command::new("flatpak-spawn");
     c.arg("--host");
     if watch {
-        // ends the host process when flatpak-spawn goes (a timeout's kill, or rustyfiles quits)
+        // ends the host process when flatpak-spawn goes (a timeout's kill, or rfiles quits)
         c.arg("--watch-bus");
     }
     for (k, v) in envs {
@@ -130,7 +130,7 @@ fn host_command(prog: &OsStr, envs: &[(&str, &str)], watch: bool) -> Command {
     c
 }
 
-/// A command-line tool (git, ffmpeg, poppler, gio…) that rustyfiles waits for: inside
+/// A command-line tool (git, ffmpeg, poppler, gio…) that rfiles waits for: inside
 /// Flatpak the host's when it has one (the runtime's own ffmpeg, gio and gsettings see the
 /// sandbox, not the user's desktop, codecs and mounts), else the sandbox's. `envs` are set
 /// for it (Flatpak doesn't pass the command's own environment to the host). A program
@@ -146,7 +146,7 @@ pub fn tool(prog: impl AsRef<OsStr>, envs: &[(&str, &str)]) -> Command {
     c
 }
 
-/// An app or terminal that outlives rustyfiles: always the host's inside Flatpak.
+/// An app or terminal that outlives rfiles: always the host's inside Flatpak.
 pub fn launch(prog: impl AsRef<OsStr>) -> Command {
     let prog = prog.as_ref();
     if is_flatpak() && on_host(prog) {
@@ -155,12 +155,12 @@ pub fn launch(prog: impl AsRef<OsStr>) -> Command {
     Command::new(prog)
 }
 
-/// The start of a desktop entry's `Exec=` that runs `exe` (rustyfiles or directlook) from the
+/// The start of a desktop entry's `Exec=` that runs `exe` (rfiles or directlook) from the
 /// host: inside Flatpak `flatpak run --command=… <id>`, else the exe's own (quoted) path.
 pub fn exec_for(exe: &str) -> String {
     match flatpak_id() {
         Some(id) => {
-            let name = Path::new(exe).file_name().map_or("rustyfiles".into(), |n| n.to_string_lossy().into_owned());
+            let name = Path::new(exe).file_name().map_or("rfiles".into(), |n| n.to_string_lossy().into_owned());
             format!("flatpak run --command={} {id}", crate::dialogs::exec_quote(&name))
         }
         None => crate::dialogs::exec_quote(exe),
@@ -177,8 +177,8 @@ mod tests {
         assert_eq!(tool("git", &[("A", "1")]).get_program(), "git");
         assert!(tool("git", &[("A", "1")]).get_envs().any(|(k, v)| k == "A" && v == Some(OsStr::new("1"))));
         assert_eq!(launch("xdg-open").get_program(), "xdg-open");
-        assert_eq!(exec_for("/opt/rusty files/rustyfiles"), "\"/opt/rusty files/rustyfiles\"");
+        assert_eq!(exec_for("/opt/rusty files/rfiles"), "\"/opt/rusty files/rfiles\"");
         assert!(in_path("sh"));
-        assert!(!in_path("rustyfiles-no-such-program"));
+        assert!(!in_path("rfiles-no-such-program"));
     }
 }

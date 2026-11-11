@@ -13,9 +13,9 @@ use velopack::sources::GithubSource;
 #[cfg(windows)]
 use velopack::{UpdateCheck, UpdateInfo, UpdateManager, VelopackApp};
 
-pub const REPO: &str = "https://github.com/gelenmedya/rustyfiles";
+pub const REPO: &str = "https://github.com/benjaminfenech/rfiles";
 /// AppUserModelID of the installed app (Velopack names shortcuts "velopack.<pack id>").
-pub const APP_ID: &str = "velopack.rustyfiles";
+pub const APP_ID: &str = "velopack.rfiles";
 
 /// First thing in `main`: Velopack's install / update / uninstall hooks run here and exit.
 #[cfg(windows)]
@@ -52,7 +52,7 @@ fn after_install_or_update() {
     }
 }
 
-/// A fresh install turns on rustyfiles' Open/Save dialogs (per user, no admin rights; Settings →
+/// A fresh install turns on rfiles' Open/Save dialogs (per user, no admin rights; Settings →
 /// Advanced turns them off). Updates don't, so someone who turned them off keeps them off.
 #[cfg(windows)]
 fn dialogs_on_by_default() {
@@ -64,7 +64,7 @@ fn dialogs_on_by_default() {
     }
 }
 
-/// Everything rustyfiles changed in Windows goes back (settings in %APPDATA% stay).
+/// Everything rfiles changed in Windows goes back (settings in %APPDATA% stay).
 #[cfg(windows)]
 fn before_uninstall() {
     let classes = rf_win::default_fm::CLASSES;
@@ -123,7 +123,7 @@ pub fn busy() -> bool {
     matches!(state(), State::Checking | State::Downloading(..))
 }
 
-/// `RUSTYFILES_FAKE_UPDATE=1` (test copies): check, download 0→100 % and "ready" without a network,
+/// `RFILES_FAKE_UPDATE=1` (test copies): check, download 0→100 % and "ready" without a network,
 /// to see the About page's states.
 #[cfg(windows)]
 fn fake_check() {
@@ -145,9 +145,9 @@ fn manager() -> Option<UpdateManager> {
 /// This build's version (Velopack's when installed, else the crate's). Read once.
 /// "0.1.0 · b241ace · 08.11.2026 02:40": the version, the commit and when it was built.
 pub fn version_full() -> String {
-    let built = env!("RUSTYFILES_BUILT").parse::<i64>().ok().and_then(|s| chrono::DateTime::from_timestamp(s, 0));
+    let built = env!("RFILES_BUILT").parse::<i64>().ok().and_then(|s| chrono::DateTime::from_timestamp(s, 0));
     let when = built.map(|t| t.with_timezone(&chrono::Local).format("%d.%m.%Y %H:%M").to_string()).unwrap_or_default();
-    format!("{} · {} · {when}", version(), env!("RUSTYFILES_COMMIT"))
+    format!("{} · {} · {when}", version(), env!("RFILES_COMMIT"))
 }
 
 #[cfg(not(windows))]
@@ -170,7 +170,7 @@ pub fn check() {
 /// Looks for an update and downloads it. Blocking: call off the UI thread.
 #[cfg(windows)]
 pub fn check() {
-    if std::env::var_os("RUSTYFILES_FAKE_UPDATE").is_some() {
+    if std::env::var_os("RFILES_FAKE_UPDATE").is_some() {
         return fake_check();
     }
     let Some(um) = manager() else {
@@ -212,9 +212,9 @@ pub fn check() {
 /// Starts the background checks: soon after start, then every 2 hours (when auto-download is
 /// on; the Check button works either way). Calls `changed` on the UI thread after each.
 pub fn spawn_checks(cx: &mut gpui_kit::App, changed: impl Fn(&mut gpui_kit::App) + 'static) {
-    // test copies don't look for updates, unless they fake one (RUSTYFILES_FAKE_UPDATE)
-    let fake = std::env::var_os("RUSTYFILES_FAKE_UPDATE").is_some();
-    if std::env::var_os("RUSTYFILES_CONFIG_DIR").is_some() && !fake {
+    // test copies don't look for updates, unless they fake one (RFILES_FAKE_UPDATE)
+    let fake = std::env::var_os("RFILES_FAKE_UPDATE").is_some();
+    if std::env::var_os("RFILES_CONFIG_DIR").is_some() && !fake {
         return;
     }
     cx.spawn(async move |cx| {
@@ -288,7 +288,7 @@ fn star_due_by(s: &crate::settings::Settings) -> bool {
 
 /// Counted at each start of the app (not for test copies or a dialog-only start).
 pub fn count_start(cx: &mut gpui_kit::App) {
-    if std::env::var_os("RUSTYFILES_CONFIG_DIR").is_some() {
+    if std::env::var_os("RFILES_CONFIG_DIR").is_some() {
         return;
     }
     let now = chrono::Utc::now().timestamp_millis();

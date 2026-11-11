@@ -2,9 +2,9 @@
 //! "Show in folder" (`ShowItems`), "Open folder" (`ShowFolders`) and "Properties"
 //! (`ShowItemProperties`).
 //!
-//! D-Bus starts `rustyfiles --file-manager-service` for it while rustyfiles is the default
+//! D-Bus starts `rfiles --file-manager-service` for it while rfiles is the default
 //! file manager (see `default_fm`). That process loads no UI: each call starts
-//! `rustyfiles <folder>` or `rustyfiles /select,<file>`, which opens a window or hands the
+//! `rfiles <folder>` or `rfiles /select,<file>`, which opens a window or hands the
 //! request to the running one, exactly like a second launch. It exits when idle; D-Bus starts
 //! it again on the next call.
 
@@ -45,7 +45,7 @@ pub fn uri_to_path(uri: &str) -> Option<PathBuf> {
     Some(PathBuf::from(std::ffi::OsString::from_vec(out)))
 }
 
-/// The rustyfiles launches for a call: one per folder. `select` shows each item selected in its
+/// The rfiles launches for a call: one per folder. `select` shows each item selected in its
 /// folder (`/select,<item>`); otherwise the folders themselves open.
 pub fn launches(uris: &[String], select: bool) -> Vec<String> {
     let mut seen: Vec<PathBuf> = Vec::new();
@@ -92,7 +92,7 @@ impl FileManager {
     fn show_items(&self, uris: Vec<String>, startup_id: String) {
         self.open(&uris, true, &startup_id);
     }
-    /// rustyfiles shows the item; its Properties are a keystroke away (Alt+Enter).
+    /// rfiles shows the item; its Properties are a keystroke away (Alt+Enter).
     fn show_item_properties(&self, uris: Vec<String>, startup_id: String) {
         self.open(&uris, true, &startup_id);
     }

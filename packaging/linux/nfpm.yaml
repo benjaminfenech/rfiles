@@ -1,6 +1,6 @@
-# rustyfiles as .deb and .rpm, from binaries already built (see build-packages.sh, which sets
+# rfiles as .deb and .rpm, from binaries already built (see build-packages.sh, which sets
 # the RF_… placeholders below). One file for both formats: nfpm (https://nfpm.goreleaser.com).
-name: rustyfiles
+name: rfiles
 arch: ${RF_ARCH}
 platform: linux
 version: ${RF_VERSION}
@@ -12,34 +12,40 @@ description: |-
   Fast file manager with tabs, dual panes and previews.
   Tabs, dual panes, a column view, DirectLook previews (images, PDFs, video, text,
   archives), archives as folders, tags, git status, network locations and removable drives.
-vendor: rustyfiles
-homepage: https://github.com/benjaminfenech/rustyfiles-linux
+vendor: rfiles
+homepage: https://github.com/benjaminfenech/rfiles
 license: MIT
+# rfiles was called rustyfiles before: installing it removes the old package (deb Replaces /
+# Conflicts, rpm Obsoletes)
+replaces:
+  - rustyfiles
+conflicts:
+  - rustyfiles
 
 contents:
-  # DirectLook is found next to rustyfiles: both live in /usr/lib/rustyfiles
-  - src: ${RF_BIN_DIR}/rustyfiles
-    dst: /usr/lib/rustyfiles/rustyfiles
+  # DirectLook is found next to rfiles: both live in /usr/lib/rfiles
+  - src: ${RF_BIN_DIR}/rfiles
+    dst: /usr/lib/rfiles/rfiles
     file_info: { mode: 0755 }
   - src: ${RF_BIN_DIR}/directlook
-    dst: /usr/lib/rustyfiles/directlook
+    dst: /usr/lib/rfiles/directlook
     file_info: { mode: 0755 }
-  - src: /usr/lib/rustyfiles/rustyfiles
-    dst: /usr/bin/rustyfiles
+  - src: /usr/lib/rfiles/rfiles
+    dst: /usr/bin/rfiles
     type: symlink
-  - src: packaging/linux/rustyfiles.desktop
-    dst: /usr/share/applications/rustyfiles.desktop
-  - src: packaging/linux/io.github.benjaminfenech.rustyfiles.metainfo.xml
-    dst: /usr/share/metainfo/io.github.benjaminfenech.rustyfiles.metainfo.xml
-  - src: crates/rf-app/assets/rustyfiles.svg
-    dst: /usr/share/icons/hicolor/scalable/apps/rustyfiles.svg
-  - src: crates/rf-app/assets/rustyfiles.png
-    dst: /usr/share/icons/hicolor/256x256/apps/rustyfiles.png
+  - src: packaging/linux/rfiles.desktop
+    dst: /usr/share/applications/rfiles.desktop
+  - src: packaging/linux/io.github.benjaminfenech.rfiles.metainfo.xml
+    dst: /usr/share/metainfo/io.github.benjaminfenech.rfiles.metainfo.xml
+  - src: crates/rf-app/assets/rfiles.svg
+    dst: /usr/share/icons/hicolor/scalable/apps/rfiles.svg
+  - src: crates/rf-app/assets/rfiles.png
+    dst: /usr/share/icons/hicolor/256x256/apps/rfiles.png
   - src: LICENSE
-    dst: /usr/share/doc/rustyfiles/copyright
+    dst: /usr/share/doc/rfiles/copyright
     packager: deb
   - src: LICENSE
-    dst: /usr/share/licenses/rustyfiles/LICENSE
+    dst: /usr/share/licenses/rfiles/LICENSE
     packager: rpm
     type: license
 

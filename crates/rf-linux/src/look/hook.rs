@@ -54,7 +54,7 @@ impl Drop for HookHandle {
 /// Kancayı kendi iş parçacığında kurar. `on_event` ayrı bir iş parçacığında çağrılır (kanca hiç beklemez).
 ///
 /// Linux: Wayland has no global keyboard hooks, so DirectLook only answers keys inside
-/// rustyfiles. The handle is inert and `on_event` is never called.
+/// rfiles. The handle is inert and `on_event` is never called.
 pub fn start(on_event: impl Fn(LookEvent) + Send + 'static) -> HookHandle {
     HookHandle { thread_id: 0, hook: None, dispatch: None }
 }

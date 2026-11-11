@@ -1,4 +1,4 @@
-//! "rustyfiles in Open / Save dialogs": registers rustyfiles_dialog.dll (crates/rf-dialog) as the
+//! "rfiles in Open / Save dialogs": registers rustyfiles_dialog.dll (crates/rf-dialog) as the
 //! COM server of Windows' FileOpenDialog and FileSaveDialog classes, per user (HKCU, no admin).
 //! Apps running as administrator don't read per-user COM registrations and keep Windows' own
 //! dialog; so do 32-bit apps (nothing is registered under WOW6432Node).

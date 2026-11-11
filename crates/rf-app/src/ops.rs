@@ -446,7 +446,7 @@ impl FolderView {
                 self.set_reselect(name);
             } else {
                 let name = crate::archive_view::unique_name(t!("Yeni metin belgesi"), ".txt", &taken);
-                let tmp = std::env::temp_dir().join(format!("rustyfiles-new-{}", std::process::id()));
+                let tmp = std::env::temp_dir().join(format!("rfiles-new-{}", std::process::id()));
                 let file = tmp.join(&name);
                 if std::fs::create_dir_all(&tmp).and_then(|_| std::fs::write(&file, b"")).is_ok() {
                     crate::archive_view::add_into(cx, archive, std::path::PathBuf::from(inner), vec![file]);

@@ -7,7 +7,7 @@ fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let secs: u64 = args.iter().find_map(|a| a.parse().ok()).unwrap_or(10);
     tray::set_handler(|e| println!("event: {e:?}"));
-    tray::show(tray::Labels { tooltip: "rustyfiles".into(), open: "Open rustyfiles".into(), new_window: "New window".into(), settings: "Settings".into(), quit: "Quit".into() });
+    tray::show(tray::Labels { tooltip: "rfiles".into(), open: "Open rfiles".into(), new_window: "New window".into(), settings: "Settings".into(), quit: "Quit".into() });
     if args.iter().any(|a| a == "notify") {
         tray::notify("Operation complete", "Copying 3 items to Downloads");
     }

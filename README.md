@@ -1,14 +1,13 @@
-# rustyfiles for Linux
+# rfiles
 
 > [!NOTE]
-> This is the **Linux port of [rustyfiles](https://github.com/gelenmedya/rustyfiles)** by
-> Özer Güzel ([gelenmedya/rustyfiles](https://github.com/gelenmedya/rustyfiles)), a file
-> manager written from scratch in Rust. It follows upstream closely: the same code builds the
-> original Windows app, and Linux builds swap its Windows layer for a Linux one. For Windows,
-> use [upstream's releases](https://github.com/gelenmedya/rustyfiles/releases). This README
-> is about Linux only. [docs/LINUX_PORT.md](docs/LINUX_PORT.md) has the full log of the port.
+> rfiles is a file manager for Linux, written in Rust. It began as the Linux port of
+> [rustyfiles](https://github.com/gelenmedya/rustyfiles) by Özer Güzel, and took its own name
+> when it stopped following it: the last upstream release merged was rustyfiles 0.6.0. For
+> Windows, use [rustyfiles' releases](https://github.com/gelenmedya/rustyfiles/releases).
+> [docs/LINUX_PORT.md](docs/LINUX_PORT.md) keeps the history of the port.
 
-rustyfiles has tabs, dual panes, archives you open like folders, and **DirectLook**, a
+rfiles has tabs, dual panes, archives you open like folders, and **DirectLook**, a
 Quick Look–style previewer on <kbd>Space</kbd>. The window never waits on the disk: listing,
 icons, thumbnails and every file operation run off the UI thread, so a slow network share or
 a folder with 100,000 files can't freeze it. It runs on Wayland and X11.
@@ -24,22 +23,22 @@ a folder with 100,000 files can't freeze it. It runs on Wayland and X11.
 ## Install
 
 Download the package for your system from the
-[latest release](https://github.com/benjaminfenech/rustyfiles-linux/releases/latest):
+[latest release](https://github.com/benjaminfenech/rfiles/releases/latest):
 
 | System | File | Install with |
 | --- | --- | --- |
-| Debian 12+, Ubuntu 22.04+ | `rustyfiles_…_amd64.deb` / `_arm64.deb` | `sudo apt install ./rustyfiles_*.deb` |
-| Fedora | `rustyfiles-….x86_64.rpm` / `.aarch64.rpm` | `sudo dnf install ./rustyfiles-*.rpm` |
-| openSUSE | the same `.rpm` | `sudo zypper install ./rustyfiles-*.rpm` |
-| Arch, CachyOS, Manjaro | `rustyfiles-git-…-x86_64.pkg.tar.zst` | `sudo pacman -U ./rustyfiles-git-*.pkg.tar.zst` |
-| Any distribution | `rustyfiles-….x86_64.flatpak` / `.aarch64.flatpak` | `flatpak install --user ./rustyfiles-*.flatpak` |
+| Debian 12+, Ubuntu 22.04+ | `rfiles_…_amd64.deb` / `_arm64.deb` | `sudo apt install ./rfiles_*.deb` |
+| Fedora | `rfiles-….x86_64.rpm` / `.aarch64.rpm` | `sudo dnf install ./rfiles-*.rpm` |
+| openSUSE | the same `.rpm` | `sudo zypper install ./rfiles-*.rpm` |
+| Arch, CachyOS, Manjaro | `rfiles-git-…-x86_64.pkg.tar.zst` | `sudo pacman -U ./rfiles-git-*.pkg.tar.zst` |
+| Any distribution | `rfiles-….x86_64.flatpak` / `.aarch64.flatpak` | `flatpak install --user ./rfiles-*.flatpak` |
 
-**Arch from source:** `packaging/arch/PKGBUILD` builds `rustyfiles-git` from the latest
+**Arch from source:** `packaging/arch/PKGBUILD` builds `rfiles-git` from the latest
 commit. Run `makepkg -si` there again to update.
 
 ```bash
-git clone https://github.com/benjaminfenech/rustyfiles-linux
-cd rustyfiles-linux/packaging/arch
+git clone https://github.com/benjaminfenech/rfiles
+cd rfiles/packaging/arch
 makepkg -si
 ```
 
@@ -49,13 +48,13 @@ terminals and tools on the host. It behaves like the native packages and uses th
 settings.
 
 **Between releases:** every commit to `main` builds the same packages. Download them from
-the latest [Linux packages](https://github.com/benjaminfenech/rustyfiles-linux/actions/workflows/linux-packages.yml)
+the latest [Linux packages](https://github.com/benjaminfenech/rfiles/actions/workflows/linux-packages.yml)
 run (needs a GitHub login).
 
 ### Optional extras
 
 Some features use tools you may already have. The .deb and .rpm recommend or suggest them,
-and `pacman -Qi rustyfiles-git` lists them as optional dependencies.
+and `pacman -Qi rfiles-git` lists them as optional dependencies.
 
 | For | Arch | Debian / Ubuntu | Fedora |
 | --- | --- | --- | --- |
@@ -94,7 +93,7 @@ and `pacman -Qi rustyfiles-git` lists them as optional dependencies.
   - Git status, and hashes.
   - "Open with", listing the apps for the type with your default first.
   - "Open terminal here", and "Open in editor".
-- **Archives:** ZIP, 7z, RAR, the tar family and ISO open like folders, password-protected ones included. Add, delete and rename inside ZIP, 7z and tar, and create ZIP, 7z and tar.zst. Reading is done by [rarchive](https://github.com/gelenmedya/rarchive), upstream's pure-Rust engine.
+- **Archives:** ZIP, 7z, RAR, the tar family and ISO open like folders, password-protected ones included. Add, delete and rename inside ZIP, 7z and tar, and create ZIP, 7z and tar.zst. Reading is done by [rarchive](https://github.com/gelenmedya/rarchive), rustyfiles' pure-Rust engine.
 - **DirectLook:** previews of images (JPEG XL built in, AVIF and HEIC through the tools above), SVG, PDF, video and audio with sound, text and code, archives, and a details card for everything else.
 - **Properties window:** General, Details, Hashes, and a drive's page with its space and file system.
 - **Desktop integration:**
@@ -102,7 +101,7 @@ and `pacman -Qi rustyfiles-git` lists them as optional dependencies.
   - Start at login.
   - A tray icon when running in the background.
   - Desktop notifications when long copies finish.
-  - The desktop's own file chooser for rustyfiles' file pickers.
+  - The desktop's own file chooser for rfiles' file pickers.
 - **Network locations:** `smb://`, `sftp://`, `ftp://`, WebDAV, and `\\server\share` in the address bar, through kio-fuse (KDE) or GVfs (GNOME), with a login prompt when the server asks for one.
 - **Languages:** 46 of them, following your `LANG` (or pick one in Settings → General).
 
@@ -110,8 +109,8 @@ and `pacman -Qi rustyfiles-git` lists them as optional dependencies.
 
 **DirectLook on tiling window managers.** DirectLook is its own window, like Quick Look. A
 Wayland app can't float or place its own window, so tiling compositors tile it unless a
-rule floats it. Its app id is `directlook`; the main window's is `rustyfiles`
-(`io.github.benjaminfenech.rustyfiles` in the Flatpak).
+rule floats it. Its app id is `directlook`; the main window's is `rfiles`
+(`io.github.benjaminfenech.rfiles` in the Flatpak).
 
 ```lua
 -- Hyprland, Lua config (hyprland.lua)
@@ -130,15 +129,15 @@ For Hyprland's classic `hyprland.conf`, add a rule that floats (and centers) cla
 ([window rules](https://wiki.hypr.land/Configuring/Basics/Window-Rules/)).
 
 **Quick search shortcut.** Wayland has no global hotkeys for apps, so bind a key in your
-desktop's keyboard settings to `rustyfiles --quick-search` (Flatpak:
-`flatpak run io.github.benjaminfenech.rustyfiles --quick-search`). Hyprland:
+desktop's keyboard settings to `rfiles --quick-search` (Flatpak:
+`flatpak run io.github.benjaminfenech.rfiles --quick-search`). Hyprland:
 
 ```bash
-bind = ALT, SPACE, exec, rustyfiles --quick-search
+bind = ALT, SPACE, exec, rfiles --quick-search
 ```
 
 **Default file manager.** Settings → Advanced → "Set as default file manager" makes folders,
-and "Show in folder" in browsers, open in rustyfiles, for your user only. Turning it off
+and "Show in folder" in browsers, open in rfiles, for your user only. Turning it off
 brings your previous file manager back.
 
 **Drives.** Right-click a drive in the sidebar to unmount it, or to eject a USB stick, SD
@@ -156,11 +155,11 @@ when the last window closes. KDE, Waybar, Noctalia and most bars show it; GNOME 
 AppIndicator extension.
 
 **Copy and paste with other apps** works on X11 and on Wayland compositors with data-control
-(KDE, Hyprland, Sway). On GNOME's Wayland session it works inside rustyfiles only.
+(KDE, Hyprland, Sway). On GNOME's Wayland session it works inside rfiles only.
 
 ## Skipped: Windows-only
 
-These are part of upstream's Windows app and have no Linux counterpart, so they're hidden on
+These come from rustyfiles' Windows app and have no Linux counterpart, so they're hidden on
 Linux:
 
 - **Explorer integration:** DirectLook over Explorer and the desktop, the Explorer context menu and its shell extensions, `shell:` paths, Win+E.
@@ -173,8 +172,8 @@ Linux:
 
 Not done yet, roughly in order of how much they'd help:
 
-- **DirectLook outside rustyfiles.** Space over other apps needs a global hotkey, which Wayland doesn't give apps. A desktop-portal GlobalShortcuts binding could bring it back.
-- **rustyfiles as other apps' Open/Save dialog.** On Linux that's an xdg-desktop-portal FileChooser backend, a project of its own.
+- **DirectLook outside rfiles.** Space over other apps needs a global hotkey, which Wayland doesn't give apps. A desktop-portal GlobalShortcuts binding could bring it back.
+- **rfiles as other apps' Open/Save dialog.** On Linux that's an xdg-desktop-portal FileChooser backend, a project of its own.
 - **Recent files** on the Home page from `~/.local/share/recently-used.xbel`.
 - **Drives:** unlocking LUKS volumes (needs a passphrase prompt), and an eject button on the sidebar row.
 - **A content search index** to stand in for Windows Search (Baloo, Tracker or plocate).
@@ -215,60 +214,60 @@ sudo apt install build-essential pkg-config libxkbcommon-dev libxkbcommon-x11-de
 ```
 
 ```bash
-git clone https://github.com/benjaminfenech/rustyfiles-linux
-cd rustyfiles-linux
-cargo run --release -p rf-app --bin rustyfiles
+git clone https://github.com/benjaminfenech/rfiles
+cd rfiles
+cargo run --release -p rf-app --bin rfiles
 ```
 
 **Packages:** `packaging/linux/build-packages.sh` makes the .deb and .rpm from a release
 build (needs [nfpm](https://nfpm.goreleaser.com)). The Flatpak builds with:
 
 ```bash
-flatpak-builder --user --install --force-clean build-flatpak packaging/flatpak/io.github.benjaminfenech.rustyfiles.yml
+flatpak-builder --user --install --force-clean build-flatpak packaging/flatpak/io.github.benjaminfenech.rfiles.yml
 ```
 
-**Releases:** put the new tag in `packaging/linux/RELEASE` (`v<upstream version>-linux.<n>`,
-like `v0.6.0-linux.1`) and its notes in `packaging/linux/release-notes.md`, in a PR. When it
-lands on `main`, CI tags it, builds every package and publishes the release.
+**Releases:** set the version in `Cargo.toml`, put its tag in `packaging/linux/RELEASE`
+(`v<version>`, like `v0.7.0`) and the notes in `packaging/linux/release-notes.md`, in a PR.
+When it lands on `main`, CI tags it, builds every package and publishes the release.
 
-**Upstream:** syncs merge upstream with a merge commit (never squash) and add Linux
-counterparts for new Windows APIs. Each one is logged in [docs/LINUX_PORT.md](docs/LINUX_PORT.md).
+**rustyfiles:** rfiles no longer merges it. A cross-platform fix from there can still be
+cherry-picked (`git remote add upstream https://github.com/gelenmedya/rustyfiles`);
+[docs/LINUX_PORT.md](docs/LINUX_PORT.md) logs the merges up to 0.6.0.
 
-**Settings** live in `~/.config/rustyfiles/settings.toml`, DirectLook's in `directlook.toml`
+**Settings** live in `~/.config/rfiles/settings.toml`, DirectLook's in `directlook.toml`
 next to it.
 
 | Variable | Effect |
 |---|---|
-| `RUSTYFILES_CONFIG_DIR` = folder | Keep settings in another folder (portable use, tests) |
-| `RUSTYFILES_MULTI_INSTANCE=1` | Allow several copies at once (tests) |
-| `RUSTYFILES_LOOK_INSTANCE` = name | A separate DirectLook instance (tests) |
-| `RUSTYFILES_FRAME_LOG=1` | Log frame times |
-| `RUSTYFILES_LOOK_TRACE=1` | Log DirectLook's timings to stderr |
-| `RUSTYFILES_MUTE=1` | DirectLook plays without sound (tests) |
+| `RFILES_CONFIG_DIR` = folder | Keep settings in another folder (portable use, tests) |
+| `RFILES_MULTI_INSTANCE=1` | Allow several copies at once (tests) |
+| `RFILES_LOOK_INSTANCE` = name | A separate DirectLook instance (tests) |
+| `RFILES_FRAME_LOG=1` | Log frame times |
+| `RFILES_LOOK_TRACE=1` | Log DirectLook's timings to stderr |
+| `RFILES_MUTE=1` | DirectLook plays without sound (tests) |
 
 | Crate | What it holds |
 |---|---|
-| `crates/rf-app` | The interface, and the two programs: `rustyfiles` and `directlook` (`src/look/`) |
+| `crates/rf-app` | The interface, and the two programs: `rfiles` and `directlook` (`src/look/`) |
 | `crates/rf-linux` | The Linux platform layer: the same modules and functions as `rf-win`, used under its name in Linux builds |
-| `crates/rf-win` | Upstream's Windows layer (Windows builds only; a few files with no Windows code are shared with `rf-linux`) |
-| `crates/gpui-windows-shim` | Linux stand-in for the few calls rf-app makes into upstream's GPUI Windows fork |
+| `crates/rf-win` | rustyfiles' Windows layer, no longer maintained (Windows builds only; a few files with no Windows code are shared with `rf-linux`) |
+| `crates/gpui-windows-shim` | Linux stand-in for the few calls rf-app makes into rustyfiles' GPUI Windows fork |
 | `crates/rf-core` | The model: locations, history, entries, formatting |
 | `crates/rf-archive` | Archive operations: browse, extract, create, edit |
 | `crates/rf-player` | DirectLook's video and audio player |
-| `crates/rustdecoder` | Upstream's own video engine (work in progress) |
+| `crates/rustdecoder` | rustyfiles' own video engine (work in progress) |
 
 The interface is built with [GPUI](https://gpui.rs), the framework behind the Zed editor.
 
-Bug reports and pull requests for the Linux port are welcome here. Issues in the app itself
-that also happen on Windows belong [upstream](https://github.com/gelenmedya/rustyfiles/issues).
+Bug reports and pull requests are welcome.
 
 ## Thanks
 
 To Özer Güzel and everyone behind [rustyfiles](https://github.com/gelenmedya/rustyfiles),
-which this port follows. Upstream credits [Files](https://github.com/files-community/Files),
+which rfiles grew out of. rustyfiles credits [Files](https://github.com/files-community/Files),
 [GPUI](https://gpui.rs) and [Zed](https://github.com/zed-industries/zed),
 [gpui-kit](https://github.com/longbridge/gpui-kit), [QuickLook](https://github.com/QL-Win/QuickLook),
-UnRAR's source, and many crates. On Linux, rustyfiles also leans on
+UnRAR's source, and many crates. On Linux, rfiles also leans on
 [ksni](https://github.com/iovxw/ksni), [ashpd](https://github.com/bilelmoussaoui/ashpd),
 [zbus](https://github.com/dbus2/zbus), [notify](https://github.com/notify-rs/notify),
 [jxl-oxide](https://github.com/tirr-c/jxl-oxide), poppler, libavif, libheif, FFmpeg, UDisks2,
@@ -276,4 +275,4 @@ kio-fuse and GVfs.
 
 ## License
 
-MIT, see [LICENSE](LICENSE), the same as upstream.
+MIT, see [LICENSE](LICENSE). It keeps rustyfiles' copyright notice next to rfiles' own.

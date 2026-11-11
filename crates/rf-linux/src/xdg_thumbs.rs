@@ -7,7 +7,7 @@
 //!    through the thumbnailer installed for its type (`/usr/share/thumbnailers/*.thumbnailer`:
 //!    ffmpegthumbnailer, evince, gsf-office…), with a time limit.
 //! 3. What we make is written back to the cache. A failure is remembered in
-//!    `fail/rustyfiles/` (until the file changes), so a broken file isn't retried on every visit.
+//!    `fail/rfiles/` (until the file changes), so a broken file isn't retried on every visit.
 
 use std::collections::HashMap;
 use std::io::BufReader;
@@ -81,7 +81,7 @@ fn write_png(dest: &Path, img: &RgbaImage, uri: &str, mtime: u64) -> Result<()> 
     let dir = dest.parent().context("no folder")?;
     std::fs::DirBuilder::new().recursive(true).mode(0o700).create(dir)?;
     static N: AtomicU32 = AtomicU32::new(0);
-    let tmp = dir.join(format!(".rustyfiles-{}-{}.png", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+    let tmp = dir.join(format!(".rfiles-{}-{}.png", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
     let r = (|| -> Result<()> {
         let f = std::fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(&tmp)?;
         let mut enc = png::Encoder::new(std::io::BufWriter::new(f), img.width(), img.height());
@@ -89,7 +89,7 @@ fn write_png(dest: &Path, img: &RgbaImage, uri: &str, mtime: u64) -> Result<()> 
         enc.set_depth(png::BitDepth::Eight);
         enc.add_text_chunk("Thumb::URI".into(), uri.into())?;
         enc.add_text_chunk("Thumb::MTime".into(), mtime.to_string())?;
-        enc.add_text_chunk("Software".into(), "rustyfiles".into())?;
+        enc.add_text_chunk("Software".into(), "rfiles".into())?;
         let mut w = enc.write_header()?;
         w.write_image_data(img.as_raw())?;
         w.finish()?;
@@ -196,7 +196,7 @@ fn exec_args(exec: &str, input: &Path, uri: &str, out: &Path, px: u32) -> Vec<St
 fn external(path: &Path, uri: &str, mime: &str, px: u32) -> Result<RgbaImage, NoThumb> {
     let Some(exec) = thumbnailers().get(mime) else { return Err(NoThumb::Unsupported) };
     static N: AtomicU32 = AtomicU32::new(0);
-    let out = std::env::temp_dir().join(format!("rustyfiles-thumb-{}-{}.png", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+    let out = std::env::temp_dir().join(format!("rfiles-thumb-{}-{}.png", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
     let args = exec_args(exec, path, uri, &out, px);
     let Some((prog, rest)) = args.split_first() else { return Err(NoThumb::Unsupported) };
     let fail = |e: anyhow::Error| NoThumb::Failed(e);
@@ -271,7 +271,7 @@ pub fn thumbnail(path: &Path, size: u32) -> Result<RgbaImage> {
         if let Some(img) = read_valid(&root.join(class).join(format!("{hash}.png")), mtime) {
             return Ok(fit(img, size));
         }
-        if read_valid(&root.join("fail/rustyfiles").join(format!("{hash}.png")), mtime).is_some() {
+        if read_valid(&root.join("fail/rfiles").join(format!("{hash}.png")), mtime).is_some() {
             bail!("failed before (file unchanged since)");
         }
     }
@@ -287,7 +287,7 @@ pub fn thumbnail(path: &Path, size: u32) -> Result<RgbaImage> {
         Err(NoThumb::Unsupported) => bail!("no thumbnailer for this type"),
         Err(NoThumb::Failed(e)) => {
             if let (Some(root), true) = (&root, cacheable) {
-                let _ = write_png(&root.join("fail/rustyfiles").join(format!("{hash}.png")), &RgbaImage::new(1, 1), &uri, mtime);
+                let _ = write_png(&root.join("fail/rfiles").join(format!("{hash}.png")), &RgbaImage::new(1, 1), &uri, mtime);
             }
             Err(e)
         }

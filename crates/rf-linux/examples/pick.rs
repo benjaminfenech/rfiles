@@ -7,7 +7,7 @@ fn main() {
     let toml = [("Settings file", "*.toml")];
     let r = match kind.as_str() {
         "folder" => pick(0, "Choose a folder", Pick::Folder),
-        "save" => pick(0, "Export settings", Pick::Save { filters: &toml, default_name: "rustyfiles-settings.toml" }),
+        "save" => pick(0, "Export settings", Pick::Save { filters: &toml, default_name: "rfiles-settings.toml" }),
         _ => pick(0, "Choose a picture", Pick::File { filters: &[("Pictures", "*.png;*.jpg")] }),
     };
     println!("{r:?}");

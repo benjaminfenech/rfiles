@@ -1,4 +1,4 @@
-//! rustyfiles ve DirectLook'un ortak kodu; iki program da bu kütüphaneyi kullanır.
+//! rfiles ve DirectLook'un ortak kodu; iki program da bu kütüphaneyi kullanır.
 
 // Linux: rf-linux mirrors rf-win's API, so the code below uses it under rf-win's name.
 #[cfg(unix)]
@@ -7,6 +7,8 @@ extern crate rf_linux as rf_win;
 mod actions;
 mod aliases;
 mod background;
+#[cfg(unix)]
+mod renamed;
 // the speed test races File Explorer: Windows only (Linux: an empty page, see bench_view_linux)
 #[cfg(windows)]
 pub mod bench;
@@ -77,7 +79,7 @@ pub(crate) fn restored_bounds(cx: &App) -> Option<WindowBounds> {
     Some(if max > 0.5 { WindowBounds::Maximized(b) } else { WindowBounds::Windowed(b) })
 }
 
-/// Panics are written to %APPDATA%\rustyfiles\crash.log (the app has no console in release).
+/// Panics are written to %APPDATA%\rfiles\crash.log (the app has no console in release).
 pub(crate) fn install_panic_log() {
     let prev = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
@@ -97,22 +99,22 @@ pub(crate) fn install_panic_log() {
     }));
 }
 
-/// Whether rustyfiles is registered as the default file manager (HKCU).
+/// Whether rfiles is registered as the default file manager (HKCU).
 pub static DEFAULT_FM: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-/// rustyfiles answers other apps' Open/Save dialogs (registry state, read off the UI thread).
+/// rfiles answers other apps' Open/Save dialogs (registry state, read off the UI thread).
 pub static FILE_DIALOGS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// The Open/Save dialog DLL to register: a copy of the one next to this exe, outside the
-/// install folder (`%LocalAppData%\rustyfiles\dialog\<build>\`). Apps keep the registered DLL
+/// install folder (`%LocalAppData%\rfiles\dialog\<build>\`). Apps keep the registered DLL
 /// loaded, and an update can't replace an install folder with a loaded DLL in it. Next to the
-/// copy, `rustyfiles-exe.txt` tells the DLL which rustyfiles to start. Older copies go once no
+/// copy, `rustyfiles-exe.txt` tells the DLL which rfiles to start. Older copies go once no
 /// app has them loaded.
 pub(crate) fn dialog_dll() -> Option<String> {
     let exe = std::env::current_exe().ok()?;
     let src = exe.with_file_name(rf_win::dialog_reg::DLL_NAME);
     let meta = std::fs::metadata(&src).ok()?;
     let stamp = meta.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map_or(0, |d| d.as_secs());
-    let root = PathBuf::from(std::env::var_os("LOCALAPPDATA")?).join("rustyfiles").join("dialog");
+    let root = PathBuf::from(std::env::var_os("LOCALAPPDATA")?).join("rfiles").join("dialog");
     let dir = root.join(format!("{}-{:x}-{:x}", env!("CARGO_PKG_VERSION"), meta.len(), stamp));
     let dst = dir.join(rf_win::dialog_reg::DLL_NAME);
     if !dst.exists() {
@@ -177,7 +179,7 @@ mod grant_tests {
     }
 }
 
-/// Opens a rustyfiles window. `start = None` restores the session (first window) or opens Home.
+/// Opens an rfiles window. `start = None` restores the session (first window) or opens Home.
 pub fn open_main_window(
     start: Option<Location>,
     ipc: Option<futures::channel::mpsc::UnboundedReceiver<String>>,
@@ -188,7 +190,7 @@ pub fn open_main_window(
         window_bounds: Some(bounds.unwrap_or_else(|| WindowBounds::centered(size(px(1280.), px(800.)), cx))),
         window_min_size: Some(size(px(720.), px(420.))),
         window_background: WindowBackgroundAppearance::MicaBackdrop,
-        app_id: crate::sys::app_id("rustyfiles"),
+        app_id: crate::sys::app_id("rfiles"),
         ..TitleBar::window_options()
     };
     if let Err(e) = gpui_kit::open_window(options, cx, move |window, cx| cx.new(|cx| Workspace::new(start, ipc, window, cx))) {
@@ -260,12 +262,12 @@ fn shell_place_bounded(arg: &str, limit: std::time::Duration) -> Option<rf_win::
     rx.recv_timeout(limit).ok().flatten().filter(|p| p.fs_path.is_none())
 }
 
-/// rustyfiles'ın girişi.
-/// Start-up timing (`RUSTYFILES_TRACE_START=1`, logged at info): milliseconds since the process
+/// rfiles'ın girişi.
+/// Start-up timing (`RFILES_TRACE_START=1`, logged at info): milliseconds since the process
 /// was created, at the steps before the first window.
 pub(crate) fn start_mark(step: &str) {
     static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    if *ON.get_or_init(|| std::env::var_os("RUSTYFILES_TRACE_START").is_some()) {
+    if *ON.get_or_init(|| std::env::var_os("RFILES_TRACE_START").is_some()) {
         eprintln!("start: {step} at {} ms", rf_win::process_age_ms());
     }
 }
@@ -274,6 +276,9 @@ pub fn main() {
     // Flatpak: the host's XDG folders (trash, settings, apps), before any thread starts
     #[cfg(unix)]
     rf_win::sandbox::adopt_host_dirs();
+    // rfiles was rustyfiles before: old variables and folders
+    #[cfg(unix)]
+    renamed::adopt_old_name();
     start_mark("main");
     // Velopack (installer / updater): first, it may run an install hook and exit
     installer::startup();
@@ -292,7 +297,7 @@ pub fn main() {
     start_mark("logging");
 
     // Linux: D-Bus started us to answer "Show in folder" while we are the default file
-    // manager. No window here: each call starts `rustyfiles <folder>` (see rf-linux fm_service).
+    // manager. No window here: each call starts `rfiles <folder>` (see rf-linux fm_service).
     #[cfg(unix)]
     if std::env::args().nth(1).as_deref() == Some(rf_win::default_fm::SERVICE_ARG) {
         match std::env::current_exe() {
@@ -380,7 +385,7 @@ pub fn main() {
             } else {
                 is_dir_bounded(PathBuf::from(&arg), std::time::Duration::from_secs(2))
             };
-            // a browsable archive (DirectLook's "rustyfiles'ta aç") opens like a folder, here
+            // a browsable archive (DirectLook's "rfiles'ta aç") opens like a folder, here
             let archive = !shell_namespace && archive_view::is_browsable(std::path::Path::new(&arg));
             if is_dir == Some(false) && !archive {
                 // Explorer opens folders through the verb we took over: what we just handed it may
@@ -415,9 +420,12 @@ pub fn main() {
     std::thread::spawn(|| {
         // copies opened/copied out of archives days ago
         crate::archive_view::clean_temp();
+        // rustyfiles' (the old name's) default file manager and autostart entries become ours
+        #[cfg(unix)]
+        renamed::adopt_old_integration();
         // default file manager whose registered exe vanished (moved / rebuilt elsewhere):
         // re-point it here, or Windows can't open any folder. Not from test instances.
-        if std::env::var_os("RUSTYFILES_CONFIG_DIR").is_none() {
+        if std::env::var_os("RFILES_CONFIG_DIR").is_none() {
             if let Ok(me) = std::env::current_exe() {
                 if rf_win::default_fm::heal(&me.display().to_string(), rf_win::default_fm::CLASSES) {
                     log::warn!("default file manager re-registered to {}", me.display());
@@ -428,7 +436,7 @@ pub fn main() {
             }
         }
         // Open/Save dialogs: a registration whose DLL moved is pointed here (not from tests)
-        if std::env::var_os("RUSTYFILES_CONFIG_DIR").is_none() {
+        if std::env::var_os("RFILES_CONFIG_DIR").is_none() {
             if rf_win::dialog_reg::is_enabled(rf_win::dialog_reg::CLASSES) {
                 if let Some(dll) = dialog_dll() {
                     if rf_win::dialog_reg::point_to(&dll, rf_win::dialog_reg::CLASSES) {
@@ -450,7 +458,7 @@ pub fn main() {
     // folder opens at once; the file, if one comes, is selected in it.
     const SHELL_SELECT_WAIT: std::time::Duration = std::time::Duration::from_secs(4);
     let shell_select = match &start {
-        Some(Location::Path(dir)) if select.is_none() && std::env::var_os("RUSTYFILES_MULTI_INSTANCE").is_none() && rf_win::default_fm::is_enabled(rf_win::default_fm::CLASSES) => {
+        Some(Location::Path(dir)) if select.is_none() && std::env::var_os("RFILES_MULTI_INSTANCE").is_none() && rf_win::default_fm::is_enabled(rf_win::default_fm::CLASSES) => {
             let (tx, rx) = std::sync::mpsc::channel();
             let dir = dir.clone();
             std::thread::spawn(move || {
@@ -481,8 +489,8 @@ pub fn main() {
         }
         _ => String::new(),
     };
-    // RUSTYFILES_MULTI_INSTANCE=1 skips forwarding (automated tests run several copies).
-    let multi = std::env::var_os("RUSTYFILES_MULTI_INSTANCE").is_some() || bar_preview;
+    // RFILES_MULTI_INSTANCE=1 skips forwarding (automated tests run several copies).
+    let multi = std::env::var_os("RFILES_MULTI_INSTANCE").is_some() || bar_preview;
     let _instance = if multi {
         None
     } else {
@@ -490,7 +498,7 @@ pub fn main() {
             rf_win::single_instance::Role::Forwarded => {
                 // the folder is on its way to the running window; the file to select follows
                 if let Some(msg) = shell_select.and_then(shell_selected) {
-                    rf_win::single_instance::send_to("rustyfiles", &msg);
+                    rf_win::single_instance::send_to("rfiles", &msg);
                 }
                 return;
             }
@@ -575,7 +583,7 @@ pub fn main() {
         // updates from GitHub Releases (installed copies only)
         installer::spawn_checks(cx, |cx| cx.refresh_windows());
         // DirectLook ayrı süreç: önceden başlatılır ki ilk Boşluk beklemesin (testlerde değil)
-        if cx.global::<settings::Settings>().directlook_enabled && std::env::var_os("RUSTYFILES_MULTI_INSTANCE").is_none() && !bar_preview {
+        if cx.global::<settings::Settings>().directlook_enabled && std::env::var_os("RFILES_MULTI_INSTANCE").is_none() && !bar_preview {
             look::ipc::send(look::ipc::Msg::Wake, true);
         }
         // "Safely remove" / eject: let go of a drive when Windows asks (see rf_win::removal)

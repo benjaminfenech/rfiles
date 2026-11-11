@@ -64,18 +64,18 @@ jobs:
             retry() { for i in 1 2 3; do "$@" && return 0; echo "attempt $i of 3 failed: $*"; [ $i = 3 ] || sleep 15; done; return 1; }
             retry apt-get update -qq
             retry apt-get install -y -qq /dist/*.deb >/dev/null
-            if ldd /usr/lib/rustyfiles/rustyfiles /usr/lib/rustyfiles/directlook | grep "not found"; then exit 1; fi
-            test -L /usr/bin/rustyfiles && test -f /usr/share/applications/rustyfiles.desktop'
+            if ldd /usr/lib/rfiles/rfiles /usr/lib/rfiles/directlook | grep "not found"; then exit 1; fi
+            test -L /usr/bin/rfiles && test -f /usr/share/applications/rfiles.desktop'
       - name: Install the .rpm on Fedora
         run: |
           docker run --rm -v "$PWD/dist:/dist:ro" fedora:latest bash -euc '
             retry() { for i in 1 2 3; do "$@" && return 0; echo "attempt $i of 3 failed: $*"; [ $i = 3 ] || sleep 15; done; return 1; }
             retry dnf install -y -q --setopt=retries=5 /dist/*.rpm
-            if ldd /usr/lib/rustyfiles/rustyfiles /usr/lib/rustyfiles/directlook | grep "not found"; then exit 1; fi
-            test -L /usr/bin/rustyfiles && test -f /usr/share/applications/rustyfiles.desktop'
+            if ldd /usr/lib/rfiles/rfiles /usr/lib/rfiles/directlook | grep "not found"; then exit 1; fi
+            test -L /usr/bin/rfiles && test -f /usr/share/applications/rfiles.desktop'
       - uses: actions/upload-artifact@v4
         with:
-          name: rustyfiles-linux-${{ matrix.nfpm_arch }}
+          name: rfiles-${{ matrix.nfpm_arch }}
           path: dist/*
 
   arch:
@@ -99,17 +99,17 @@ jobs:
           git config --system --add safe.directory '*'
           chown -R builder: .
           cd packaging/arch
-          sudo -u builder env RUSTYFILES_SOURCE="git+file://$GITHUB_WORKSPACE#commit=$(git rev-parse HEAD)" \
+          sudo -u builder env RFILES_SOURCE="git+file://$GITHUB_WORKSPACE#commit=$(git rev-parse HEAD)" \
             makepkg -s --noconfirm
       - name: Install and check
         run: |
-          pacman -U --noconfirm packaging/arch/rustyfiles-git-[0-9]*.pkg.tar.zst
-          if ldd /usr/lib/rustyfiles/rustyfiles /usr/lib/rustyfiles/directlook | grep "not found"; then exit 1; fi
-          test -L /usr/bin/rustyfiles && test -f /usr/share/applications/rustyfiles.desktop
-          mkdir dist && cp packaging/arch/rustyfiles-git-[0-9]*.pkg.tar.zst dist/
+          pacman -U --noconfirm packaging/arch/rfiles-git-[0-9]*.pkg.tar.zst
+          if ldd /usr/lib/rfiles/rfiles /usr/lib/rfiles/directlook | grep "not found"; then exit 1; fi
+          test -L /usr/bin/rfiles && test -f /usr/share/applications/rfiles.desktop
+          mkdir dist && cp packaging/arch/rfiles-git-[0-9]*.pkg.tar.zst dist/
       - uses: actions/upload-artifact@v4
         with:
-          name: rustyfiles-linux-arch-x86_64
+          name: rfiles-arch-x86_64
           path: dist/*
 
   flatpak:
@@ -140,13 +140,13 @@ jobs:
           retry() { for i in 1 2 3; do "$@" && return 0; echo "attempt $i of 3 failed: $*"; [ $i = 3 ] || sleep 15; done; return 1; }
           retry flatpak install -y --noninteractive flathub org.freedesktop.Sdk.Extension.rust-stable//26.08
           flatpak-builder --disable-rofiles-fuse --force-clean \
-            --repo=repo build-flatpak packaging/flatpak/io.github.benjaminfenech.rustyfiles.yml
+            --repo=repo build-flatpak packaging/flatpak/io.github.benjaminfenech.rfiles.yml
           mkdir dist
           # installing the bundle fetches the runtime from Flathub
           flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
-            repo "dist/rustyfiles-$version.${{ matrix.arch }}.flatpak" io.github.benjaminfenech.rustyfiles
+            repo "dist/rfiles-$version.${{ matrix.arch }}.flatpak" io.github.benjaminfenech.rfiles
           ls -l dist
       - uses: actions/upload-artifact@v4
         with:
-          name: rustyfiles-linux-flatpak-${{ matrix.arch }}
+          name: rfiles-flatpak-${{ matrix.arch }}
           path: dist/*

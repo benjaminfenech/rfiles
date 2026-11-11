@@ -1,9 +1,9 @@
-# Launches rustyfiles (optionally at a path), waits, screenshots, reports memory, kills it.
+# Launches rfiles (optionally at a path), waits, screenshots, reports memory, kills it.
 param(
     [string]$Path = "",
     [string]$Out = "shot.png",
     [int]$WaitMs = 1500,
-    [string]$Exe = "$PSScriptRoot\..\target\debug\rustyfiles.exe"
+    [string]$Exe = "$PSScriptRoot\..\target\debug\rfiles.exe"
 )
 $args2 = @(); if ($Path) { $args2 = @("`"$Path`"") }
 $sw = [Diagnostics.Stopwatch]::StartNew()

@@ -7,7 +7,7 @@
 //!   desktop-specific ones, then system ones);
 //! * a type's parents count too (`text/rust` is a `text/plain`, so text editors are offered).
 //!
-//! Read once per run: an app installed while rustyfiles runs shows up after a restart.
+//! Read once per run: an app installed while rfiles runs shows up after a restart.
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};

@@ -8,7 +8,7 @@ from frame to frame), 15 frames a second. About 1.3 MB; the loop is seamless.
 
     python tools/splash/make_splash.py --three <path to node_modules/three> --font <Bricolage .woff2>
 
-Needs node, Chrome, ffmpeg and Pillow. three comes from the site (rustyfilescom/node_modules/three);
+Needs node, Chrome, ffmpeg and Pillow. three comes from the site (rfilescom/node_modules/three);
 the font from Google Fonts (Bricolage Grotesque, OFL) or the site's build.
 """
 

@@ -1,4 +1,4 @@
-//! DirectLook ayarları: kendi dosyası `directlook.toml` (rustyfiles'ın `settings.toml`'u ile iki
+//! DirectLook ayarları: kendi dosyası `directlook.toml` (rfiles'ın `settings.toml`'u ile iki
 //! süreç birbirinin değişikliğini ezmesin diye ayrı). Her değişiklik diskten taze okunur, üzerine
 //! yazılır, kaydedilir.
 

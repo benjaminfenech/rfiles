@@ -12,12 +12,12 @@ BEGIN
   BEGIN
     BLOCK "041F04B0"
     BEGIN
-      VALUE "FileDescription", "rustyfiles"
-      VALUE "ProductName", "rustyfiles"
+      VALUE "FileDescription", "rfiles"
+      VALUE "ProductName", "rfiles"
       VALUE "FileVersion", "0.1.0"
       VALUE "ProductVersion", "0.1.0"
-      VALUE "OriginalFilename", "rustyfiles.exe"
-      VALUE "InternalName", "rustyfiles"
+      VALUE "OriginalFilename", "rfiles.exe"
+      VALUE "InternalName", "rfiles"
     END
   END
   BLOCK "VarFileInfo"

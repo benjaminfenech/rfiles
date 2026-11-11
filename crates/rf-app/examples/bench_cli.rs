@@ -1,5 +1,5 @@
 //! The Settings speed test without the UI: `cargo run --release -p rf-app --example bench_cli
-//! -- [quick]`. Needs target/release/rustyfiles.exe built. Prints the results as JSON.
+//! -- [quick]`. Needs target/release/rfiles.exe built. Prints the results as JSON.
 
 #[cfg(windows)]
 #[path = "support/bench_cli_win.rs"]

@@ -266,7 +266,7 @@ fn heif_tools(path: &Path, ext: &str, bytes: &[u8], max_side: u32) -> anyhow::Re
     };
     static N: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
     let n = N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    let dir = std::env::temp_dir().join(format!("rustyfiles-look-{}-{n}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("rfiles-look-{}-{n}", std::process::id()));
     {
         use std::os::unix::fs::DirBuilderExt;
         std::fs::DirBuilder::new().mode(0o700).create(&dir).with_context(|| dir.display().to_string())?;

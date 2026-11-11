@@ -98,7 +98,7 @@ pub fn init(cx: &mut App) {
             s.keybindings.insert(keys.clone(), action.clone());
         });
         // bind just the new key (re-binding the whole map would stack duplicates)
-        match cx.build_action(&format!("rustyfiles::{action}"), None) {
+        match cx.build_action(&format!("rfiles::{action}"), None) {
             Ok(a) => match KeyBinding::load(&keys, a, None, false, None, cx) {
                 Ok(b) => cx.bind_keys([b]),
                 Err(e) => log::warn!("keybinding {keys:?}: {e}"),
@@ -147,14 +147,14 @@ pub fn custom_keys(action: &str, cx: &App) -> Option<String> {
     cx.global::<crate::settings::Settings>()
         .keybindings
         .iter()
-        .find(|(_, a)| a.as_str() == action || a.strip_prefix("rustyfiles::") == Some(action))
+        .find(|(_, a)| a.as_str() == action || a.strip_prefix("rfiles::") == Some(action))
         .map(|(k, _)| k.clone())
 }
 
 pub fn reset(action: &str, cx: &mut App) {
     let action = action.to_string();
     crate::settings::update(cx, |s| {
-        s.keybindings.retain(|_, a| *a != action && a.strip_prefix("rustyfiles::") != Some(action.as_str()))
+        s.keybindings.retain(|_, a| *a != action && a.strip_prefix("rfiles::") != Some(action.as_str()))
     });
 }
 

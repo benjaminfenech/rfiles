@@ -6,7 +6,7 @@ pub fn main() -> anyhow::Result<()> {
     env_logger::init();
     let quick = std::env::args().any(|a| a == "quick");
     let mut me = rf_app::bench::rustyfiles_app();
-    me.exe = std::env::current_exe()?.parent().unwrap().parent().unwrap().join("rustyfiles.exe");
+    me.exe = std::env::current_exe()?.parent().unwrap().parent().unwrap().join("rfiles.exe");
     let mut apps = vec![me];
     apps.extend(rf_win::bench::detect());
     let plan = rf_app::bench::Plan {

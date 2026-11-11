@@ -1,7 +1,7 @@
 # Captures the main window of a process to a PNG (used for visual checks during development).
-# Usage: powershell -File tools/shot.ps1 -ProcessName rustyfiles -Out shot.png
+# Usage: powershell -File tools/shot.ps1 -ProcessName rfiles -Out shot.png
 param(
-    [string]$ProcessName = "rustyfiles",
+    [string]$ProcessName = "rfiles",
     [string]$Out = "shot.png",
     [int]$WaitMs = 0
 )

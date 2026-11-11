@@ -1,4 +1,4 @@
-//! `RUSTYFILES_LOOK_TRACE=1`: gösterimden itibaren geçen süreyi stderr'e yazar (her olay bir kez).
+//! `RFILES_LOOK_TRACE=1`: gösterimden itibaren geçen süreyi stderr'e yazar (her olay bir kez).
 
 use std::sync::Mutex;
 use std::time::Instant;
@@ -7,7 +7,7 @@ static STATE: Mutex<Option<(Instant, Vec<&'static str>)>> = Mutex::new(None);
 
 fn on() -> bool {
     static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    *ON.get_or_init(|| std::env::var_os("RUSTYFILES_LOOK_TRACE").is_some())
+    *ON.get_or_init(|| std::env::var_os("RFILES_LOOK_TRACE").is_some())
 }
 
 /// Yeni gösterim başladı.

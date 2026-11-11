@@ -3,7 +3,7 @@
 //! kontroller içeriğin üstünde durur, fare durunca gizlenir. Tıklama oynat/duraklat, çift tık
 //! tam ekran, tekerlek ses düzeyi (0,04). Ses: 500×300 kart (kapak, başlık/sanatçı/albüm,
 //! süre, eşzamanlı şarkı sözü). FilmCraft'ın açamadığı dosyalar Media Foundation ile oynatılır.
-//! İsteğe bağlı: RUSTYFILES_RUSTDECODER=1 ile MP4/MOV (H.264, HEVC) kendi motorumuzla (rd_video.rs) oynatılır;
+//! İsteğe bağlı: RFILES_RUSTDECODER=1 ile MP4/MOV (H.264, HEVC) kendi motorumuzla (rd_video.rs) oynatılır;
 //! açılamayan dosyalar yukarıdaki yollara düşer.
 
 use std::cell::Cell;
@@ -180,7 +180,7 @@ enum Kind {
 }
 
 fn sink() -> Box<dyn AudioSink> {
-    if std::env::var_os("RUSTYFILES_MUTE").is_some() {
+    if std::env::var_os("RFILES_MUTE").is_some() {
         return Box::new(rf_player::NullSink::new(48000, 2));
     }
     rf_player::wasapi_sink().unwrap_or_else(|e| {
@@ -477,7 +477,7 @@ impl MediaView {
         });
         self._tasks.push(cx.spawn(async move |this, cx| {
             let (meta, lyrics) = work.await;
-            if std::env::var_os("RUSTYFILES_LOOK_TRACE").is_some() {
+            if std::env::var_os("RFILES_LOOK_TRACE").is_some() {
                 eprintln!("look: ses bilgisi {meta:?}, {} söz satırı", lyrics.len());
             }
             let _ = this.update(cx, |v, cx| {

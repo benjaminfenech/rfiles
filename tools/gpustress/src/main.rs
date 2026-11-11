@@ -1,4 +1,4 @@
-//! GPU load generator for testing the rustyfiles hybrid renderer.
+//! GPU load generator for testing the rfiles hybrid renderer.
 //!
 //! `gpustress --seconds N --intensity 0..100 [--mode ps|cs] [--no-pdh]`
 //!
