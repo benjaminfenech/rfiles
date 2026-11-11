@@ -72,13 +72,6 @@ impl FolderView {
             }
             return;
         }
-        // Windows only: Linux has no classic shell menu to show
-        let shift = cfg!(windows) && crate::sys::shift_down();
-        if shift {
-            // power users: the full classic Explorer menu (extended verbs)
-            self.show_native_menu(background, cx);
-            return;
-        }
         let Some(dir) = self.current_dir() else { return };
         let items = if background { Vec::new() } else { self.selection_paths() };
         let background = background || items.is_empty();
@@ -138,14 +131,9 @@ impl FolderView {
                 act(me, |v, w, cx| if v.selected_is_single_dir() { v.paste_into_selected(w, cx) } else { v.paste(w, cx) }),
             ),
             Quick::new(L::TextCursorInput, t!("Yeniden adlandır  (F2)"), true, act(me, |v, w, cx| v.rename_selection(w, cx))),
-            Quick::new(L::Share2, t!("Paylaş"), true, act(me, |v, _, _| v.share())),
             Quick::new(L::Trash, t!("Sil  (Del)"), true, act(me, |v, w, cx| v.delete_selected(false, w, cx))),
             Quick::new(L::Wrench, t!("Özellikler  (Alt+Enter)"), true, act(me, |v, _, cx| v.properties(cx))),
         ]
-        .into_iter()
-        // Share is Windows' share sheet
-        .filter(|q| cfg!(windows) || q.icon != L::Share2)
-        .collect()
     }
 
     fn items_menu(&self, me: &Me, dir: &std::path::Path, items: &[PathBuf], cx: &mut Context<Self>) -> Menu {
@@ -223,7 +211,7 @@ impl FolderView {
         if single_dir && cx.global::<crate::settings::Settings>().name_index && crate::archive_view::split(&target_dir).is_none() {
             let key = target_dir.to_string_lossy().trim_end_matches(std::path::MAIN_SEPARATOR).to_string();
             let key = if key.is_empty() { std::path::MAIN_SEPARATOR.to_string() } else { key };
-            let same = |e: &String, k: &str| if cfg!(windows) { e.eq_ignore_ascii_case(k) } else { e == k };
+            let same = |e: &String, k: &str| e == k;
             let out = cx.global::<crate::settings::Settings>().index_excluded.iter().any(|e| same(e, &key));
             v.push(
                 Item::action(t!("Aramada dizine alma"), icon(L::SearchSlash), move |_, cx| {
@@ -350,11 +338,6 @@ impl FolderView {
             let d = target_dir.clone();
             v.push(Item::action(t!("Terminalde aç"), icon(L::SquareTerminal), move |_, _| open_terminal(d.clone())).hint("Ctrl+Shift+`"));
         }
-        // Windows' shell menu (other apps' entries); Linux has none
-        if cfg!(windows) {
-            v.push(Item::Separator);
-            v.push(Item::Sub { label: t!("Diğer seçenekleri göster").into(), icon: icon(L::Ellipsis), items: Sub::Pending { key: "more", fallback: None } });
-        }
         Menu { quick: self.quick_clipboard(me, true), items: v }
     }
 
@@ -396,11 +379,6 @@ impl FolderView {
             git_items.push(Item::action(t!("Depoyu klonla…"), icon(L::GitFork), move |w, cx| crate::git_ui::clone_dialog(m.clone(), d.clone(), w, cx)));
             v.push(Item::sub("Git", icon(L::GitBranch), git_items));
         }
-        // Windows' shell menu (other apps' entries); Linux has none
-        if cfg!(windows) {
-            v.push(Item::Separator);
-            v.push(Item::Sub { label: t!("Diğer seçenekleri göster").into(), icon: icon(L::Ellipsis), items: Sub::Pending { key: "more", fallback: None } });
-        }
         Menu { quick: self.quick_clipboard(me, false), items: v }
     }
 
@@ -411,19 +389,6 @@ impl FolderView {
         } else {
             self.begin_rename(window, cx);
         }
-    }
-
-    /// Windows' share sheet for the selection.
-    pub(crate) fn share(&self) {
-        let items = self.selection_paths();
-        if items.is_empty() {
-            return;
-        }
-        rf_win::sta::run(move |owner| {
-            if let Err(e) = rf_win::ctxmenu::invoke_verb(owner, &ShellTarget::Items(items), "Windows.ModernShare", cursor()) {
-                log::warn!("share: {e:#}");
-            }
-        });
     }
 
     /// Properties of the current folder (background menu).
@@ -555,27 +520,11 @@ impl FolderView {
                 }
                 v
             }
-            BarMenu::View { dual, shelf } if crate::sys::layout_flyout() => {
+            BarMenu::View { dual, shelf } => {
                 // Files' layout flyout (tiles, size slider, switches)
                 // opened after this update: its first frame reads this view
                 window.defer(cx, move |window, cx| crate::layout_panel::open(me, dual, shelf, pos, window, cx));
                 return;
-            }
-            BarMenu::View { dual, shelf } => {
-                let mut v = layout_items(&me, self.view_mode, self.grid_style);
-                v.push(Item::Separator);
-                v.push(
-                    Item::action(t!("Gizli öğeleri göster"), icon(L::Eye), act(&me, |v, _, cx| v.toggle_hidden(cx)))
-                        .checked(self.filter.show_hidden)
-                        .hint("Ctrl+H"),
-                );
-                v.push(
-                    Item::action(t!("Çift panel"), icon(L::Columns2), |w, cx| w.dispatch_action(Box::new(crate::actions::ToggleDualPane), cx))
-                        .checked(dual)
-                        .hint("Ctrl+Shift+D"),
-                );
-                v.push(Item::action(t!("Raf"), icon(L::Inbox), |w, cx| w.dispatch_action(Box::new(crate::actions::ToggleShelf), cx)).checked(shelf));
-                v
             }
         };
         fluent_menu::show(Menu { quick: Vec::new(), items }, pos, window, cx);
@@ -666,11 +615,7 @@ fn create_archive_dialog(items: Vec<PathBuf>, window: &mut Window, cx: &mut App)
         if name.is_empty() {
             return Err(t!("Bir ad girin").into());
         }
-        // Explorer's characters on Windows; Linux only forbids "/"
-        if cfg!(windows) && name.contains(['\\', '/', ':', '*', '?', '"', '<', '>', '|']) {
-            return Err(t!("Ad şu karakterleri içeremez: \\ / : * ? \" < > |").into());
-        }
-        if !cfg!(windows) && crate::ops::invalid_file_name(name) {
+        if crate::ops::invalid_file_name(name) {
             return Err("A file name can't contain \"/\".".into());
         }
         let lvl = [0, 1, 5, 9][level.get().min(3)];
@@ -845,35 +790,6 @@ fn tidy(items: Vec<ShellItem>) -> Vec<ShellItem> {
         out.pop();
     }
     out
-}
-
-/// Fills the "more" submenu of an open menu with the shell's items for `target` (sidebar,
-/// drives…); `me` receives "Rename" if the shell asks for it.
-pub fn load_shell_more(menu: WeakEntity<fluent_menu::MenuView>, target: ShellTarget, me: Me, cx: &mut App) {
-    let (tx, rx) = oneshot::channel();
-    rf_win::sta::run(move |owner| {
-        let _ = tx.send(rf_win::ctxmenu::build(owner, &target, false).map_err(|e| format!("{e:#}")));
-    });
-    cx.spawn(async move |cx| {
-        let r = rx.await.unwrap_or_else(|_| Err("cancelled".into()));
-        let _ = cx.update(|cx| {
-            let pending = match r {
-                Ok((session, shell)) => {
-                    let is_hidden = |it: &ShellItem| !it.verb.is_empty() && HIDDEN_VERBS.contains(&it.verb.to_ascii_lowercase().as_str());
-                    let keep: Vec<ShellItem> = shell.into_iter().filter(|it| !is_hidden(it)).collect();
-                    Pending::Ready(Rc::new(to_items(&me, session, &tidy(keep), cx)))
-                }
-                Err(e) => {
-                    log::warn!("shell menu: {e}");
-                    Pending::Failed
-                }
-            };
-            if let Some(m) = menu.upgrade() {
-                m.update(cx, |m, cx| m.set_pending("more", pending, cx));
-            }
-        });
-    })
-    .detach();
 }
 
 fn to_items(me: &Me, session: u64, items: &[ShellItem], cx: &mut App) -> Vec<Item> {

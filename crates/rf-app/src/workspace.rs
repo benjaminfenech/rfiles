@@ -156,8 +156,6 @@ pub struct Workspace {
     drag_hover_tab: Option<(usize, u64)>,
     /// Files are being dragged over the window: the sidebar shows its "drop here to pin" row.
     sidebar_ext_drag: bool,
-    /// This window answers another app's Open/Save dialog (see `picker`).
-    picker: Option<std::rc::Rc<crate::picker::PickSession>>,
     /// Window width from the last frame (breadcrumb collapsing).
     viewport_w: f32,
     last_session: Vec<String>,
@@ -171,56 +169,7 @@ pub struct Workspace {
 pub struct OpenWorkspaces(Vec<(AnyWindowHandle, WeakEntity<Workspace>)>);
 impl Global for OpenWorkspaces {}
 
-/// A second launch forwarded its argument: open it as a tab in the most recent live window
-/// and bring that window up; with no window left, open a new one.
-/// Taskbar jump list: "New window" / "New tab" and the pinned folders. Rewritten only when the
-/// pins or the language change; test runs (several instances) leave the user's list alone.
-fn update_jump_list(places: &crate::places::Places) {
-    static LAST: std::sync::Mutex<Option<(Vec<(String, PathBuf)>, [&'static str; 3])>> = std::sync::Mutex::new(None);
-    if !places.loaded || std::env::var_os("RFILES_MULTI_INSTANCE").is_some() {
-        return;
-    }
-    // in the UI language, as the sidebar shows them (a default pin's title is its Turkish name)
-    let pins: Vec<(String, PathBuf)> = places.pinned.iter().map(|p| (crate::i18n::td(&p.title), p.path.clone())).collect();
-    let labels = [t!("Yeni pencere"), t!("Yeni sekme"), t!("Sabitlenenler")];
-    {
-        let mut last = LAST.lock().unwrap();
-        if last.as_ref() == Some(&(pins.clone(), labels)) {
-            return;
-        }
-        *last = Some((pins.clone(), labels));
-    }
-    let Ok(exe) = std::env::current_exe() else { return };
-    std::thread::spawn(move || {
-        let tasks = [(labels[0], rf_win::jumplist::NEW_WINDOW_ARG), (labels[1], "")];
-        if let Err(e) = rf_win::jumplist::set(&exe, &tasks, labels[2], &pins) {
-            log::warn!("jump list: {e:#}");
-        }
-    });
-}
-
-/// Whether `path` lives on drive `letter` (`E:\…`, `\\?\E:\…`).
-pub fn on_drive(path: &std::path::Path, letter: char) -> bool {
-    let s = path.to_string_lossy();
-    let s = s.strip_prefix(r"\\?\").unwrap_or(&s);
-    let mut c = s.chars();
-    matches!((c.next(), c.next()), (Some(l), Some(':')) if l.eq_ignore_ascii_case(&letter))
-}
-
-/// Windows asks to eject `letter` ("Safely remove", eject from our sidebar or Explorer): every
-/// window lets go of it — panes on that drive go Home (their folder watchers, size walks and
-/// listings stop), its previews close, queued thumbnails are dropped.
-pub fn release_drive(letter: char, cx: &mut App) {
-    let list = cx.try_global::<OpenWorkspaces>().map(|g| g.0.clone()).unwrap_or_default();
-    for (handle, ws) in list {
-        let Some(ws) = ws.upgrade() else { continue };
-        let _ = handle.update(cx, |_, _, cx| ws.update(cx, |w, cx| w.release_drive(letter, cx)));
-    }
-}
-
-/// Linux: every window lets go of the drive mounted at `root` before it is unmounted (as
-/// [`release_drive`] does for a Windows drive letter).
-#[cfg(unix)]
+/// Every window lets go of the drive mounted at `root` before it is unmounted.
 pub fn release_mount(root: &std::path::Path, cx: &mut App) {
     let list = cx.try_global::<OpenWorkspaces>().map(|g| g.0.clone()).unwrap_or_default();
     for (handle, ws) in list {
@@ -249,8 +198,11 @@ pub fn any_main_window(cx: &App) -> bool {
 /// (`rfiles /select,<file>`, like Explorer).
 pub const SELECT_PREFIX: &str = "\u{1}select:";
 
-/// A file to select in the window that just opened its folder ("Show in folder" from another app,
-/// see rf_win::shell_window): selected in place, or its folder opened when no window shows it.
+/// The launcher's "New window" action (the desktop entry's `--new-window`).
+pub const NEW_WINDOW_ARG: &str = "--new-window";
+
+/// A file to select in a window that shows its folder (the quick search's "Show in folder"):
+/// selected in place, or its folder opened when no window shows it.
 pub const SELECT_HERE_PREFIX: &str = "\u{1}select-here:";
 
 /// A second launch on a shell folder (a phone, Network…) reaches the running window as this
@@ -292,11 +244,7 @@ pub fn parse_launch(msg: &str) -> (Location, Option<String>) {
 /// forward); false when none does.
 fn select_in_open_folder(file: &std::path::Path, cx: &mut App) -> bool {
     let (Some(dir), Some(name)) = (file.parent(), file.file_name()) else { return false };
-    // Windows paths compare without case; Linux names are case-sensitive
-    let key = |p: &std::path::Path| {
-        let k = p.to_string_lossy().trim_end_matches(['\\', '/']).to_string();
-        if cfg!(windows) { k.to_lowercase() } else { k }
-    };
+    let key = |p: &std::path::Path| p.to_string_lossy().trim_end_matches('/').to_string();
     let want = key(dir);
     let name = name.to_string_lossy().into_owned();
     let list = cx.try_global::<OpenWorkspaces>().map(|g| g.0.clone()).unwrap_or_default();
@@ -328,10 +276,6 @@ pub static START_SELECT: std::sync::Mutex<Option<String>> = std::sync::Mutex::ne
 static LOOK_FOLLOWED: std::sync::Mutex<Option<PathBuf>> = std::sync::Mutex::new(None);
 
 pub fn route_ipc(msg: String, cx: &mut App) {
-    if let Some(pipe) = msg.strip_prefix(crate::picker::PICK_PREFIX) {
-        crate::picker::begin(pipe.to_string(), cx);
-        return;
-    }
     match crate::look::ipc::ToApp::decode(&msg) {
         Some(crate::look::ipc::ToApp::LookClosed) => {
             crate::folder_view::QUICK_LOOK_OPEN.store(false, std::sync::atomic::Ordering::Relaxed);
@@ -351,7 +295,7 @@ pub fn route_ipc(msg: String, cx: &mut App) {
         }
         return;
     }
-    if msg.trim() == rf_win::jumplist::NEW_WINDOW_ARG {
+    if msg.trim() == NEW_WINDOW_ARG {
         crate::open_main_window(Some(Location::Home), None, None, cx);
         return;
     }
@@ -411,8 +355,7 @@ impl Workspace {
             let images = images.clone();
             cx.new(|cx| Preview::new(images, cx))
         };
-        cx.observe(&places, |_, places, cx| {
-            update_jump_list(places.read(cx));
+        cx.observe(&places, |_, _, cx| {
             cx.notify()
         })
         .detach();
@@ -517,14 +460,11 @@ impl Workspace {
         .detach();
 
         cx.observe_global::<crate::settings::Settings>(|this, cx| {
-            // the language may have changed: the jump list follows
-            update_jump_list(this.places.read(cx));
             let s = cx.global::<crate::settings::Settings>();
             // a file dialog keeps its own preview state (shown by default)
-            if this.picker.is_none() {
-                this.preview_open = s.preview_open;
-                this.sidebar_rail = s.sidebar_rail;
-            }
+            this.preview_open = s.preview_open;
+            this.sidebar_rail = s.sidebar_rail;
+
             this.sidebar_open = s.sidebar_open;
             cx.notify();
         })
@@ -593,7 +533,6 @@ impl Workspace {
             tab_anim_serial: 0,
             drag_hover_tab: None,
             sidebar_ext_drag: false,
-            picker: None,
             viewport_w: 1300.,
             last_session: Vec::new(),
             _bulk_sub: None,
@@ -625,66 +564,17 @@ impl Workspace {
         this
     }
 
-    /// Open/Save dialog window: its answer, filter and session (see `picker`).
     /// The preview pane on/off: the saved setting, or only this window when it is a file dialog.
     fn toggle_preview(&mut self, cx: &mut Context<Self>) {
         let v = !self.preview_open;
-        if self.picker.is_some() {
-            self.preview_open = v;
-            cx.notify();
-        } else {
-            crate::settings::update(cx, |s| s.preview_open = v);
-        }
-    }
-
-    pub(crate) fn set_picker(&mut self, session: std::rc::Rc<crate::picker::PickSession>, window: &mut Window, cx: &mut Context<Self>) {
-        let (patterns, folders_only) = (session.patterns(), session.folders_only());
-        for t in &self.tabs {
-            for v in std::iter::once(&t.left).chain(t.right.as_ref()) {
-                v.update(cx, |v, cx| v.set_picking(patterns.clone(), folders_only, cx));
-            }
-        }
-        self.picker = Some(session);
-        // the preview pane helps picking (Windows' dialogs have one too): on by default here,
-        // and the sidebar starts as a strip of icons (it opens over the list while hovered)
-        self.preview_open = true;
-        self.sidebar_rail = true;
-        // closing the window (X, Alt+F4) cancels; it is not the user's session
-        let ws = cx.entity().downgrade();
-        window.on_window_should_close(cx, move |_, cx| {
-            if let Some(ws) = ws.upgrade() {
-                ws.update(cx, |ws, _| crate::picker::answer_cancel(ws));
-            }
-            true
-        });
-        cx.notify();
-    }
-
-    pub(crate) fn picker(&self) -> Option<std::rc::Rc<crate::picker::PickSession>> {
-        self.picker.clone()
+        crate::settings::update(cx, |s| s.preview_open = v);
     }
 
     pub(crate) fn active_view(&self) -> Entity<FolderView> {
         self.active_tab().clone()
     }
 
-    /// Open/Save dialog: another file type chosen (1-based).
-    pub(crate) fn set_pick_filter(&mut self, ix: u32, _window: &mut Window, cx: &mut Context<Self>) {
-        let Some(pk) = self.picker.clone() else { return };
-        pk.filter_ix.set(ix);
-        let patterns = pk.patterns();
-        for t in &self.tabs {
-            for v in std::iter::once(&t.left).chain(t.right.as_ref()) {
-                v.update(cx, |v, cx| v.set_picking(patterns.clone(), pk.folders_only(), cx));
-            }
-        }
-        cx.notify();
-    }
-
     pub fn save_session(&mut self, bounds: Option<WindowBounds>, cx: &mut Context<Self>) {
-        if self.picker.is_some() {
-            return;
-        }
         let placement = bounds.map(|wb| {
             let (b, max) = match wb {
                 WindowBounds::Windowed(b) => (b, 0.),
@@ -722,11 +612,7 @@ impl Workspace {
         let places = self.places.clone();
         let images = self.images.clone();
         let tab = cx.new(|cx| FolderView::new(loc, places, images, cx));
-        if let Some(pk) = self.picker.clone() {
-            tab.update(cx, |v, cx| v.set_picking(pk.patterns(), pk.folders_only(), cx));
-        }
         let sub = cx.subscribe_in(&tab, window, |this, emitter, ev: &FolderEvent, window, cx| match ev {
-            FolderEvent::Picked(paths) => crate::picker::picked(this, paths.clone(), window, cx),
             FolderEvent::ToOtherPane(kind, paths) => {
                 if let Some(other) = this.other_pane(emitter) {
                     let dest = match other.read(cx).location() {
@@ -1064,10 +950,6 @@ impl Workspace {
         cx.notify();
     }
 
-    fn release_drive(&mut self, letter: char, cx: &mut Context<Self>) {
-        self.release_where(&format!("{letter}:"), |p| on_drive(p, letter), cx);
-    }
-
     /// Panes showing a folder `on_it` go Home (their watchers, size walks and listings stop),
     /// previews of it close, queued thumbnails are dropped. `name` is for the log.
     fn release_where(&mut self, name: &str, on_it: impl Fn(&Path) -> bool, cx: &mut Context<Self>) {
@@ -1092,7 +974,6 @@ impl Workspace {
 
     /// Linux: unmounts (or, with `eject`, safely removes) the drive mounted at `root` after
     /// every window let go of it; says why when it can't.
-    #[cfg(unix)]
     fn unmount_drive(&mut self, root: PathBuf, eject: bool, window: &mut Window, cx: &mut Context<Self>) {
         release_mount(&root, cx);
         let win = window.window_handle();
@@ -1541,7 +1422,6 @@ impl Workspace {
     fn begin_address_edit(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let text = match self.active_tab().read(cx).location() {
             // Linux: a network folder as its address (typing it back mounts the same folder)
-            #[cfg(unix)]
             Location::Path(p) if crate::settings::address_shows_url() && rf_win::remote::display_url(p).is_some() => {
                 rf_core::history::redact_credentials(&rf_win::remote::display_url(p).unwrap_or_default())
             }
@@ -1755,9 +1635,8 @@ impl Workspace {
             let rail = if self.sidebar_rail { w < RAIL_SNAP + 30. } else { w < RAIL_SNAP };
             if rail != self.sidebar_rail {
                 self.sidebar_rail = rail;
-                if self.picker.is_none() {
-                    cx.update_global::<crate::settings::Settings, _>(|s, _| s.sidebar_rail = rail);
-                }
+                cx.update_global::<crate::settings::Settings, _>(|s, _| s.sidebar_rail = rail);
+
                 cx.notify();
             }
             if rail {
@@ -1817,20 +1696,7 @@ impl Workspace {
     /// Right-click on a sidebar folder/drive: the Explorer menu (eject, properties, format…)
     /// plus open in new tab/window and pin/unpin.
     fn sidebar_menu(&mut self, path: PathBuf, window: &mut Window, cx: &mut Context<Self>) {
-        use crate::fluent_menu::{Item, Menu, MenuIcon, Sub};
-        // Windows only: Linux has no classic shell menu to show
-        let shift = cfg!(windows) && crate::sys::shift_down();
-        if shift {
-            // the classic Explorer menu, extended verbs included
-            let p2 = path.clone();
-            rf_win::sta::run(move |owner| {
-                let pt = crate::sys::cursor_pos();
-                if let Err(e) = rf_win::ctxmenu::show_for_one(owner, &p2, pt, true, &[]) {
-                    log::warn!("sidebar menu: {e:#}");
-                }
-            });
-            return;
-        }
+        use crate::fluent_menu::{Item, Menu, MenuIcon};
         let me = cx.entity().downgrade();
         let is_pinned = self.current_pins(cx).contains(&path);
         let with = |f: fn(&mut Workspace, PathBuf, &mut Window, &mut Context<Workspace>)| {
@@ -1874,17 +1740,9 @@ impl Workspace {
                 crate::properties_view::open(vec![p], ws.images.clone(), cx);
             }))
             .hint("Alt+Enter"),
-            Item::Separator,
-            Item::Sub { label: t!("Diğer seçenekleri göster").into(), icon: MenuIcon::Lucide(L::Ellipsis), items: Sub::Pending { key: "more", fallback: None } },
         ];
-        // Windows' shell menu (other apps' entries); Linux has none
         let mut items = items;
-        if !cfg!(windows) {
-            items.truncate(items.len() - 2);
-        }
-        // Linux: a mounted drive can be unmounted, a stick or disc ejected (Windows has these
-        // in its shell menu)
-        #[cfg(unix)]
+        // a mounted drive can be unmounted, a stick or disc ejected
         if let Some(d) = self.places.read(cx).drives.iter().find(|d| d.root == path && !places::unmounted(d)) {
             use rf_win::DriveKind;
             let system = ["/", "/home", "/boot", "/efi", "/usr", "/var"].iter().any(|s| d.root == Path::new(s));
@@ -1900,11 +1758,7 @@ impl Workspace {
                 items.splice(at..at, extra);
             }
         }
-        let menu = crate::fluent_menu::show(Menu { quick: Vec::new(), items }, window.mouse_position(), window, cx);
-        let view = self.active_tab().downgrade();
-        if cfg!(windows) {
-            crate::ctx_menu::load_shell_more(menu.downgrade(), rf_win::ctxmenu::ShellTarget::One(path), view, cx);
-        }
+        crate::fluent_menu::show(Menu { quick: Vec::new(), items }, window.mouse_position(), window, cx);
     }
 
     /// Folders dropped on the sidebar's pin area get pinned (files are ignored, as in Explorer).
@@ -1927,7 +1781,6 @@ impl Workspace {
     fn set_pinned(&mut self, path: PathBuf, pin: bool, cx: &mut Context<Self>) {
         // Linux: a folder on a network mount is pinned by its URL (the mount's local path
         // changes between sessions; opening the URL mounts it again)
-        #[cfg(unix)]
         let path = rf_win::remote::remote_url(&path).map_or(path, PathBuf::from);
         let mut list = self.current_pins(cx);
         if !pin {
@@ -2259,7 +2112,6 @@ impl Workspace {
                 this.with_tab(cx, |v, cx| v.rename_selection(w, cx))
             }))
             // Share is Windows' share sheet
-            .when(cfg!(windows), |d| d.child(cmd("cb-share", L::Share2, "Paylaş", writable_sel, cx, |this, _, cx| this.with_tab(cx, |v, _| v.share()))))
             .child(cmd("cb-delete", L::Trash, "Sil  (Del)", writable_sel, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.delete_selected(false, w, cx))
             }))
@@ -2614,7 +2466,7 @@ impl Workspace {
         let shown = |k: &str| !hidden.iter().any(|h| h == k);
         // Linux: network shares go under Network, with the network locations (Windows keeps
         // mapped drives with the others, as Explorer does)
-        let (shares, drives): (Vec<_>, Vec<_>) = if cfg!(windows) { (Vec::new(), drives) } else { drives.into_iter().partition(|d| d.kind == rf_win::DriveKind::Network) };
+        let (shares, drives): (Vec<_>, Vec<_>) = drives.into_iter().partition(|d| d.kind == rf_win::DriveKind::Network);
         let drives = if shown("drives") { drives } else { Vec::new() };
         if !drives.is_empty() {
             col = col.child(header(t!("Sürücüler")));
@@ -2837,24 +2689,6 @@ impl Workspace {
                             )
                     }))
                     .children(ide_button)
-                    // a downloaded update: one click restarts into it
-                    .children(matches!(crate::installer::state(), crate::installer::State::Ready(_)).then(|| {
-                        h_flex()
-                            .id("update-ready")
-                            .h(px(22.))
-                            .px_2()
-                            .gap_1()
-                            .items_center()
-                            .rounded(theme::RADIUS_SM)
-                            .text_color(p.accent)
-                            .hover(|s| s.bg(p.hover))
-                            .child(Icon::new(L::RefreshCw).size(px(12.)))
-                            .child(t!("Güncelleme hazır"))
-                            .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Yeniden başlat ve güncelle")).build(w, cx))
-                            .on_click(|_, _, _| {
-                                std::thread::spawn(crate::installer::restart_to_update);
-                            })
-                    }))
                     .children(ms.filter(|_| in_folder && perf).map(|ms| format!("{ms} ms")))
                     .children(perf.then(|| render_backend_badge(p))),
             )
@@ -2931,21 +2765,8 @@ fn tooltip_text(id: &str) -> &'static str {
 pub fn open_in_ide(dir: PathBuf, ide: String) {
     std::thread::spawn(move || {
         let r = if ide.is_empty() {
-            #[cfg(windows)]
-            {
-                use std::os::windows::process::CommandExt;
-                const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-                // `code` is a .cmd launcher: run it through cmd without a console window
-                std::process::Command::new("cmd").args(["/c", "code", "."]).current_dir(&dir).creation_flags(CREATE_NO_WINDOW).spawn()
-            }
-            #[cfg(not(windows))]
-            {
-                rf_win::sandbox::launch("code").arg(".").current_dir(&dir).spawn()
-            }
+            rf_win::sandbox::launch("code").arg(".").current_dir(&dir).spawn()
         } else {
-            #[cfg(windows)]
-            let mut c = std::process::Command::new(&ide);
-            #[cfg(not(windows))]
             let mut c = rf_win::sandbox::launch(&ide);
             c.arg(&dir).spawn()
         };
@@ -3006,7 +2827,6 @@ fn breadcrumbs(path: &Path) -> Vec<(String, Location)> {
     #[allow(unused_mut)] // reassigned on Linux only
     let mut comps: Box<dyn Iterator<Item = std::path::Component>> = Box::new(path.components());
     // Linux: a network folder starts at its address ("smb://nas") rather than /run/user/…
-    #[cfg(unix)]
     if crate::settings::address_shows_url()
         && let Some((url, root)) = rf_win::remote::mount_url(path)
         && let Ok(rest) = path.strip_prefix(&root)
@@ -3051,7 +2871,6 @@ fn parse_location(text: &str) -> Option<Location> {
     // Environment variables like %USERPROFILE%
     let expanded = expand_env(t);
     // Unix: "~" and "~/sub" are the home folder
-    #[cfg(unix)]
     let expanded = match expanded.strip_prefix('~') {
         Some(rest) if rest.is_empty() || rest.starts_with('/') => {
             dirs::home_dir().map_or(expanded.clone(), |h| format!("{}{rest}", h.display()))
@@ -3202,42 +3021,6 @@ impl Render for Workspace {
                 .child(full)
         });
         let status = self.render_statusbar(&p, cx);
-        let picker_footer = self.picker.clone().map(|pk| crate::picker::footer(self, &pk, &p, window, cx));
-        let star_strip = (self.picker.is_none() && crate::installer::star_due(cx.global::<crate::settings::Settings>())).then(|| {
-            let action = |id: &'static str, label: &'static str, star: bool| {
-                div()
-                    .id(id)
-                    .px_2()
-                    .py_0p5()
-                    .rounded(theme::RADIUS_SM)
-                    .cursor_pointer()
-                    .when(star, |d| d.text_color(p.accent))
-                    .hover(|s| s.bg(p.hover))
-                    .child(label)
-                    .on_click(move |_, _, cx| {
-                        if star {
-                            std::thread::spawn(|| {
-                                let _ = rf_win::shell::open(std::path::Path::new(crate::installer::REPO));
-                            });
-                        }
-                        crate::settings::update(cx, |s| s.star_asked = true);
-                    })
-            };
-            h_flex()
-                .flex_shrink_0()
-                .px_3()
-                .py_1()
-                .gap_2()
-                .items_center()
-                .border_t_1()
-                .border_color(p.divider)
-                .text_xs()
-                .text_color(p.text_secondary)
-                .child(Icon::new(L::Star).size(px(12.)).text_color(p.accent))
-                .child(div().flex_1().child(t!("rfiles işinize yarıyor mu? GitHub'da bir yıldız, başkalarının da bulmasına yardım eder.")))
-                .child(action("star-yes", t!("Yıldız ver"), true))
-                .child(action("star-no", t!("Bir daha gösterme"), false))
-        });
         // Taskbar title follows the active folder.
         let title = format!("{} — rfiles", self.active_tab().read(cx).title(cx));
         if title != self.last_title {
@@ -3250,7 +3033,7 @@ impl Render for Workspace {
             .iter()
             .map(|t| session_text(t.left.read(cx).location()))
             .collect();
-        if session != self.last_session && self.picker.is_none() {
+        if session != self.last_session {
             self.last_session = session.clone();
             let active = self.active;
             cx.defer(move |cx| {
@@ -3566,15 +3349,12 @@ impl Render for Workspace {
                                     .children(shelf)
                                     .children(preview),
                             )
-                            .children(star_strip)
                             .when(show_statusbar, |d| d.child(status))
-                            .children(picker_footer),
                     ),
             )
             .child(div().h(px(8.)))
             // Last children = painted on top.
             .children(crate::status_center::render_flyout(&self.ops, &p, theme::TITLEBAR_H + px(44.), cx))
-            .children(crate::status_center::update_toast(&p, self.picker.is_some()))
             .children(quick_look_layer)
             .children(self.palette.clone())
             .children(crate::fluent_menu::current(window, cx))
@@ -3605,7 +3385,6 @@ mod tests {
     use rf_core::Location;
     use std::path::{Path, PathBuf};
 
-    #[cfg(unix)]
     #[test]
     fn unix_crumbs() {
         let c = breadcrumbs(Path::new("/home/demo"));
@@ -3618,19 +3397,6 @@ mod tests {
         assert_eq!(parse_location("~/x"), Some(Location::Path(home.join("x"))));
         assert_eq!(parse_location("~user"), Some(Location::Path(PathBuf::from("~user"))));
     }
-
-    #[cfg(windows)]
-    #[test]
-    fn crumbs() {
-        let c = breadcrumbs(Path::new(r"C:\Users\demo"));
-        let labels: Vec<_> = c.iter().map(|(l, _)| l.as_str()).collect();
-        // C:\Users shows Explorer's localized name ("Kullanıcılar" on Turkish Windows)
-        let users = rf_win::localized::folder_label(Path::new(r"C:\Users"), None).map_or("Users".to_string(), |l| l.to_string());
-        assert_eq!(labels, vec!["C:", users.as_str(), "demo"]);
-        assert_ne!(users, "");
-        assert_eq!(c[0].1, Location::Path(PathBuf::from(r"C:\")));
-        assert_eq!(parse_location("d:"), Some(Location::Path(PathBuf::from(r"d:\"))));
-    }
 }
 
 #[cfg(test)]
@@ -3639,23 +3405,12 @@ mod launch_tests {
     use rf_core::Location;
     use std::path::PathBuf;
 
-    #[cfg(unix)]
     #[test]
     fn unix_select_messages() {
         let (loc, sel) = parse_launch(&format!("{SELECT_PREFIX}/home/me/Klasör/rapor ü.txt"));
         assert_eq!(loc, Location::Path(PathBuf::from("/home/me/Klasör")));
         assert_eq!(sel.as_deref(), Some("rapor ü.txt"));
         assert_eq!(parse_launch("/usr/share"), (Location::Path(PathBuf::from("/usr/share")), None));
-        assert_eq!(parse_launch("  "), (Location::Home, None));
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn select_messages() {
-        let (loc, sel) = parse_launch(&format!(r"{SELECT_PREFIX}C:\Klasör\rapor ü.txt"));
-        assert_eq!(loc, Location::Path(PathBuf::from(r"C:\Klasör")));
-        assert_eq!(sel.as_deref(), Some("rapor ü.txt"));
-        assert_eq!(parse_launch(r"C:\Windows"), (Location::Path(PathBuf::from(r"C:\Windows")), None));
         assert_eq!(parse_launch("  "), (Location::Home, None));
     }
 

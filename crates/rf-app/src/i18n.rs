@@ -262,7 +262,6 @@ fn lookup(key: &str) -> Option<&'static str> {
 
 /// Linux: texts that name a Windows feature differently there (the Recycle Bin is the Trash):
 /// (key, Turkish, English). Other languages keep their own word.
-#[cfg(unix)]
 const LINUX: &[(&str, &str, &str)] = &[
     ("Geri dönüşüm kutusu", "Çöp kutusu", "Trash"),
     ("Geri Dönüşüm Kutusu", "Çöp Kutusu", "Trash"),
@@ -285,7 +284,6 @@ const LINUX: &[(&str, &str, &str)] = &[
 
 /// The Linux text for `key` in Turkish or English, if it differs there.
 fn platform_text(key: &str) -> Option<&'static str> {
-    #[cfg(unix)]
     if let Some((_, tr, en)) = LINUX.iter().find(|(k, _, _)| *k == key) {
         return match active() {
             Lang::Tr => Some(tr),
@@ -404,7 +402,6 @@ mod tests {
     }
 
     /// An upstream rewording would leave a Linux override behind silently.
-    #[cfg(unix)]
     #[test]
     fn linux_overrides_name_existing_texts() {
         for (key, tr, en) in LINUX {
@@ -451,13 +448,11 @@ mod tests {
         for (tr, _) in crate::i18n_en::EN {
             assert_eq!(t(tr), platform_text(tr).unwrap_or(tr));
         }
-        #[cfg(unix)]
         assert_eq!(t("Geri Dönüşüm Kutusu"), "Çöp Kutusu");
         assert_eq!(items(1), "1 öğe");
         assert_eq!(pct(53.), "%53");
         set(Lang::En);
         assert_eq!(t("Yeni klasör"), "New folder");
-        #[cfg(unix)]
         assert_eq!(t("Geri Dönüşüm Kutusu"), "Trash");
         assert_eq!(items(1), "1 item");
         assert_eq!(items(3), "3 items");

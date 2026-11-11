@@ -114,8 +114,5 @@ pub fn op_finished(ops: &Entity<Ops>, id: u64, cx: &mut App) {
 /// Whether one of our windows has the focus. Linux has no foreground-window query that works
 /// on Wayland: GPUI knows whether its windows are active.
 fn app_in_front(cx: &mut App) -> bool {
-    if cfg!(windows) {
-        return rf_win::window::app_in_front();
-    }
     cx.windows().into_iter().any(|w| w.update(cx, |_, window, _| window.is_window_active()).unwrap_or(false))
 }

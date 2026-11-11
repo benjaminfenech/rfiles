@@ -1,22 +1,12 @@
 //! rfiles ve DirectLook'un ortak kodu; iki program da bu kütüphaneyi kullanır.
 
 // Linux: rf-linux mirrors rf-win's API, so the code below uses it under rf-win's name.
-#[cfg(unix)]
 extern crate rf_linux as rf_win;
 
 mod actions;
 mod aliases;
 mod background;
-#[cfg(unix)]
 mod renamed;
-// the speed test races File Explorer: Windows only (Linux: an empty page, see bench_view_linux)
-#[cfg(windows)]
-pub mod bench;
-#[cfg(windows)]
-mod bench_view;
-#[cfg(not(windows))]
-#[path = "bench_view_linux.rs"]
-mod bench_view;
 mod archive_view;
 mod bulk_rename;
 mod command_palette;
@@ -38,18 +28,13 @@ mod keymap_editor;
 mod layouts;
 pub mod look;
 mod image_cache;
-mod installer;
+mod about;
 mod ops;
-mod picker;
-mod picker_proto;
 mod places;
 mod settings;
 mod shell_view;
 mod select_box;
 mod settings_view;
-// lists and controls other apps' windows: Windows only
-#[cfg(windows)]
-mod taskbar_preview;
 mod shelf_view;
 mod status_center;
 mod tags;
@@ -80,7 +65,7 @@ pub(crate) fn restored_bounds(cx: &App) -> Option<WindowBounds> {
     Some(if max > 0.5 { WindowBounds::Maximized(b) } else { WindowBounds::Windowed(b) })
 }
 
-/// Panics are written to %APPDATA%\rfiles\crash.log (the app has no console in release).
+/// Panics are also written to crash.log in the config folder (launchers hide stderr).
 pub(crate) fn install_panic_log() {
     let prev = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
@@ -100,86 +85,8 @@ pub(crate) fn install_panic_log() {
     }));
 }
 
-/// Whether rfiles is registered as the default file manager (HKCU).
+/// Whether rfiles is the default file manager (read off the UI thread at start).
 pub static DEFAULT_FM: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-/// rfiles answers other apps' Open/Save dialogs (registry state, read off the UI thread).
-pub static FILE_DIALOGS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-
-/// The Open/Save dialog DLL to register: a copy of the one next to this exe, outside the
-/// install folder (`%LocalAppData%\rfiles\dialog\<build>\`). Apps keep the registered DLL
-/// loaded, and an update can't replace an install folder with a loaded DLL in it. Next to the
-/// copy, `rustyfiles-exe.txt` tells the DLL which rfiles to start. Older copies go once no
-/// app has them loaded.
-pub(crate) fn dialog_dll() -> Option<String> {
-    let exe = std::env::current_exe().ok()?;
-    let src = exe.with_file_name(rf_win::dialog_reg::DLL_NAME);
-    let meta = std::fs::metadata(&src).ok()?;
-    let stamp = meta.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map_or(0, |d| d.as_secs());
-    let root = PathBuf::from(std::env::var_os("LOCALAPPDATA")?).join("rfiles").join("dialog");
-    let dir = root.join(format!("{}-{:x}-{:x}", env!("CARGO_PKG_VERSION"), meta.len(), stamp));
-    let dst = dir.join(rf_win::dialog_reg::DLL_NAME);
-    if !dst.exists() {
-        std::fs::create_dir_all(&dir).ok()?;
-        grant_app_packages(&dir);
-        let part = dir.join("rustyfiles_dialog.dll.part");
-        std::fs::copy(&src, &part).ok()?;
-        std::fs::rename(&part, &dst).ok()?;
-    }
-    let _ = std::fs::write(dir.join("rustyfiles-exe.txt"), exe.display().to_string());
-    if let Ok(rd) = std::fs::read_dir(&root) {
-        for e in rd.flatten() {
-            if e.path() != dir {
-                let _ = std::fs::remove_dir_all(e.path()); // fails while an app has it loaded
-            }
-        }
-    }
-    Some(dst.display().to_string())
-}
-
-/// Packaged apps' file pickers run in PickerHost.exe, which can only load the registered DLL if
-/// app packages may read it; LocalAppData gives them no access, and the failed load makes the
-/// picker fail (Snipping Tool crashed on Save as). Read and execute for ALL APPLICATION PACKAGES
-/// and ALL RESTRICTED APPLICATION PACKAGES, inherited by the files copied in after.
-#[cfg(not(windows))]
-fn grant_app_packages(_dir: &std::path::Path) {}
-
-#[cfg(windows)]
-fn grant_app_packages(dir: &std::path::Path) {
-    use std::os::windows::process::CommandExt;
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-    let _ = std::process::Command::new("icacls")
-        .arg(dir)
-        .args(["/grant", "*S-1-15-2-1:(OI)(CI)(RX)", "*S-1-15-2-2:(OI)(CI)(RX)"])
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .creation_flags(CREATE_NO_WINDOW)
-        .status();
-}
-
-// Windows only: Windows ACLs, read with icacls
-#[cfg(all(test, windows))]
-mod grant_tests {
-    #[test]
-    fn app_packages_can_read_the_dialog_folder() {
-        let dir = std::env::temp_dir().join(format!("rf-grant-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        super::grant_app_packages(&dir);
-        let file = dir.join("rustyfiles_dialog.dll");
-        std::fs::write(&file, b"x").unwrap();
-        // the file copied in after inherits the grant; SDDL (SIDs, not localized names):
-        // AC is ALL APPLICATION PACKAGES, S-1-15-2-2 ALL RESTRICTED APPLICATION PACKAGES
-        let saved = std::env::temp_dir().join(format!("rf-grant-{}.acl", std::process::id()));
-        std::process::Command::new("icacls").arg(&file).arg("/save").arg(&saved).output().unwrap();
-        let raw = std::fs::read(&saved).unwrap();
-        let words: Vec<u16> = raw.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
-        let sddl = String::from_utf16_lossy(&words);
-        let _ = std::fs::remove_file(&saved);
-        let _ = std::fs::remove_dir_all(&dir);
-        assert!(sddl.contains("(A;ID;0x1200a9;;;AC)"), "{sddl}");
-        assert!(sddl.contains("(A;ID;0x1200a9;;;S-1-15-2-2)"), "{sddl}");
-    }
-}
-
 /// Opens an rfiles window. `start = None` restores the session (first window) or opens Home.
 pub fn open_main_window(
     start: Option<Location>,
@@ -252,17 +159,6 @@ fn is_dir_bounded(p: PathBuf, limit: std::time::Duration) -> Option<bool> {
     rx.recv_timeout(limit).ok()
 }
 
-/// A shell namespace argument resolved to a folder we list ourselves that is not on the file
-/// system (see `rf_win::shellfolder::browsable`), within `limit`.
-fn shell_place_bounded(arg: &str, limit: std::time::Duration) -> Option<rf_win::shellfolder::Place> {
-    let (tx, rx) = std::sync::mpsc::channel();
-    let arg = arg.to_string();
-    std::thread::spawn(move || {
-        let _ = tx.send(rf_win::shellfolder::browsable(&arg));
-    });
-    rx.recv_timeout(limit).ok().flatten().filter(|p| p.fs_path.is_none())
-}
-
 /// rfiles'ın girişi.
 /// Start-up timing (`RFILES_TRACE_START=1`, logged at info): milliseconds since the process
 /// was created, at the steps before the first window.
@@ -275,16 +171,10 @@ pub(crate) fn start_mark(step: &str) {
 
 pub fn main() {
     // Flatpak: the host's XDG folders (trash, settings, apps), before any thread starts
-    #[cfg(unix)]
     rf_win::sandbox::adopt_host_dirs();
     // rfiles was rustyfiles before: old variables and folders
-    #[cfg(unix)]
     renamed::adopt_old_name();
     start_mark("main");
-    // Velopack (installer / updater): first, it may run an install hook and exit
-    installer::startup();
-    // the id Velopack gives the Start menu / taskbar shortcuts: a pin survives updates
-    rf_win::window::set_app_id(installer::APP_ID);
     install_panic_log();
     rf_win::shell::suppress_critical_error_dialogs();
     // before any shell icon/thumbnail work: see keep_gdiplus_alive (loader-lock deadlock)
@@ -299,7 +189,6 @@ pub fn main() {
 
     // Linux: D-Bus started us to answer "Show in folder" while we are the default file
     // manager. No window here: each call starts `rfiles <folder>` (see rf-linux fm_service).
-    #[cfg(unix)]
     if std::env::args().nth(1).as_deref() == Some(rf_win::default_fm::SERVICE_ARG) {
         match std::env::current_exe() {
             Ok(exe) => {
@@ -312,37 +201,24 @@ pub fn main() {
         return;
     }
 
-    // As default file manager we also receive shell namespaces (Control Panel = "::{…}") and
-    // non-folders: hand those back to Explorer so nothing becomes unreachable.
-    // The folder check is bounded: an offline network path must not keep the window from
-    // appearing for the whole SMB timeout. Undecided after 2 s = treat as a (slow) folder.
     // `--settings=directlook`: DirectLook'un simge menüsünden "DirectLook ayarları"
-    // `--settings=speed`: straight to Settings → Speed test
     let settings_arg = std::env::args().nth(1).and_then(|a| a.strip_prefix("--settings=").map(str::to_string));
     let open_look_settings = settings_arg.is_some();
-    // `--pick <pipe>`: an app's Open/Save dialog (rustyfiles_dialog.dll) asks for a file
-    let pick = (std::env::args().nth(1).as_deref() == Some("--pick")).then(|| std::env::args().nth(2)).flatten();
-    // `--bar-preview`: our taskbar, as an ordinary window (see taskbar_preview)
-    let bar_preview = cfg!(windows) && std::env::args().nth(1).as_deref() == Some("--bar-preview");
     // `--quick-search`: the quick search window, as its hotkey opens it (a shortcut of the
     // user's own can run this)
     let quick_search = std::env::args().nth(1).as_deref() == Some(quick_search::LAUNCH_ARG);
-    if bar_preview {
-        quick_search::disable_hotkey();
-    }
     let arg = std::env::args().nth(1).map(|a| a.trim().trim_matches('"').to_string()).filter(|a| !a.is_empty());
     // Linux: launchers pass file:// URIs (the desktop entry's %U, which lets smb://… in too)
-    #[cfg(unix)]
     let arg = arg.map(|a| match a.starts_with("file://").then(|| rf_win::fm_service::uri_to_path(&a)).flatten() {
         Some(p) => p.to_string_lossy().into_owned(),
         None => a,
     });
-    let arg = arg.filter(|_| !open_look_settings && pick.is_none() && !bar_preview && !quick_search);
-    // jump list task "New window"
-    let new_window = arg.as_deref() == Some(rf_win::jumplist::NEW_WINDOW_ARG);
+    let arg = arg.filter(|_| !open_look_settings && !quick_search);
+    // the launcher's "New window" action
+    let new_window = arg.as_deref() == Some(workspace::NEW_WINDOW_ARG);
     let arg = arg.filter(|_| !new_window);
     let mut start: Option<Location> = None;
-    // Explorer's `/select,<file>`: its folder, with the file selected
+    // `/select,<file>` (from the "Show in folder" service): its folder, with the file selected
     // (callers also write `/select, <file>`: the path then comes as the next argument)
     let all_args = std::env::args().skip(1).collect::<Vec<_>>().join(" ");
     let mut select = {
@@ -362,70 +238,44 @@ pub fn main() {
         start = p.parent().map(|d| Location::Path(d.to_path_buf()));
         *workspace::START_SELECT.lock().unwrap() = p.file_name().map(|n| n.to_string_lossy().into_owned());
     }
-    // desktop icons (This PC, Recycle Bin) arrive as shell namespaces: those we show ourselves
+    // `shell:RecycleBinFolder` and search links (also what a second launch forwards)
     if let Some(loc) = arg.as_deref().and_then(Location::from_shell_name) {
         start = Some(loc);
     } else if let Some(arg) = arg {
-        let shell_namespace = arg.starts_with("::") || arg.to_ascii_lowercase().starts_with("shell:");
-        // a namespace folder we can list ourselves (a phone, Network, a library…) opens here;
-        // Control Panel and other applets (and anything that does not enumerate) stay with Explorer.
-        // Bounded like the folder check: a device that hangs must not keep the window away.
-        let shell_place = if shell_namespace { shell_place_bounded(&arg, std::time::Duration::from_secs(3)) } else { None };
-        if let Some(place) = shell_place {
-            start = Some(Location::Shell { parsing: place.parsing, name: place.name });
-        } else {
-            // a network server root (\\nas) isn't a "directory" to Rust, but we browse its shares
-            let server = rf_win::network::server_root(std::path::Path::new(&arg)).is_some();
-            // Linux: network locations (smb://, sftp://…) are mounted by the window
-            #[cfg(unix)]
-            let server = server || rf_win::remote::is_remote(std::path::Path::new(&arg));
-            let is_dir = if shell_namespace {
-                Some(false)
-            } else if server {
-                Some(true)
-            } else {
-                is_dir_bounded(PathBuf::from(&arg), std::time::Duration::from_secs(2))
-            };
-            // a browsable archive (DirectLook's "rfiles'ta aç") opens like a folder, here
-            let archive = !shell_namespace && archive_view::is_browsable(std::path::Path::new(&arg));
-            if is_dir == Some(false) && !archive {
-                // Explorer opens folders through the verb we took over: what we just handed it may
-                // come straight back. Never ping-pong; a path is then shown here (with its error).
-                if !rf_win::default_fm::forwarded_recently(&arg) {
-                    rf_win::default_fm::note_forward(&arg);
-                    #[cfg(windows)]
-                    let _ = std::process::Command::new("explorer.exe").arg(&arg).spawn();
-                    // Linux: a file's own default app
-                    #[cfg(not(windows))]
-                    let _ = rf_win::shell::open(std::path::Path::new(&arg));
-                    return;
-                }
-                if shell_namespace {
-                    return;
-                }
-                // a file that came back (an archive type Windows browses but we don't, e.g. .cpio):
-                // its folder, with the file selected
-                let p = PathBuf::from(&arg);
-                if let (Some(dir), Some(name)) = (p.parent().filter(|_| p.is_file()), p.file_name()) {
-                    start = Some(Location::Path(dir.to_path_buf()));
-                    *workspace::START_SELECT.lock().unwrap() = Some(name.to_string_lossy().into_owned());
-                    select = Some(arg.clone());
-                }
+        // network locations (smb://, sftp://…) are mounted by the window
+        let remote = rf_win::remote::is_remote(std::path::Path::new(&arg));
+        // bounded: an offline network path must not keep the window from appearing for the
+        // whole SMB timeout. Undecided after 2 s = treat as a (slow) folder.
+        let is_dir = if remote { Some(true) } else { is_dir_bounded(PathBuf::from(&arg), std::time::Duration::from_secs(2)) };
+        // a browsable archive (DirectLook's "rfiles'ta aç") opens like a folder, here
+        let archive = archive_view::is_browsable(std::path::Path::new(&arg));
+        if is_dir == Some(false) && !archive {
+            // a file goes to its own default app; should that be us, it comes straight back:
+            // never ping-pong, it is then shown here (its folder, with the file selected)
+            if !rf_win::default_fm::forwarded_recently(&arg) {
+                rf_win::default_fm::note_forward(&arg);
+                let _ = rf_win::shell::open(std::path::Path::new(&arg));
+                return;
             }
-            if start.is_none() {
-                start = Some(Location::Path(PathBuf::from(arg)));
+            let p = PathBuf::from(&arg);
+            if let (Some(dir), Some(name)) = (p.parent().filter(|_| p.is_file()), p.file_name()) {
+                start = Some(Location::Path(dir.to_path_buf()));
+                *workspace::START_SELECT.lock().unwrap() = Some(name.to_string_lossy().into_owned());
+                select = Some(arg.clone());
             }
         }
+        if start.is_none() {
+            start = Some(Location::Path(PathBuf::from(arg)));
+        }
     }
-    // Cache the registry state for the settings page (read once, off the hot path).
+    // The default file manager state for the settings page (read once, off the hot path).
     std::thread::spawn(|| {
         // copies opened/copied out of archives days ago
         crate::archive_view::clean_temp();
         // rustyfiles' (the old name's) default file manager and autostart entries become ours
-        #[cfg(unix)]
         renamed::adopt_old_integration();
         // default file manager whose registered exe vanished (moved / rebuilt elsewhere):
-        // re-point it here, or Windows can't open any folder. Not from test instances.
+        // re-point it here, or other apps can't open any folder. Not from test instances.
         if std::env::var_os("RFILES_CONFIG_DIR").is_none() {
             if let Ok(me) = std::env::current_exe() {
                 if rf_win::default_fm::heal(&me.display().to_string(), rf_win::default_fm::CLASSES) {
@@ -436,53 +286,20 @@ pub fn main() {
                 }
             }
         }
-        // Open/Save dialogs: a registration whose DLL moved is pointed here (not from tests)
-        if std::env::var_os("RFILES_CONFIG_DIR").is_none() {
-            if rf_win::dialog_reg::is_enabled(rf_win::dialog_reg::CLASSES) {
-                if let Some(dll) = dialog_dll() {
-                    if rf_win::dialog_reg::point_to(&dll, rf_win::dialog_reg::CLASSES) {
-                        log::warn!("file dialogs now use {dll}");
-                    }
-                }
-            }
-        }
-        FILE_DIALOGS.store(rf_win::dialog_reg::is_enabled(rf_win::dialog_reg::CLASSES), std::sync::atomic::Ordering::Relaxed);
         DEFAULT_FM.store(
             rf_win::default_fm::is_enabled(rf_win::default_fm::CLASSES),
             std::sync::atomic::Ordering::Relaxed,
         )
     });
 
-    // "Show in folder" from other apps (SHOpenFolderAndSelectItems: Telegram, browsers) while we
-    // are the default file manager: Windows opens the folder through our verb and names the
-    // file afterwards, to a window it finds in its window list (see rf_win::shell_window). The
-    // folder opens at once; the file, if one comes, is selected in it.
-    const SHELL_SELECT_WAIT: std::time::Duration = std::time::Duration::from_secs(4);
-    let shell_select = match &start {
-        Some(Location::Path(dir)) if select.is_none() && std::env::var_os("RFILES_MULTI_INSTANCE").is_none() && rf_win::default_fm::is_enabled(rf_win::default_fm::CLASSES) => {
-            let (tx, rx) = std::sync::mpsc::channel();
-            let dir = dir.clone();
-            std::thread::spawn(move || {
-                let _ = tx.send(rf_win::shell_window::wait_for_select(&dir, SHELL_SELECT_WAIT));
-            });
-            Some(rx)
-        }
-        _ => None,
-    };
-    let shell_selected = move |rx: std::sync::mpsc::Receiver<Option<PathBuf>>| {
-        rx.recv_timeout(SHELL_SELECT_WAIT + std::time::Duration::from_secs(1)).ok().flatten().map(|f| format!("{}{}", workspace::SELECT_HERE_PREFIX, f.display()))
-    };
-
     // Single instance: a second launch opens its folder as a tab in the running window.
     let message = match &start {
         _ if open_look_settings => look::ipc::ToApp::OpenSettings.encode(),
-        _ if pick.is_some() => format!("{}{}", picker::PICK_PREFIX, pick.as_deref().unwrap_or_default()),
-        _ if new_window => rf_win::jumplist::NEW_WINDOW_ARG.to_string(),
+        _ if new_window => workspace::NEW_WINDOW_ARG.to_string(),
         _ if quick_search => quick_search::LAUNCH_ARG.to_string(),
         _ if select.is_some() => format!("{}{}", workspace::SELECT_PREFIX, select.as_deref().unwrap_or_default()),
         Some(Location::Path(p)) => p.to_string_lossy().into_owned(),
         Some(Location::RecycleBin) => "shell:RecycleBinFolder".to_string(),
-        Some(Location::Shell { parsing, .. }) => format!("{}{parsing}", workspace::SHELL_PREFIX),
         // a search link goes on to the running window as a search link
         Some(Location::Search { root, query }) => {
             let enc = |s: &str| s.replace('%', "%25").replace('&', "%26");
@@ -491,30 +308,16 @@ pub fn main() {
         _ => String::new(),
     };
     // RFILES_MULTI_INSTANCE=1 skips forwarding (automated tests run several copies).
-    let multi = std::env::var_os("RFILES_MULTI_INSTANCE").is_some() || bar_preview;
+    let multi = std::env::var_os("RFILES_MULTI_INSTANCE").is_some();
     let _instance = if multi {
         None
     } else {
         match rf_win::single_instance::acquire(&message) {
-            rf_win::single_instance::Role::Forwarded => {
-                // the folder is on its way to the running window; the file to select follows
-                if let Some(msg) = shell_select.and_then(shell_selected) {
-                    rf_win::single_instance::send_to("rfiles", &msg);
-                }
-                return;
-            }
+            rf_win::single_instance::Role::Forwarded => return,
             rf_win::single_instance::Role::Primary(guard) => Some(guard),
         }
     };
     let (ipc_tx, ipc_rx) = futures::channel::mpsc::unbounded::<String>();
-    if let Some(rx) = shell_select {
-        let tx = ipc_tx.clone();
-        std::thread::spawn(move || {
-            if let Some(msg) = shell_selected(rx) {
-                let _ = tx.unbounded_send(msg);
-            }
-        });
-    }
     if !multi {
         rf_win::single_instance::serve(move |m| {
             let _ = ipc_tx.unbounded_send(m);
@@ -548,7 +351,6 @@ pub fn main() {
         if let Some(page) = &settings_arg {
             settings_view::open_page(
                 match page.as_str() {
-                    "speed" => settings_view::Page::Speed,
                     "general" => settings_view::Page::General,
                     _ => settings_view::Page::Look,
                 },
@@ -564,43 +366,20 @@ pub fn main() {
             rf_win::foldersize::shared_cache().persist(d.join("foldersizes.bin"));
         }
         let bounds = restored_bounds(cx);
-        match pick.clone() {
-            // started only to answer a dialog: no main window
-            Some(pipe) => picker::begin(pipe, cx),
-            #[cfg(windows)]
-            None if bar_preview => taskbar_preview::open(cx),
+        if quick_search {
             // started for the quick search only: no main window (it quits when that closes,
             // unless running in the background)
-            None if quick_search => quick_search::toggle(cx),
-            None => {
-                installer::count_start(cx);
-                start_mark("opening the window");
-                open_main_window(if open_look_settings { Some(Location::Settings) } else { start }, None, bounds, cx);
-                start_mark("window opened");
-                // a copy or move cut off last time: ask to carry it on
-                status_center::offer_resume(cx);
-            }
+            quick_search::toggle(cx);
+        } else {
+            start_mark("opening the window");
+            open_main_window(if open_look_settings { Some(Location::Settings) } else { start }, None, bounds, cx);
+            start_mark("window opened");
+            // a copy or move cut off last time: ask to carry it on
+            status_center::offer_resume(cx);
         }
-        // updates from GitHub Releases (installed copies only)
-        installer::spawn_checks(cx, |cx| cx.refresh_windows());
         // DirectLook ayrı süreç: önceden başlatılır ki ilk Boşluk beklemesin (testlerde değil)
-        if cx.global::<settings::Settings>().directlook_enabled && std::env::var_os("RFILES_MULTI_INSTANCE").is_none() && !bar_preview {
+        if cx.global::<settings::Settings>().directlook_enabled && std::env::var_os("RFILES_MULTI_INSTANCE").is_none() {
             look::ipc::send(look::ipc::Msg::Wake, true);
-        }
-        // "Safely remove" / eject: let go of a drive when Windows asks (see rf_win::removal)
-        {
-            let (tx, mut rx) = futures::channel::mpsc::unbounded::<(char, std::sync::mpsc::Sender<()>)>();
-            rf_win::removal::start(move |letter, ack| {
-                let _ = tx.unbounded_send((letter, ack));
-            });
-            cx.spawn(async move |cx| {
-                use futures::StreamExt;
-                while let Some((letter, ack)) = rx.next().await {
-                    cx.update(|cx| workspace::release_drive(letter, cx));
-                    let _ = ack.send(());
-                }
-            })
-            .detach();
         }
         // Second launches arrive here and go to whichever window is still open.
         let mut ipc_rx = ipc_rx;

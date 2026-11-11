@@ -48,8 +48,9 @@ fn open_settings() {
 /// DirectLook's own icon: when its setting is on and rfiles has none (rfiles running in
 /// the background has one, with the settings in its menu): one icon, not two.
 fn tray_wanted(cx: &App) -> bool {
-    // Linux: DirectLook only runs for the app's window (no global hotkey): no icon of its own
-    cfg!(windows) && cx.global::<LookSettings>().look_tray_icon && !cx.global::<crate::settings::Settings>().run_in_background
+    // DirectLook only runs for the app's window (no global hotkey): no icon of its own
+    let _ = cx;
+    false
 }
 
 fn sync_tray(cx: &App) {
@@ -93,9 +94,7 @@ fn handle(msg: Msg, cx: &mut App) {
 
 /// directlook.exe
 pub fn main() {
-    #[cfg(unix)]
     rf_win::sandbox::adopt_host_dirs();
-    #[cfg(unix)]
     crate::renamed::adopt_old_name();
     crate::install_panic_log();
     rf_win::shell::suppress_critical_error_dialogs();

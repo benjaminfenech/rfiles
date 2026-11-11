@@ -124,7 +124,6 @@ fn worker(path: PathBuf, opened: mpsc::Sender<Result<Vec<(f32, f32)>, String>>, 
         Err(e) => {
             let msg = match e.downcast_ref::<PdfError>() {
                 Some(PdfError::Password) => t!("Bu PDF parola ile korunuyor; DirectLook parolalı PDF'leri henüz açmıyor."),
-                #[cfg(unix)]
                 Some(PdfError::NoPoppler) => "To preview PDFs, install poppler (it provides pdfinfo and pdftoppm).",
                 _ => t!("Bu dosya PDF olarak okunamadı; bozuk olabilir."),
             };

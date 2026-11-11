@@ -236,8 +236,18 @@ fn category_of(t: &DiskTree, id: u32) -> icons::Category {
     name.rsplit_once('.').map_or(icons::Category::Other, |(_, e)| icons::category_for_ext(&e.to_ascii_lowercase()))
 }
 
-fn count(n: u64) -> String {
-    crate::bench_view::count(n)
+/// 2330750 → "2.330.750" (Turkish) / "2,330,750" (English).
+pub(crate) fn count(n: u64) -> String {
+    let sep = if crate::i18n::t("1.000 dosya").starts_with("1.000") { '.' } else { ',' };
+    let s = n.to_string();
+    let mut out = String::new();
+    for (i, c) in s.chars().enumerate() {
+        if i > 0 && (s.len() - i) % 3 == 0 {
+            out.push(sep);
+        }
+        out.push(c);
+    }
+    out
 }
 
 impl Render for DiskUsageView {

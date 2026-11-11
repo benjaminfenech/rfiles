@@ -119,7 +119,6 @@ pub fn edit_dialog(dir: PathBuf, window: &mut gpui_kit::Window, cx: &mut gpui_ki
 mod tests {
     use super::*;
 
-    #[cfg(unix)]
     #[test]
     fn resolves_on_unix() {
         let list = vec![("proje".to_string(), PathBuf::from("/home/me/İşler/Proje")), ("Ölçüm".to_string(), PathBuf::from("/data/"))];
@@ -127,19 +126,5 @@ mod tests {
         assert_eq!(resolve_in("@PROJE/src/lib", &list).as_deref(), Some("/home/me/İşler/Proje/src/lib"));
         assert_eq!(resolve_in(" @ölçüm/", &list).as_deref(), Some("/data/"));
         assert_eq!(resolve_in("/proje", &list), None);
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn resolves_names_and_sub_paths() {
-        let list = vec![("proje".to_string(), PathBuf::from(r"D:\İşler\Proje")), ("Ölçüm".to_string(), PathBuf::from(r"E:\data\"))];
-        assert_eq!(resolve_in("@proje", &list).as_deref(), Some(r"D:\İşler\Proje\"));
-        assert_eq!(resolve_in("@PROJE\\src/lib", &list).as_deref(), Some(r"D:\İşler\Proje\src\lib"));
-        assert_eq!(resolve_in(" @ölçüm\\", &list).as_deref(), Some(r"E:\data\"));
-        assert_eq!(resolve_in("@yok", &list), None);
-        assert_eq!(resolve_in(r"C:\proje", &list), None);
-        assert!(is_valid_name("iş"));
-        assert!(!is_valid_name("a\\b"));
-        assert!(!is_valid_name("  "));
     }
 }

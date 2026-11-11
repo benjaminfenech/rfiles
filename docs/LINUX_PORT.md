@@ -598,6 +598,19 @@ the hybrid renderer), the winget manifests, `scripts/install.ps1`, the `.rc` fil
 `rustyfiles.ico`, and rf-app's Windows dependencies (Velopack, the GPUI Windows fork,
 `windows-registry`, `embed-resource`). The four files rf-linux shared from rf-win by
 `#[path]` (`hash`, `apppkg` with `apppkg/vector`, `elf`, `design`) now live in rf-linux.
-`picker` (rfiles as other apps' Open/Save dialog, which only the DLL starts) keeps compiling
-with rf-dialog's message types in `rf-app/src/picker_proto.rs`, until the rest of rf-app's
-Windows code goes. Code under `cfg(windows)` is untouched here: it's never compiled on Linux.
+`picker` (rfiles as other apps' Open/Save dialog, which only the DLL starts) kept compiling
+with rf-dialog's message types in `rf-app/src/picker_proto.rs` until the next step. Code under `cfg(windows)` is untouched here: it's never compiled on Linux.
+
+**rf-app's Windows code** third. Gone: the speed test against File Explorer (`bench`,
+`bench_view`, the `bench_cli` example, Settings → Speed test), rfiles as other apps'
+Open/Save dialog (`picker`, `picker_proto`, `--pick`, the dialog DLL copy and its Settings
+switch), the taskbar preview (`--bar-preview`), jump lists, the Velopack updater
+(`installer.rs` is now `about.rs`, only the version), the update toast and buttons, the
+GitHub star strip, Explorer's classic Shift+right-click menu, Share, "Windows
+properties…", Disk Cleanup, the Properties tabs Compatibility, Security, Sharing and
+Customize, the "Safely remove" listener, `splash.gif` (the installer's) with `tools/splash`,
+and the PowerShell tools. Every `cfg(windows)` / `cfg!(windows)` branch in rf-app is gone
+and `cfg(unix)` gates are dropped (always true). The launcher's "New window" action keeps
+`--new-window`. Still to go: the rf-linux stubs that only mirrored rf-win's API (shortcuts,
+signatures, the hotkey, the tray…), the `rf_win` alias, and the in-window/popup-window split
+with the gpui-windows shim.

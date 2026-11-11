@@ -61,16 +61,7 @@ impl crate::folder_view::FolderView {
         let items: Vec<PathBuf> = if background { Vec::new() } else { sel.iter().filter_map(|&i| self.shell_items.get(i as usize)).map(|c| PathBuf::from(&c.parsing)).collect() };
         let (tx, rx) = futures::channel::oneshot::channel();
         rf_win::sta::run(move |owner| {
-            #[cfg(windows)]
-            let pt = {
-                let mut pt = windows::Win32::Foundation::POINT::default();
-                unsafe {
-                    let _ = windows::Win32::UI::WindowsAndMessaging::GetCursorPos(&mut pt);
-                }
-                (pt.x, pt.y)
-            };
             // Linux: never reached (no shell folders); the menu opens at the pointer anyway
-            #[cfg(not(windows))]
             let pt = (0, 0);
             let r = match items.as_slice() {
                 [] => rf_win::ctxmenu::show_for_background(owner, std::path::Path::new(&parsing), pt, false, &[]),

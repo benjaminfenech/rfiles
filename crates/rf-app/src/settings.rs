@@ -516,14 +516,12 @@ static ADDRESS_URL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBoo
 /// Linux: whether the address bar shows network folders as their address (Settings → Files
 /// and folders), readable without an `App`.
 // used by the Linux build only
-#[cfg_attr(windows, allow(dead_code))]
 pub fn address_shows_url() -> bool {
     ADDRESS_URL.load(Ordering::Relaxed)
 }
 
 /// How drives are named (Settings → Files and folders), readable without an `App`.
 // used by the Linux build only
-#[cfg_attr(windows, allow(dead_code))]
 pub fn drive_names() -> DriveNames {
     match DRIVE_NAMES.load(Ordering::Relaxed) {
         1 => DriveNames::MountPoint,
@@ -835,10 +833,7 @@ fn sync_name_index(on: bool, excluded: &[String]) {
         // a copy with its own settings folder (tests, portable) keeps its index there too
         let dir = match std::env::var_os("RFILES_CONFIG_DIR").filter(|d| !d.is_empty()) {
             Some(cfg) => std::path::PathBuf::from(cfg).join("index"),
-            #[cfg(windows)]
-            None => std::env::var_os("LOCALAPPDATA").map_or_else(std::env::temp_dir, std::path::PathBuf::from).join("rfiles").join("index"),
             // Linux: the cache folder (`~/.cache/rfiles/index`, never indexed itself)
-            #[cfg(not(windows))]
             None => dirs::cache_dir().unwrap_or_else(std::env::temp_dir).join("rfiles").join("index"),
         };
         // RFILES_INDEX_ROOTS="E:\;F:\" picks the roots (testing; Linux: "/data;/home/me")

@@ -1,4 +1,4 @@
-//! File operations, clipboard, inline rename and the native context menu for a FolderView.
+//! File operations, clipboard and inline rename for a FolderView.
 //! Everything that can block runs on worker threads or the shell STA thread.
 
 use crate::t;
@@ -7,31 +7,10 @@ use std::path::PathBuf;
 use futures::channel::oneshot;
 use gpui_kit::component::input::{InputEvent, InputState};
 use gpui_kit::*;
-use rf_win::ctxmenu::MenuOutcome;
 use rf_win::fileops::{self, Transfer};
 
 use crate::folder_view::FolderView;
-use rf_win::ctxmenu::ExtraItem;
 
-const MENU_NEW_TAB: u32 = 1;
-const MENU_PIN: u32 = 2;
-const MENU_COPY_PATH: u32 = 3;
-const MENU_TERMINAL: u32 = 4;
-const MENU_NEW_FOLDER: u32 = 5;
-const MENU_NEW_TEXT: u32 = 6;
-const MENU_PASTE: u32 = 7;
-const MENU_TAG_BASE: u32 = 100;
-const MENU_EXTRACT_HERE: u32 = 10;
-const MENU_EXTRACT_TO: u32 = 11;
-const MENU_ZIP: u32 = 12;
-const MENU_7Z: u32 = 13;
-const MENU_TAGS: u32 = 14;
-const MENU_OPEN_LOCATION: u32 = 15;
-const MENU_BULK_RENAME: u32 = 16;
-const MENU_SHELF: u32 = 17;
-const MENU_OTHER_OPEN: u32 = 18;
-const MENU_OTHER_COPY: u32 = 19;
-const MENU_OTHER_MOVE: u32 = 20;
 
 /// "photos.tar.gz" → "photos" (pure string work; the unique folder is chosen at extract time).
 pub(crate) fn archive_stem(p: &std::path::Path) -> String {
@@ -569,11 +548,7 @@ impl FolderView {
         // Windows; Linux only forbids "/")
         if invalid_file_name(&new_name) {
             let title = crate::t!("Yeniden adlandır").to_string();
-            let rule = if cfg!(windows) {
-                crate::t!("Dosya adı şu karakterleri içeremez: \\ / : * ? \" < > | ve nokta ile bitemez.").to_string()
-            } else {
-                "A file name can't contain \"/\".".to_string()
-            };
+            let rule = "A file name can't contain \"/\".".to_string();
             let msg = format!("{}\n\n{}", new_name, rule);
             alert_box(title, msg, window.window_handle(), cx);
             window.focus(&self.focus, cx);
@@ -616,12 +591,11 @@ impl FolderView {
                     }
                     // Another item already has that name (a case-only change is fine): say so
                     // plainly instead of the shell's "parameter is incorrect".
-                    let (src, dst) = (f2.clone(), f2.with_file_name(&n2));
+                    let dst = f2.with_file_name(&n2);
                     let clash = cx
                         .background_spawn(async move {
-                            // case-insensitive names on Windows only: on Linux "A.txt" is another file
-                            let case_only = cfg!(windows) && src.to_string_lossy().to_lowercase() == dst.to_string_lossy().to_lowercase();
-                            !case_only && std::fs::symlink_metadata(&dst).is_ok()
+                            // names are case-sensitive: "A.txt" is another file
+                            std::fs::symlink_metadata(&dst).is_ok()
                         })
                         .await;
                     if clash {
@@ -657,170 +631,6 @@ impl FolderView {
         cx.notify();
     }
 
-    /// The classic Explorer context menu (Shift+right-click) for the selection or background.
-    pub fn show_native_menu(&mut self, background: bool, cx: &mut Context<Self>) {
-        let Some(dir) = self.current_dir() else { return };
-        let items = if background { Vec::new() } else { self.selection_paths() };
-        let background = background || items.is_empty();
-        // From the listing, not the disk: a stat here could hang on an offline network path.
-        let single_dir = items.len() == 1 && self.selected_is_single_dir();
-        let item = |id: u32, label: &str| ExtraItem { id, label: label.to_string(), enabled: true };
-        let extra: Vec<ExtraItem> = if background {
-            vec![
-                item(MENU_NEW_FOLDER, t!("Yeni klasör\tCtrl+Shift+N")),
-                item(MENU_NEW_TEXT, t!("Yeni metin belgesi")),
-                ExtraItem { id: MENU_PASTE, label: t!("Yapıştır\tCtrl+V").into(), enabled: rf_win::clipboard::has_files() },
-                item(MENU_TERMINAL, t!("Terminalde aç")),
-                item(MENU_COPY_PATH, t!("Yolu kopyala")),
-            ]
-        } else {
-            let mut v = Vec::new();
-            if self.is_search() && items.len() == 1 {
-                v.push(item(MENU_OPEN_LOCATION, t!("Dosya konumunu aç")));
-            }
-            if single_dir {
-                v.push(item(MENU_NEW_TAB, t!("Yeni sekmede aç")));
-                v.push(item(MENU_PIN, t!("Kenar çubuğuna sabitle")));
-                v.push(item(MENU_TERMINAL, t!("Terminalde aç")));
-            }
-            v.push(item(MENU_COPY_PATH, t!("Yolu kopyala\tCtrl+Shift+C")));
-            if items.len() > 1 && !self.is_search() {
-                v.push(item(MENU_BULK_RENAME, t!("Toplu yeniden adlandır…\tF2")));
-            }
-            if items.len() == 1 && rf_archive::is_supported(&items[0]) {
-                v.push(item(MENU_EXTRACT_HERE, t!("Buraya çıkar")));
-                v.push(item(MENU_EXTRACT_TO, &format!("{} {}\\", t!("Klasöre çıkar:"), archive_stem(&items[0]))));
-            }
-            v.push(item(MENU_ZIP, t!("ZIP olarak sıkıştır")));
-            v.push(item(MENU_7Z, t!("7z olarak sıkıştır")));
-            v.push(item(MENU_TAGS, t!("Etiketle…")));
-            v.push(item(MENU_SHELF, t!("Rafa ekle\tCtrl+Shift+S")));
-            if self.dual {
-                if single_dir {
-                    v.push(item(MENU_OTHER_OPEN, t!("Diğer panelde aç")));
-                }
-                v.push(item(MENU_OTHER_COPY, t!("Diğer panele kopyala")));
-                v.push(item(MENU_OTHER_MOVE, t!("Diğer panele taşı")));
-            }
-            v
-        };
-        let target_dir = if single_dir { items[0].clone() } else { dir.clone() };
-        let tag_items = items.clone();
-        let paste_dir_ui = dir.clone();
-        let (tx, rx) = oneshot::channel::<(MenuOutcome, Option<(Vec<PathBuf>, Transfer)>)>();
-        // Read Shift here: the shell thread has its own input state.
-        let extended = crate::sys::shift_down();
-        rf_win::sta::run(move |owner| {
-            let pt = crate::sys::cursor_pos();
-            let r = if background {
-                rf_win::ctxmenu::show_for_background(owner, &dir, pt, extended, &extra)
-            } else {
-                rf_win::ctxmenu::show_for_items(owner, &items, pt, extended, &extra)
-            };
-            let r = r.unwrap_or_else(|e| {
-                log::warn!("context menu: {e:#}");
-                MenuOutcome::Dismissed
-            });
-            // Read the clipboard right here on the shell thread; the UI starts the transfer.
-            let clip = if r == MenuOutcome::Custom(MENU_PASTE) {
-                rf_win::clipboard::get_files(owner).ok().flatten()
-            } else {
-                None
-            };
-            let _ = tx.send((r, clip));
-        });
-        cx.spawn(async move |this, cx| {
-            let (outcome, clip) = rx.await.unwrap_or((MenuOutcome::Dismissed, None));
-            let _ = this.update(cx, |v, cx| match outcome {
-                MenuOutcome::Custom(MENU_PASTE) => {
-                    if let Some((paths, kind)) = clip {
-                        crate::status_center::transfer(cx, kind, paths, paste_dir_ui.clone());
-                    }
-                }
-                MenuOutcome::Rename => {
-                    v.request_rename();
-                    cx.notify();
-                }
-                MenuOutcome::Custom(MENU_NEW_FOLDER) => v.create_new(true, cx),
-                MenuOutcome::Custom(MENU_NEW_TEXT) => v.create_new(false, cx),
-                MenuOutcome::Custom(MENU_COPY_PATH) => v.copy_path(cx),
-                MenuOutcome::Custom(MENU_TERMINAL) => {
-                    let d = target_dir.clone();
-                    std::thread::spawn(move || {
-                        let _ = rf_win::shell::open_terminal(&d);
-                    });
-                }
-                MenuOutcome::Custom(MENU_NEW_TAB) => {
-                    cx.emit(crate::folder_view::FolderEvent::OpenInNewTab(rf_core::Location::Path(target_dir.clone())))
-                }
-                MenuOutcome::Custom(MENU_PIN) => v.pin(target_dir.clone(), cx),
-                MenuOutcome::Custom(MENU_EXTRACT_HERE) => {
-                    if let Some(a) = tag_items.first() {
-                        let dest = a.parent().map(|p| p.to_path_buf()).unwrap_or_default();
-                        crate::status_center::extract(cx, a.clone(), Some(dest));
-                    }
-                }
-                MenuOutcome::Custom(MENU_EXTRACT_TO) => {
-                    if let Some(a) = tag_items.first() {
-                        crate::status_center::extract(cx, a.clone(), None);
-                    }
-                }
-                MenuOutcome::Custom(id @ (MENU_ZIP | MENU_7Z)) => {
-                    let format = if id == MENU_ZIP { rf_archive::Format::Zip } else { rf_archive::Format::SevenZ };
-                    if let Some(first) = tag_items.first() {
-                        let dir = first.parent().map(|p| p.to_path_buf()).unwrap_or_default();
-                        let stem = if tag_items.len() == 1 {
-                            first.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "Arşiv".into())
-                        } else {
-                            rf_core::history::display_name(&dir)
-                        };
-                        let dest = dir.join(format!("{stem}.{}", format.extension()));
-                        crate::status_center::compress(cx, tag_items.clone(), dest, format);
-                    }
-                }
-                MenuOutcome::Custom(MENU_TAGS) => v.tag_menu(tag_items.clone(), cx),
-                MenuOutcome::Custom(MENU_SHELF) => cx.emit(crate::folder_view::FolderEvent::AddToShelf(tag_items.clone())),
-                MenuOutcome::Custom(MENU_OTHER_OPEN) => {
-                    cx.emit(crate::folder_view::FolderEvent::OpenInOtherPane(rf_core::Location::Path(target_dir.clone())))
-                }
-                MenuOutcome::Custom(id @ (MENU_OTHER_COPY | MENU_OTHER_MOVE)) => {
-                    let kind = if id == MENU_OTHER_COPY { Transfer::Copy } else { Transfer::Move };
-                    cx.emit(crate::folder_view::FolderEvent::ToOtherPane(kind, tag_items.clone()))
-                }
-                MenuOutcome::Custom(MENU_BULK_RENAME) => cx.emit(crate::folder_view::FolderEvent::BulkRename(tag_items.clone())),
-                MenuOutcome::Custom(MENU_OPEN_LOCATION) => {
-                    if let Some(p) = tag_items.first() {
-                        if let (Some(parent), Some(name)) = (p.parent(), p.file_name()) {
-                            v.set_reselect(name.to_string_lossy().into_owned());
-                            v.navigate(rf_core::Location::Path(parent.to_path_buf()), cx);
-                        }
-                    }
-                }
-                _ => {}
-            });
-        })
-        .detach();
-    }
-
-    /// Starts an OLE drag of the selection (to Explorer, the desktop, another tab…).
-    pub fn start_drag_out(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
-        // Linux: rows are GPUI drag sources instead (`FolderView::draggable`)
-        if !cfg!(windows) {
-            return;
-        }
-        let items = self.selection_paths();
-        if items.is_empty() {
-            return;
-        }
-        let ui_thread = crate::sys::current_thread_id();
-        crate::sys::release_capture();
-        rf_win::sta::run(move |owner| {
-            if let Err(e) = rf_win::dnd::drag_out(owner, ui_thread, &items) {
-                log::warn!("drag: {e:#}");
-            }
-        });
-    }
-
     /// Files dropped onto `dest` (a folder row or the current folder background).
     pub fn drop_into(&mut self, dest: PathBuf, paths: &ExternalPaths, cx: &mut Context<Self>) {
         let sources: Vec<PathBuf> = crate::file_drag::take(paths);
@@ -832,36 +642,8 @@ impl FolderView {
         crate::status_center::transfer(cx, kind, sources, dest);
     }
 
-    /// Second popup listing tags (● = every selected item has it); picking toggles the tag.
-    pub fn tag_menu(&mut self, paths: Vec<PathBuf>, cx: &mut Context<Self>) {
-        let store = &cx.global::<crate::tags::Tags>().0;
-        let items: Vec<ExtraItem> = store
-            .defs
-            .iter()
-            .map(|d| {
-                let all = paths.iter().all(|p| store.has(p, d.id));
-                ExtraItem { id: MENU_TAG_BASE + d.id, label: format!("{}  {}", if all { "●" } else { "○" }, crate::i18n::td(&d.name)), enabled: true }
-            })
-            .collect();
-        let (tx, rx) = oneshot::channel::<Option<u32>>();
-        rf_win::sta::run(move |owner| {
-            let pt = crate::sys::cursor_pos();
-            let _ = tx.send(rf_win::ctxmenu::show_simple(owner, pt, &items));
-        });
-        cx.spawn(async move |this, cx| {
-            if let Ok(Some(id)) = rx.await {
-                let _ = this.update(cx, |_, cx| {
-                    crate::tags::update(cx, |t| t.toggle(&paths, id - MENU_TAG_BASE));
-                    cx.notify();
-                });
-            }
-        })
-        .detach();
-    }
-
     pub fn pin(&mut self, dir: PathBuf, cx: &mut Context<Self>) {
         // Linux: a network folder by its URL (see Workspace::set_pinned)
-        #[cfg(unix)]
         let dir = rf_win::remote::remote_url(&dir).map_or(dir, PathBuf::from);
         let current: Vec<PathBuf> = self.places_pinned_paths(cx);
         crate::settings::update(cx, |s| {
@@ -962,42 +744,22 @@ mod tests {
 /// Whether a new file name breaks the platform's rules: Explorer's characters and no trailing
 /// dot on Windows; only "/" on Linux (and never "." or "..").
 pub(crate) fn invalid_file_name(name: &str) -> bool {
-    if cfg!(windows) {
-        name.contains(['\\', '/', ':', '*', '?', '"', '<', '>', '|']) || name.ends_with('.')
-    } else {
-        name.contains(['/', '\0']) || name == "." || name == ".."
-    }
+    name.contains(['/', '\0']) || name == "." || name == ".."
 }
 
 /// A message box: the shell's on Windows, the app's own dialog in `win` elsewhere (Linux has
 /// no shell message box).
 pub(crate) fn alert_box(title: String, msg: String, win: AnyWindowHandle, cx: &mut App) {
-    #[cfg(windows)]
-    {
-        let _ = (win, &cx);
-        rf_win::sta::run(move |owner| rf_win::shell::alert(owner, &title, &msg));
-    }
-    #[cfg(not(windows))]
-    {
-        let _ = win.update(cx, |_, window, cx| {
-            let ok = crate::prompt::Button::new(crate::t!("Tamam"), crate::prompt::Kind::Primary, |_, _, _| Ok(()));
-            crate::prompt::show(title, Some(msg), None, vec![ok], window, cx);
-        });
-    }
+    let _ = win.update(cx, |_, window, cx| {
+        let ok = crate::prompt::Button::new(crate::t!("Tamam"), crate::prompt::Kind::Primary, |_, _, _| Ok(()));
+        crate::prompt::show(title, Some(msg), None, vec![ok], window, cx);
+    });
 }
 
 /// A yes / no question: the shell's on Windows, the app's own dialog (OK / Cancel) in `win`
 /// elsewhere. Closing it without answering is a no.
 fn confirm_box(title: String, msg: String, win: AnyWindowHandle, cx: &mut App) -> oneshot::Receiver<bool> {
     let (tx, rx) = oneshot::channel::<bool>();
-    #[cfg(windows)]
-    {
-        let _ = (win, &cx);
-        rf_win::sta::run(move |owner| {
-            let _ = tx.send(rf_win::shell::confirm(owner, &title, &msg));
-        });
-    }
-    #[cfg(not(windows))]
     {
         let tx = std::rc::Rc::new(std::cell::RefCell::new(Some(tx)));
         let answer = move |yes: bool| {
@@ -1028,12 +790,8 @@ mod name_tests {
     fn file_name_rules() {
         assert!(invalid_file_name("a/b"));
         assert!(!invalid_file_name("normal.txt"));
-        if cfg!(windows) {
-            assert!(invalid_file_name("a:b") && invalid_file_name("dot."));
-        } else {
-            // legal on Linux
-            assert!(!invalid_file_name("notes: 2026?") && !invalid_file_name("dot.") && !invalid_file_name("a\\b"));
-            assert!(invalid_file_name(".") && invalid_file_name(".."));
-        }
+        // legal on Linux
+        assert!(!invalid_file_name("notes: 2026?") && !invalid_file_name("dot.") && !invalid_file_name("a\\b"));
+        assert!(invalid_file_name(".") && invalid_file_name(".."));
     }
 }

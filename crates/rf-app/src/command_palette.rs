@@ -149,7 +149,7 @@ fn as_path(q: &str) -> Option<PathBuf> {
     let t = q.trim().trim_matches('"');
     let looks = t.len() >= 2 && (t.as_bytes()[1] == b':' || t.starts_with("\\\\") || t.starts_with('%'))
         // Linux: absolute and home paths
-        || (cfg!(unix) && (t.starts_with('/') || t == "~" || t.starts_with("~/")));
+        || t.starts_with('/') || t == "~" || t.starts_with("~/");
     looks.then(|| PathBuf::from(t))
 }
 

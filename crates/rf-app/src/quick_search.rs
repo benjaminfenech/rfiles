@@ -43,17 +43,9 @@ const APPS_STALE: Duration = Duration::from_secs(300);
 /// The shortcut held now (None: none) and whether registering it failed.
 static HELD: Mutex<Option<(Option<String>, Option<rf_win::hotkey::HotkeyError>)>> = Mutex::new(None);
 
-static NO_HOTKEY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-
-/// A side copy of rfiles (the taskbar preview) must not take the user's hotkey.
-pub fn disable_hotkey() {
-    NO_HOTKEY.store(true, std::sync::atomic::Ordering::Relaxed);
-}
-
 /// This process registers the hotkey: the one rfiles (not DirectLook, not a test copy).
 fn hotkey_owner() -> bool {
     !crate::background::DIRECTLOOK_PROCESS.load(std::sync::atomic::Ordering::Relaxed)
-        && !NO_HOTKEY.load(std::sync::atomic::Ordering::Relaxed)
         && std::env::var_os("RFILES_MULTI_INSTANCE").is_none()
 }
 
@@ -106,11 +98,6 @@ pub fn release_for_capture() {
     }
     let _ = rf_win::hotkey::set(None);
     *HELD.lock().unwrap() = Some((None, None));
-}
-
-/// Why the configured hotkey does not work, if it doesn't.
-pub fn problem() -> Option<rf_win::hotkey::HotkeyError> {
-    HELD.lock().unwrap().as_ref().and_then(|(_, e)| e.clone())
 }
 
 /// Routes hotkey presses to the app and warms the app list (call once at startup).
@@ -206,13 +193,7 @@ fn bookmark_files() -> Vec<PathBuf> {
 
 /// The browsers' "User Data" folders (each holds `Local State` and the profiles).
 fn browser_roots() -> Vec<PathBuf> {
-    #[cfg(windows)]
-    {
-        let Some(local) = dirs::data_local_dir() else { return Vec::new() };
-        ["Google\\Chrome", "Microsoft\\Edge"].iter().map(|b| local.join(b).join("User Data")).collect()
-    }
     // Linux: `~/.config/<browser>`, the Chromium family's (same Bookmarks format)
-    #[cfg(not(windows))]
     {
         let Some(config) = dirs::config_dir() else { return Vec::new() };
         ["google-chrome", "chromium", "microsoft-edge", "BraveSoftware/Brave-Browser", "vivaldi"].iter().map(|b| config.join(b)).collect()
