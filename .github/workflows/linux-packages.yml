@@ -3,7 +3,8 @@ name: Linux packages
 # .deb and .rpm for x86_64 and aarch64, built on Ubuntu 22.04 so they run on glibc 2.35 and
 # newer (Debian 12+, Ubuntu 22.04+, Fedora, openSUSE), the Arch package from
 # packaging/arch/PKGBUILD, and a Flatpak bundle for x86_64 and aarch64. Each package is installed in a clean container before it's
-# uploaded as an artifact. linux-release.yml runs this for a tag and attaches the packages.
+# uploaded as an artifact. Downloads from package mirrors are tried three times: a mirror's
+# hiccup shouldn't fail a build. linux-release.yml runs this for a tag and attaches the packages.
 on:
   push:
     branches: [main]
@@ -43,8 +44,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: System libraries
         run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config libxkbcommon-dev libxkbcommon-x11-dev libxcb1-dev libwayland-dev libfontconfig1-dev libfreetype-dev libasound2-dev
+          retry() { for i in 1 2 3; do "$@" && return 0; echo "attempt $i of 3 failed: $*"; [ $i = 3 ] || sleep 15; done; return 1; }
+          retry sudo apt-get update
+          retry sudo apt-get install -y pkg-config libxkbcommon-dev libxkbcommon-x11-dev libxcb1-dev libwayland-dev libfontconfig1-dev libfreetype-dev libasound2-dev
       - name: nfpm
         run: |
           base=https://github.com/goreleaser/nfpm/releases/download/v$NFPM_VERSION
@@ -59,13 +61,16 @@ jobs:
       - name: Install the .deb on Debian 12
         run: |
           docker run --rm -v "$PWD/dist:/dist:ro" debian:12 bash -euc '
-            apt-get update -qq && apt-get install -y -qq /dist/*.deb >/dev/null
+            retry() { for i in 1 2 3; do "$@" && return 0; echo "attempt $i of 3 failed: $*"; [ $i = 3 ] || sleep 15; done; return 1; }
+            retry apt-get update -qq
+            retry apt-get install -y -qq /dist/*.deb >/dev/null
             if ldd /usr/lib/rustyfiles/rustyfiles /usr/lib/rustyfiles/directlook | grep "not found"; then exit 1; fi
             test -L /usr/bin/rustyfiles && test -f /usr/share/applications/rustyfiles.desktop'
       - name: Install the .rpm on Fedora
         run: |
           docker run --rm -v "$PWD/dist:/dist:ro" fedora:latest bash -euc '
-            dnf install -y -q /dist/*.rpm
+            retry() { for i in 1 2 3; do "$@" && return 0; echo "attempt $i of 3 failed: $*"; [ $i = 3 ] || sleep 15; done; return 1; }
+            retry dnf install -y -q --setopt=retries=5 /dist/*.rpm
             if ldd /usr/lib/rustyfiles/rustyfiles /usr/lib/rustyfiles/directlook | grep "not found"; then exit 1; fi
             test -L /usr/bin/rustyfiles && test -f /usr/share/applications/rustyfiles.desktop'
       - uses: actions/upload-artifact@v4
@@ -79,7 +84,9 @@ jobs:
     steps:
       # git before checkout: without it, checkout downloads a tarball (no history for pkgver)
       - name: Update and install git
-        run: pacman -Syu --noconfirm --needed git
+        run: |
+          retry() { for i in 1 2 3; do "$@" && return 0; echo "attempt $i of 3 failed: $*"; [ $i = 3 ] || sleep 15; done; return 1; }
+          retry pacman -Syu --noconfirm --needed git
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
@@ -130,7 +137,8 @@ jobs:
           version=$(packaging/linux/version.sh)
           flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
           # the image has the Platform and Sdk; only the Rust extension is missing
-          flatpak install -y --noninteractive flathub org.freedesktop.Sdk.Extension.rust-stable//26.08
+          retry() { for i in 1 2 3; do "$@" && return 0; echo "attempt $i of 3 failed: $*"; [ $i = 3 ] || sleep 15; done; return 1; }
+          retry flatpak install -y --noninteractive flathub org.freedesktop.Sdk.Extension.rust-stable//26.08
           flatpak-builder --disable-rofiles-fuse --force-clean \
             --repo=repo build-flatpak packaging/flatpak/io.github.benjaminfenech.rustyfiles.yml
           mkdir dist
