@@ -433,7 +433,7 @@ fn general(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
             p,
             L::CalendarClock,
             t!("Tarih biçimi"),
-            Some(t!("Uygulama: \"5 dakika önce\"; Sistem: 05.11.2026 13:45; Evrensel: 2026-11-05 13:45")),
+            Some(t!("Uygulama: \"5 dakika önce\"; Sistem: 05.11.2026 13:45; Evrensel: 2026-11-05 13:45; Gün/ay/yıl: 05/11/2026 13:45")),
             dropdown(
                 "datefmt",
                 p,
@@ -442,6 +442,7 @@ fn general(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                     (DatePref::Application, t!("Uygulama").into()),
                     (DatePref::System, t!("Sistem").into()),
                     (DatePref::Universal, t!("Evrensel").into()),
+                    (DatePref::DayMonthYear, t!("Gün/ay/yıl").into()),
                 ],
                 |s, v| s.date_format = v,
             ),
