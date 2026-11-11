@@ -74,6 +74,8 @@ pub enum DatePref {
     Application,
     System,
     Universal,
+    /// "05/11/2026 13:45"
+    DayMonthYear,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -641,6 +643,7 @@ impl Settings {
             DatePref::Application => rf_core::format::DateStyle::Relative,
             DatePref::System => rf_core::format::DateStyle::Local,
             DatePref::Universal => rf_core::format::DateStyle::Universal,
+            DatePref::DayMonthYear => rf_core::format::DateStyle::DayMonthYear,
         });
         rf_core::format::set_decimal_sizes(self.decimal_sizes);
         SOLID.store(self.backdrop == BackdropPref::Solid, Ordering::Relaxed);

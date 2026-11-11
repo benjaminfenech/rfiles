@@ -15,6 +15,8 @@ pub enum DateStyle {
     Local,
     /// ISO 8601 "2026-11-05 13:45"
     Universal,
+    /// "05/11/2026 13:45"
+    DayMonthYear,
 }
 
 pub fn set_date_style(s: DateStyle) {
@@ -25,7 +27,8 @@ fn date_style() -> DateStyle {
     match DATE_STYLE.load(Ordering::Relaxed) {
         0 => DateStyle::Relative,
         1 => DateStyle::Local,
-        _ => DateStyle::Universal,
+        2 => DateStyle::Universal,
+        _ => DateStyle::DayMonthYear,
     }
 }
 
@@ -87,6 +90,7 @@ fn datetime_with(ms: i64, style: DateStyle, now: i64, en: bool) -> String {
     match style {
         DateStyle::Universal => dt.format("%Y-%m-%d %H:%M").to_string(),
         DateStyle::Local => dt.format("%d.%m.%Y %H:%M").to_string(),
+        DateStyle::DayMonthYear => dt.format("%d/%m/%Y %H:%M").to_string(),
         DateStyle::Relative => {
             let secs = (now - ms) / 1000;
             let (n, tr, enu) = match secs {
@@ -133,6 +137,8 @@ mod tests {
         assert_eq!(datetime_with(now - 2 * 86_400_000, DateStyle::Relative, now, false), "2 gün önce");
         assert!(datetime_with(now - 30 * 86_400_000, DateStyle::Relative, now, false).contains('.'));
         assert_eq!(datetime_with(now, DateStyle::Universal, now, false).len(), 16);
+        let dmy = datetime_with(now, DateStyle::DayMonthYear, now, false);
+        assert_eq!((dmy.len(), &dmy[2..3], &dmy[5..6]), (16, "/", "/"), "{dmy}");
         assert_eq!(size_with(1500, false, true), "1,50 KB");
         assert_eq!(size_with(1500, false, false), "1,46 KB");
     }

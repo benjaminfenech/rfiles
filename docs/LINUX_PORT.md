@@ -241,6 +241,16 @@ certificates for the info card.
   prompt), and an eject button on the sidebar row. Tried with a FAT image on a loop device
   (`cargo run -p rf-linux --example udisks -- list | mount <dev> | unmount <dir> | eject <dir>`);
   the sidebar showed it as unmounted; clicking it and the menu items weren't tried by hand.
+  **Network shares** (2026-11-11): the sidebar lists them under Network (Linux only; Windows
+  keeps mapped drives with the others), before the network locations. `list_drives` reads
+  `/etc/fstab`'s network entries: an `autofs` mount at one of their mount points is a systemd
+  automount (`x-systemd.automount`) holding its place, listed as that share; entries not
+  mounted at all are listed too; shares come last, in fstab's order. Before, an automounted
+  share showed only once something had opened it, and `drive_mask` hashed only `/dev`
+  mounts, so a share mounting later never refreshed the sidebar: it now hashes network and
+  autofs mounts too. `slow_to_read` counts `autofs` (opening mounts it, up to its
+  `x-systemd.mount-timeout`). `cargo run -p rf-linux --example drives` prints the list
+  without touching any share.
 - ~~Network and FTP~~ **done** (2026-11-09), through the desktop's network layer instead of
   our own SMB/FTP code: `rf-linux` `remote` mounts `smb://`, `sftp://`, `ftp(s)://`, WebDAV,
   `nfs://`… (and `\\server\share`, `//server/share`) with kio-fuse (`org.kde.KIOFuse`
@@ -422,6 +432,22 @@ on Linux, such as a new feature or shortcut.
   Foundation events, the Open/Save dialog's z-order checks. DirectLook's own tray card stays
   hidden. Fixed for Linux: opening a file in an already open folder compared paths without
   case.
+- **v0.6.0 @ aac27ce** (2026-11-11, 4 commits after f25a485). Upstream's Properties window
+  became Windows' property sheet, in tabs. On Linux it shows General (with "Opens with" and
+  its Change button, which opens the desktop's app chooser), Details and Hashes, and a
+  drive's page for its mount point (Linux drives have no letters: `/` is the root, and a
+  folder that is a mount point gets the drive page). Attributes: only read-only, as before
+  (hidden is a dot name; archive, indexing, compression and encryption are Windows'), with
+  `fileinfo::set_attrs` / `set_attrs_tree` turning it into the write permission, and the
+  plain "Read-only" label for folders (on Linux it stops changes in the folder itself).
+  Windows-only, so hidden on Linux: Compatibility, Security (Windows ACLs), Digital
+  signatures, Sharing, Customize (desktop.ini icons), Disk Cleanup and the Windows
+  properties links. rf-linux has the same types for them (`compat`, `security`,
+  `signature`, `folder_custom`, `shortcut::Details`, the new `PeInfo` fields) with reads that
+  find nothing; `security::read` gives the owner from /etc/passwd for the Details tab.
+  `breakable` wraps paths after `/` too. The shared `apppkg.rs` names its new `vector`
+  submodule with `#[path]`: included from rf-linux, a plain `mod vector;` would be looked for
+  in `src/`.
 
 ## Packaging
 

@@ -124,7 +124,8 @@ pub fn slow_to_read(path: &Path) -> bool {
         return false;
     };
     // fuseblk is a local disk through FUSE (ntfs-3g, exfat-fuse): as quick as any disk
-    (fs.starts_with("fuse") && fs != "fuseblk") || matches!(kind_of(&fs, &src, &point), Some(DriveKind::Network | DriveKind::Removable | DriveKind::Optical))
+    // autofs: an automount, which opening mounts (from the network, for fstab's shares)
+    (fs.starts_with("fuse") && fs != "fuseblk") || fs == "autofs" || matches!(kind_of(&fs, &src, &point), Some(DriveKind::Network | DriveKind::Removable | DriveKind::Optical))
 }
 
 /// (total, free for the user) bytes of the filesystem holding `p`.
@@ -146,9 +147,11 @@ fn space(p: &Path) -> Option<(u64, u64)> {
 /// thread.
 pub fn list_drives() -> Vec<Drive> {
     let labels = labels();
+    let fstab = fstab_network(&std::fs::read_to_string("/etc/fstab").unwrap_or_default());
     let mut seen = std::collections::HashSet::new();
     let mut out = Vec::new();
     for (point, fs, src) in mounts() {
+        let (fs, src) = as_share(point.as_path(), fs, src, &fstab);
         let Some(kind) = kind_of(&fs, &src, &point) else { continue };
         // system plumbing mounts of the root disk
         if kind == DriveKind::Fixed && point != Path::new("/") && !point.starts_with("/home") && !point.starts_with("/mnt") {
@@ -161,7 +164,41 @@ pub fn list_drives() -> Vec<Drive> {
         let label = if src.starts_with("/dev/") { labels.get(&canonical(&src)).cloned().unwrap_or_default() } else { String::new() };
         out.push(Drive { root: point, letter: '\0', label, source: src, kind, total, free, fs });
     }
+    // the shares in fstab that aren't mounted (yet), where they will be
+    for (point, src, fs) in &fstab {
+        if seen.insert(src.clone()) {
+            out.push(Drive { root: point.clone(), letter: '\0', label: String::new(), source: src.clone(), kind: DriveKind::Network, total: 0, free: 0, fs: fs.clone() });
+        }
+    }
+    // shares last, in fstab's order (automounts come up in whatever order they're opened)
+    let rank = |d: &Drive| fstab.iter().position(|(_, s, _)| *s == d.source).unwrap_or(usize::MAX);
+    out.sort_by_key(|d| if d.kind == DriveKind::Network { (1, rank(d)) } else { (0, 0) });
     out
+}
+
+/// The network shares in fstab (`//nas/media /mnt/media cifs …`): (mount point, source, fs
+/// type), in the file's order.
+fn fstab_network(text: &str) -> Vec<(PathBuf, String, String)> {
+    text.lines()
+        .filter_map(|l| {
+            let l = l.trim();
+            if l.starts_with('#') {
+                return None;
+            }
+            let mut f = l.split_whitespace();
+            let (src, point, fs) = (f.next()?, f.next()?, f.next()?);
+            NETWORK_FS.contains(&fs).then(|| (PathBuf::from(unescape(point)), unescape(src), fs.to_string()))
+        })
+        .collect()
+}
+
+/// A systemd automount (`x-systemd.automount`) is an `autofs` mount holding the place of an
+/// fstab share until something opens the folder: it stands for that share (fs type, source).
+fn as_share(point: &Path, fs: String, src: String, fstab: &[(PathBuf, String, String)]) -> (String, String) {
+    match fstab.iter().find(|(p, _, _)| p == point) {
+        Some((_, s, f)) if fs == "autofs" => (f.clone(), s.clone()),
+        _ => (fs, src),
+    }
 }
 
 fn canonical(dev: &str) -> PathBuf {
@@ -238,9 +275,10 @@ pub fn is_unmounted(d: &Drive) -> bool {
 pub fn drive_mask() -> u32 {
     use std::hash::{Hash, Hasher};
     let mut h = std::collections::hash_map::DefaultHasher::new();
-    for (p, _, src) in mounts() {
-        if src.starts_with("/dev/") {
-            p.hash(&mut h);
+    // network shares and automounts too: a share mounts when something first opens it
+    for (p, fs, src) in mounts() {
+        if src.starts_with("/dev/") || fs == "autofs" || NETWORK_FS.contains(&fs.as_str()) {
+            (p, fs).hash(&mut h);
         }
     }
     // block devices too: a plugged-in stick shows up before anything mounts it
@@ -286,6 +324,28 @@ pub fn seek_penalty(path: &Path) -> Option<bool> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn fstab_shares_and_their_automounts() {
+        let fstab = super::fstab_network(
+            "# TrueNAS\n//10.0.0.9/media /mnt/media cifs x-systemd.automount,_netdev 0 0\n\
+             UUID=abcd / btrfs defaults 0 0\n\
+             nas:/export/My\\040Files /mnt/my\\040files nfs4 noauto 0 0\n\
+             #//10.0.0.9/old /mnt/old cifs defaults 0 0\n",
+        );
+        assert_eq!(
+            fstab,
+            vec![
+                ("/mnt/media".into(), "//10.0.0.9/media".to_string(), "cifs".to_string()),
+                ("/mnt/my files".into(), "nas:/export/My Files".to_string(), "nfs4".to_string()),
+            ]
+        );
+        let p = std::path::Path::new("/mnt/media");
+        // the automount stands for the share; the share itself, once mounted, is itself
+        assert_eq!(super::as_share(p, "autofs".into(), "systemd-1".into(), &fstab), ("cifs".to_string(), "//10.0.0.9/media".to_string()));
+        assert_eq!(super::as_share(p, "cifs".into(), "//10.0.0.9/media".into(), &fstab), ("cifs".to_string(), "//10.0.0.9/media".to_string()));
+        assert_eq!(super::as_share(std::path::Path::new("/proc/sys/fs/binfmt_misc"), "autofs".into(), "systemd-1".into(), &fstab).0, "autofs");
+    }
+
 
     /// The system disk and the home folder read quickly; a FUSE network mount, if one is
     /// mounted here, does not.
