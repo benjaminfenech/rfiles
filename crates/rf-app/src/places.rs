@@ -1,6 +1,6 @@
 //! Shared sidebar/home data: drives and pinned folders, loaded off the UI thread.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use gpui_kit::assets::IconName as L;
 use gpui_kit::*;
@@ -77,10 +77,77 @@ pub struct Recent {
     pub is_dir: bool,
 }
 
-/// Recently used files for Home's Recent section: none yet (the desktop's list,
-/// `~/.local/share/recently-used.xbel`, isn't read yet).
-fn load_recent(_limit: usize) -> Vec<Recent> {
-    Vec::new()
+/// Recently used files for Home's Recent section: the desktop's list (freedesktop's
+/// `$XDG_DATA_HOME/recently-used.xbel`, written by GTK, KDE and most apps), newest first.
+/// Inside Flatpak `adopt_host_dirs` has pointed `XDG_DATA_HOME` at the host's.
+fn load_recent(limit: usize) -> Vec<Recent> {
+    let Some(xml) = dirs::data_dir().and_then(|d| std::fs::read_to_string(d.join("recently-used.xbel")).ok()) else {
+        return Vec::new();
+    };
+    recent_from_xbel(&xml, limit, |p| std::fs::metadata(p).ok().map(|m| m.is_dir()))
+}
+
+/// The local files in a `recently-used.xbel`, newest first, without duplicates, at most
+/// `limit`. `is_dir` says whether a path exists (None: gone, skipped) and is a folder.
+fn recent_from_xbel(xml: &str, limit: usize, is_dir: impl Fn(&Path) -> Option<bool>) -> Vec<Recent> {
+    let mut items: Vec<(PathBuf, i64)> = xml
+        .split("<bookmark")
+        .skip(1)
+        .filter(|item| item.starts_with(|c: char| c.is_ascii_whitespace()))
+        .filter_map(|item| {
+            let tag = item.split_once('>')?.0;
+            let href = xml_unescape(&xml_attr(tag, "href")?);
+            if !href.starts_with("file://") {
+                return None;
+            }
+            let path = rf_linux::fm_service::uri_to_path(&href)?;
+            let used_ms = ["modified", "visited", "added"]
+                .iter()
+                .filter_map(|a| xml_attr(tag, a))
+                .find_map(|t| chrono::DateTime::parse_from_rfc3339(&t).ok())
+                .map_or(0, |t| t.timestamp_millis());
+            Some((path, used_ms))
+        })
+        .collect();
+    // newest first; for a path listed twice the newest entry stays
+    items.sort_by(|a, b| b.1.cmp(&a.1));
+    let mut out: Vec<Recent> = Vec::new();
+    for (target, used_ms) in items {
+        if out.len() >= limit {
+            break;
+        }
+        if out.iter().any(|r| r.target == target) {
+            continue;
+        }
+        let Some(is_dir) = is_dir(&target) else { continue };
+        out.push(Recent {
+            name: target.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
+            target,
+            used_ms,
+            is_dir,
+        });
+    }
+    out
+}
+
+/// The value of attribute `name` in the inside of an XML start tag (`href="…" modified='…'`).
+fn xml_attr(tag: &str, name: &str) -> Option<String> {
+    let mut rest = tag;
+    loop {
+        rest = rest.trim_start();
+        let (key, after) = rest.split_once('=')?;
+        let after = after.trim_start();
+        let quote = after.chars().next().filter(|c| *c == '"' || *c == '\'')?;
+        let (value, tail) = after[1..].split_once(quote)?;
+        if key.trim() == name {
+            return Some(value.to_string());
+        }
+        rest = tail;
+    }
+}
+
+fn xml_unescape(s: &str) -> String {
+    s.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&apos;", "'").replace("&amp;", "&")
 }
 
 /// Cloud folders (OneDrive, Dropbox, iCloud, Google Drive) and WSL distributions.
@@ -300,5 +367,55 @@ mod tests {
         assert_eq!(linux_drive_name(&part, Device), "sda2");
         part.label = "Windows".into();
         assert_eq!(linux_drive_name(&part, Auto), "Windows");
+    }
+
+    const XBEL: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<xbel version="1.0" xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks"
+      xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info">
+  <bookmark href="file:///home/me/Documents/report.pdf" added="2026-11-01T09:00:00Z" modified="2026-11-10T12:00:00.123456Z" visited="2026-11-10T12:00:00Z">
+    <info><metadata owner="http://freedesktop.org"><mime:mime-type type="application/pdf"/>
+      <bookmark:applications><bookmark:application name="Evince" exec="&apos;evince %u&apos;" modified="2026-11-10T12:00:00Z" count="3"/></bookmark:applications>
+    </metadata></info>
+  </bookmark>
+  <bookmark href="https://example.com/page" added="2026-11-11T08:00:00Z" modified="2026-11-11T08:00:00Z"/>
+  <bookmark modified='2026-11-11T07:00:00Z' href='file:///home/me/My%20Files/caf%C3%A9%20%26%20bar.txt'/>
+  <bookmark href="file:///home/me/Pictures" modified="2026-11-09T10:00:00Z"/>
+  <bookmark href="file:///home/me/gone.txt" modified="2026-11-11T09:00:00Z"/>
+  <bookmark href="file:///home/me/Documents/report%2Epdf" modified="2026-11-02T10:00:00Z"/>
+  <bookmark href="file:///home/me/old.txt" modified="2025-01-01T00:00:00Z"/>
+</xbel>"#;
+
+    fn exists(p: &std::path::Path) -> Option<bool> {
+        let p = p.to_str().unwrap();
+        (!p.ends_with("gone.txt")).then(|| p.ends_with("Pictures"))
+    }
+
+    #[test]
+    fn recent_from_xbel() {
+        let r = super::recent_from_xbel(XBEL, 10, exists);
+        let targets: Vec<_> = r.iter().map(|r| r.target.to_str().unwrap()).collect();
+        // newest first; web pages, missing files and the repeated report are left out
+        assert_eq!(
+            targets,
+            ["/home/me/My Files/café & bar.txt", "/home/me/Documents/report.pdf", "/home/me/Pictures", "/home/me/old.txt"]
+        );
+        assert_eq!(r[0].name, "café & bar.txt");
+        assert_eq!(r[1].used_ms, 1_794_312_000_123);
+        assert!(r[2].is_dir && !r[1].is_dir);
+        // the limit counts only the files shown
+        let two = super::recent_from_xbel(XBEL, 2, exists);
+        assert_eq!(two.len(), 2);
+        assert_eq!(two[1].target, r[1].target);
+        assert!(super::recent_from_xbel(XBEL, 0, exists).is_empty());
+    }
+
+    #[test]
+    fn recent_from_bad_xbel() {
+        for xml in ["", "not xml", "<xbel><bookmark", "<bookmark href=\"file:///a", "<bookmark href=>", "<bookmark:application href=\"file:///a\"/>"] {
+            assert!(super::recent_from_xbel(xml, 10, |_| Some(false)).is_empty(), "{xml}");
+        }
+        // no usable time: still listed, oldest
+        let r = super::recent_from_xbel(r#"<bookmark href="file:///a"/><bookmark href="file:///b" modified="2026-01-01T00:00:00Z"/>"#, 10, |_| Some(false));
+        assert_eq!(r.iter().map(|r| r.used_ms == 0).collect::<Vec<_>>(), [false, true]);
     }
 }
