@@ -241,6 +241,16 @@ certificates for the info card.
   prompt), and an eject button on the sidebar row. Tried with a FAT image on a loop device
   (`cargo run -p rf-linux --example udisks -- list | mount <dev> | unmount <dir> | eject <dir>`);
   the sidebar showed it as unmounted; clicking it and the menu items weren't tried by hand.
+  **Network shares** (2026-11-11): the sidebar lists them under Network (Linux only; Windows
+  keeps mapped drives with the others), before the network locations. `list_drives` reads
+  `/etc/fstab`'s network entries: an `autofs` mount at one of their mount points is a systemd
+  automount (`x-systemd.automount`) holding its place, listed as that share; entries not
+  mounted at all are listed too; shares come last, in fstab's order. Before, an automounted
+  share showed only once something had opened it, and `drive_mask` hashed only `/dev`
+  mounts, so a share mounting later never refreshed the sidebar: it now hashes network and
+  autofs mounts too. `slow_to_read` counts `autofs` (opening mounts it, up to its
+  `x-systemd.mount-timeout`). `cargo run -p rf-linux --example drives` prints the list
+  without touching any share.
 - ~~Network and FTP~~ **done** (2026-11-09), through the desktop's network layer instead of
   our own SMB/FTP code: `rf-linux` `remote` mounts `smb://`, `sftp://`, `ftp(s)://`, WebDAV,
   `nfs://`… (and `\\server\share`, `//server/share`) with kio-fuse (`org.kde.KIOFuse`

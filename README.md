@@ -349,6 +349,10 @@ or to eject a USB stick, SD card or disc safely. Internal disks may ask for an a
 password, which needs a polkit agent running (KDE and GNOME start one; on Hyprland or Sway
 start e.g. `hyprpolkitagent` or `polkit-kde-agent`).
 
+Network shares (SMB, NFS, SSHFS…) are listed under **Network**, named "share (server)". Every
+share in `/etc/fstab` is there, mounted or not, in the file's order; one with
+`x-systemd.automount` mounts when you open it.
+
 **DirectLook on tiling window managers.** DirectLook (<kbd>Space</kbd>) is its own window,
 like Quick Look. A Wayland app can't float or place its own window, so tiling compositors tile
 it unless a rule floats it. Windows have the app id `directlook` (the main window:
