@@ -332,7 +332,9 @@ Merge `upstream/main` into a `sync/upstream-<version>` branch (merge commit, nev
 New `rf-win` API that the app calls needs a Linux counterpart in `rf-linux` (the build says
 which); new `rf-win` examples get the `support/<name>_win.rs` wrapper with a stub `main`;
 new features need checking for Windows-only assumptions the compiler can't see (`\\`
-separators, case-insensitive paths, drive letters).
+separators, case-insensitive paths, drive letters). `README.md` is this fork's own (Linux only, since 2026-11-11): when upstream's README
+changes, keep ours (`git checkout --ours README.md`) and carry over anything that matters
+on Linux, such as a new feature or shortcut.
 
 - **0.4.0** (2026-11-09, 52 commits). Linux stand-ins: `fastcopy` journals and resume
   (since ported: see the fastcopy row), `preview_host::mf_decodes`
