@@ -1869,18 +1869,9 @@ impl Workspace {
                     let _ = rf_win::shell::open_terminal(&p);
                 });
             })),
+            // our Properties window (a drive gets its own page there)
             Item::action(t!("Özellikler"), MenuIcon::Lucide(L::Wrench), with(|ws, p, _, cx| {
-                // Linux: our own properties window (there is no shell dialog)
-                if !cfg!(windows) {
-                    crate::properties_view::open(vec![p], ws.images.clone(), cx);
-                    return;
-                }
-                rf_win::sta::run(move |owner| {
-                    let pt = crate::sys::cursor_pos();
-                    if let Err(e) = rf_win::ctxmenu::invoke_verb(owner, &rf_win::ctxmenu::ShellTarget::One(p), "properties", pt) {
-                        log::warn!("properties: {e:#}");
-                    }
-                });
+                crate::properties_view::open(vec![p], ws.images.clone(), cx);
             }))
             .hint("Alt+Enter"),
             Item::Separator,

@@ -83,6 +83,86 @@ pub fn set_flags(path: &Path, readonly: Option<bool>, hidden: Option<bool>) -> s
     Ok(())
 }
 
+/// Attribute bits the Properties window sets (Windows' values). Linux has only read-only (the
+/// write permission); the others are Windows features and are left alone.
+pub const ARCHIVE: u32 = 0x20;
+pub const NOT_INDEXED: u32 = 0x2000;
+pub const COMPRESSED: u32 = 0x800;
+pub const ENCRYPTED: u32 = 0x4000;
+const READONLY: u32 = 0x1;
+
+/// Sets / clears attribute bits: on Linux only read-only, as [`set_flags`].
+pub fn set_attrs(path: &Path, set: u32, clear: u32) -> std::io::Result<()> {
+    set_attrs_changed(path, set, clear).map(|_| ())
+}
+
+fn set_attrs_changed(path: &Path, set: u32, clear: u32) -> std::io::Result<bool> {
+    let m = std::fs::symlink_metadata(path)?;
+    // a link's own permissions mean nothing on Linux
+    if m.file_type().is_symlink() {
+        return Ok(false);
+    }
+    let ro = m.permissions().readonly();
+    let want = if set & READONLY != 0 { true } else if clear & READONLY != 0 { false } else { ro };
+    if want == ro {
+        return Ok(false);
+    }
+    set_flags(path, Some(want), None)?;
+    Ok(true)
+}
+
+/// [`set_attrs`] on a folder and everything under it (not following links); the number of
+/// items changed.
+pub fn set_attrs_tree(dir: &Path, set: u32, clear: u32, cancel: &dyn Fn() -> bool) -> std::io::Result<usize> {
+    let mut changed = 0usize;
+    if cancel() {
+        return Ok(0);
+    }
+    if set_attrs_changed(dir, set, clear)? {
+        changed += 1;
+    }
+    if std::fs::symlink_metadata(dir)?.file_type().is_symlink() {
+        return Ok(changed);
+    }
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(d) = stack.pop() {
+        for e in std::fs::read_dir(&d)? {
+            if cancel() {
+                return Ok(changed);
+            }
+            let p = e?.path();
+            let m = std::fs::symlink_metadata(&p)?;
+            if set_attrs_changed(&p, set, clear)? {
+                changed += 1;
+            }
+            if m.is_dir() {
+                stack.push(p);
+            }
+        }
+    }
+    Ok(changed)
+}
+
+/// NTFS compression: not on Linux.
+pub fn set_compressed(_path: &Path, _on: bool) -> std::io::Result<()> {
+    Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "compression is a Windows (NTFS) feature"))
+}
+
+/// EFS encryption: not on Linux.
+pub fn set_encrypted(_path: &Path, _on: bool) -> std::io::Result<()> {
+    Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "encryption is a Windows (EFS) feature"))
+}
+
+/// Whether the volume supports (compression, encryption) as Windows does them: never on Linux.
+pub fn volume_caps(_path: &Path) -> (bool, bool) {
+    (false, false)
+}
+
+/// The folder's Windows share name: none on Linux.
+pub fn share_of(_dir: &Path) -> Option<String> {
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -100,6 +180,26 @@ mod tests {
         assert_eq!(std::fs::metadata(&p).unwrap().permissions().mode() & 0o777, 0o644);
         assert!(set_flags(&p, None, Some(true)).is_err(), "hidden is a dot name");
         let _ = std::fs::remove_file(&p);
+    }
+
+    #[test]
+    fn attrs_tree_sets_read_only_below() {
+        let d = std::env::temp_dir().join(format!("rf-attrs-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(d.join("sub")).unwrap();
+        std::fs::write(d.join("sub/a"), b"x").unwrap();
+        std::fs::write(d.join("b"), b"x").unwrap();
+        // files only: read-only folders would stop the cleanup at the end from deleting them
+        for f in ["sub/a", "b"] {
+            set_attrs(&d.join(f), READONLY, 0).unwrap();
+            assert!(std::fs::metadata(d.join(f)).unwrap().permissions().readonly());
+        }
+        let n = set_attrs_tree(&d, 0, READONLY, &|| false).unwrap();
+        assert_eq!(n, 2, "the two read-only files, the folders were writable already");
+        assert!(!std::fs::metadata(d.join("sub/a")).unwrap().permissions().readonly());
+        assert_eq!(set_attrs(&d.join("b"), ARCHIVE | NOT_INDEXED, 0).ok(), Some(()), "Windows-only bits are ignored");
+        assert_eq!(volume_caps(&d), (false, false));
+        let _ = std::fs::remove_dir_all(&d);
     }
 }
 

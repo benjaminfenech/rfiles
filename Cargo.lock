@@ -3241,7 +3241,7 @@ dependencies = [
 [[package]]
 name = "gpui-pre-windows"
 version = "0.3.11"
-source = "git+https://github.com/gelenmedya/gpui-pre-windows?rev=0f1a52a05c0de7fbc9e3647ecaa7b0426d2de385#0f1a52a05c0de7fbc9e3647ecaa7b0426d2de385"
+source = "git+https://github.com/gelenmedya/gpui-pre-windows?rev=e2966a6c332e5e96ebb1acbb6eedc18ea652fab5#e2966a6c332e5e96ebb1acbb6eedc18ea652fab5"
 dependencies = [
  "accesskit",
  "accesskit_windows",
@@ -3285,11 +3285,11 @@ checksum = "99b18b06f5026b3d312488eacfdddbe78f82b4bf32bb2d2bc3186e31e552b797"
 
 [[package]]
 name = "gpui-windows-shim"
-version = "0.5.2"
+version = "0.6.0"
 
 [[package]]
 name = "gpustress"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "windows 0.62.2",
 ]
@@ -6630,7 +6630,7 @@ dependencies = [
 
 [[package]]
 name = "rf-app"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6668,7 +6668,7 @@ dependencies = [
 
 [[package]]
 name = "rf-archive"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "bzip2",
@@ -6692,7 +6692,7 @@ dependencies = [
 
 [[package]]
 name = "rf-core"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "chardetng",
@@ -6710,7 +6710,7 @@ dependencies = [
 
 [[package]]
 name = "rf-dialog"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -6720,7 +6720,7 @@ dependencies = [
 
 [[package]]
 name = "rf-linux"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "ashpd",
@@ -6755,7 +6755,7 @@ dependencies = [
 
 [[package]]
 name = "rf-player"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "cpal",
@@ -6772,7 +6772,7 @@ dependencies = [
 
 [[package]]
 name = "rf-win"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "crc32fast",
@@ -6959,7 +6959,7 @@ dependencies = [
 
 [[package]]
 name = "rustdecoder"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "crc32fast",
  "flate2",

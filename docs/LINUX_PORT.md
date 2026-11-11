@@ -420,6 +420,22 @@ separators, case-insensitive paths, drive letters).
   Foundation events, the Open/Save dialog's z-order checks. DirectLook's own tray card stays
   hidden. Fixed for Linux: opening a file in an already open folder compared paths without
   case.
+- **v0.6.0 @ aac27ce** (2026-11-11, 4 commits after f25a485). Upstream's Properties window
+  became Windows' property sheet, in tabs. On Linux it shows General (with "Opens with" and
+  its Change button, which opens the desktop's app chooser), Details and Hashes, and a
+  drive's page for its mount point (Linux drives have no letters: `/` is the root, and a
+  folder that is a mount point gets the drive page). Attributes: only read-only, as before
+  (hidden is a dot name; archive, indexing, compression and encryption are Windows'), with
+  `fileinfo::set_attrs` / `set_attrs_tree` turning it into the write permission, and the
+  plain "Read-only" label for folders (on Linux it stops changes in the folder itself).
+  Windows-only, so hidden on Linux: Compatibility, Security (Windows ACLs), Digital
+  signatures, Sharing, Customize (desktop.ini icons), Disk Cleanup and the Windows
+  properties links. rf-linux has the same types for them (`compat`, `security`,
+  `signature`, `folder_custom`, `shortcut::Details`, the new `PeInfo` fields) with reads that
+  find nothing; `security::read` gives the owner from /etc/passwd for the Details tab.
+  `breakable` wraps paths after `/` too. The shared `apppkg.rs` names its new `vector`
+  submodule with `#[path]`: included from rf-linux, a plain `mod vector;` would be looked for
+  in `src/`.
 
 ## Packaging
 
