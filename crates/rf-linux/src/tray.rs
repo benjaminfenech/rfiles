@@ -105,7 +105,7 @@ pub fn hide() {
     post(Cmd::Hide);
 }
 
-/// A desktop notification from rustyfiles (the notification daemon decides about quiet hours).
+/// A desktop notification from rfiles (the notification daemon decides about quiet hours).
 pub fn notify(title: &str, body: &str) {
     post(Cmd::Notify { title: title.to_string(), body: body.to_string() });
 }
@@ -116,7 +116,7 @@ struct Item {
 
 impl ksni::Tray for Item {
     fn id(&self) -> String {
-        "rustyfiles".into()
+        "rfiles".into()
     }
     fn title(&self) -> String {
         self.labels.tooltip.clone()
@@ -151,12 +151,12 @@ impl ksni::Tray for Item {
     }
 }
 
-/// The app icon (`rf-app/assets/rustyfiles.png`) as SNI pixmaps (ARGB32, big-endian), in a
+/// The app icon (`rf-app/assets/rfiles.png`) as SNI pixmaps (ARGB32, big-endian), in a
 /// few sizes for the bar to pick from.
 fn app_icon() -> &'static [ksni::Icon] {
     static ICONS: OnceLock<Vec<ksni::Icon>> = OnceLock::new();
     ICONS.get_or_init(|| {
-        let Ok(img) = image::load_from_memory(include_bytes!("../../rf-app/assets/rustyfiles.png")) else { return Vec::new() };
+        let Ok(img) = image::load_from_memory(include_bytes!("../../rf-app/assets/rfiles.png")) else { return Vec::new() };
         [22u32, 32, 48, 64]
             .iter()
             .map(|&s| {
@@ -184,14 +184,14 @@ fn send_notification(title: &str, body: &str) -> anyhow::Result<()> {
         }
     };
     let mut hints: HashMap<&str, Value> = HashMap::new();
-    hints.insert("desktop-entry", Value::from("rustyfiles"));
+    hints.insert("desktop-entry", Value::from("rfiles"));
     let actions: Vec<&str> = Vec::new();
     conn.call_method(
         Some("org.freedesktop.Notifications"),
         "/org/freedesktop/Notifications",
         Some("org.freedesktop.Notifications"),
         "Notify",
-        &("rustyfiles", 0u32, "system-file-manager", title, body, actions, hints, -1i32),
+        &("rfiles", 0u32, "system-file-manager", title, body, actions, hints, -1i32),
     )?;
     Ok(())
 }

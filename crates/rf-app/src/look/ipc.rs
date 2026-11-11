@@ -1,4 +1,4 @@
-//! rustyfiles ↔ DirectLook iletileri (tek örnek borusu üzerinden, satır başına bir ileti).
+//! rfiles ↔ DirectLook iletileri (tek örnek borusu üzerinden, satır başına bir ileti).
 
 use std::path::PathBuf;
 
@@ -7,10 +7,10 @@ use super::ShowOpts;
 /// DirectLook'un tek örnek adı (boru ve kilit).
 pub const APP: &str = "directlook";
 
-/// The single-instance name. `RUSTYFILES_LOOK_INSTANCE=<x>` gives a test copy its own
+/// The single-instance name. `RFILES_LOOK_INSTANCE=<x>` gives a test copy its own
 /// ("directlook-<x>"), so it never talks to the user's running DirectLook.
 pub fn app_name() -> String {
-    match std::env::var("RUSTYFILES_LOOK_INSTANCE") {
+    match std::env::var("RFILES_LOOK_INSTANCE") {
         Ok(x) if !x.is_empty() => format!("{APP}-{x}"),
         _ => APP.to_string(),
     }
@@ -23,7 +23,7 @@ const TO_APP_PREFIX: &str = "\u{1}directlook:";
 pub enum Msg {
     /// Göster (komut satırı `--look`).
     Show(PathBuf, ShowOpts),
-    /// Açıksa kapat, değilse göster (rustyfiles'ta Boşluk).
+    /// Açıksa kapat, değilse göster (rfiles'ta Boşluk).
     Toggle(PathBuf),
     /// Seçim değişti: açıksa bu dosyaya geç, değilse bir şey yapma.
     Follow(PathBuf),
@@ -78,10 +78,10 @@ impl Msg {
     }
 }
 
-/// DirectLook'tan rustyfiles'a giden ileti.
+/// DirectLook'tan rfiles'a giden ileti.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ToApp {
-    /// Önizleme penceresi kapandı (rustyfiles "açık" bilgisini bırakır).
+    /// Önizleme penceresi kapandı (rfiles "açık" bilgisini bırakır).
     LookClosed,
     /// Ayarlar → DirectLook sayfasını aç.
     OpenSettings,
@@ -164,7 +164,7 @@ mod tests {
     }
 
     #[test]
-    fn messages_to_rustyfiles() {
+    fn messages_to_rfiles() {
         for m in [ToApp::LookClosed, ToApp::OpenSettings] {
             assert_eq!(ToApp::decode(&m.encode()), Some(m));
         }

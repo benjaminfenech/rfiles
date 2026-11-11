@@ -9,7 +9,7 @@
 //!
 //! On Wayland through the data-control protocol (wlroots compositors like Hyprland and Sway,
 //! KDE; not GNOME), on X11 as the CLIPBOARD selection owner. Where neither works, copy and
-//! paste stay inside rustyfiles (the in-process copy below).
+//! paste stay inside rfiles (the in-process copy below).
 
 use std::io::Read;
 use std::path::PathBuf;
@@ -24,7 +24,7 @@ const URI_LIST: &str = "text/uri-list";
 const KDE_CUT: &str = "application/x-kde-cutselection";
 /// What `clear` offers: nothing anyone pastes, but we own the clipboard (so `sequence`
 /// notices when someone else copies).
-const EMPTY: &str = "application/x-rustyfiles-cleared";
+const EMPTY: &str = "application/x-rfiles-cleared";
 /// How long a reader waits for the clipboard's owner.
 const READ_TIMEOUT: Duration = Duration::from_secs(2);
 
@@ -340,8 +340,8 @@ fn publish(sources: Vec<(String, Vec<u8>)>) -> u64 {
         Backend::None => Ok(()),
     };
     if let Err(e) = r {
-        // GNOME has no data-control: copy / paste then stay inside rustyfiles
-        log::info!("clipboard: {e:#}; files stay on rustyfiles' own clipboard");
+        // GNOME has no data-control: copy / paste then stay inside rfiles
+        log::info!("clipboard: {e:#}; files stay on rfiles' own clipboard");
     }
     generation
 }
@@ -403,7 +403,7 @@ pub fn get_files(owner: crate::Opaque) -> anyhow::Result<Option<(Vec<PathBuf>, T
     match system {
         Ok(r) => Ok(r),
         Err(e) => {
-            log::debug!("clipboard: {e:#}; using rustyfiles' own");
+            log::debug!("clipboard: {e:#}; using rfiles' own");
             Ok(FILES.lock().unwrap().clone())
         }
     }

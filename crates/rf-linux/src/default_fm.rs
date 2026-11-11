@@ -1,13 +1,13 @@
 //! "Set as default file manager" on Linux, for this user only: folders opened from other apps
 //! (`xdg-open`, desktop shortcuts) and "Show in folder" in browsers and other apps land in
-//! rustyfiles. Three files:
+//! rfiles. Three files:
 //!
-//! * `rustyfiles.desktop` in `$XDG_DATA_HOME/applications` (also lists us in "Open with");
-//! * `inode/directory=rustyfiles.desktop` in `$XDG_CONFIG_HOME/mimeapps.list` (and in a
+//! * `rfiles.desktop` in `$XDG_DATA_HOME/applications` (also lists us in "Open with");
+//! * `inode/directory=rfiles.desktop` in `$XDG_CONFIG_HOME/mimeapps.list` (and in a
 //!   desktop-specific `<desktop>-mimeapps.list` that already sets folders, since that one wins).
 //!   The default it replaces is kept under `[X-rustyfiles]` and put back by [`disable`];
 //! * a D-Bus activation file for `org.freedesktop.FileManager1`, so "Show in folder" starts
-//!   `rustyfiles --file-manager-service` (see `fm_service`) when nothing serves it.
+//!   `rfiles --file-manager-service` (see `fm_service`) when nothing serves it.
 //!
 //! `classes_root` is Windows' registry root ([`CLASSES`]: the user's real folders); tests pass a
 //! scratch folder instead (with `config/` and `data/` under it).
@@ -15,13 +15,13 @@
 use std::path::{Path, PathBuf};
 
 pub const CLASSES: &str = r"Software\Classes";
-/// Archive types rustyfiles browses (Windows offers them in Default apps; unused on Linux).
+/// Archive types rfiles browses (Windows offers them in Default apps; unused on Linux).
 pub const ARCHIVE_EXTS: [&str; 9] = [".zip", ".7z", ".rar", ".tar", ".tgz", ".txz", ".tzst", ".tbz2", ".tbz"];
 /// Name under Windows' RegisteredApplications.
-pub const APP_NAME: &str = "rustyfiles";
+pub const APP_NAME: &str = "rfiles";
 /// Our desktop entry's id.
-pub const DESKTOP_ID: &str = "rustyfiles.desktop";
-/// The D-Bus service rustyfiles answers as default file manager.
+pub const DESKTOP_ID: &str = "rfiles.desktop";
+/// The D-Bus service rfiles answers as default file manager.
 pub const SERVICE: &str = "org.freedesktop.FileManager1";
 /// The argument D-Bus activation starts us with (no window: see `fm_service`).
 pub const SERVICE_ARG: &str = "--file-manager-service";
@@ -165,23 +165,23 @@ fn desktop_entry(exe: &str) -> String {
     // inside Flatpak the icon is exported under the app id
     let icon = match crate::sandbox::flatpak_id() {
         Some(id) => id,
-        None if icon_installed() => "rustyfiles",
+        None if icon_installed() => "rfiles",
         None => "system-file-manager",
     };
     format!(
-        "[Desktop Entry]\nType=Application\nName=rustyfiles\nGenericName=File Manager\nComment=Browse files and folders\n\
+        "[Desktop Entry]\nType=Application\nName=rfiles\nGenericName=File Manager\nComment=Browse files and folders\n\
          Exec={exe} %U\nIcon={icon}\nTerminal=false\nCategories=System;FileTools;FileManager;\n\
-         MimeType=inode/directory;\nStartupWMClass=rustyfiles\n"
+         MimeType=inode/directory;\nStartupWMClass=rfiles\n"
     )
 }
 
-/// Whether the package installed rustyfiles' own icon (`hicolor/…/apps/rustyfiles.*`): this
+/// Whether the package installed rfiles' own icon (`hicolor/…/apps/rfiles.*`): this
 /// entry replaces the package's (same name), so it should look the same.
 fn icon_installed() -> bool {
     let dirs = std::env::var("XDG_DATA_DIRS").unwrap_or_else(|_| "/usr/local/share:/usr/share".into());
     dirs.split(':').filter(|d| !d.is_empty()).any(|d| {
         let hicolor = Path::new(d).join("icons/hicolor");
-        hicolor.join("scalable/apps/rustyfiles.svg").exists() || hicolor.join("256x256/apps/rustyfiles.png").exists()
+        hicolor.join("scalable/apps/rfiles.svg").exists() || hicolor.join("256x256/apps/rfiles.png").exists()
     })
 }
 
@@ -247,11 +247,11 @@ pub fn disable(classes_root: &str) -> anyhow::Result<()> {
     if classes_root == CLASSES {
         reload_bus();
     }
-    // the desktop entry stays: it lists rustyfiles in "Open with" for folders
+    // the desktop entry stays: it lists rfiles in "Open with" for folders
     Ok(())
 }
 
-/// Whether folders open in rustyfiles: the first of the user's mimeapps.list files that names a
+/// Whether folders open in rfiles: the first of the user's mimeapps.list files that names a
 /// folder app names ours.
 pub fn is_enabled(classes_root: &str) -> bool {
     let Some(pl) = places(classes_root) else { return false };
@@ -298,6 +298,44 @@ pub fn heal(current: &str, classes_root: &str) -> bool {
     }
 }
 
+/// rfiles was called rustyfiles before (desktop entry `old_id`, `rustyfiles.desktop`). When
+/// that entry's program is gone (the old package was removed) it is taken over for `exe`: if
+/// it was the default file manager, ours is now (the file manager it replaced stays
+/// remembered, for [`disable`]); either way the old entry goes, and ours lists rfiles in
+/// "Open with". An entry whose program still exists is left alone, so a source build next to
+/// an installed copy changes nothing. True when it changed anything.
+pub fn adopt_renamed(old_id: &str, exe: &str, classes_root: &str) -> bool {
+    let Some(pl) = places(classes_root) else { return false };
+    let old_file = pl.data.join("applications").join(old_id);
+    let Ok(text) = std::fs::read_to_string(&old_file) else { return false };
+    let prog = text.lines().find_map(|l| l.strip_prefix("Exec=")).map(crate::dialogs::exec_args).and_then(|a| a.into_iter().next());
+    if !prog.is_some_and(|p| Path::new(&p).is_absolute() && !Path::new(&p).exists()) {
+        return false;
+    }
+    let mut was_default = false;
+    for f in pl.mimeapps() {
+        let Ok(t) = std::fs::read_to_string(&f) else { continue };
+        if default_in(&t, FOLDER).as_deref() == Some(old_id) {
+            // in place: the default from before rustyfiles is still the one remembered
+            let mut gs = groups(&t);
+            set(&mut gs, "Default Applications", FOLDER, Some(&format!("{DESKTOP_ID};")));
+            if write(&f, &write_groups(&gs)).is_err() {
+                return false;
+            }
+            was_default = true;
+        }
+    }
+    let _ = write(&pl.desktop_file(), &desktop_entry(exe));
+    if was_default {
+        let _ = write(&pl.service_file(), &service_entry(exe));
+        if classes_root == CLASSES {
+            reload_bus();
+        }
+    }
+    let _ = std::fs::remove_file(&old_file);
+    true
+}
+
 /// Windows brings its archive registration up to date here; Linux has none.
 pub fn add_archives(_exe: &str, _classes_root: &str) -> bool {
     false
@@ -314,7 +352,7 @@ pub fn should_forward_to_explorer(arg: &str) -> bool {
 /// argument we hand to it can come straight back (a server root like `\\nas`, a folder that
 /// looked like a file). Forwards are remembered for a few seconds to break such a loop.
 fn forward_log() -> std::path::PathBuf {
-    std::env::temp_dir().join("rustyfiles-forward.txt")
+    std::env::temp_dir().join("rfiles-forward.txt")
 }
 fn now_ms() -> u128 {
     std::time::SystemTime::now()
@@ -371,10 +409,10 @@ mod tests {
         assert_eq!(without_default(&on, FOLDER, DESKTOP_ID), DOLPHIN);
         // no previous default: ours is just removed
         let fresh = with_default("", FOLDER, DESKTOP_ID);
-        assert_eq!(fresh, "[Default Applications]\ninode/directory=rustyfiles.desktop;\n");
+        assert_eq!(fresh, "[Default Applications]\ninode/directory=rfiles.desktop;\n");
         assert_eq!(default_in(&without_default(&fresh, FOLDER, DESKTOP_ID), FOLDER), None);
         // someone else became the default since: disabling leaves them be
-        let changed = on.replace("inode/directory=rustyfiles.desktop;", "inode/directory=nautilus.desktop;");
+        let changed = on.replace("inode/directory=rfiles.desktop;", "inode/directory=nautilus.desktop;");
         assert_eq!(default_in(&without_default(&changed, FOLDER, DESKTOP_ID), FOLDER).as_deref(), Some("nautilus.desktop"));
     }
 
@@ -385,13 +423,13 @@ mod tests {
         std::fs::create_dir_all(base.join("config")).unwrap();
         std::fs::write(base.join("config/mimeapps.list"), DOLPHIN).unwrap();
         assert!(!is_enabled(&root));
-        enable("/opt/rusty files/rustyfiles", &root).unwrap();
+        enable("/opt/rusty files/rfiles", &root).unwrap();
         assert!(is_enabled(&root));
-        assert_eq!(registered_exe(&root), Some(PathBuf::from("/opt/rusty files/rustyfiles")));
-        let desktop = std::fs::read_to_string(base.join("data/applications/rustyfiles.desktop")).unwrap();
-        assert!(desktop.contains("Exec=\"/opt/rusty files/rustyfiles\" %U\n"), "{desktop}");
+        assert_eq!(registered_exe(&root), Some(PathBuf::from("/opt/rusty files/rfiles")));
+        let desktop = std::fs::read_to_string(base.join("data/applications/rfiles.desktop")).unwrap();
+        assert!(desktop.contains("Exec=\"/opt/rusty files/rfiles\" %U\n"), "{desktop}");
         let service = std::fs::read_to_string(base.join("data/dbus-1/services/org.freedesktop.FileManager1.service")).unwrap();
-        assert!(service.contains("Exec=\"/opt/rusty files/rustyfiles\" --file-manager-service\n"), "{service}");
+        assert!(service.contains("Exec=\"/opt/rusty files/rfiles\" --file-manager-service\n"), "{service}");
         // the exe moved: heal points the entry at the new one
         let me = std::env::current_exe().unwrap().to_string_lossy().into_owned();
         assert!(heal(&me, &root));
@@ -399,6 +437,24 @@ mod tests {
         disable(&root).unwrap();
         assert!(!is_enabled(&root));
         assert_eq!(std::fs::read_to_string(base.join("config/mimeapps.list")).unwrap(), DOLPHIN, "Dolphin is back");
+
+        // a default set by rustyfiles (the old name) whose program is gone becomes ours
+        std::fs::write(
+            base.join("config/mimeapps.list"),
+            "[Default Applications]\ninode/directory=rustyfiles.desktop;\n\n[X-rustyfiles]\nprevious-inode/directory=org.kde.dolphin.desktop;\n",
+        )
+        .unwrap();
+        std::fs::write(base.join("data/applications/rustyfiles.desktop"), "[Desktop Entry]\nExec=/nonexistent/rustyfiles/rustyfiles %U\n").unwrap();
+        assert!(adopt_renamed("rustyfiles.desktop", "/usr/lib/rfiles/rfiles", &root));
+        assert!(is_enabled(&root));
+        assert_eq!(registered_exe(&root), Some(PathBuf::from("/usr/lib/rfiles/rfiles")));
+        assert!(!base.join("data/applications/rustyfiles.desktop").exists());
+        assert!(!adopt_renamed("rustyfiles.desktop", "/usr/lib/rfiles/rfiles", &root), "once");
+        disable(&root).unwrap();
+        assert!(std::fs::read_to_string(base.join("config/mimeapps.list")).unwrap().contains("inode/directory=org.kde.dolphin.desktop"), "Dolphin comes back");
+        // an old entry whose program still exists is left alone
+        std::fs::write(base.join("data/applications/rustyfiles.desktop"), "[Desktop Entry]\nExec=/bin/sh %U\n").unwrap();
+        assert!(!adopt_renamed("rustyfiles.desktop", "/usr/lib/rfiles/rfiles", &root));
         assert!(!base.join("data/dbus-1/services/org.freedesktop.FileManager1.service").exists());
         let _ = std::fs::remove_dir_all(&base);
     }

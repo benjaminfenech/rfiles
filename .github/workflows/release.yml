@@ -27,7 +27,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory publish | Out-Null
-          Copy-Item target/release/rustyfiles.exe, target/release/directlook.exe, target/release/rustyfiles_dialog.dll, LICENSE publish
+          Copy-Item target/release/rfiles.exe, target/release/directlook.exe, target/release/rustyfiles_dialog.dll, LICENSE publish
       - name: Install vpk
         # same version as the velopack crate in crates/rf-app/Cargo.toml
         run: dotnet tool install -g vpk --version 1.2.161
@@ -35,6 +35,6 @@ jobs:
         continue-on-error: true
         run: vpk download github --repoUrl https://github.com/${{ github.repository }} --token ${{ github.token }}
       - name: Pack
-        run: vpk pack -u rustyfiles -v ${{ steps.v.outputs.version }} -p publish -e rustyfiles.exe --packTitle rustyfiles --packAuthors "Özer Güzel" -i crates/rf-app/assets/rustyfiles.ico -s crates/rf-app/assets/splash.gif --splashProgressColor "#ff6a1a"
+        run: vpk pack -u rfiles -v ${{ steps.v.outputs.version }} -p publish -e rfiles.exe --packTitle rfiles --packAuthors "Özer Güzel" -i crates/rf-app/assets/rustyfiles.ico -s crates/rf-app/assets/splash.gif --splashProgressColor "#ff6a1a"
       - name: Publish
-        run: vpk upload github --repoUrl https://github.com/${{ github.repository }} --token ${{ github.token }} --publish --releaseName "rustyfiles ${{ steps.v.outputs.version }}" --tag ${{ github.ref_name }}
+        run: vpk upload github --repoUrl https://github.com/${{ github.repository }} --token ${{ github.token }} --publish --releaseName "rfiles ${{ steps.v.outputs.version }}" --tag ${{ github.ref_name }}

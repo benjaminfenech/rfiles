@@ -167,7 +167,7 @@ impl LookManager {
     }
 
     /// Shows `path` in a new window instead of the active one (Linux, when the size must change:
-    /// see `sys::reopen_for_size`). The new window opens before the old one goes, so rustyfiles
+    /// see `sys::reopen_for_size`). The new window opens before the old one goes, so rfiles
     /// never hears "closed" and keeps sending the selection.
     pub(crate) fn reopen(path: PathBuf, topmost: bool, cx: &mut App) {
         let old = Self::global(cx).active.take();

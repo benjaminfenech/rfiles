@@ -121,7 +121,7 @@ fn test_label(t: OpenTest) -> &'static str {
 
 fn app_label(k: AppKind) -> &'static str {
     match k {
-        AppKind::Rustyfiles => "rustyfiles",
+        AppKind::Rustyfiles => "rfiles",
         AppKind::Explorer => t!("Dosya Gezgini"),
         AppKind::Files => "Files",
         AppKind::FilePilot => "File Pilot",
@@ -140,7 +140,7 @@ fn machine_line(m: &Machine) -> String {
     parts.join(" · ")
 }
 
-/// rustyfiles' median and the slowest other app's on `test`, for the headline.
+/// rfiles' median and the slowest other app's on `test`, for the headline.
 fn speedup(r: &Results, test: OpenTest, other: AppKind) -> Option<(f64, f64)> {
     let o = r.open.iter().find(|o| o.test == test)?;
     let ours = o.apps.iter().find(|a| a.app == AppKind::Rustyfiles)?.median()?.settled_ms;
@@ -379,7 +379,7 @@ pub(crate) fn short_link(r: &Results) -> String {
     let prefix = format!("{SITE}/r/");
     let got = agent
         .post(format!("{SITE}/api/r"))
-        .header("User-Agent", format!("rustyfiles/{}", crate::installer::version()))
+        .header("User-Agent", format!("rfiles/{}", crate::installer::version()))
         .content_type("application/json")
         .send(&body[..])
         .ok()
@@ -410,7 +410,7 @@ fn with_link(cx: &mut App, f: impl FnOnce(&Results, &str, &mut App) + 'static) {
 }
 
 fn summary_text(r: &Results, link: &str) -> String {
-    let mut lines = vec![format!("rustyfiles · {}", machine_line(&r.machine))];
+    let mut lines = vec![format!("rfiles · {}", machine_line(&r.machine))];
     for o in &r.open {
         if !matches!(o.test, OpenTest::Files100k | OpenTest::Start) {
             continue;
@@ -429,7 +429,7 @@ fn summary_text(r: &Results, link: &str) -> String {
     let any_shared = r.open.iter().filter(|o| matches!(o.test, OpenTest::Files100k | OpenTest::Start)).any(|o| o.apps.iter().any(|a| a.median().is_some_and(|m| m.shared)));
     if let Some(v) = &r.engines.copy_small {
         if let (Some(a), Some(b)) = (v.ours_ms, v.windows_ms) {
-            lines.push(format!("{}: rustyfiles {} · Windows {}", t!("10.000 küçük dosya kopyalama"), ms(a), ms(b)));
+            lines.push(format!("{}: rfiles {} · Windows {}", t!("10.000 küçük dosya kopyalama"), ms(a), ms(b)));
         }
     }
     if any_shared {
@@ -443,10 +443,10 @@ fn summary_text(r: &Results, link: &str) -> String {
 /// The short line for X / WhatsApp / Reddit titles.
 fn headline(r: &Results) -> String {
     match speedup(r, OpenTest::Files100k, AppKind::Explorer) {
-        Some((ours, theirs)) => t!("rustyfiles bilgisayarımda 100.000 dosyalık klasörü {ours} sürede açtı, Dosya Gezgini {theirs}.")
+        Some((ours, theirs)) => t!("rfiles bilgisayarımda 100.000 dosyalık klasörü {ours} sürede açtı, Dosya Gezgini {theirs}.")
             .replace("{ours}", &ms(ours))
             .replace("{theirs}", &ms(theirs)),
-        None => t!("rustyfiles: Windows için hızlı, ücretsiz ve açık kaynak dosya yöneticisi.").to_string(),
+        None => t!("rfiles: Windows için hızlı, ücretsiz ve açık kaynak dosya yöneticisi.").to_string(),
     }
 }
 
@@ -473,7 +473,7 @@ fn esc(s: &str) -> String {
 
 /// The result card as SVG (1200 × 675, the size social sites show whole).
 fn card_svg(r: &Results) -> String {
-    // 1200 × 675, the size social sites show whole; the same look as rustyfiles' posts:
+    // 1200 × 675, the size social sites show whole; the same look as rfiles' posts:
     // two-tone wordmark, one big multiplier, bars, three figures, a warm glow
     let (w, h) = (1200.0, 675.0);
     let orange = "#ff6a1a";
@@ -601,7 +601,7 @@ fn copy_picture(window: &Window, cx: &mut App) {
     match rf_win::bench::render_card(&svg, 1.0) {
         Ok(pic) => {
             // also kept as a file next to the results, for attaching
-            let path = crate::bench::bench_dir().join("rustyfiles-speed-test.png");
+            let path = crate::bench::bench_dir().join("rfiles-speed-test.png");
             let _ = std::fs::write(&path, &pic.png);
             let ok = owner.is_some_and(|h| rf_win::clipboard::set_image(windows::Win32::Foundation::HWND(h as *mut _), pic.width, pic.height, &pic.rgba, &pic.png).is_ok());
             note(if ok { t!("Sonuç kartı panoya kopyalandı") } else { t!("Panoya kopyalanamadı") }, cx);
@@ -620,7 +620,7 @@ fn save_picture(cx: &mut App) {
     std::thread::spawn(move || {
         let Ok(pic) = rf_win::bench::render_card(&svg, 1.0) else { return };
         let dir = rf_win::known::KnownFolder::Downloads.path().unwrap_or_else(std::env::temp_dir);
-        let path = rf_win::fileops::unique_name(&dir, "rustyfiles speed test", ".png");
+        let path = rf_win::fileops::unique_name(&dir, "rfiles speed test", ".png");
         if std::fs::write(&path, &pic.png).is_ok() {
             let _ = rf_win::shell::open(&path);
         }
@@ -667,7 +667,7 @@ pub fn page(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
 
     // intro: what it does, on which machine, with which apps
     let machine = st.machine.as_ref().map(machine_line).unwrap_or_default();
-    let mut chips = h_flex().gap_2().flex_wrap().child(chip(p, "bench-app-rf", "rustyfiles", true, true, |_| {}));
+    let mut chips = h_flex().gap_2().flex_wrap().child(chip(p, "bench-app-rf", "rfiles", true, true, |_| {}));
     let installed: Vec<AppKind> = st.detected.iter().map(|a| a.kind).collect();
     for kind in [AppKind::Explorer, AppKind::Files, AppKind::FilePilot] {
         let here = installed.contains(&kind);
@@ -913,12 +913,12 @@ fn table_card(p: &Palette, r: &Results) -> AnyElement {
 fn engines_card(p: &Palette, r: &Results) -> Option<AnyElement> {
     let e = &r.engines;
     let mut rows: Vec<(String, String, String, String)> = Vec::new();
-    // "işlemci süresi: rustyfiles 1.20 s · Windows 3.40 s · bellek: +12 MB · +40 MB"
+    // "işlemci süresi: rfiles 1.20 s · Windows 3.40 s · bellek: +12 MB · +40 MB"
     let cost = |ours: (Option<f64>, Option<f64>), theirs: Option<(Option<f64>, Option<f64>, &str)>| -> String {
         let mb = |m: f64| format!("+{m:.0} MB");
         let mut parts = Vec::new();
         if let Some(c) = ours.0 {
-            let mut s = format!("{}: rustyfiles {}", t!("işlemci süresi"), ms(c));
+            let mut s = format!("{}: rfiles {}", t!("işlemci süresi"), ms(c));
             if let Some((Some(tc), _, name)) = theirs {
                 s.push_str(&format!(" · {name} {}", ms(tc)));
             }
@@ -938,7 +938,7 @@ fn engines_card(p: &Palette, r: &Results) -> Option<AnyElement> {
         let usage = cost((v.ours_cpu_ms, v.ours_mb), Some((v.windows_cpu_ms, v.windows_mb, windows_name)));
         let (Some(a), Some(b)) = (v.ours_ms, v.windows_ms) else {
             if let Some(a) = v.ours_ms {
-                rows.push((label.to_string(), format!("rustyfiles {}", ms(a)), String::new(), usage));
+                rows.push((label.to_string(), format!("rfiles {}", ms(a)), String::new(), usage));
             }
             return;
         };
@@ -950,7 +950,7 @@ fn engines_card(p: &Palette, r: &Results) -> Option<AnyElement> {
         } else {
             t!("{x} daha yavaş").replace("{x}", &times(a, b))
         };
-        rows.push((label.to_string(), format!("rustyfiles {} · {windows_name} {}", ms(a), ms(b)), verdict, usage));
+        rows.push((label.to_string(), format!("rfiles {} · {windows_name} {}", ms(a), ms(b)), verdict, usage));
     };
     versus(t!("Kopyalama: 10.000 küçük dosya"), &e.copy_small, "Windows");
     versus(t!("Kopyalama: 1 GB'lık tek dosya"), &e.copy_big, "Windows");
@@ -986,7 +986,7 @@ fn engines_card(p: &Palette, r: &Results) -> Option<AnyElement> {
     }
     Some(
         shell(p)
-            .child(h_flex().px_4().pt_4().pb_2().child(div().font_weight(FontWeight::SEMIBOLD).child(t!("rustyfiles motorları ve Windows"))))
+            .child(h_flex().px_4().pt_4().pb_2().child(div().font_weight(FontWeight::SEMIBOLD).child(t!("rfiles motorları ve Windows"))))
             .child(list)
             .into_any_element(),
     )
@@ -995,7 +995,7 @@ fn engines_card(p: &Palette, r: &Results) -> Option<AnyElement> {
 fn star_card(p: &Palette, r: &Results) -> AnyElement {
     let line = match speedup(r, OpenTest::Files100k, AppKind::Explorer) {
         Some((ours, theirs)) if theirs > ours => {
-            t!("rustyfiles bu bilgisayarda büyük klasörü Dosya Gezgini'nden {x} hızlı açtı.").replace("{x}", &times(theirs, ours))
+            t!("rfiles bu bilgisayarda büyük klasörü Dosya Gezgini'nden {x} hızlı açtı.").replace("{x}", &times(theirs, ours))
         }
         _ => t!("Test bitti.").to_string(),
     };
@@ -1013,7 +1013,7 @@ fn star_card(p: &Palette, r: &Results) -> AnyElement {
                         .min_w_0()
                         .child(div().font_weight(FontWeight::SEMIBOLD).child(line))
                         .child(div().text_sm().text_color(p.text_secondary).child(t!(
-                            "rustyfiles ücretsiz ve tek kişinin emeği. Beğendiysen GitHub'da bir yıldız ver: başkalarının da bulmasına yardım eder."
+                            "rfiles ücretsiz ve tek kişinin emeği. Beğendiysen GitHub'da bir yıldız ver: başkalarının da bulmasına yardım eder."
                         ))),
                 )
                 .child(button("bench-star", p, L::Star, t!("Yıldız ver"), true, |_, cx| {

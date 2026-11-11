@@ -1,4 +1,4 @@
-//! Stand-in for the rustyfiles-specific API of our GPUI Windows fork
+//! Stand-in for the rfiles-specific API of our GPUI Windows fork
 //! (github.com/gelenmedya/gpui-pre-windows) on platforms where GPUI uses its own backend.
 //! Same names and types, no effect: rf-app's call sites stay as they are.
 

@@ -454,7 +454,7 @@ pub fn checkout(root: &Path, branch: &str, mode: CheckoutMode) -> Result<()> {
                         "push",
                         "--include-untracked",
                         "-m",
-                        "rustyfiles checkout",
+                        "rfiles checkout",
                     ],
                     "Değişiklikler stash'e alınamadı",
                 )?;

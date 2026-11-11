@@ -15,7 +15,7 @@ param(
 )
 . "$PSScriptRoot\ui.ps1"
 $root = Split-Path $PSScriptRoot -Parent
-$script:RFExe = "$root\target\release\rustyfiles.exe"
+$script:RFExe = "$root\target\release\rfiles.exe"
 $gpustress = "$root\target\release\gpustress.exe"
 New-Item -ItemType Directory -Force $OutDir | Out-Null
 if ($Scenario -eq "frames") { $StressSeconds = 40 }
@@ -26,13 +26,13 @@ Remove-Item $log, $raw -ErrorAction SilentlyContinue
 function Pct($sorted, [double]$p) { if ($sorted.Count -eq 0) { return $null }; $sorted[[int][Math]::Round(($sorted.Count - 1) * $p)] }
 
 function Start-App {
-  $env:RUSTYFILES_RENDERER = $Mode
-  $env:RUSTYFILES_FRAME_LOG = $raw
+  $env:RFILES_RENDERER = $Mode
+  $env:RFILES_FRAME_LOG = $raw
   $env:RUST_LOG = "info,gpui_windows=debug"
   $script:RF = Start-Process $script:RFExe -ArgumentList "`"$Path`"" -PassThru -RedirectStandardError $log
   $sw = [Diagnostics.Stopwatch]::StartNew()
   while ($script:RF.MainWindowHandle -eq 0 -and $sw.ElapsedMilliseconds -lt 15000) { Start-Sleep -Milliseconds 20; $script:RF.Refresh() }
-  if ($script:RF.HasExited) { throw "rustyfiles exited immediately (single instance forwarded to another running instance?)" }
+  if ($script:RF.HasExited) { throw "rfiles exited immediately (single instance forwarded to another running instance?)" }
   Start-Sleep -Milliseconds 700
   Focus-RF
 }
@@ -73,7 +73,7 @@ function Watch-Log([int]$ms, [Diagnostics.Stopwatch]$clock, [ref]$events) {
 }
 
 try {
-  if (Get-Process rustyfiles -ErrorAction SilentlyContinue) { throw "another rustyfiles is already running; refusing to start (single instance)" }
+  if (Get-Process rfiles -ErrorAction SilentlyContinue) { throw "another rfiles is already running; refusing to start (single instance)" }
   Start-App
   $clock = [Diagnostics.Stopwatch]::StartNew()
   $events = @()

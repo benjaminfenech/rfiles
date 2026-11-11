@@ -1,6 +1,6 @@
 //! One global keyboard shortcut for the quick search (upstream: `RegisterHotKey`). Wayland gives
 //! apps no global shortcuts: on Linux the desktop's own shortcut settings start
-//! `rustyfiles --quick-search` (Hyprland: `bind = ALT, SPACE, exec, rustyfiles --quick-search`;
+//! `rfiles --quick-search` (Hyprland: `bind = ALT, SPACE, exec, rfiles --quick-search`;
 //! GNOME and KDE: a custom shortcut). Nothing is registered here.
 
 /// Why a shortcut can't be the hotkey.

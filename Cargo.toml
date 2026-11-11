@@ -136,7 +136,7 @@ debug = false
 # Iterating on optimized builds: release without LTO, incremental. A one-line change in rf-app
 # took 144 s with --release (thin LTO links the two exes) against ~10 s in dev (measured by the
 # rustbuilder session). Speed numbers and published builds still come from --release.
-#   cargo build --profile fast -p rf-app   →   target/fast/rustyfiles.exe
+#   cargo build --profile fast -p rf-app   →   target/fast/rfiles.exe
 [profile.fast]
 inherits = "release"
 lto = false

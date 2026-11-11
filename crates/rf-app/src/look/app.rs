@@ -1,6 +1,6 @@
 //! DirectLook programının girişi: ayrı süreç, kendi tek örnek borusu, kendi bildirim alanı simgesi.
-//! rustyfiles'tan iletiler (`ipc::Msg`) ve isteğe bağlı sistem geneli klavye kancasıyla çalışır.
-//! rustyfiles'ın `settings.toml`'undan yalnız dil ve temayı okur, hiç yazmaz.
+//! rfiles'tan iletiler (`ipc::Msg`) ve isteğe bağlı sistem geneli klavye kancasıyla çalışır.
+//! rfiles'ın `settings.toml`'undan yalnız dil ve temayı okur, hiç yazmaz.
 
 use gpui_kit::*;
 
@@ -8,7 +8,7 @@ use super::config::LookSettings;
 use super::ipc::{Msg, ToApp, app_name};
 use super::{LookManager, ShowOpts};
 
-/// Açılış argümanları: `--msg <ileti>` (rustyfiles), `--look <yol> [top,pin]` (komut satırı),
+/// Açılış argümanları: `--msg <ileti>` (rfiles), `--look <yol> [top,pin]` (komut satırı),
 /// `--background` (Windows'la başlama, ön ısıtma).
 pub fn parse_args(args: &[&str]) -> Msg {
     match args.first().copied() {
@@ -33,19 +33,19 @@ fn tray_labels() -> rf_win::tray::Labels {
     }
 }
 
-/// Ayarlar sayfasını rustyfiles'ta açar (çalışmıyorsa başlatır).
+/// Ayarlar sayfasını rfiles'ta açar (çalışmıyorsa başlatır).
 fn open_settings() {
     std::thread::spawn(|| {
-        if rf_win::single_instance::send_to("rustyfiles", &ToApp::OpenSettings.encode()) {
+        if rf_win::single_instance::send_to("rfiles", &ToApp::OpenSettings.encode()) {
             return;
         }
         if let Ok(me) = std::env::current_exe() {
-            let _ = std::process::Command::new(me.with_file_name(format!("rustyfiles{}", std::env::consts::EXE_SUFFIX))).arg("--settings=directlook").spawn();
+            let _ = std::process::Command::new(me.with_file_name(format!("rfiles{}", std::env::consts::EXE_SUFFIX))).arg("--settings=directlook").spawn();
         }
     });
 }
 
-/// DirectLook's own icon: when its setting is on and rustyfiles has none (rustyfiles running in
+/// DirectLook's own icon: when its setting is on and rfiles has none (rfiles running in
 /// the background has one, with the settings in its menu): one icon, not two.
 fn tray_wanted(cx: &App) -> bool {
     // Linux: DirectLook only runs for the app's window (no global hotkey): no icon of its own
@@ -79,7 +79,7 @@ fn handle(msg: Msg, cx: &mut App) {
         Msg::Close => LookManager::close(cx),
         Msg::Reload => {
             cx.set_global(LookSettings::load());
-            // rustyfiles' settings too: language, theme, and whether it has a tray icon
+            // rfiles' settings too: language, theme, and whether it has a tray icon
             cx.set_global(crate::settings::Settings::load());
             sync_tray(cx);
         }
@@ -95,6 +95,8 @@ fn handle(msg: Msg, cx: &mut App) {
 pub fn main() {
     #[cfg(unix)]
     rf_win::sandbox::adopt_host_dirs();
+    #[cfg(unix)]
+    crate::renamed::adopt_old_name();
     crate::install_panic_log();
     rf_win::shell::suppress_critical_error_dialogs();
     rf_win::thumbs::keep_gdiplus_alive();
@@ -123,7 +125,7 @@ pub fn main() {
 
     gpui_kit::application().with_assets(gpui_kit::assets::AllAssets).run(move |cx| {
         gpui_kit::init(cx);
-        // rustyfiles'ın ayarları: yalnız dil, tema, tarih biçimi için okunur, asla yazılmaz
+        // rfiles'ın ayarları: yalnız dil, tema, tarih biçimi için okunur, asla yazılmaz
         cx.set_global(crate::settings::Settings::load());
         if !rf_win::encoding::user_locale_is_turkish() {
             rf_core::textload::set_locale_hint(None);
@@ -136,7 +138,7 @@ pub fn main() {
         cx.on_window_closed(|cx, _| {
             if !LookManager::is_visible(cx) {
                 std::thread::spawn(|| {
-                    let _ = rf_win::single_instance::send_to("rustyfiles", &ToApp::LookClosed.encode());
+                    let _ = rf_win::single_instance::send_to("rfiles", &ToApp::LookClosed.encode());
                 });
             }
         })

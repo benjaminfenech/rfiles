@@ -1,4 +1,4 @@
-//! rustdecoder: rustyfiles' own video engine. Containers and bitstreams are parsed here; the
+//! rustdecoder: rfiles' own video engine. Containers and bitstreams are parsed here; the
 //! compressed pictures go to the graphics card's video engine (D3D11 Video). See
 //! `docs/design/rustdecoder.md`.
 

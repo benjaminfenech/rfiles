@@ -1141,15 +1141,15 @@
  },
  {
   "id": "e67eea17",
-  "key": "Klasörler ve Win+E rustyfiles ile açılır. Önce scripts\\install.ps1 ile kurun (şu an derleme klasöründen çalışıyor).",
-  "tr": "Klasörler ve Win+E rustyfiles ile açılır. Önce scripts\\install.ps1 ile kurun (şu an derleme klasöründen çalışıyor).",
-  "en": "Folders and Win+E open in rustyfiles. Install it first with scripts\\install.ps1 (currently running from the build folder)."
+  "key": "Klasörler ve Win+E rfiles ile açılır. Önce scripts\\install.ps1 ile kurun (şu an derleme klasöründen çalışıyor).",
+  "tr": "Klasörler ve Win+E rfiles ile açılır. Önce scripts\\install.ps1 ile kurun (şu an derleme klasöründen çalışıyor).",
+  "en": "Folders and Win+E open in rfiles. Install it first with scripts\\install.ps1 (currently running from the build folder)."
  },
  {
   "id": "86ffdbca",
-  "key": "Klasörler ve Win+E rustyfiles ile açılır. Yalnızca bu kullanıcı için, istediğiniz an geri alınır.",
-  "tr": "Klasörler ve Win+E rustyfiles ile açılır. Yalnızca bu kullanıcı için, istediğiniz an geri alınır.",
-  "en": "Folders and Win+E open in rustyfiles. Applies to this user only and can be reverted at any time."
+  "key": "Klasörler ve Win+E rfiles ile açılır. Yalnızca bu kullanıcı için, istediğiniz an geri alınır.",
+  "tr": "Klasörler ve Win+E rfiles ile açılır. Yalnızca bu kullanıcı için, istediğiniz an geri alınır.",
+  "en": "Folders and Win+E open in rfiles. Applies to this user only and can be reverted at any time."
  },
  {
   "id": "e733698e",
@@ -1255,15 +1255,15 @@
  },
  {
   "id": "ca7298dc",
-  "key": "Arşivleri rustyfiles ile aç",
-  "tr": "Arşivleri rustyfiles ile aç",
-  "en": "Open archives with rustyfiles"
+  "key": "Arşivleri rfiles ile aç",
+  "tr": "Arşivleri rfiles ile aç",
+  "en": "Open archives with rfiles"
  },
  {
   "id": "ea38eca8",
-  "key": "Zip, 7z, rar, tar için varsayılan uygulama Windows'ta seçilir. Açılan sayfada rustyfiles'ı varsayılan yapın.",
-  "tr": "Zip, 7z, rar, tar için varsayılan uygulama Windows'ta seçilir. Açılan sayfada rustyfiles'ı varsayılan yapın.",
-  "en": "The default app for zip, 7z, rar and tar is chosen in Windows. Make rustyfiles the default on the page that opens."
+  "key": "Zip, 7z, rar, tar için varsayılan uygulama Windows'ta seçilir. Açılan sayfada rfiles'ı varsayılan yapın.",
+  "tr": "Zip, 7z, rar, tar için varsayılan uygulama Windows'ta seçilir. Açılan sayfada rfiles'ı varsayılan yapın.",
+  "en": "The default app for zip, 7z, rar and tar is chosen in Windows. Make rfiles the default on the page that opens."
  },
  {
   "id": "819bdc03",
@@ -2491,15 +2491,15 @@
  },
  {
   "id": "2220b7a5",
-  "key": "rustyfiles {v} indiriliyor",
-  "tr": "rustyfiles {v} indiriliyor",
-  "en": "Downloading rustyfiles {v}"
+  "key": "rfiles {v} indiriliyor",
+  "tr": "rfiles {v} indiriliyor",
+  "en": "Downloading rfiles {v}"
  },
  {
   "id": "7daa795d",
-  "key": "rustyfiles {v} hazır",
-  "tr": "rustyfiles {v} hazır",
-  "en": "rustyfiles {v} is ready"
+  "key": "rfiles {v} hazır",
+  "tr": "rfiles {v} hazır",
+  "en": "rfiles {v} is ready"
  },
  {
   "id": "099cc52a",
@@ -2821,27 +2821,27 @@
  },
  {
   "id": "cf1e0c2e",
-  "key": "rustyfiles bilgisayarımda 100.000 dosyalık klasörü {ours} sürede açtı, Dosya Gezgini {theirs}.",
-  "tr": "rustyfiles bilgisayarımda 100.000 dosyalık klasörü {ours} sürede açtı, Dosya Gezgini {theirs}.",
-  "en": "rustyfiles opened a 100,000-file folder on my PC in {ours}. File Explorer took {theirs}."
+  "key": "rfiles bilgisayarımda 100.000 dosyalık klasörü {ours} sürede açtı, Dosya Gezgini {theirs}.",
+  "tr": "rfiles bilgisayarımda 100.000 dosyalık klasörü {ours} sürede açtı, Dosya Gezgini {theirs}.",
+  "en": "rfiles opened a 100,000-file folder on my PC in {ours}. File Explorer took {theirs}."
  },
  {
   "id": "f8fbf8fa",
-  "key": "rustyfiles bu bilgisayarda büyük klasörü Dosya Gezgini'nden {x} hızlı açtı.",
-  "tr": "rustyfiles bu bilgisayarda büyük klasörü Dosya Gezgini'nden {x} hızlı açtı.",
-  "en": "On this PC, rustyfiles opened the big folder {x} faster than File Explorer."
+  "key": "rfiles bu bilgisayarda büyük klasörü Dosya Gezgini'nden {x} hızlı açtı.",
+  "tr": "rfiles bu bilgisayarda büyük klasörü Dosya Gezgini'nden {x} hızlı açtı.",
+  "en": "On this PC, rfiles opened the big folder {x} faster than File Explorer."
  },
  {
   "id": "cee01668",
-  "key": "rustyfiles motorları ve Windows",
-  "tr": "rustyfiles motorları ve Windows",
-  "en": "rustyfiles' engines and Windows'"
+  "key": "rfiles motorları ve Windows",
+  "tr": "rfiles motorları ve Windows",
+  "en": "rfiles' engines and Windows'"
  },
  {
   "id": "8fcddc58",
-  "key": "rustyfiles: Windows için hızlı, ücretsiz ve açık kaynak dosya yöneticisi.",
-  "tr": "rustyfiles: Windows için hızlı, ücretsiz ve açık kaynak dosya yöneticisi.",
-  "en": "rustyfiles: a fast, free and open-source file manager for Windows."
+  "key": "rfiles: Windows için hızlı, ücretsiz ve açık kaynak dosya yöneticisi.",
+  "tr": "rfiles: Windows için hızlı, ücretsiz ve açık kaynak dosya yöneticisi.",
+  "en": "rfiles: a fast, free and open-source file manager for Windows."
  },
  {
   "id": "74633f5a",
@@ -2953,9 +2953,9 @@
  },
  {
   "id": "252ff602",
-  "key": "rustyfiles ücretsiz ve tek kişinin emeği. Beğendiysen GitHub'da bir yıldız ver: başkalarının da bulmasına yardım eder.",
-  "tr": "rustyfiles ücretsiz ve tek kişinin emeği. Beğendiysen GitHub'da bir yıldız ver: başkalarının da bulmasına yardım eder.",
-  "en": "rustyfiles is free and made by one person. If you like it, star it on GitHub: it helps others find it."
+  "key": "rfiles ücretsiz ve tek kişinin emeği. Beğendiysen GitHub'da bir yıldız ver: başkalarının da bulmasına yardım eder.",
+  "tr": "rfiles ücretsiz ve tek kişinin emeği. Beğendiysen GitHub'da bir yıldız ver: başkalarının da bulmasına yardım eder.",
+  "en": "rfiles is free and made by one person. If you like it, star it on GitHub: it helps others find it."
  },
  {
   "id": "c0ac6ae1",
@@ -3553,9 +3553,9 @@
  },
  {
   "id": "a28aaea5",
-  "key": "rustyfiles güncel.",
-  "tr": "rustyfiles güncel.",
-  "en": "rustyfiles is up to date."
+  "key": "rfiles güncel.",
+  "tr": "rfiles güncel.",
+  "en": "rfiles is up to date."
  },
  {
   "id": "809a61d8",
@@ -3625,9 +3625,9 @@
  },
  {
   "id": "30b905e5",
-  "key": "rustyfiles işinize yarıyorsa başkalarının da bulmasına yardım eder.",
-  "tr": "rustyfiles işinize yarıyorsa başkalarının da bulmasına yardım eder.",
-  "en": "If rustyfiles is useful to you, it helps others find it."
+  "key": "rfiles işinize yarıyorsa başkalarının da bulmasına yardım eder.",
+  "tr": "rfiles işinize yarıyorsa başkalarının da bulmasına yardım eder.",
+  "en": "If rfiles is useful to you, it helps others find it."
  },
  {
   "id": "fb2db8ea",
@@ -3649,9 +3649,9 @@
  },
  {
   "id": "bc982215",
-  "key": "rustyfiles işinize yarıyor mu? GitHub'da bir yıldız, başkalarının da bulmasına yardım eder.",
-  "tr": "rustyfiles işinize yarıyor mu? GitHub'da bir yıldız, başkalarının da bulmasına yardım eder.",
-  "en": "Enjoying rustyfiles? A star on GitHub helps others find it."
+  "key": "rfiles işinize yarıyor mu? GitHub'da bir yıldız, başkalarının da bulmasına yardım eder.",
+  "tr": "rfiles işinize yarıyor mu? GitHub'da bir yıldız, başkalarının da bulmasına yardım eder.",
+  "en": "Enjoying rfiles? A star on GitHub helps others find it."
  },
  {
   "id": "86fc237f",
@@ -3667,21 +3667,21 @@
  },
  {
   "id": "6685455e",
-  "key": "Aç / Kaydet pencerelerinde rustyfiles",
-  "tr": "Aç / Kaydet pencerelerinde rustyfiles",
-  "en": "rustyfiles in Open / Save dialogs"
+  "key": "Aç / Kaydet pencerelerinde rfiles",
+  "tr": "Aç / Kaydet pencerelerinde rfiles",
+  "en": "rfiles in Open / Save dialogs"
  },
  {
   "id": "17d99477",
-  "key": "Uygulamaların dosya açma, kaydetme ve klasör seçme pencereleri rustyfiles ile açılır. Pencereye kendi seçeneklerini ekleyen uygulamalarda Windows'un penceresi açılır. Açık uygulamalarda, yeniden başlatınca geçerli olur.",
-  "tr": "Uygulamaların dosya açma, kaydetme ve klasör seçme pencereleri rustyfiles ile açılır. Pencereye kendi seçeneklerini ekleyen uygulamalarda Windows'un penceresi açılır. Açık uygulamalarda, yeniden başlatınca geçerli olur.",
-  "en": "Apps' open, save and select-folder dialogs open in rustyfiles. Apps that add their own options to the dialog keep Windows' one. Apps already running pick it up once restarted."
+  "key": "Uygulamaların dosya açma, kaydetme ve klasör seçme pencereleri rfiles ile açılır. Pencereye kendi seçeneklerini ekleyen uygulamalarda Windows'un penceresi açılır. Açık uygulamalarda, yeniden başlatınca geçerli olur.",
+  "tr": "Uygulamaların dosya açma, kaydetme ve klasör seçme pencereleri rfiles ile açılır. Pencereye kendi seçeneklerini ekleyen uygulamalarda Windows'un penceresi açılır. Açık uygulamalarda, yeniden başlatınca geçerli olur.",
+  "en": "Apps' open, save and select-folder dialogs open in rfiles. Apps that add their own options to the dialog keep Windows' one. Apps already running pick it up once restarted."
  },
  {
   "id": "dc29599a",
-  "key": "rustyfiles_dialog.dll bulunamadı: rustyfiles'ı kurulum betiğiyle kurun.",
-  "tr": "rustyfiles_dialog.dll bulunamadı: rustyfiles'ı kurulum betiğiyle kurun.",
-  "en": "rustyfiles_dialog.dll is missing: install rustyfiles with the install script."
+  "key": "rustyfiles_dialog.dll bulunamadı: rfiles'ı kurulum betiğiyle kurun.",
+  "tr": "rustyfiles_dialog.dll bulunamadı: rfiles'ı kurulum betiğiyle kurun.",
+  "en": "rustyfiles_dialog.dll is missing: install rfiles with the install script."
  },
  {
   "id": "95e66d77",
@@ -4399,9 +4399,9 @@
  },
  {
   "id": "346e8945",
-  "key": "Windows başladığında rustyfiles'ı aç",
-  "tr": "Windows başladığında rustyfiles'ı aç",
-  "en": "Open rustyfiles when Windows starts"
+  "key": "Windows başladığında rfiles'ı aç",
+  "tr": "Windows başladığında rfiles'ı aç",
+  "en": "Open rfiles when Windows starts"
  },
  {
   "id": "e6672c8e",
@@ -4417,9 +4417,9 @@
  },
  {
   "id": "b069751d",
-  "key": "Klasörler ve Win+E rustyfiles ile açılır. Yalnızca bu kullanıcı için; istediğiniz an geri alınır.",
-  "tr": "Klasörler ve Win+E rustyfiles ile açılır. Yalnızca bu kullanıcı için; istediğiniz an geri alınır.",
-  "en": "Folders and Win+E open with rustyfiles. Applies to this user only and can be reverted at any time."
+  "key": "Klasörler ve Win+E rfiles ile açılır. Yalnızca bu kullanıcı için; istediğiniz an geri alınır.",
+  "tr": "Klasörler ve Win+E rfiles ile açılır. Yalnızca bu kullanıcı için; istediğiniz an geri alınır.",
+  "en": "Folders and Win+E open with rfiles. Applies to this user only and can be reverted at any time."
  },
  {
   "id": "c8f73ffb",
@@ -5029,15 +5029,15 @@
  },
  {
   "id": "05fcfc72",
-  "key": "Kopyalama, taşıma, sıkıştırma 10 saniyeden uzun sürdüyse ve rustyfiles önde değilse",
-  "tr": "Kopyalama, taşıma, sıkıştırma 10 saniyeden uzun sürdüyse ve rustyfiles önde değilse",
-  "en": "When copying, moving or compressing took over 10 seconds and rustyfiles isn't in front"
+  "key": "Kopyalama, taşıma, sıkıştırma 10 saniyeden uzun sürdüyse ve rfiles önde değilse",
+  "tr": "Kopyalama, taşıma, sıkıştırma 10 saniyeden uzun sürdüyse ve rfiles önde değilse",
+  "en": "When copying, moving or compressing took over 10 seconds and rfiles isn't in front"
  },
  {
   "id": "bcbb332c",
-  "key": "rustyfiles'ı aç",
-  "tr": "rustyfiles'ı aç",
-  "en": "Open rustyfiles"
+  "key": "rfiles'ı aç",
+  "tr": "rfiles'ı aç",
+  "en": "Open rfiles"
  },
  {
   "id": "26a92876",
@@ -5455,9 +5455,9 @@
  },
  {
   "id": "7c98a34c",
-  "key": "rustyfiles'ta aç",
-  "tr": "rustyfiles'ta aç",
-  "en": "Open in rustyfiles"
+  "key": "rfiles'ta aç",
+  "tr": "rfiles'ta aç",
+  "en": "Open in rfiles"
  },
  {
   "id": "69c2d458",
@@ -5515,9 +5515,9 @@
  },
  {
   "id": "effdf47b",
-  "key": "Açılınca rustyfiles arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge)",
-  "tr": "Açılınca rustyfiles arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge)",
-  "en": "When on, rustyfiles keeps running in the background and opens when Windows starts (icon in the notification area)"
+  "key": "Açılınca rfiles arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge)",
+  "tr": "Açılınca rfiles arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge)",
+  "en": "When on, rfiles keeps running in the background and opens when Windows starts (icon in the notification area)"
  },
  {
   "id": "38e53d30",
@@ -5671,15 +5671,15 @@
  },
  {
   "id": "1a86cf38",
-  "key": "Boşluk ile önizleme. Ayrı bir program olarak çalışır: rustyfiles'ı yavaşlatmaz, biri kapanınca öteki etkilenmez.",
-  "tr": "Boşluk ile önizleme. Ayrı bir program olarak çalışır: rustyfiles'ı yavaşlatmaz, biri kapanınca öteki etkilenmez.",
-  "en": "Preview with Space. Runs as a separate program: it doesn't slow rustyfiles down, and if one closes the other is unaffected."
+  "key": "Boşluk ile önizleme. Ayrı bir program olarak çalışır: rfiles'ı yavaşlatmaz, biri kapanınca öteki etkilenmez.",
+  "tr": "Boşluk ile önizleme. Ayrı bir program olarak çalışır: rfiles'ı yavaşlatmaz, biri kapanınca öteki etkilenmez.",
+  "en": "Preview with Space. Runs as a separate program: it doesn't slow rfiles down, and if one closes the other is unaffected."
  },
  {
   "id": "8a926ab5",
-  "key": "DirectLook arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge); rustyfiles kapalıyken de",
-  "tr": "DirectLook arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge); rustyfiles kapalıyken de",
-  "en": "DirectLook keeps running in the background and opens when Windows starts (icon in the notification area), even while rustyfiles is closed"
+  "key": "DirectLook arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge); rfiles kapalıyken de",
+  "tr": "DirectLook arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge); rfiles kapalıyken de",
+  "en": "DirectLook keeps running in the background and opens when Windows starts (icon in the notification area), even while rfiles is closed"
  },
  {
   "id": "9605c848",

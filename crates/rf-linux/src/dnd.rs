@@ -1,5 +1,5 @@
-//! Drag files out of rustyfiles (to Explorer, the desktop, other apps — or back into
-//! rustyfiles itself) with the standard shell data object and drag image.
+//! Drag files out of rfiles (to Explorer, the desktop, other apps — or back into
+//! rfiles itself) with the standard shell data object and drag image.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
 #![allow(unused)]

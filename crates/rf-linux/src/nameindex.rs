@@ -1,7 +1,7 @@
 //! A name index of whole folders: searching it takes milliseconds where walking the disk takes
 //! seconds to minutes.
 //!
-//! Linux version of upstream's `rf-win/src/nameindex.rs` (rustyfiles 0.4.0, with the name
+//! Linux version of upstream's `rf-win/src/nameindex.rs` (rfiles 0.4.0, with the name
 //! table of upstream `c8e1e57`), kept in the same order, function by function, so an upstream
 //! change can be carried over by comparing the two files. It isn't shared with rf-win because
 //! the parts that differ run through all of it:

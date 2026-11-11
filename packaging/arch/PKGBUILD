@@ -1,14 +1,14 @@
 # Maintainer: Benjamin Fenech <benjamin@fenech.dev>
-# rustyfiles, Linux port: built from the latest commit of the GitHub repository.
+# rfiles, Linux port: built from the latest commit of the GitHub repository.
 # Build and install from this folder with: makepkg -si
 
-pkgname=rustyfiles-git
-_name=rustyfiles
+pkgname=rfiles-git
+_name=rfiles
 pkgver=0.3.0
 pkgrel=1
 pkgdesc='Fast file manager with tabs, dual panes and previews'
 arch=('x86_64' 'aarch64')
-url='https://github.com/benjaminfenech/rustyfiles-linux'
+url='https://github.com/benjaminfenech/rfiles'
 license=('MIT')
 depends=(
   'alsa-lib'
@@ -29,7 +29,7 @@ optdepends=(
   'poppler: PDF previews'
   'libavif: full-size AVIF images'
   'libheif: full-size HEIC images'
-  'ffmpeg: video formats rustyfiles cannot play on its own'
+  'ffmpeg: video formats rfiles cannot play on its own'
   'kio-fuse: network locations (smb://, sftp://, ftp://) on KDE'
   'gvfs-smb: network locations on GNOME and others (with gvfs)'
   'udisks2: mounting and ejecting drives'
@@ -37,10 +37,12 @@ optdepends=(
   'git: git status and actions in repositories'
 )
 provides=("$_name")
-conflicts=("$_name")
+# rfiles was called rustyfiles before: this package takes the old one's place
+conflicts=("$_name" 'rustyfiles' 'rustyfiles-git')
+replaces=('rustyfiles-git')
 options=('!lto')
-# CI builds a given checkout instead: RUSTYFILES_SOURCE='git+file:///path#commit=<sha>'
-source=("$_name::${RUSTYFILES_SOURCE:-git+$url.git}")
+# CI builds a given checkout instead: RFILES_SOURCE='git+file:///path#commit=<sha>'
+source=("$_name::${RFILES_SOURCE:-git+$url.git}")
 sha256sums=('SKIP')
 
 pkgver() {
@@ -66,16 +68,16 @@ build() {
 
 package() {
   cd "$_name"
-  # DirectLook is found next to rustyfiles: both live in /usr/lib/rustyfiles
-  install -Dm755 target/release/rustyfiles "$pkgdir/usr/lib/$_name/rustyfiles"
+  # DirectLook is found next to rfiles: both live in /usr/lib/rfiles
+  install -Dm755 target/release/rfiles "$pkgdir/usr/lib/$_name/rfiles"
   install -Dm755 target/release/directlook "$pkgdir/usr/lib/$_name/directlook"
   install -dm755 "$pkgdir/usr/bin"
-  ln -s "/usr/lib/$_name/rustyfiles" "$pkgdir/usr/bin/rustyfiles"
+  ln -s "/usr/lib/$_name/rfiles" "$pkgdir/usr/bin/rfiles"
 
-  install -Dm644 packaging/linux/rustyfiles.desktop "$pkgdir/usr/share/applications/rustyfiles.desktop"
-  install -Dm644 packaging/linux/io.github.benjaminfenech.rustyfiles.metainfo.xml \
-    "$pkgdir/usr/share/metainfo/io.github.benjaminfenech.rustyfiles.metainfo.xml"
-  install -Dm644 crates/rf-app/assets/rustyfiles.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/rustyfiles.svg"
-  install -Dm644 crates/rf-app/assets/rustyfiles.png "$pkgdir/usr/share/icons/hicolor/256x256/apps/rustyfiles.png"
+  install -Dm644 packaging/linux/rfiles.desktop "$pkgdir/usr/share/applications/rfiles.desktop"
+  install -Dm644 packaging/linux/io.github.benjaminfenech.rfiles.metainfo.xml \
+    "$pkgdir/usr/share/metainfo/io.github.benjaminfenech.rfiles.metainfo.xml"
+  install -Dm644 crates/rf-app/assets/rfiles.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/rfiles.svg"
+  install -Dm644 crates/rf-app/assets/rfiles.png "$pkgdir/usr/share/icons/hicolor/256x256/apps/rfiles.png"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

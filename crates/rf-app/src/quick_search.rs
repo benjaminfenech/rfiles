@@ -1,9 +1,9 @@
 //! Quick search (Alt+Space by default): a small window over whatever app is in front that finds
-//! installed apps, files and folders (rustyfiles' name index), Chrome / Edge bookmarks, and
+//! installed apps, files and folders (rfiles' name index), Chrome / Edge bookmarks, and
 //! offers a web search. Enter opens, Ctrl+Enter shows the item in its folder, Shift+Enter
 //! previews it with DirectLook, Esc closes. What is opened often comes first.
 //!
-//! The hotkey is registered by the running rustyfiles (`rf_win::hotkey`); with "keep running in
+//! The hotkey is registered by the running rfiles (`rf_win::hotkey`); with "keep running in
 //! the background" on it works while no window is open.
 
 use std::collections::HashMap;
@@ -25,7 +25,7 @@ use crate::theme::{self, Palette};
 
 /// The shortcut editor records into the quick-search hotkey under this name (keymap_editor).
 pub const CAPTURE_ACTION: &str = "@quick-search";
-/// `rustyfiles.exe --quick-search` opens it too (in the running rustyfiles).
+/// `rfiles.exe --quick-search` opens it too (in the running rfiles).
 pub const LAUNCH_ARG: &str = "--quick-search";
 
 const WIDTH: f32 = 680.;
@@ -45,16 +45,16 @@ static HELD: Mutex<Option<(Option<String>, Option<rf_win::hotkey::HotkeyError>)>
 
 static NO_HOTKEY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
-/// A side copy of rustyfiles (the taskbar preview) must not take the user's hotkey.
+/// A side copy of rfiles (the taskbar preview) must not take the user's hotkey.
 pub fn disable_hotkey() {
     NO_HOTKEY.store(true, std::sync::atomic::Ordering::Relaxed);
 }
 
-/// This process registers the hotkey: the one rustyfiles (not DirectLook, not a test copy).
+/// This process registers the hotkey: the one rfiles (not DirectLook, not a test copy).
 fn hotkey_owner() -> bool {
     !crate::background::DIRECTLOOK_PROCESS.load(std::sync::atomic::Ordering::Relaxed)
         && !NO_HOTKEY.load(std::sync::atomic::Ordering::Relaxed)
-        && std::env::var_os("RUSTYFILES_MULTI_INSTANCE").is_none()
+        && std::env::var_os("RFILES_MULTI_INSTANCE").is_none()
 }
 
 /// Apps, files and pages being started on other threads: the app does not quit under them
@@ -543,7 +543,7 @@ fn search(query: &str, engine: WebSearch, with_bookmarks: bool, index_on: bool) 
     // files and folders: the name index, every indexed drive
     let mut index_building = false;
     let status = rf_win::indexer::status();
-    // on in Settings but not started yet (it starts a few seconds after rustyfiles): coming
+    // on in Settings but not started yet (it starts a few seconds after rfiles): coming
     let index_off = !index_on;
     if index_on && status.is_empty() {
         index_building = true;
@@ -683,7 +683,7 @@ pub fn toggle(cx: &mut App) {
         })
         .map(|d| d.id());
     // automated UI tests: shown without taking the foreground from the user
-    let test = std::env::var_os("RUSTYFILES_QUICK_SEARCH_NOACTIVATE").is_some();
+    let test = std::env::var_os("RFILES_QUICK_SEARCH_NOACTIVATE").is_some();
     let opts = WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(Bounds::new(origin, size(px(WIDTH), px(64.))))),
         display_id,
@@ -820,7 +820,7 @@ impl QuickSearch {
                 crate::look::ipc::send(crate::look::ipc::Msg::Show(path.clone(), crate::look::ShowOpts::default()), true);
             }
             (Target::Path { path, dir: true }, How::Open) => {
-                // a folder opens in rustyfiles
+                // a folder opens in rfiles
                 let msg = path.display().to_string();
                 cx.defer(move |cx| crate::workspace::route_ipc(msg, cx));
             }

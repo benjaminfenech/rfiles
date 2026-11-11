@@ -1,4 +1,4 @@
-//! A preview of our own taskbar (`rustyfiles --bar-preview`): the running apps as buttons,
+//! A preview of our own taskbar (`rfiles --bar-preview`): the running apps as buttons,
 //! grouped like Explorer's taskbar, live. An ordinary window: it doesn't reserve screen space
 //! and doesn't touch Explorer's taskbar (phase 2 of notes/design: görev çubuğu).
 
@@ -41,7 +41,7 @@ pub fn open(cx: &mut App) {
         ..gpui_kit::component::TitleBar::window_options()
     };
     let r = gpui_kit::open_window(opts, cx, |window, cx| {
-        window.set_window_title("rustyfiles bar (preview)");
+        window.set_window_title("rfiles bar (preview)");
         let own = crate::look::window::hwnd_of(window);
         cx.new(|cx| {
             let (tx, mut rx) = futures::channel::mpsc::unbounded::<()>();

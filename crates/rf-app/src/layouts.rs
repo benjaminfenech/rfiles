@@ -1,6 +1,6 @@
 //! Per-folder layout memory (Settings → Layout → "Sync layout across folders" off): each
 //! folder remembers its view, sort and grouping, like Files. Stored in
-//! `%APPDATA%\rustyfiles\layouts.json`, written in the background after a change.
+//! `%APPDATA%\rfiles\layouts.json`, written in the background after a change.
 
 use std::collections::HashMap;
 use std::path::Path;

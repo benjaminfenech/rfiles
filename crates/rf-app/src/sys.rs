@@ -223,7 +223,7 @@ pub fn native_separators(p: std::path::PathBuf) -> std::path::PathBuf {
 pub fn app_id(name: &str) -> Option<String> {
     // Flatpak: the main window carries the app id, which names its desktop entry (icon, dock)
     #[cfg(unix)]
-    if let Some(id) = rf_win::sandbox::flatpak_id().filter(|_| name == "rustyfiles") {
+    if let Some(id) = rf_win::sandbox::flatpak_id().filter(|_| name == "rfiles") {
         return Some(id.to_string());
     }
     (!cfg!(windows)).then(|| name.to_string())

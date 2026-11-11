@@ -315,7 +315,7 @@ fn qs_command() -> &'static str {
         if let Some(id) = rf_win::sandbox::flatpak_id() {
             return format!("flatpak run {id} --quick-search");
         }
-        "rustyfiles --quick-search".to_string()
+        "rfiles --quick-search".to_string()
     })
 }
 
@@ -1413,7 +1413,7 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         p,
         L::Eye,
         t!("DirectLook'u kullan"),
-        Some(t!("Boşluk ile önizleme. Ayrı bir program olarak çalışır: rustyfiles'ı yavaşlatmaz, biri kapanınca öteki etkilenmez.")),
+        Some(t!("Boşluk ile önizleme. Ayrı bir program olarak çalışır: rfiles'ı yavaşlatmaz, biri kapanınca öteki etkilenmez.")),
         switch("dl-enabled", p, enabled, move |_, cx| {
             settings::update(cx, |s| s.directlook_enabled = !enabled);
             if enabled {
@@ -1426,12 +1426,12 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     if !enabled {
         return v;
     }
-    // Wayland has no global hotkeys: DirectLook works inside rustyfiles only
+    // Wayland has no global hotkeys: DirectLook works inside rfiles only
     v.push(windows_only(card(
         p,
         L::Monitor,
         t!("Explorer ve masaüstünde de Boşluk ile önizle"),
-        Some(t!("DirectLook arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge); rustyfiles kapalıyken de")),
+        Some(t!("DirectLook arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge); rfiles kapalıyken de")),
         switch("look-wide", p, l.look_system_wide, {
             let on = l.look_system_wide;
             move |_, cx| {
@@ -1488,19 +1488,19 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         ),
         card(p, L::PictureInPicture, t!("Her zaman üstte"), None, lsw("look-top", p, l.look_topmost, |s, v| s.look_topmost = v)),
         windows_only(card(p, L::PanelBottom, t!("Görev çubuğunda göster"), None, lsw("look-taskbar", p, l.look_show_in_taskbar, |s, v| s.look_show_in_taskbar = v))),
-        // Linux: DirectLook has no tray icon of its own (it runs inside rustyfiles only)
+        // Linux: DirectLook has no tray icon of its own (it runs inside rfiles only)
         windows_only(card(
             p,
             L::AppWindow,
             t!("Bildirim alanında DirectLook simgesi"),
-            Some(t!("rustyfiles arka planda çalışırken gösterilmez: tek simge rustyfiles'ınkidir")),
+            Some(t!("rfiles arka planda çalışırken gösterilmez: tek simge rfiles'ınkidir")),
             lsw("look-tray", p, l.look_tray_icon, |s, v| s.look_tray_icon = v),
         )),
         card(
             p,
             L::MousePointerClick,
             t!("Açılınca pencereyi odakla"),
-            Some(if ON_WINDOWS { t!("Kapalıyken klavye Explorer'da kalır: oklarla dosyalar arasında gezinilir") } else { t!("When off, the keyboard stays in rustyfiles: arrow keys move between files") }),
+            Some(if ON_WINDOWS { t!("Kapalıyken klavye Explorer'da kalır: oklarla dosyalar arasında gezinilir") } else { t!("When off, the keyboard stays in rfiles: arrow keys move between files") }),
             lsw("look-focus", p, l.look_focus_on_open, |s, v| s.look_focus_on_open = v),
         ),
         card(p, L::CircleX, t!("Başka pencereye geçince kapat"), Some(t!("Sabitlenmiş pencereler açık kalır")), lsw("look-lostfocus", p, l.look_close_on_lost_focus, |s, v| s.look_close_on_lost_focus = v)),
@@ -1648,14 +1648,14 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
     let dialogs_on = crate::FILE_DIALOGS.load(std::sync::atomic::Ordering::Relaxed);
     // (only looks: the copy is made when the switch is turned on)
     let has_dll = std::env::current_exe().is_ok_and(|e| e.with_file_name(rf_win::dialog_reg::DLL_NAME).exists());
-    // while rustyfiles is the default file manager: archives can be given to it too (only the
+    // while rfiles is the default file manager: archives can be given to it too (only the
     // user can pick the default app, in Windows' own page)
     let archives = dfm_on.then(|| {
         card(
             p,
             L::FileArchive,
-            t!("Arşivleri rustyfiles ile aç"),
-            Some(t!("Zip, 7z, rar, tar için varsayılan uygulama Windows'ta seçilir. Açılan sayfada rustyfiles'ı varsayılan yapın.")),
+            t!("Arşivleri rfiles ile aç"),
+            Some(t!("Zip, 7z, rar, tar için varsayılan uygulama Windows'ta seçilir. Açılan sayfada rfiles'ı varsayılan yapın.")),
             button("dfm-arch", p, t!("Varsayılan uygulamalar"), |_, _| {
                 let page = format!("ms-settings:defaultapps?registeredAppUser={}", rf_win::default_fm::APP_NAME);
                 if let Err(e) = rf_win::shell::open(std::path::Path::new(&page)) {
@@ -1680,7 +1680,7 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         card(
             p,
             L::Power,
-            if ON_WINDOWS { t!("Windows başladığında rustyfiles'ı aç") } else { t!("Open rustyfiles when you log in") },
+            if ON_WINDOWS { t!("Windows başladığında rfiles'ı aç") } else { t!("Open rfiles when you log in") },
             None,
             switch("start-win", p, start_on, move |window, _| {
                 if let Ok(exe) = std::env::current_exe() {
@@ -1702,7 +1702,7 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             p,
             L::Bell,
             t!("Uzun işlemler bitince bildirim göster"),
-            Some(t!("Kopyalama, taşıma, sıkıştırma 10 saniyeden uzun sürdüyse ve rustyfiles önde değilse")),
+            Some(t!("Kopyalama, taşıma, sıkıştırma 10 saniyeden uzun sürdüyse ve rfiles önde değilse")),
             sw("notify-ops", p, s.notify_long_ops, |s, v| s.notify_long_ops = v),
         ),
         section(p, t!("Performans")),
@@ -1777,9 +1777,9 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             L::AppWindow,
             t!("Varsayılan dosya yöneticisi olarak ayarla"),
             Some(if ON_WINDOWS {
-                t!("Klasörler ve Win+E rustyfiles ile açılır. Yalnızca bu kullanıcı için; istediğiniz an geri alınır.")
+                t!("Klasörler ve Win+E rfiles ile açılır. Yalnızca bu kullanıcı için; istediğiniz an geri alınır.")
             } else {
-                t!("Folders opened from other apps, and \"Show in folder\" in browsers, open in rustyfiles. Applies to this user only; turning it off brings back the previous file manager.")
+                t!("Folders opened from other apps, and \"Show in folder\" in browsers, open in rfiles. Applies to this user only; turning it off brings back the previous file manager.")
             }),
             switch("dfm", p, dfm_on, move |window, _| {
                 let exe = std::env::current_exe().map(|e| e.display().to_string()).unwrap_or_default();
@@ -1796,15 +1796,15 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         ),
     ];
     out.extend(archives.filter(|_| ON_WINDOWS));
-    // other apps' Open / Save / folder dialogs show rustyfiles (needs rustyfiles_dialog.dll)
+    // other apps' Open / Save / folder dialogs show rfiles (needs rustyfiles_dialog.dll)
     out.push(windows_only(card(
         p,
         L::FolderOpen,
-        t!("Aç / Kaydet pencerelerinde rustyfiles"),
+        t!("Aç / Kaydet pencerelerinde rfiles"),
         Some(if has_dll {
-            t!("Uygulamaların dosya açma, kaydetme ve klasör seçme pencereleri rustyfiles ile açılır. Pencereye kendi seçeneklerini ekleyen uygulamalarda Windows'un penceresi açılır. Açık uygulamalarda, yeniden başlatınca geçerli olur.")
+            t!("Uygulamaların dosya açma, kaydetme ve klasör seçme pencereleri rfiles ile açılır. Pencereye kendi seçeneklerini ekleyen uygulamalarda Windows'un penceresi açılır. Açık uygulamalarda, yeniden başlatınca geçerli olur.")
         } else {
-            t!("rustyfiles_dialog.dll bulunamadı: rustyfiles'ı kurulum betiğiyle kurun.")
+            t!("rustyfiles_dialog.dll bulunamadı: rfiles'ı kurulum betiğiyle kurun.")
         }),
         switch("dlg", p, dialogs_on, move |window, _| {
             if !has_dll && !dialogs_on {
@@ -1851,7 +1851,7 @@ fn update_card(p: &Palette, s: &Settings) -> AnyElement {
         State::NotInstalled => t!("Bu kopya kurulum programıyla kurulmadı: güncellemeleri GitHub'dan indirin.").to_string(),
         State::Idle => t!("Güncellemeler GitHub'dan gelir.").to_string(),
         State::Checking => t!("Denetleniyor…").to_string(),
-        State::UpToDate => t!("rustyfiles güncel.").to_string(),
+        State::UpToDate => t!("rfiles güncel.").to_string(),
         State::Downloading(v, pct) => format!("{} {v} · %{pct}", t!("İndiriliyor:")),
         State::Ready(v) => format!("{} {v}. {}", t!("İndirildi:"), t!("Yeniden başlatınca uygulanır.")),
         State::Failed(e) => format!("{} {e}", t!("Denetlenemedi:")),
@@ -1938,11 +1938,11 @@ pub(crate) fn check_updates_now(cx: &mut App) {
     .detach();
 }
 
-const REPO_URL: &str = "https://github.com/gelenmedya/rustyfiles";
-const SITE_URL: &str = "https://rustyfiles.com";
-const DISCORD_URL: &str = "https://discord.gg/K2banZ36zJ";
-const ISSUES_URL: &str = "https://github.com/gelenmedya/rustyfiles/issues/new";
-const RELEASES_URL: &str = "https://github.com/gelenmedya/rustyfiles/releases";
+const REPO_URL: &str = "https://github.com/benjaminfenech/rfiles";
+const ISSUES_URL: &str = "https://github.com/benjaminfenech/rfiles/issues/new";
+const RELEASES_URL: &str = "https://github.com/benjaminfenech/rfiles/releases";
+/// The project rfiles grew out of.
+const UPSTREAM_URL: &str = "https://github.com/gelenmedya/rustyfiles";
 
 fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
     let ver = crate::installer::version_full();
@@ -1953,9 +1953,9 @@ fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
         card(
             p,
             L::FolderOpen,
-            "rustyfiles",
+            "rfiles",
             Some(&version),
-            button("copy-ver", p, t!("Kopyala"), move |_, cx| cx.write_to_clipboard(ClipboardItem::new_string(format!("rustyfiles {ver}")))),
+            button("copy-ver", p, t!("Kopyala"), move |_, cx| cx.write_to_clipboard(ClipboardItem::new_string(format!("rfiles {ver}")))),
         ),
         // Velopack updates are Windows' installer; Linux gets updates from its package
         windows_only(update_card(p, &s)),
@@ -1967,12 +1967,11 @@ fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
             sw("auto-upd", p, s.auto_update, |s, v| s.auto_update = v),
         )),
         section(p, "GitHub"),
-        link_row(p, "gh-star", L::Star, t!("GitHub'da yıldız ver"), Some(t!("rustyfiles işinize yarıyorsa başkalarının da bulmasına yardım eder.")), |_, _| open_url(REPO_URL)),
+        link_row(p, "gh-star", L::Star, t!("GitHub'da yıldız ver"), Some(t!("rfiles işinize yarıyorsa başkalarının da bulmasına yardım eder.")), |_, _| open_url(REPO_URL)),
         link_row(p, "gh-issue", L::MessageSquare, t!("Hata bildir ya da öneride bulun"), None, |_, _| open_url(ISSUES_URL)),
         link_row(p, "gh-notes", L::ScrollText, t!("Sürüm notları"), None, |_, _| open_url(RELEASES_URL)),
-        section(p, t!("Topluluk")),
-        link_row(p, "site", L::Globe, t!("Web sitesi"), Some("rustyfiles.com"), |_, _| open_url(SITE_URL)),
-        link_row(p, "discord", L::Users, t!("Discord sunucusu"), Some(t!("Soru sor, fikir paylaş, yeni sürümlerden haberdar ol.")), |_, _| open_url(DISCORD_URL)),
+        // rfiles began as the Linux port of rustyfiles
+        link_row(p, "upstream", L::GitFork, "Based on rustyfiles", Some("by Özer Güzel: github.com/gelenmedya/rustyfiles"), |_, _| open_url(UPSTREAM_URL)),
         div()
             .px_1()
             .text_xs()
@@ -2062,7 +2061,7 @@ fn pick_into(_window: &mut Window, cx: &mut App, title: &str, target: PickTarget
             0 => pick(owner, &title, Pick::File { filters: &f(&images) }),
             // Linux programs have no extension to filter on
             1 => pick(owner, &title, Pick::File { filters: &if cfg!(windows) { f(&exe) } else { Vec::new() } }),
-            2 => pick(owner, &title, Pick::Save { filters: &f(&toml), default_name: "rustyfiles-ayarlar.toml" }),
+            2 => pick(owner, &title, Pick::Save { filters: &f(&toml), default_name: "rfiles-ayarlar.toml" }),
             _ => pick(owner, &title, Pick::File { filters: &f(&toml) }),
         };
         let _ = tx.send(r);

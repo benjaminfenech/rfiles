@@ -6,9 +6,9 @@ use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-/// Socket path for an app of the bundle (rustyfiles and DirectLook are separate groups).
+/// Socket path for an app of the bundle (rfiles and DirectLook are separate groups).
 fn socket_for(app: &str) -> PathBuf {
-    let suffix = match std::env::var_os("RUSTYFILES_CONFIG_DIR") {
+    let suffix = match std::env::var_os("RFILES_CONFIG_DIR") {
         Some(dir) => {
             use std::hash::{Hash, Hasher};
             let mut h = std::collections::hash_map::DefaultHasher::new();
@@ -46,7 +46,7 @@ static BOUND: Mutex<Vec<(String, UnixListener)>> = Mutex::new(Vec::new());
 
 /// Decides the role. `message` is sent to the primary when one exists ("" = just focus a new window/tab).
 pub fn acquire(message: &str) -> Role {
-    acquire_app("rustyfiles", message)
+    acquire_app("rfiles", message)
 }
 
 /// [`acquire`] for another application of the bundle (e.g. "directlook").
@@ -84,7 +84,7 @@ fn send(path: &std::path::Path, message: &str) -> bool {
 
 /// Serves the socket on a background thread; each received line is passed to `on_message`.
 pub fn serve(on_message: impl Fn(String) + Send + Sync + 'static) {
-    serve_app("rustyfiles", on_message)
+    serve_app("rfiles", on_message)
 }
 
 /// [`serve`] for another application of the bundle.

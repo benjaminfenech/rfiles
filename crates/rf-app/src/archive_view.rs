@@ -280,7 +280,7 @@ pub fn list_inside(archive: &Path, inner: &Path) -> anyhow::Result<Vec<Entry>> {
 
 /// Where items opened or copied out of archives are extracted.
 pub(crate) fn temp_root() -> PathBuf {
-    std::env::temp_dir().join("rustyfiles-arsiv")
+    std::env::temp_dir().join("rfiles-arsiv")
 }
 
 /// Extracts the given items (paths inside archives) into a new temp folder per archive and

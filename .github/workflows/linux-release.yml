@@ -56,7 +56,7 @@ jobs:
               # the tag first (a draft release has none until it's published), then the
               # release as a draft: it's published once the packages are attached
               gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$tag" -f sha="$GITHUB_SHA" >/dev/null
-              gh release create "$tag" --draft --verify-tag --title "rustyfiles ${tag#v}" \
+              gh release create "$tag" --draft --verify-tag --title "rfiles ${tag#v}" \
                 --notes-file packaging/linux/release-notes.md
               created=true
             fi
@@ -81,7 +81,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: rustyfiles-linux-*
+          pattern: rfiles-*
           path: dist
           merge-multiple: true
       - name: Wait for the release
@@ -93,7 +93,7 @@ jobs:
             sleep 60
           done
           echo "no release for $TAG after an hour: creating it"
-          gh release create "$TAG" --verify-tag --title "rustyfiles ${TAG#v}" --notes "Linux packages for $TAG."
+          gh release create "$TAG" --verify-tag --title "rfiles ${TAG#v}" --notes "Linux packages for $TAG."
       - name: Attach the packages and publish
         run: |
           ls -l dist

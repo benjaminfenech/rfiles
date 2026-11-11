@@ -18,7 +18,7 @@ pub(crate) fn spawn_detached(cmd: &mut std::process::Command) -> std::io::Result
 }
 
 /// `verb` None = open with the default app (`xdg-open`). "Open with" and the properties
-/// dialog are Windows shell verbs: Phase 1 (`.desktop` files) and rustyfiles' own window.
+/// dialog are Windows shell verbs: Phase 1 (`.desktop` files) and rfiles' own window.
 fn exec(path: &Path, verb: Option<&str>, args: Option<&str>) -> anyhow::Result<()> {
     match verb {
         None => {

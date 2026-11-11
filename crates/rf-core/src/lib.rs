@@ -1,4 +1,4 @@
-//! rf-core: platform-independent model for rustyfiles (entries, sorting, filtering, navigation).
+//! rf-core: platform-independent model for rfiles (entries, sorting, filtering, navigation).
 
 pub mod entry;
 pub mod format;

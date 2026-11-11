@@ -1,21 +1,21 @@
-# rustyfiles as a Flatpak. Build and install from the repository root with:
+# rfiles as a Flatpak. Build and install from the repository root with:
 #
 #   flatpak-builder --user --install --force-clean build-flatpak \
-#     packaging/flatpak/io.github.benjaminfenech.rustyfiles.yml
+#     packaging/flatpak/io.github.benjaminfenech.rfiles.yml
 #
 # A file manager works on the user's own files, apps and settings, so this sandbox is wide
 # open on purpose: the whole host filesystem, and `flatpak-spawn --host` (the
 # org.freedesktop.Flatpak name) to run host apps, terminals and tools (git, ffmpeg, poppler,
 # avif/heif tools, gio, thumbnailers). rf-linux's `sandbox` module does the rest.
-id: io.github.benjaminfenech.rustyfiles
+id: io.github.benjaminfenech.rfiles
 runtime: org.freedesktop.Platform
 runtime-version: "26.08"
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
-command: rustyfiles
-rename-desktop-file: rustyfiles.desktop
-rename-icon: rustyfiles
+command: rfiles
+rename-desktop-file: rfiles.desktop
+rename-icon: rfiles
 
 finish-args:
   - --share=ipc
@@ -40,33 +40,33 @@ finish-args:
   # notifications, the tray icon
   - --talk-name=org.freedesktop.Notifications
   - --talk-name=org.kde.StatusNotifierWatcher
-  # "Show in folder" from other apps when rustyfiles is the default file manager
+  # "Show in folder" from other apps when rfiles is the default file manager
   - --own-name=org.freedesktop.FileManager1
 
 modules:
-  - name: rustyfiles
+  - name: rfiles
     buildsystem: simple
     build-options:
       append-path: /usr/lib/sdk/rust-stable/bin
       env:
-        CARGO_HOME: /run/build/rustyfiles/cargo
-        CARGO_TARGET_DIR: /run/build/rustyfiles/target
+        CARGO_HOME: /run/build/rfiles/cargo
+        CARGO_TARGET_DIR: /run/build/rfiles/target
       # cargo downloads the crates (Flathub would need them listed as sources instead)
       build-args:
         - --share=network
     build-commands:
       - cargo build --locked --release -p rf-app --bins
-      # DirectLook is found next to rustyfiles
-      - install -Dm755 target/release/rustyfiles /app/lib/rustyfiles/rustyfiles
-      - install -Dm755 target/release/directlook /app/lib/rustyfiles/directlook
+      # DirectLook is found next to rfiles
+      - install -Dm755 target/release/rfiles /app/lib/rfiles/rfiles
+      - install -Dm755 target/release/directlook /app/lib/rfiles/directlook
       - install -dm755 /app/bin
-      - ln -s /app/lib/rustyfiles/rustyfiles /app/bin/rustyfiles
-      - install -Dm644 packaging/linux/rustyfiles.desktop /app/share/applications/rustyfiles.desktop
-      - install -Dm644 packaging/linux/io.github.benjaminfenech.rustyfiles.metainfo.xml
-        /app/share/metainfo/io.github.benjaminfenech.rustyfiles.metainfo.xml
-      - install -Dm644 crates/rf-app/assets/rustyfiles.svg /app/share/icons/hicolor/scalable/apps/rustyfiles.svg
-      - install -Dm644 crates/rf-app/assets/rustyfiles.png /app/share/icons/hicolor/256x256/apps/rustyfiles.png
-      - install -Dm644 LICENSE /app/share/licenses/rustyfiles/LICENSE
+      - ln -s /app/lib/rfiles/rfiles /app/bin/rfiles
+      - install -Dm644 packaging/linux/rfiles.desktop /app/share/applications/rfiles.desktop
+      - install -Dm644 packaging/linux/io.github.benjaminfenech.rfiles.metainfo.xml
+        /app/share/metainfo/io.github.benjaminfenech.rfiles.metainfo.xml
+      - install -Dm644 crates/rf-app/assets/rfiles.svg /app/share/icons/hicolor/scalable/apps/rfiles.svg
+      - install -Dm644 crates/rf-app/assets/rfiles.png /app/share/icons/hicolor/256x256/apps/rfiles.png
+      - install -Dm644 LICENSE /app/share/licenses/rfiles/LICENSE
     sources:
       - type: dir
         path: ../..
@@ -78,4 +78,4 @@ modules:
           - .claude
           - packaging/arch/src
           - packaging/arch/pkg
-          - packaging/arch/rustyfiles
+          - packaging/arch/rfiles

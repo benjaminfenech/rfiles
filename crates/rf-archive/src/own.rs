@@ -28,7 +28,7 @@ pub(crate) fn describe(e: &rarchive::Error) -> String {
     match e {
         E::Io(x) => format!("Arşiv dosyası okunamadı: {x}"),
         E::NotArchive => "Bu dosya bir arşiv değil ya da başı bozuk.".into(),
-        E::OldFormat => "Bu, RAR 1.3/1.4 biçiminde çok eski bir arşiv (1990'lar); rustyfiles bu biçimi açmıyor. WinRAR ya da 7-Zip açabilir.".into(),
+        E::OldFormat => "Bu, RAR 1.3/1.4 biçiminde çok eski bir arşiv (1990'lar); rfiles bu biçimi açmıyor. WinRAR ya da 7-Zip açabilir.".into(),
         E::Unsupported(what) => unsupported(what),
         E::Corrupt(what) => format!("Arşiv bozuk ya da yarım inmiş; yeniden indirmeyi deneyin. (Ayrıntı: {what})"),
         E::BadChecksum(name) => format!("\"{name}\" bozuk çıktı (sağlama tutmuyor). Arşiv hasarlı olabilir; yeniden indirmeyi deneyin."),
@@ -40,7 +40,7 @@ pub(crate) fn describe(e: &rarchive::Error) -> String {
 fn unsupported(what: &str) -> String {
     let feature = match what {
         "old RAR encryption" => {
-            return "Bu arşiv RAR 1.5/2.0'ın eski şifrelemesini kullanıyor; rustyfiles bunu açmıyor. WinRAR ya da 7-Zip açabilir.".into();
+            return "Bu arşiv RAR 1.5/2.0'ın eski şifrelemesini kullanıyor; rfiles bunu açmıyor. WinRAR ya da 7-Zip açabilir.".into();
         }
         "missing volume" => {
             return "Çok parçalı arşivin bir parçası eksik. Bütün parçaları (.part1.rar, .part2.rar… ya da .rar, .r00, .r01…) aynı klasöre koyup tekrar deneyin.".into();

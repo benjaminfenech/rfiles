@@ -1,4 +1,4 @@
-//! rustyfiles palette: Windows 11 Fluent surfaces + SwiftUI-like softness
+//! rfiles palette: Windows 11 Fluent surfaces + SwiftUI-like softness
 //! (rounded corners, gentle fills, calm secondary text).
 
 use gpui_kit::*;

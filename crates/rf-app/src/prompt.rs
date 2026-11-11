@@ -1,5 +1,5 @@
 //! A small Fluent dialog (title, message, optional text box, buttons) drawn by the app, so
-//! questions look like the rest of rustyfiles instead of a Win32 message box. One at a time;
+//! questions look like the rest of rfiles instead of a Win32 message box. One at a time;
 //! the workspace of its window paints it on top.
 
 use std::rc::Rc;

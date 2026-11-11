@@ -203,7 +203,7 @@ impl ImageCache {
 
     /// Large thumbnail (falls back to the large icon when the file has no thumbnail).
     /// The shell's picture for a parsing name (an app of "All apps": `shell:AppsFolder\<id>`).
-    /// Asked as a thumbnail: inside rustyfiles the icon of a Store app comes back as the shell's
+    /// Asked as a thumbnail: inside rfiles the icon of a Store app comes back as the shell's
     /// blank app placeholder, its thumbnail is the app's own logo.
     pub fn shell_icon(&mut self, parsing: &str, px: u32, cx: &mut Context<Self>) -> Option<Arc<RenderImage>> {
         let key = key_of(&[&"shell", &parsing, &px]);

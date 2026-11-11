@@ -1,6 +1,6 @@
-//! rustyfiles as the Open / Save dialog of other apps (see crates/rf-dialog). The DLL in the
-//! app starts `rustyfiles --pick <pipe>`; we read its request from the pipe, open a normal
-//! rustyfiles window with a strip at the bottom (name, file type, OK / Cancel) and write the
+//! rfiles as the Open / Save dialog of other apps (see crates/rf-dialog). The DLL in the
+//! app starts `rfiles --pick <pipe>`; we read its request from the pipe, open a normal
+//! rfiles window with a strip at the bottom (name, file type, OK / Cancel) and write the
 //! answer back. Opening a file in that window (double click, Enter) picks it.
 
 use std::cell::{Cell, RefCell};
@@ -44,7 +44,7 @@ impl PickSession {
         self.req.mode == Mode::Folder
     }
 
-    /// Written right here, before the window closes: when rustyfiles was started only for this
+    /// Written right here, before the window closes: when rfiles was started only for this
     /// dialog it quits with its last window, and an answer left to another thread could be lost.
     /// The app is already waiting to read, so the write doesn't block.
     fn answer(&self, resp: Response) {
@@ -516,13 +516,13 @@ mod tests {
     }
 }
 
-/// Appends a line to `%LOCALAPPDATA%/rustyfiles/dialog.log` (where the dialog DLL logs).
+/// Appends a line to `%LOCALAPPDATA%/rfiles/dialog.log` (where the dialog DLL logs).
 fn dialog_log(line: &str) {
     use std::io::Write;
     let Some(dir) = std::env::var_os("LOCALAPPDATA") else { return };
-    let path = PathBuf::from(dir).join("rustyfiles").join("dialog.log");
+    let path = PathBuf::from(dir).join("rfiles").join("dialog.log");
     let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs());
     if let Ok(mut f) = std::fs::OpenOptions::new().append(true).open(&path) {
-        let _ = writeln!(f, "{secs} rustyfiles[{}] app {} {line}", std::process::id(), env!("CARGO_PKG_VERSION"));
+        let _ = writeln!(f, "{secs} rfiles[{}] app {} {line}", std::process::id(), env!("CARGO_PKG_VERSION"));
     }
 }

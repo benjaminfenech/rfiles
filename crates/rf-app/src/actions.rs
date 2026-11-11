@@ -1,7 +1,7 @@
 use gpui_kit::*;
 
 gpui_kit::actions!(
-    rustyfiles,
+    rfiles,
     [
         GoBack,
         GoForward,
@@ -89,7 +89,9 @@ pub fn bind_user(cx: &mut App) {
     let map = cx.global::<crate::settings::Settings>().keybindings.clone();
     let mut bindings = Vec::new();
     for (keys, action) in map {
-        let name = if action.contains("::") { action.clone() } else { format!("rustyfiles::{action}") };
+        // shortcuts saved before the rename say `rustyfiles::`
+        let action = action.strip_prefix("rustyfiles::").map_or(action.clone(), |a| format!("rfiles::{a}"));
+        let name = if action.contains("::") { action.clone() } else { format!("rfiles::{action}") };
         match cx.build_action(&name, None) {
             Ok(a) => match KeyBinding::load(&keys, a, None, false, None, cx) {
                 Ok(b) => bindings.push(b),

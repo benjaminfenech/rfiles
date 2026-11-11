@@ -1143,8 +1143,8 @@ fn panel(ops: &Entity<Ops>, p: &Palette, cx: &App) -> Div {
 fn update_row(p: &Palette) -> Option<AnyElement> {
     use crate::installer::State;
     let (title, detail, pct, ready) = match crate::installer::state() {
-        State::Downloading(v, pct) => (t!("rustyfiles {v} indiriliyor").replace("{v}", &v), format!("%{pct}"), Some(pct), false),
-        State::Ready(v) => (t!("rustyfiles {v} hazır").replace("{v}", &v), t!("Yeniden başlatınca kurulur").to_string(), None, true),
+        State::Downloading(v, pct) => (t!("rfiles {v} indiriliyor").replace("{v}", &v), format!("%{pct}"), Some(pct), false),
+        State::Ready(v) => (t!("rfiles {v} hazır").replace("{v}", &v), t!("Yeniden başlatınca kurulur").to_string(), None, true),
         _ => return None,
     };
     Some(
@@ -1234,7 +1234,7 @@ pub fn update_toast(p: &Palette, picker: bool) -> Option<AnyElement> {
                     .child(Icon::new(L::RefreshCw).size(px(16.)).text_color(p.accent))
                     .child(
                         v_flex()
-                            .child(div().text_sm().font_weight(FontWeight::SEMIBOLD).child(t!("rustyfiles {v} hazır").replace("{v}", &v)))
+                            .child(div().text_sm().font_weight(FontWeight::SEMIBOLD).child(t!("rfiles {v} hazır").replace("{v}", &v)))
                             .child(div().text_xs().text_color(p.text_secondary).child(t!("Yeniden başlatınca kurulur"))),
                     )
                     .child(

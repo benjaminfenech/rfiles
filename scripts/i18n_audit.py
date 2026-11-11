@@ -13,7 +13,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 loc = pathlib.Path(sys.argv[1])
 src = json.loads((loc / "_source.json").read_text(encoding="utf-8"))
 # texts that are fine to keep as English everywhere
-keep = re.compile(r"^(rustyfiles|DirectLook|GPUI|Git|GitHub|Mica|Mica Alt|Acrylic|ZIP|RAR|7z|TAR|OK|PDF|SVG|PowerShell|Velopack|Unicode|SHA-?\d+|MD5|CRC32|[A-Z0-9+\-./ ]{1,6}|.*Ctrl.*|.*\{[^}]*\}.*)$")
+keep = re.compile(r"^(rfiles|DirectLook|GPUI|Git|GitHub|Mica|Mica Alt|Acrylic|ZIP|RAR|7z|TAR|OK|PDF|SVG|PowerShell|Velopack|Unicode|SHA-?\d+|MD5|CRC32|[A-Z0-9+\-./ ]{1,6}|.*Ctrl.*|.*\{[^}]*\}.*)$")
 report = {}
 for f in sorted(loc.glob("*.json")):
     if f.name.startswith("_") or f.stem == "en-GB":

@@ -64,7 +64,7 @@ fn any_case(glob: &str) -> String {
 fn uri_path(uri: &str) -> Option<PathBuf> {
     crate::fm_service::uri_to_path(uri)
 }
-const RUN_VALUE: &str = "rustyfiles";
+const RUN_VALUE: &str = "rfiles";
 
 /// Linux: "start with Windows" is the XDG autostart entry
 /// (`$XDG_CONFIG_HOME/autostart/<name>.desktop`) that desktops run at login.
@@ -111,6 +111,70 @@ fn set_in(dir: &Path, name: &str, exe: &Path, args: &[&str], on: bool) -> anyhow
     Ok(())
 }
 
+/// The arguments of a desktop entry's `Exec=` value, unquoted (the reverse of [`exec_quote`]).
+pub(crate) fn exec_args(exec: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut cur: Option<String> = None;
+    let mut chars = exec.chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '"' => {
+                let s = cur.get_or_insert_with(String::new);
+                while let Some(c) = chars.next() {
+                    match c {
+                        '\\' => s.extend(chars.next()),
+                        '"' => break,
+                        c => s.push(c),
+                    }
+                }
+            }
+            c if c.is_whitespace() => out.extend(cur.take()),
+            c => cur.get_or_insert_with(String::new).push(c),
+        }
+    }
+    out.extend(cur);
+    out.into_iter().map(|a| a.replace("%%", "%")).collect()
+}
+
+/// The program and arguments an autostart entry `name` runs, when there is one.
+fn autostart_exec(dir: &Path, name: &str) -> Option<Vec<String>> {
+    let text = std::fs::read_to_string(dir.join(format!("{name}.desktop"))).ok()?;
+    let exec = text.lines().find_map(|l| l.strip_prefix("Exec="))?;
+    Some(exec_args(exec)).filter(|a| !a.is_empty())
+}
+
+/// Whether `prog` (an entry's program) is an absolute path that no longer exists: the app it
+/// started was moved, renamed or uninstalled. `flatpak` and other bare names never count.
+fn gone(prog: &str) -> bool {
+    Path::new(prog).is_absolute() && !Path::new(prog).exists()
+}
+
+/// rfiles was called rustyfiles before: its autostart entry (`old`) whose program is gone
+/// becomes ours, for `exe`, with the same arguments. True when it did.
+pub fn adopt_renamed_autostart(old: &str, exe: &Path) -> bool {
+    autostart_dir().is_some_and(|d| adopt_in(&d, old, RUN_VALUE, exe))
+}
+
+/// An autostart entry `name` whose program is gone (it moved with a rename) starts `exe`
+/// instead, with the same arguments. True when it did.
+pub fn repoint_autostart(name: &str, exe: &Path) -> bool {
+    autostart_dir().is_some_and(|d| adopt_in(&d, name, name, exe))
+}
+
+fn adopt_in(dir: &Path, old: &str, new: &str, exe: &Path) -> bool {
+    let Some(args) = autostart_exec(dir, old) else { return false };
+    if !gone(&args[0]) {
+        return false;
+    }
+    let on = starts_in(dir, old);
+    let rest: Vec<&str> = args[1..].iter().map(String::as_str).collect();
+    if old != new {
+        let _ = std::fs::remove_file(dir.join(format!("{old}.desktop")));
+    }
+    // an entry the desktop's settings switched off stays off
+    set_in(dir, new, exe, &rest, on).is_ok()
+}
+
 /// One argument of a desktop entry's `Exec=` (Desktop Entry spec: quoted when it has reserved
 /// characters; `"`, `` ` ``, `$` and `\` escaped inside quotes; `%` doubled).
 pub(crate) fn exec_quote(arg: &str) -> String {
@@ -142,23 +206,48 @@ mod tests {
     #[test]
     fn autostart_entry() {
         let dir = std::env::temp_dir().join(format!("rf-autostart-{}", std::process::id()));
-        assert!(!starts_in(&dir, "rustyfiles"));
-        set_in(&dir, "rustyfiles", Path::new("/opt/my apps/rustyfiles"), &["--background"], true).unwrap();
-        assert!(starts_in(&dir, "rustyfiles"));
-        let text = std::fs::read_to_string(dir.join("rustyfiles.desktop")).unwrap();
-        assert!(text.contains("Exec=\"/opt/my apps/rustyfiles\" --background\n"), "{text}");
+        assert!(!starts_in(&dir, "rfiles"));
+        set_in(&dir, "rfiles", Path::new("/opt/my apps/rfiles"), &["--background"], true).unwrap();
+        assert!(starts_in(&dir, "rfiles"));
+        let text = std::fs::read_to_string(dir.join("rfiles.desktop")).unwrap();
+        assert!(text.contains("Exec=\"/opt/my apps/rfiles\" --background\n"), "{text}");
         // switched off in the desktop's settings
-        std::fs::write(dir.join("rustyfiles.desktop"), text.replace("enabled=true", "enabled=false")).unwrap();
-        assert!(!starts_in(&dir, "rustyfiles"));
-        set_in(&dir, "rustyfiles", Path::new("/x"), &[], false).unwrap();
-        assert!(!dir.join("rustyfiles.desktop").exists());
-        set_in(&dir, "rustyfiles", Path::new("/x"), &[], false).unwrap();
+        std::fs::write(dir.join("rfiles.desktop"), text.replace("enabled=true", "enabled=false")).unwrap();
+        assert!(!starts_in(&dir, "rfiles"));
+        set_in(&dir, "rfiles", Path::new("/x"), &[], false).unwrap();
+        assert!(!dir.join("rfiles.desktop").exists());
+        set_in(&dir, "rfiles", Path::new("/x"), &[], false).unwrap();
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
+    fn renamed_autostart_entries_move_over() {
+        let dir = std::env::temp_dir().join(format!("rf-autostart-rename-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        set_in(&dir, "rustyfiles", Path::new("/nonexistent/rustyfiles/rustyfiles"), &["--background"], true).unwrap();
+        set_in(&dir, "DirectLook", Path::new("/nonexistent/rustyfiles/directlook"), &["--background"], true).unwrap();
+        assert!(adopt_in(&dir, "rustyfiles", "rfiles", Path::new("/usr/lib/rfiles/rfiles")));
+        assert!(!dir.join("rustyfiles.desktop").exists());
+        assert_eq!(autostart_exec(&dir, "rfiles").unwrap(), ["/usr/lib/rfiles/rfiles", "--background"]);
+        assert!(adopt_in(&dir, "DirectLook", "DirectLook", Path::new("/usr/lib/rfiles/directlook")));
+        assert_eq!(autostart_exec(&dir, "DirectLook").unwrap(), ["/usr/lib/rfiles/directlook", "--background"]);
+        // an entry whose program still exists (a source build next to an installed copy) stays
+        set_in(&dir, "other", Path::new("/bin/sh"), &[], true).unwrap();
+        assert!(!adopt_in(&dir, "other", "rfiles", Path::new("/x")));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn exec_args_undo_exec_quote() {
+        for a in ["/opt/my apps/rfiles", "50%", "a\"b", "plain"] {
+            assert_eq!(exec_args(&format!("{} --x", exec_quote(a))), [a, "--x"]);
+        }
+    }
+
+    #[test]
     fn exec_quoting() {
-        assert_eq!(exec_quote("/usr/bin/rustyfiles"), "/usr/bin/rustyfiles");
+        assert_eq!(exec_quote("/usr/bin/rfiles"), "/usr/bin/rfiles");
         assert_eq!(exec_quote("a b"), "\"a b\"");
         assert_eq!(exec_quote("50%"), "50%%");
         assert_eq!(exec_quote("$HOME\\x\"y"), "\"\\$HOME\\\\x\\\"y\"");

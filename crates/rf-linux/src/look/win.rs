@@ -13,7 +13,7 @@ pub fn work_area_at_cursor() -> [f32; 4] {
 pub fn work_area_of(hwnd: isize) -> [f32; 4] {
     Default::default()
 }
-/// Başka bir sürecin (ör. DirectLook'tan çağrılan rustyfiles) pencereyi öne alabilmesine izin verir;
+/// Başka bir sürecin (ör. DirectLook'tan çağrılan rfiles) pencereyi öne alabilmesine izin verir;
 /// yoksa Windows ön plan kilidi yüzünden pencere yalnız görev çubuğunda yanıp söner.
 pub fn allow_any_foreground() {}
 pub fn set_topmost(hwnd: isize, on: bool) {}

@@ -189,10 +189,10 @@ fn load_theme(name: &str) -> Option<Theme> {
     Some(Theme { bases, subdirs, inherits: list("Inherits") })
 }
 
-/// The icon theme the desktop uses: `RUSTYFILES_ICON_THEME`, KDE's `kdeglobals` on KDE, the
+/// The icon theme the desktop uses: `RFILES_ICON_THEME`, KDE's `kdeglobals` on KDE, the
 /// GTK settings files, then GNOME's setting, else hicolor.
 pub fn current_theme_name() -> String {
-    if let Ok(t) = std::env::var("RUSTYFILES_ICON_THEME") {
+    if let Ok(t) = std::env::var("RFILES_ICON_THEME") {
         if !t.is_empty() {
             return t;
         }

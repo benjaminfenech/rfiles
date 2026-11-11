@@ -15,7 +15,7 @@ use crate::look::config::LookSettings;
 /// Tek örnek borusunda Hızlı Bakış isteğinin öneki.
 const IPC_PREFIX: &str = "\u{1}look:";
 
-/// `rustyfiles --look <yol> [top,pin]`.
+/// `rfiles --look <yol> [top,pin]`.
 pub fn parse_look_args(args: &[&str]) -> Option<(PathBuf, ShowOpts)> {
     if args.first().copied() != Some("--look") {
         return None;
@@ -186,7 +186,7 @@ fn handle(m: HookMsg, cx: &mut App) {
     }
 }
 
-/// Önizleme rustyfiles içinden açıldı: Explorer seçimi izlenmez.
+/// Önizleme rfiles içinden açıldı: Explorer seçimi izlenmez.
 pub fn app_source(cx: &mut App) {
     cx.default_global::<LookSystem>().source = None;
 }
