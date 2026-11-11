@@ -3,7 +3,7 @@
 //! offers a web search. Enter opens, Ctrl+Enter shows the item in its folder, Shift+Enter
 //! previews it with DirectLook, Esc closes. What is opened often comes first.
 //!
-//! The hotkey is registered by the running rfiles (`rf_win::hotkey`); with "keep running in
+//! The hotkey is registered by the running rfiles (`rf_linux::hotkey`); with "keep running in
 //! the background" on it works while no window is open.
 
 use std::collections::HashMap;
@@ -23,8 +23,6 @@ use crate::settings::{Settings, WebSearch};
 use crate::t;
 use crate::theme::{self, Palette};
 
-/// The shortcut editor records into the quick-search hotkey under this name (keymap_editor).
-pub const CAPTURE_ACTION: &str = "@quick-search";
 /// `rfiles.exe --quick-search` opens it too (in the running rfiles).
 pub const LAUNCH_ARG: &str = "--quick-search";
 
@@ -38,13 +36,10 @@ const MAX_BOOKMARKS: usize = 3;
 const APPS_STALE: Duration = Duration::from_secs(300);
 
 // ---------------------------------------------------------------------------------------------
-// The hotkey
+// Starting
 
-/// The shortcut held now (None: none) and whether registering it failed.
-static HELD: Mutex<Option<(Option<String>, Option<rf_win::hotkey::HotkeyError>)>> = Mutex::new(None);
-
-/// This process registers the hotkey: the one rfiles (not DirectLook, not a test copy).
-fn hotkey_owner() -> bool {
+/// This process warms the app list: the one rfiles (not DirectLook, not a test copy).
+fn warms_up() -> bool {
     !crate::background::DIRECTLOOK_PROCESS.load(std::sync::atomic::Ordering::Relaxed)
         && std::env::var_os("RFILES_MULTI_INSTANCE").is_none()
 }
@@ -66,56 +61,12 @@ fn launch(f: impl FnOnce() + Send + 'static) {
     });
 }
 
-/// Settings applied: holds the configured hotkey (or none). Registering waits for the hotkey
-/// thread, a few microseconds.
-pub fn sync(s: &Settings) {
-    if !hotkey_owner() {
-        return;
-    }
-    let want = s.quick_search.then(|| s.quick_search_keys.clone()).filter(|k| !k.trim().is_empty());
-    let mut held = HELD.lock().unwrap();
-    // (a shortcut another app held is tried again: that app may have let it go)
-    if held.as_ref().is_some_and(|(k, e)| *k == want && e.is_none()) {
-        return;
-    }
-    let r = rf_win::hotkey::set(want.as_deref());
-    if let Err(e) = &r {
-        log::warn!("quick search hotkey {want:?}: {e:?}");
-    }
-    *held = Some((want, r.err()));
-}
-
-/// Lets the next `sync` register again (after the shortcut editor let go of the keys).
-pub fn resync(cx: &App) {
-    *HELD.lock().unwrap() = None;
-    sync(cx.global::<Settings>());
-}
-
-/// The shortcut editor is recording a new hotkey: the old one must not swallow the keys.
-pub fn release_for_capture() {
-    if !hotkey_owner() {
-        return;
-    }
-    let _ = rf_win::hotkey::set(None);
-    *HELD.lock().unwrap() = Some((None, None));
-}
-
-/// Routes hotkey presses to the app and warms the app list (call once at startup).
+/// Warms the app list (call once at startup). The desktop's own shortcut opens the quick
+/// search (`rfiles --quick-search`): Wayland gives apps no global hotkeys.
 pub fn init(cx: &mut App) {
-    if !hotkey_owner() {
+    if !warms_up() {
         return;
     }
-    let (tx, mut rx) = futures::channel::mpsc::unbounded::<()>();
-    rf_win::hotkey::set_handler(move || {
-        let _ = tx.unbounded_send(());
-    });
-    cx.spawn(async move |cx| {
-        use futures::StreamExt;
-        while rx.next().await.is_some() {
-            cx.update(toggle);
-        }
-    })
-    .detach();
     // the first press should not wait for "All apps" (about a second cold)
     if cx.global::<Settings>().quick_search {
         std::thread::Builder::new()
@@ -131,19 +82,19 @@ pub fn init(cx: &mut App) {
 // ---------------------------------------------------------------------------------------------
 // Sources
 
-static APPS: Mutex<Option<(Instant, Arc<Vec<rf_win::apps::App>>)>> = Mutex::new(None);
+static APPS: Mutex<Option<(Instant, Arc<Vec<rf_linux::apps::App>>)>> = Mutex::new(None);
 /// One enumeration at a time (each keystroke's search would start its own).
 static LISTING: Mutex<()> = Mutex::new(());
 
 /// "All apps": cached; a stale list is served while a fresh one is read.
-fn apps() -> Arc<Vec<rf_win::apps::App>> {
+fn apps() -> Arc<Vec<rf_linux::apps::App>> {
     let cached = APPS.lock().unwrap().clone();
     match cached {
         Some((at, list)) => {
             if at.elapsed() > APPS_STALE {
                 *APPS.lock().unwrap() = Some((Instant::now(), list.clone()));
                 std::thread::spawn(|| {
-                    if let Ok(l) = rf_win::apps::list() {
+                    if let Ok(l) = rf_linux::apps::list() {
                         *APPS.lock().unwrap() = Some((Instant::now(), Arc::new(l)));
                     }
                 });
@@ -155,7 +106,7 @@ fn apps() -> Arc<Vec<rf_win::apps::App>> {
             if let Some((_, list)) = APPS.lock().unwrap().clone() {
                 return list;
             }
-            match rf_win::apps::list() {
+            match rf_linux::apps::list() {
                 Ok(l) if !l.is_empty() => {
                     let list = Arc::new(l);
                     *APPS.lock().unwrap() = Some((Instant::now(), list.clone()));
@@ -523,7 +474,7 @@ fn search(query: &str, engine: WebSearch, with_bookmarks: bool, index_on: bool) 
     items.extend(a.into_iter().take(MAX_APPS));
     // files and folders: the name index, every indexed drive
     let mut index_building = false;
-    let status = rf_win::indexer::status();
+    let status = rf_linux::indexer::status();
     // on in Settings but not started yet (it starts a few seconds after rfiles): coming
     let index_off = !index_on;
     if index_on && status.is_empty() {
@@ -546,8 +497,8 @@ fn search(query: &str, engine: WebSearch, with_bookmarks: bool, index_on: bool) 
     };
     for (root, state, _, _) in status {
         match state {
-            rf_win::indexer::State::Ready => {}
-            rf_win::indexer::State::Building => {
+            rf_linux::indexer::State::Ready => {}
+            rf_linux::indexer::State::Building => {
                 index_building = true;
                 continue;
             }
@@ -556,7 +507,7 @@ fn search(query: &str, engine: WebSearch, with_bookmarks: bool, index_on: bool) 
         // the best names first, whatever their place in the index (a common fragment matches
         // tens of thousands of files)
         let rank = |name: &str| if glob { Some(500) } else { score(name, &q) };
-        if let Some(found) = rf_win::indexer::search_ranked(query.trim(), &root, false, 60, &rank) {
+        if let Some(found) = rf_linux::indexer::search_ranked(query.trim(), &root, false, 60, &rank) {
             for (_, p) in found {
                 add(p, &mut hits);
             }
@@ -652,7 +603,7 @@ pub fn toggle(cx: &mut App) {
         }
     };
     // centered on the screen under the pointer, in its upper part (where the eyes are)
-    let work = rf_win::look::win::work_area_at_cursor();
+    let work = rf_linux::look::win::work_area_at_cursor();
     let origin = point(px(work[0] + (work[2] - WIDTH) / 2.), px(work[1] + work[3] * 0.22));
     let max_h = (work[3] * 0.78 - 24.).max(200.);
     let display_id = cx
@@ -680,10 +631,10 @@ pub fn toggle(cx: &mut App) {
     };
     match cx.open_window(opts, move |window, cx| {
         let hwnd = crate::look::window::hwnd_of(window);
-        rf_win::window::set_dark_mode(hwnd, Palette::for_window(window).dark);
+        rf_linux::window::set_dark_mode(hwnd, Palette::for_window(window).dark);
         // summoned from another app: take the keyboard (the hotkey press allows it)
         if !test {
-            rf_win::window::bring_to_front(hwnd);
+            rf_linux::window::bring_to_front(hwnd);
         }
         cx.new(|cx| QuickSearch::new(images, max_h, window, cx))
     }) {
@@ -785,9 +736,9 @@ impl QuickSearch {
         let engine = cx.global::<Settings>().web_search;
         match (&item.target, how) {
             (Target::App { id, name }, _) => {
-                let app = rf_win::apps::App { id: id.clone(), name: name.clone() };
+                let app = rf_linux::apps::App { id: id.clone(), name: name.clone() };
                 launch(move || {
-                    if let Err(e) = rf_win::apps::launch(&app) {
+                    if let Err(e) = rf_linux::apps::launch(&app) {
                         log::warn!("quick search: start {}: {e:#}", app.name);
                     }
                 });
@@ -797,7 +748,7 @@ impl QuickSearch {
                 cx.defer(move |cx| crate::workspace::route_ipc(msg, cx));
             }
             (Target::Path { path, .. }, How::Preview) => {
-                rf_win::look::win::allow_any_foreground();
+                rf_linux::look::win::allow_any_foreground();
                 crate::look::ipc::send(crate::look::ipc::Msg::Show(path.clone(), crate::look::ShowOpts::default()), true);
             }
             (Target::Path { path, dir: true }, How::Open) => {
@@ -808,7 +759,7 @@ impl QuickSearch {
             (Target::Path { path, dir: false }, How::Open) => {
                 let p = path.clone();
                 launch(move || {
-                    if let Err(e) = rf_win::shell::open(&p) {
+                    if let Err(e) = rf_linux::shell::open(&p) {
                         log::warn!("quick search: open {}: {e:#}", p.display());
                     }
                 });
@@ -832,7 +783,7 @@ enum How {
 
 fn open_url(url: String) {
     launch(move || {
-        if let Err(e) = rf_win::shell::open(Path::new(&url)) {
+        if let Err(e) = rf_linux::shell::open(Path::new(&url)) {
             log::warn!("quick search: open url: {e:#}");
         }
     });
@@ -856,7 +807,7 @@ impl QuickSearch {
     fn icon(&self, item: &Item, p: &Palette, cx: &mut Context<Self>) -> AnyElement {
         let img = match &item.target {
             Target::App { id, name } => {
-                let parsing = rf_win::apps::App { id: id.clone(), name: name.clone() }.parsing();
+                let parsing = rf_linux::apps::App { id: id.clone(), name: name.clone() }.parsing();
                 self.images.update(cx, |c, cx| c.shell_icon(&parsing, crate::image_cache::ICON_PX, cx))
             }
             Target::Path { path, dir } => {

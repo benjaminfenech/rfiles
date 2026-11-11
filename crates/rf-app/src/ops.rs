@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use futures::channel::oneshot;
 use gpui_kit::component::input::{InputEvent, InputState};
 use gpui_kit::*;
-use rf_win::fileops::{self, Transfer};
+use rf_linux::fileops::{self, Transfer};
 
 use crate::folder_view::FolderView;
 
@@ -177,8 +177,8 @@ impl FolderView {
             return;
         }
         // OpenClipboard can wait on other apps: never on the UI thread.
-        rf_win::sta::run(move |owner| {
-            if let Err(e) = rf_win::clipboard::set_files(owner, &paths, kind) {
+        rf_linux::sta::run(move |owner| {
+            if let Err(e) = rf_linux::clipboard::set_files(owner, &paths, kind) {
                 log::warn!("clipboard: {e:#}");
             }
         });
@@ -206,7 +206,7 @@ impl FolderView {
         let paths: Vec<PathBuf> = self
             .selection_paths()
             .into_iter()
-            .filter(|p| rf_win::rotate::can_rotate(p) && crate::archive_view::split(p).is_none())
+            .filter(|p| rf_linux::rotate::can_rotate(p) && crate::archive_view::split(p).is_none())
             .collect();
         if paths.is_empty() {
             return;
@@ -214,7 +214,7 @@ impl FolderView {
         let task = cx.background_spawn(async move {
             let mut errors = Vec::new();
             for p in &paths {
-                if let Err(e) = rf_win::rotate::rotate(p, clockwise) {
+                if let Err(e) = rf_linux::rotate::rotate(p, clockwise) {
                     errors.push(format!("{}: {e:#}", p.file_name().unwrap_or_default().to_string_lossy()));
                 }
             }
@@ -261,56 +261,20 @@ impl FolderView {
         }
     }
 
-    /// Creates shortcuts (.lnk) to the clipboard items in the current folder.
-    pub fn paste_shortcuts(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
-        if self.shell_read_only(cx) {
-            return;
-        }
-        let Some(dir) = self.current_dir() else { return };
-        if rf_win::ftp::is_ftp(&dir) {
-            return;
-        }
-        let (tx, rx) = oneshot::channel();
-        rf_win::sta::run(move |owner| {
-            let _ = tx.send(rf_win::clipboard::get_files(owner).map_err(|e| log::warn!("paste: {e:#}")).ok().flatten());
-        });
-        cx.spawn(async move |this, cx| {
-            let Ok(Some((paths, _))) = rx.await else { return };
-            let work = cx.background_spawn(async move {
-                for p in paths {
-                    let stem = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "Kısayol".into());
-                    // never overwrite: "x.lnk", "x (2).lnk", …
-                    let mut link = dir.join(format!("{stem}.lnk"));
-                    let mut n = 2;
-                    while link.exists() {
-                        link = dir.join(format!("{stem} ({n}).lnk"));
-                        n += 1;
-                    }
-                    if let Err(e) = rf_win::shortcut::create(&link, &p) {
-                        log::warn!("shortcut {link:?}: {e:#}");
-                    }
-                }
-            });
-            work.await;
-            let _ = this.update(cx, |v, cx| v.refresh(cx));
-        })
-        .detach();
-    }
-
     fn paste_to(&mut self, dir: PathBuf, _window: &mut Window, cx: &mut Context<Self>) {
         // GetClipboardData can block on a slow source app (delayed rendering).
         let (tx, rx) = oneshot::channel();
-        rf_win::sta::run(move |owner| {
-            let _ = tx.send(rf_win::clipboard::get_files(owner).map_err(|e| log::warn!("paste: {e:#}")).ok().flatten());
+        rf_linux::sta::run(move |owner| {
+            let _ = tx.send(rf_linux::clipboard::get_files(owner).map_err(|e| log::warn!("paste: {e:#}")).ok().flatten());
         });
-        if rf_win::ftp::is_ftp(&dir) {
+        if rf_linux::ftp::is_ftp(&dir) {
             // FTP: upload the clipboard files (folders are skipped), then refresh
             let url = dir.to_string_lossy().into_owned();
             cx.spawn(async move |this, cx| {
                 if let Ok(Some((paths, _))) = rx.await {
                     let work = cx.background_spawn(async move {
                         for p in paths.iter().filter(|p| p.is_file()) {
-                            if let Err(e) = rf_win::ftp::upload(p, &url) {
+                            if let Err(e) = rf_linux::ftp::upload(p, &url) {
                                 log::warn!("ftp upload {p:?}: {e}");
                             }
                         }
@@ -634,17 +598,17 @@ impl FolderView {
     /// Files dropped onto `dest` (a folder row or the current folder background).
     pub fn drop_into(&mut self, dest: PathBuf, paths: &ExternalPaths, cx: &mut Context<Self>) {
         let sources: Vec<PathBuf> = crate::file_drag::take(paths);
-        if sources.is_empty() || rf_win::dnd::is_invalid_drop(&sources, &dest) {
+        if sources.is_empty() || rf_linux::dnd::is_invalid_drop(&sources, &dest) {
             return;
         }
         let (ctrl, shift) = (crate::sys::ctrl_down(), crate::sys::shift_down());
-        let kind = rf_win::dnd::default_transfer(&sources, &dest, ctrl, shift);
+        let kind = rf_linux::dnd::default_transfer(&sources, &dest, ctrl, shift);
         crate::status_center::transfer(cx, kind, sources, dest);
     }
 
     pub fn pin(&mut self, dir: PathBuf, cx: &mut Context<Self>) {
         // Linux: a network folder by its URL (see Workspace::set_pinned)
-        let dir = rf_win::remote::remote_url(&dir).map_or(dir, PathBuf::from);
+        let dir = rf_linux::remote::remote_url(&dir).map_or(dir, PathBuf::from);
         let current: Vec<PathBuf> = self.places_pinned_paths(cx);
         crate::settings::update(cx, |s| {
             let mut v = s.pinned.clone().unwrap_or(current);
@@ -667,8 +631,8 @@ impl FolderView {
 
     pub fn open_with(&self) {
         if let Some(p) = self.selection_paths().into_iter().next() {
-            rf_win::sta::run(move |_| {
-                let _ = rf_win::shell::open_with(&p);
+            rf_linux::sta::run(move |_| {
+                let _ = rf_linux::shell::open_with(&p);
             });
         }
     }

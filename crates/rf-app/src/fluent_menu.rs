@@ -348,7 +348,7 @@ fn open_level(view: Entity<MenuView>, level: usize, bounds: Bounds<Pixels>, focu
         use raw_window_handle::{HasWindowHandle, RawWindowHandle};
         if let Ok(h) = w.window_handle() {
             if let RawWindowHandle::Win32(h) = h.as_raw() {
-                rf_win::window::set_dark_mode(h.hwnd.get(), dark);
+                rf_linux::window::set_dark_mode(h.hwnd.get(), dark);
             }
         }
         cx.new(|cx| LevelView::new(view, level, w, cx))
@@ -424,7 +424,7 @@ impl Render for LevelView {
 struct IconCache(std::collections::HashMap<u64, Arc<RenderImage>>);
 impl Global for IconCache {}
 
-pub fn shell_icon(icon: &rf_win::ctxmenu::ShellIcon, cx: &mut App) -> Option<Arc<RenderImage>> {
+pub fn shell_icon(icon: &rf_linux::ctxmenu::ShellIcon, cx: &mut App) -> Option<Arc<RenderImage>> {
     use std::hash::{Hash, Hasher};
     let mut h = std::collections::hash_map::DefaultHasher::new();
     (icon.width, icon.height).hash(&mut h);

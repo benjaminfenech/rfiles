@@ -11,7 +11,7 @@ use gpui_kit::component::{Icon, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 use rf_core::shelf::Shelf;
-use rf_win::fileops::Transfer;
+use rf_linux::fileops::Transfer;
 
 use crate::theme::{self, Palette};
 

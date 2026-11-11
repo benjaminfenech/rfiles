@@ -44,9 +44,9 @@ fn hexa(c: u32, a: f32) -> Hsla {
 }
 
 /// The user's Windows accent palette, read once.
-fn system_accent() -> Option<rf_win::accent::AccentPalette> {
-    static P: std::sync::OnceLock<Option<rf_win::accent::AccentPalette>> = std::sync::OnceLock::new();
-    *P.get_or_init(rf_win::accent::palette)
+fn system_accent() -> Option<rf_linux::accent::AccentPalette> {
+    static P: std::sync::OnceLock<Option<rf_linux::accent::AccentPalette>> = std::sync::OnceLock::new();
+    *P.get_or_init(rf_linux::accent::palette)
 }
 
 impl Palette {

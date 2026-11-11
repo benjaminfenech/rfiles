@@ -252,7 +252,7 @@ fn run_plan(dir: &std::path::Path, pairs: &[(String, String)]) -> Vec<String> {
         if dead.contains(&s.from) {
             continue;
         }
-        if let Err(e) = rf_win::fileops::rename_no_replace(&dir.join(&s.from), &dir.join(&s.to)) {
+        if let Err(e) = rf_linux::fileops::rename_no_replace(&dir.join(&s.from), &dir.join(&s.to)) {
             let shown = orig_of_tmp.get(&s.from).unwrap_or(&s.from);
             errors.push(format!("{shown} → {}: {e}", s.to));
             if orig_of_tmp.contains_key(&s.to) {

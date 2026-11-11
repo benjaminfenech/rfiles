@@ -12,7 +12,7 @@ use gpui_kit::assets::IconName as L;
 use gpui_kit::component::{Icon, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
-use rf_win::fastcopy::{Conflict, Resolve};
+use rf_linux::fastcopy::{Conflict, Resolve};
 
 use crate::select_box::{Choice, select_box};
 use crate::t;

@@ -71,7 +71,6 @@ fn commands() -> Vec<Cmd> {
         cmd!("Kes", "Ctrl+X", L::Scissors, CutItems),
         cmd!("Yapıştır", "Ctrl+V", L::ClipboardPaste, PasteItems),
         cmd!("Seçili klasöre yapıştır", "Ctrl+Shift+V", L::ClipboardPaste, PasteIntoSelected),
-        cmd!("Kısayol olarak yapıştır", "", L::Link, PasteShortcut),
         cmd!("Geri dönüşüm kutusuna taşı", "Del", L::Trash, DeleteItems),
         cmd!("Kalıcı olarak sil", "Shift+Del", L::TrashOff, DeletePermanently),
         cmd!("Yeniden adlandır", "F2", L::Pencil, RenameItem),

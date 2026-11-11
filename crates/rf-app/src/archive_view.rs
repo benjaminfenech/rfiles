@@ -356,7 +356,7 @@ pub fn open_items(cx: &mut gpui_kit::App, paths: Vec<PathBuf>) {
             Err(e) => return Err(e),
         };
         for p in real {
-            rf_win::shell::open(&p)?;
+            rf_linux::shell::open(&p)?;
         }
         Ok(true)
     });
@@ -370,11 +370,11 @@ pub fn copy_items(cx: &mut gpui_kit::App, paths: Vec<PathBuf>) {
         return;
     }
     let (tx, rx) = std::sync::mpsc::channel();
-    rf_win::sta::run(move |owner| {
-        if let Err(e) = rf_win::clipboard::clear(owner) {
+    rf_linux::sta::run(move |owner| {
+        if let Err(e) = rf_linux::clipboard::clear(owner) {
             log::warn!("clipboard: {e:#}");
         }
-        let _ = tx.send(rf_win::clipboard::sequence());
+        let _ = tx.send(rf_linux::clipboard::sequence());
     });
     let title = format!("{} {}", t!("Arşivden kopyalanıyor:"), names(&paths));
     crate::status_center::start(cx, title, move |t| {
@@ -386,13 +386,13 @@ pub fn copy_items(cx: &mut gpui_kit::App, paths: Vec<PathBuf>) {
             Err(e) if e.downcast_ref::<rf_archive::Cancelled>().is_some() => return Ok(false),
             Err(e) => return Err(e),
         };
-        if rf_win::clipboard::sequence() != seq {
+        if rf_linux::clipboard::sequence() != seq {
             // the user copied something else in the meantime: keep that
             return Ok(true);
         }
         let (tx, rx) = std::sync::mpsc::channel();
-        rf_win::sta::run(move |owner| {
-            let _ = tx.send(rf_win::clipboard::set_files(owner, &real, rf_win::fileops::Transfer::Copy));
+        rf_linux::sta::run(move |owner| {
+            let _ = tx.send(rf_linux::clipboard::set_files(owner, &real, rf_linux::fileops::Transfer::Copy));
         });
         rx.recv().map_err(|_| anyhow::anyhow!("pano"))??;
         Ok(true)

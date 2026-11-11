@@ -1,12 +1,7 @@
 //! Our own Properties window, with the tabs of Windows' property sheet:
 //! - General: name, type, the app it opens with (and "Change…"), location, size / size on disk /
-//!   contents, times, attributes (read-only, hidden, and the advanced ones: archive, indexing,
-//!   compression, encryption; for a folder optionally down its whole tree), "Unblock" for a
-//!   downloaded file. A drive shows its file system and how full it is instead.
-//! - Shortcut (.lnk): target, arguments, start in, comment, how it runs, run as administrator,
-//!   its icon.
+//!   contents, times, read-only. A drive shows its file system and how full it is instead.
 //! - Details: the version resource of programs, media / document properties, the file facts.
-//! - Digital signatures: the embedded Authenticode signatures and whether Windows trusts them.
 //! - Hashes (files).
 //!
 //! Every disk access happens on background threads; the window never waits on a slow drive.
@@ -21,10 +16,9 @@ use gpui_kit::component::{Icon, TitleBar, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 use rf_core::{Entry, EntryKind, format};
-use rf_win::fileinfo::{ARCHIVE, COMPRESSED, ENCRYPTED, Info, NOT_INDEXED};
+use rf_linux::fileinfo::{ARCHIVE, COMPRESSED, ENCRYPTED, Info, NOT_INDEXED};
 
 use crate::image_cache::ImageCache;
-use crate::select_box::{Choice, select_box};
 use crate::t;
 use crate::theme::{self, Palette};
 
@@ -54,9 +48,7 @@ pub fn open(paths: Vec<PathBuf>, images: Entity<ImageCache>, cx: &mut App) {
 #[derive(Clone, Copy, PartialEq)]
 enum Page {
     General,
-    Shortcut,
     Details,
-    Signatures,
     Hashes,
 }
 
@@ -153,21 +145,8 @@ fn attrs_from(v: [Option<bool>; 6]) -> Attrs {
 #[derive(Default)]
 struct Loaded {
     info: Option<Result<Info, String>>,
-    blocked: bool,
-    /// The volume can compress / encrypt.
-    caps: (bool, bool),
-    drive: Option<rf_win::drives::Drive>,
-    pe: Option<rf_win::pe::PeInfo>,
-    signatures: Option<rf_win::signature::Signatures>,
-    link: Option<rf_win::shortcut::Details>,
-}
-
-/// The shortcut tab's text fields.
-struct LinkInputs {
-    target: Entity<InputState>,
-    args: Entity<InputState>,
-    dir: Entity<InputState>,
-    comment: Entity<InputState>,
+    drive: Option<rf_linux::drives::Drive>,
+    pe: Option<rf_linux::pe::PeInfo>,
 }
 
 pub struct PropsView {
@@ -175,26 +154,16 @@ pub struct PropsView {
     images: Entity<ImageCache>,
     page: Page,
     info: Option<Result<Info, String>>,
-    folder: Option<Option<rf_win::foldersize::FolderSize>>,
+    folder: Option<Option<rf_linux::foldersize::FolderSize>>,
     totals: Option<Totals>,
     media: Vec<(&'static str, String)>,
     name: Option<Entity<InputState>>,
     attrs: Attrs,
-    /// The volume can compress / encrypt (Advanced attributes shows those only then).
-    caps: (bool, bool),
     /// A folder's attribute change goes down its whole tree too.
     recurse: bool,
-    /// A single downloaded file (Windows may block it), and whether the user ticked "Unblock".
-    blocked: bool,
-    unblock: bool,
-    drive: Option<rf_win::drives::Drive>,
-    pe: Option<rf_win::pe::PeInfo>,
-    signatures: Option<rf_win::signature::Signatures>,
-    sig_sel: usize,
-    security: Option<Result<rf_win::security::Security, String>>,
-    link: Option<rf_win::shortcut::Details>,
-    link_loaded: Option<rf_win::shortcut::Details>,
-    link_inputs: Option<LinkInputs>,
+    drive: Option<rf_linux::drives::Drive>,
+    pe: Option<rf_linux::pe::PeInfo>,
+    security: Option<Result<rf_linux::security::Security, String>>,
     hash: Option<Entity<crate::hash_panel::HashPanel>>,
     error: Option<SharedString>,
     busy: bool,
@@ -220,11 +189,6 @@ fn ext_of(p: &Path) -> String {
 /// Programs and other files that carry a version resource.
 fn is_pe(p: &Path) -> bool {
     matches!(ext_of(p).as_str(), "exe" | "dll" | "sys" | "ocx" | "cpl" | "scr" | "drv" | "efi" | "mui" | "ax" | "com")
-}
-
-/// Files that can carry an embedded Authenticode signature.
-fn signable(p: &Path) -> bool {
-    is_pe(p) || matches!(ext_of(p).as_str(), "msi" | "msp" | "cab" | "cat" | "ps1" | "psm1" | "psd1" | "vbs" | "js" | "appx" | "msix" | "appxbundle" | "msixbundle")
 }
 
 /// The root, "/" (other drives are mount points, found in the drive list instead).
@@ -260,18 +224,10 @@ impl PropsView {
             media: Vec::new(),
             name,
             attrs: Attrs::default(),
-            caps: (false, false),
             recurse: false,
-            blocked: false,
-            unblock: false,
             drive: None,
             pe: None,
-            signatures: None,
-            sig_sel: 0,
             security: None,
-            link: None,
-            link_loaded: None,
-            link_inputs: None,
             hash: None,
             error: None,
             busy: false,
@@ -296,30 +252,9 @@ impl PropsView {
             let task = cx.background_spawn(async move { load_one(&p) });
             cx.spawn_in(window, async move |this, cx| {
                 let l = task.await;
-                let _ = this.update_in(cx, |v, window, cx| {
-                    v.blocked = l.blocked;
-                    v.caps = l.caps;
+                let _ = this.update_in(cx, |v, _, cx| {
                     v.drive = l.drive;
                     v.pe = l.pe;
-                    v.signatures = l.signatures;
-                    if let Some(d) = l.link {
-                        let mk = |s: &str, window: &mut Window, cx: &mut Context<Self>| {
-                            let s = s.to_string();
-                            cx.new(|cx| {
-                                let mut i = InputState::new(window, cx);
-                                i.set_value(s, window, cx);
-                                i
-                            })
-                        };
-                        v.link_inputs = Some(LinkInputs {
-                            target: mk(&d.target, window, cx),
-                            args: mk(&d.args, window, cx),
-                            dir: mk(&d.working_dir, window, cx),
-                            comment: mk(&d.comment, window, cx),
-                        });
-                        v.link_loaded = Some(d.clone());
-                        v.link = Some(d);
-                    }
                     if let Some(Ok(i)) = &l.info {
                         let mut acc = [None; 6];
                         merge_attrs(&mut acc, i.attrs, true);
@@ -336,17 +271,6 @@ impl PropsView {
         } else {
             self.totals = Some(Totals::default());
             let paths = self.paths.clone();
-            if let Some(first) = paths.first().cloned() {
-                let task = cx.background_spawn(async move { rf_win::fileinfo::volume_caps(&first) });
-                cx.spawn(async move |this, cx| {
-                    let caps = task.await;
-                    let _ = this.update(cx, |v, cx| {
-                        v.caps = caps;
-                        cx.notify();
-                    });
-                })
-                .detach();
-            }
             let (tx, mut rx) = futures::channel::mpsc::unbounded::<(Totals, [Option<bool>; 6])>();
             std::thread::Builder::new()
                 .name("rf-props".into())
@@ -359,7 +283,7 @@ impl PropsView {
                         if cancel.load(Ordering::Relaxed) {
                             return;
                         }
-                        let Ok(info) = rf_win::fileinfo::info(p) else { continue };
+                        let Ok(info) = rf_linux::fileinfo::info(p) else { continue };
                         merge_attrs(&mut acc, info.attrs, i == 0);
                         if info.is_dir {
                             t.sel_dirs += 1;
@@ -430,7 +354,7 @@ impl PropsView {
             })
             .detach();
         } else {
-            let task = cx.background_spawn(async move { rf_win::props::media_props(&path) });
+            let task = cx.background_spawn(async move { rf_linux::props::media_props(&path) });
             cx.spawn(async move |this, cx| {
                 let r = task.await;
                 let _ = this.update(cx, |v, cx| {
@@ -448,7 +372,7 @@ impl PropsView {
             return;
         }
         let p = self.paths[0].clone();
-        let task = cx.background_spawn(async move { rf_win::security::read(&p).map_err(|e| format!("{e:#}")) });
+        let task = cx.background_spawn(async move { rf_linux::security::read(&p).map_err(|e| format!("{e:#}")) });
         cx.spawn(async move |this, cx| {
             let r = task.await;
             let _ = this.update(cx, |v, cx| {
@@ -458,17 +382,6 @@ impl PropsView {
         })
         .detach();
         self.security = None;
-    }
-
-    fn link_now(&self, cx: &App) -> Option<rf_win::shortcut::Details> {
-        let mut d = self.link.clone()?;
-        if let Some(i) = &self.link_inputs {
-            d.target = i.target.read(cx).value().trim().to_string();
-            d.args = i.args.read(cx).value().to_string();
-            d.working_dir = i.dir.read(cx).value().trim().to_string();
-            d.comment = i.comment.read(cx).value().to_string();
-        }
-        Some(d)
     }
 
     fn renamed_to(&self, cx: &App) -> Option<String> {
@@ -484,8 +397,6 @@ impl PropsView {
     fn dirty(&self, cx: &App) -> bool {
         self.renamed_to(cx).is_some()
             || self.attrs.changed()
-            || (self.blocked && self.unblock)
-            || self.link_now(cx) != self.link_loaded
     }
 
     /// Applies the edits on a helper thread; `close` closes the window when it worked.
@@ -507,7 +418,7 @@ impl PropsView {
                 return;
             }
         }
-        // attribute bits to set / clear, compression and encryption to switch
+        // attribute bits to set / clear
         let a = self.attrs;
         let (mut set, mut clear) = (0u32, 0u32);
         for (flag, bit, inverted) in [(a.readonly, READONLY, false), (a.hidden, HIDDEN, false), (a.archive, ARCHIVE, false), (a.indexed, NOT_INDEXED, true)] {
@@ -519,48 +430,23 @@ impl PropsView {
                 }
             }
         }
-        let compress = a.compressed.changed().then_some(a.compressed.now).flatten();
-        let encrypt = a.encrypted.changed().then_some(a.encrypted.now).flatten();
         let recurse = self.recurse;
         let paths = self.paths.clone();
-        let unblock = self.blocked && self.unblock;
-        let link = self.link_now(cx).filter(|d| Some(d) != self.link_loaded.as_ref());
         let cancel = self.cancel.clone();
         self.busy = true;
         self.error = None;
         let task = cx.background_spawn(async move {
             let mut paths = paths;
             let named = |p: &Path, e: &dyn std::fmt::Display| format!("{}: {e}", file_name(p));
-            if unblock {
-                rf_win::fileinfo::unblock(&paths[0]).map_err(|e| named(&paths[0], &e))?;
-            }
             for p in &paths {
                 let tree = recurse && p.is_dir();
                 if set != 0 || clear != 0 {
                     if tree {
-                        rf_win::fileinfo::set_attrs_tree(p, set, clear, &|| cancel.load(Ordering::Relaxed)).map_err(|e| named(p, &e))?;
+                        rf_linux::fileinfo::set_attrs_tree(p, set, clear, &|| cancel.load(Ordering::Relaxed)).map_err(|e| named(p, &e))?;
                     } else {
-                        rf_win::fileinfo::set_attrs(p, set, clear).map_err(|e| named(p, &e))?;
+                        rf_linux::fileinfo::set_attrs(p, set, clear).map_err(|e| named(p, &e))?;
                     }
                 }
-                // (encryption and compression exclude each other: the one switched off first)
-                let switches: Vec<(bool, bool)> = match (compress, encrypt) {
-                    (Some(c), Some(e)) if c => vec![(false, e), (true, c)],
-                    (Some(c), Some(e)) => vec![(true, c), (false, e)],
-                    (Some(c), None) => vec![(true, c)],
-                    (None, Some(e)) => vec![(false, e)],
-                    (None, None) => vec![],
-                };
-                for (is_compress, on) in switches {
-                    let items = if tree { walk(p, &cancel) } else { vec![p.clone()] };
-                    for it in &items {
-                        let r = if is_compress { rf_win::fileinfo::set_compressed(it, on) } else { rf_win::fileinfo::set_encrypted(it, on) };
-                        r.map_err(|e| named(it, &e))?;
-                    }
-                }
-            }
-            if let Some(d) = &link {
-                rf_win::shortcut::save(&paths[0], d).map_err(|e| named(&paths[0], &format!("{e:#}")))?;
             }
             let mut renamed = None;
             if let Some(n) = new_name {
@@ -587,11 +473,6 @@ impl PropsView {
                         v.paths = paths;
                         v.attrs.commit();
                         v.recurse = false;
-                        if v.unblock {
-                            (v.blocked, v.unblock) = (false, false);
-                        }
-                        v.link_loaded = v.link_now(cx);
-                        v.link = v.link_loaded.clone();
                         if close {
                             window.remove_window();
                         }
@@ -618,38 +499,16 @@ impl PropsView {
         let Some(p) = self.single().map(Path::to_path_buf) else { return };
         let owner = Self::hwnd(window);
         let (tx, rx) = futures::channel::oneshot::channel();
-        rf_win::sta::run(move |_| {
+        rf_linux::sta::run(move |_| {
             // Linux: the desktop's app chooser (it returns before the choice is made)
-            let _ = (owner, rf_win::shell::open_with(&p));
-            let _ = tx.send(rf_win::fileinfo::opens_with(&p));
+            let _ = (owner, rf_linux::shell::open_with(&p));
+            let _ = tx.send(rf_linux::fileinfo::opens_with(&p));
         });
         cx.spawn(async move |this, cx| {
             if let Ok(app) = rx.await {
                 let _ = this.update(cx, |v, cx| {
                     if let Some(Ok(i)) = &mut v.info {
                         i.opens_with = app;
-                    }
-                    cx.notify();
-                });
-            }
-        })
-        .detach();
-    }
-
-    /// Windows' "Change Icon" dialog; `apply` takes the choice to the shortcut.
-    fn pick_icon(&mut self, start: (String, i32), window: &mut Window, cx: &mut Context<Self>) {
-        let owner = Self::hwnd(window);
-        let (tx, rx) = futures::channel::oneshot::channel();
-        rf_win::sta::run(move |_| {
-            // Linux shows no .lnk shortcuts
-            let _ = (owner, start, tx.send(None));
-        });
-        cx.spawn(async move |this, cx| {
-            if let Ok(Some((file, index))) = rx.await {
-                let _ = this.update(cx, |v, cx| {
-                    if let Some(d) = &mut v.link {
-                        d.icon = file;
-                        d.icon_index = index;
                     }
                     cx.notify();
                 });
@@ -671,14 +530,8 @@ impl PropsView {
             return pages;
         }
         let Some(Ok(info)) = &self.info else { return pages };
-        if self.link.is_some() {
-            pages.push((Page::Shortcut, t!("Kısayol")));
-        }
         if !info.is_dir {
             pages.push((Page::Details, t!("Ayrıntılar")));
-        }
-        if self.signatures.is_some() {
-            pages.push((Page::Signatures, t!("Dijital imzalar")));
         }
         if !info.is_dir {
             pages.push((Page::Hashes, t!("Karmalar")));
@@ -774,20 +627,6 @@ impl PropsView {
 
         out.push(self.render_attrs(p, cx));
 
-        if self.blocked {
-            let on = self.unblock;
-            out.push(card(
-                p,
-                vec![
-                    section(p, t!("Güvenlik")),
-                    note(p, t!("Bu dosya başka bir bilgisayardan geldi. Windows, bilgisayarınızı korumak için onu engelleyebilir.")),
-                    check_row(p, "unblock", t!("Engellemeyi kaldır"), Some(on), cx.listener(move |v, _, _, cx| {
-                        v.unblock = !on;
-                        cx.notify();
-                    })),
-                ],
-            ));
-        }
         out
     }
 
@@ -796,13 +635,6 @@ impl PropsView {
         let flag = |id: &'static str, label: &'static str, f: Flag, pick: fn(&mut Attrs) -> &mut Flag, cx: &mut Context<Self>| {
             check_row(p, id, label, f.now, cx.listener(move |v, _, _, cx| {
                 pick(&mut v.attrs).toggle();
-                // compression and encryption exclude each other, as in Windows
-                if id == "comp" && v.attrs.compressed.now == Some(true) {
-                    v.attrs.encrypted.now = Some(false);
-                }
-                if id == "enc" && v.attrs.encrypted.now == Some(true) {
-                    v.attrs.compressed.now = Some(false);
-                }
                 cx.notify();
             }))
         };
@@ -811,8 +643,8 @@ impl PropsView {
         card(p, rows)
     }
 
-    fn render_drive(&self, d: &rf_win::drives::Drive, p: &Palette) -> Vec<AnyElement> {
-        use rf_win::drives::DriveKind;
+    fn render_drive(&self, d: &rf_linux::drives::Drive, p: &Palette) -> Vec<AnyElement> {
+        use rf_linux::drives::DriveKind;
         let kind = match d.kind {
             DriveKind::Removable => t!("Çıkarılabilir disk"),
             DriveKind::Network => t!("Ağ sürücüsü"),
@@ -856,107 +688,6 @@ impl PropsView {
             ],
         ));
         out
-    }
-
-    fn render_shortcut(&self, p: &Palette, cx: &mut Context<Self>) -> Vec<AnyElement> {
-        let (Some(d), Some(inp)) = (&self.link, &self.link_inputs) else { return vec![] };
-        let target = PathBuf::from(rf_win::localized::expand_env(&d.target));
-        let target_type = if d.target.is_empty() {
-            t!("Kabuk öğesi").to_string()
-        } else if target.is_dir() {
-            t!("Dosya klasörü").to_string()
-        } else {
-            match ext_of(&target).as_str() {
-                "exe" | "com" | "bat" | "cmd" => t!("Uygulama").to_string(),
-                "" => t!("Dosya").to_string(),
-                e => format!("{} (.{e})", t!("Dosya")),
-            }
-        };
-        let target_dir = target.parent().and_then(|d| d.file_name()).map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-        let field = |label: &'static str, input: &Entity<InputState>| {
-            h_flex()
-                .w_full()
-                .gap_3()
-                .items_center()
-                .py(px(4.))
-                .text_sm()
-                .child(div().w(px(130.)).flex_shrink_0().text_color(p.text_secondary).child(label))
-                .child(text_field(p, input))
-                .into_any_element()
-        };
-        let show = d.show;
-        const RUN: [(i32, &str); 3] = [(1, "Normal pencere"), (7, "Simge durumunda"), (3, "Ekranı kaplamış")];
-        let current = RUN.iter().find(|(v, _)| *v == show).map_or(RUN[0].1, |(_, l)| l);
-        let me = cx.entity().downgrade();
-        let run_box = select_box("lnk-run", p, crate::i18n::t(current), move |_| {
-            RUN.iter()
-                .map(|&(value, label)| {
-                    let me = me.clone();
-                    Choice::new(crate::i18n::t(label), value == show || (value == 1 && !matches!(show, 3 | 7)), move |_, cx| {
-                        let _ = me.update(cx, |v, cx| {
-                            if let Some(d) = &mut v.link {
-                                d.show = value;
-                            }
-                            cx.notify();
-                        });
-                    })
-                })
-                .collect()
-        });
-        let admin = d.run_as_admin;
-        let icon_start = if d.icon.is_empty() { (d.target.clone(), 0) } else { (d.icon.clone(), d.icon_index) };
-        let icon_text = if d.icon.is_empty() { t!("Hedefin simgesi").to_string() } else { format!("{}, {}", file_name(Path::new(&d.icon)), d.icon_index) };
-        let hotkey = rf_win::shortcut::hotkey_text(d.hotkey);
-        let t2 = target.clone();
-        vec![
-            card(
-                p,
-                vec![
-                    row(p, t!("Hedef türü"), target_type),
-                    row(p, t!("Hedef konumu"), if target_dir.is_empty() { "—".into() } else { target_dir }),
-                ],
-            ),
-            card(
-                p,
-                vec![
-                    field(t!("Hedef"), &inp.target),
-                    field(t!("Bağımsız değişkenler"), &inp.args),
-                    field(t!("Başlangıç yeri"), &inp.dir),
-                    field(t!("Açıklama"), &inp.comment),
-                    row(p, t!("Kısayol tuşu"), if hotkey.is_empty() { t!("Yok").to_string() } else { hotkey }),
-                    h_flex()
-                        .w_full()
-                        .gap_3()
-                        .items_center()
-                        .py(px(6.))
-                        .text_sm()
-                        .child(div().w(px(130.)).flex_shrink_0().text_color(p.text_secondary).child(t!("Çalıştır")))
-                        .child(div().flex_1().min_w_0().child(run_box))
-                        .into_any_element(),
-                    check_row(p, "lnk-admin", t!("Yönetici olarak çalıştır"), Some(admin), cx.listener(move |v, _, _, cx| {
-                        if let Some(d) = &mut v.link {
-                            d.run_as_admin = !admin;
-                        }
-                        cx.notify();
-                    })),
-                ],
-            ),
-            card(
-                p,
-                vec![
-                    row(p, t!("Simge"), icon_text),
-                    h_flex()
-                        .gap_4()
-                        .py_1()
-                        .child(link_button(p, "lnk-icon", L::Palette, t!("Simge değiştir…")).on_click(cx.listener(move |v, _, window, cx| v.pick_icon(icon_start.clone(), window, cx))))
-                        .child(link_button(p, "lnk-open", L::FolderOpen, t!("Dosya konumunu aç")).on_click(move |_, _, cx| {
-                            let dir = t2.parent().map(Path::to_path_buf).unwrap_or_else(|| t2.clone());
-                            crate::workspace::route_ipc(dir.to_string_lossy().into_owned(), cx);
-                        }))
-                        .into_any_element(),
-                ],
-            ),
-        ]
     }
 
     fn render_details(&self, p: &Palette) -> Vec<AnyElement> {
@@ -1015,155 +746,27 @@ impl PropsView {
         out
     }
 
-    fn render_signatures(&self, p: &Palette, cx: &mut Context<Self>) -> Vec<AnyElement> {
-        let Some(s) = &self.signatures else { return vec![] };
-        let mut out = Vec::new();
-        let (ok_icon, color, text) = match &s.verdict {
-            Ok(()) => (L::ShieldCheck, hsla(140. / 360., 0.6, 0.45, 1.), t!("Bu dijital imza geçerli.").to_string()),
-            Err(e) => (L::ShieldAlert, p.danger, format!("{} ({})", t!("Bu dijital imza geçerli değil."), verdict_reason(e))),
-        };
-        out.push(
-            h_flex()
-                .gap_2()
-                .px_4()
-                .py_3()
-                .rounded(theme::RADIUS)
-                .bg(p.card_bg)
-                .border_1()
-                .border_color(p.border)
-                .items_center()
-                .text_sm()
-                .child(Icon::new(ok_icon).size(px(20.)).text_color(color))
-                .child(div().flex_1().child(text))
-                .into_any_element(),
-        );
-        let sel = self.sig_sel.min(s.list.len().saturating_sub(1));
-        let mut list = vec![
-            h_flex()
-                .py(px(5.))
-                .text_xs()
-                .text_color(p.text_secondary)
-                .child(div().flex_1().child(t!("İmzalayan")))
-                .child(div().w(px(70.)).child(t!("Özet")))
-                .child(div().w(px(130.)).child(t!("Zaman damgası")))
-                .into_any_element(),
-        ];
-        for (k, g) in s.list.iter().enumerate() {
-            let on = k == sel;
-            list.push(
-                h_flex()
-                    .id(("sig", k))
-                    .px_1()
-                    .py(px(5.))
-                    .rounded(px(4.))
-                    .text_sm()
-                    .cursor_pointer()
-                    .when(on, |d| d.bg(p.hover))
-                    .hover(|d| d.bg(p.hover))
-                    .child(div().flex_1().min_w_0().truncate().child(g.signer.clone()))
-                    .child(div().w(px(70.)).child(g.digest.clone()))
-                    .child(div().w(px(130.)).child(g.timestamp_ms.map(format::datetime_full).unwrap_or_else(|| t!("Yok").to_string())))
-                    .on_click(cx.listener(move |v, _, _, cx| {
-                        v.sig_sel = k;
-                        cx.notify();
-                    }))
-                    .into_any_element(),
-            );
-        }
-        out.push(card(p, list));
-        if let Some(g) = s.list.get(sel) {
-            out.push(card(
-                p,
-                vec![
-                    section(p, t!("İmza ayrıntıları")),
-                    row(p, t!("İmzalayan"), g.signer.clone()),
-                    row(p, t!("Veren"), g.issuer.clone()),
-                    row(p, t!("Özet algoritması"), g.digest.clone()),
-                    row(p, t!("İmzalanma zamanı"), g.timestamp_ms.map(format::datetime_full).unwrap_or_else(|| t!("Zaman damgası yok").to_string())),
-                ],
-            ));
-        }
-        out
-    }
 }
 
 /// Everything the window shows about one item, read on a background thread.
 fn load_one(p: &Path) -> Loaded {
     let mut l = Loaded::default();
-    let info = rf_win::fileinfo::info(p).map_err(|e| e.to_string());
+    let info = rf_linux::fileinfo::info(p).map_err(|e| e.to_string());
     let is_dir = info.as_ref().is_ok_and(|i| i.is_dir);
     let is_file = info.as_ref().is_ok_and(|i| !i.is_dir);
-    l.blocked = is_file && rf_win::fileinfo::zone_blocked(p);
-    l.caps = rf_win::fileinfo::volume_caps(p);
     // a drive is its mount point
     if is_dir {
-        l.drive = rf_win::drives::list_drives().into_iter().find(|d| d.root == p);
+        l.drive = rf_linux::drives::list_drives().into_iter().find(|d| d.root == p);
     }
     if is_dir {
     }
     if is_file {
         if is_pe(p) {
-            l.pe = rf_win::pe::info(p);
-        }
-        if signable(p) {
-            l.signatures = rf_win::signature::read(p);
-        }
-        if ext_of(p) == "lnk" {
-            l.link = rf_win::shortcut::details(p).ok();
+            l.pe = rf_linux::pe::info(p);
         }
     }
     l.info = Some(info);
     l
-}
-
-/// WinVerifyTrust's reason (English, from rf_win::signature) in the UI language.
-fn verdict_reason(e: &str) -> String {
-    let l = e.to_ascii_lowercase();
-    let k = if l.contains("does not match") {
-        t!("imza dosyayla uyuşmuyor")
-    } else if l.contains("distrust") {
-        t!("sertifika açıkça engellenmiş")
-    } else if l.contains("not trusted") {
-        t!("sertifikaya güvenilmiyor")
-    } else if l.contains("expired") {
-        t!("sertifikanın süresi dolmuş")
-    } else if l.contains("chain") {
-        t!("sertifika zinciri kurulamadı")
-    } else if l.contains("no signature") {
-        t!("imza yok")
-    } else if l.contains("revoked") {
-        t!("sertifika iptal edilmiş")
-    } else if l.contains("code signing") {
-        t!("sertifika kod imzalamak için geçerli değil")
-    } else {
-        return e.to_string();
-    };
-    k.to_string()
-}
-
-/// A folder and everything under it (not following junctions or links), for a change that
-/// goes down the tree.
-fn walk(dir: &Path, cancel: &AtomicBool) -> Vec<PathBuf> {
-    let mut out = vec![dir.to_path_buf()];
-    let mut stack = vec![dir.to_path_buf()];
-    while let Some(d) = stack.pop() {
-        if cancel.load(Ordering::Relaxed) {
-            break;
-        }
-        let Ok(rd) = std::fs::read_dir(&d) else { continue };
-        for e in rd.flatten() {
-            let Ok(ft) = e.file_type() else { continue };
-            if ft.is_symlink() {
-                continue;
-            }
-            let p = e.path();
-            if ft.is_dir() {
-                stack.push(p.clone());
-            }
-            out.push(p);
-        }
-    }
-    out
 }
 
 fn group(n: u64) -> String {
@@ -1206,10 +809,6 @@ fn row_with(p: &Palette, k: &'static str, v: String, action: AnyElement) -> AnyE
 
 fn section(p: &Palette, title: &'static str) -> AnyElement {
     div().pt_1().pb(px(2.)).text_xs().font_weight(FontWeight::SEMIBOLD).text_color(p.text_secondary).child(title).into_any_element()
-}
-
-fn note(p: &Palette, text: &str) -> AnyElement {
-    div().text_xs().text_color(p.text_secondary).child(text.to_string()).into_any_element()
 }
 
 fn link_button(p: &Palette, id: &'static str, icon: L, label: &'static str) -> Stateful<Div> {
@@ -1298,7 +897,7 @@ impl Render for PropsView {
             self.frame_dark = Some(p.dark);
             let h = Self::hwnd(window);
             if h != 0 {
-                rf_win::window::set_dark_mode(h, p.dark);
+                rf_linux::window::set_dark_mode(h, p.dark);
             }
         }
         let title = match (self.single(), &self.drive) {
@@ -1369,9 +968,7 @@ impl Render for PropsView {
 
         let body: Vec<AnyElement> = match self.page {
             Page::General => self.render_general(&p, cx),
-            Page::Shortcut => self.render_shortcut(&p, cx),
             Page::Details => self.render_details(&p),
-            Page::Signatures => self.render_signatures(&p, cx),
             Page::Hashes => self.hash.clone().map(|h| vec![card(&p, vec![div().py_2().child(h).into_any_element()])]).unwrap_or_default(),
         };
 
@@ -1447,7 +1044,7 @@ impl Render for PropsView {
 
 #[cfg(test)]
 mod tests {
-    use super::{ARCHIVE, AtomicBool, NOT_INDEXED, Path, READONLY, attrs_from, is_pe, is_root, merge_attrs, signable, walk};
+    use super::{ARCHIVE, NOT_INDEXED, Path, READONLY, attrs_from, is_pe, is_root, merge_attrs};
 
     #[test]
     fn attribute_tristates_merge() {
@@ -1467,18 +1064,6 @@ mod tests {
     #[test]
     fn kinds_of_files() {
         assert!(is_pe(Path::new(r"C:\a\b.EXE")) && is_pe(Path::new("x.dll")) && !is_pe(Path::new("x.txt")));
-        assert!(signable(Path::new("kur.msi")) && signable(Path::new("a.ps1")) && !signable(Path::new("a.png")));
         assert!(is_root(Path::new("/")) && !is_root(Path::new("/home")));
-    }
-
-    #[test]
-    fn walking_a_tree() {
-        let d = std::env::temp_dir().join(format!("rf-props-walk-{}", std::process::id()));
-        std::fs::create_dir_all(d.join("a/b")).unwrap();
-        std::fs::write(d.join("a/b/x.txt"), b"x").unwrap();
-        std::fs::write(d.join("y.txt"), b"y").unwrap();
-        let all = walk(&d, &AtomicBool::new(false));
-        assert_eq!(all.len(), 5, "{all:?}");
-        std::fs::remove_dir_all(&d).unwrap();
     }
 }

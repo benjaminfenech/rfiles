@@ -611,6 +611,18 @@ properties…", Disk Cleanup, the Properties tabs Compatibility, Security, Shari
 Customize, the "Safely remove" listener, `splash.gif` (the installer's) with `tools/splash`,
 and the PowerShell tools. Every `cfg(windows)` / `cfg!(windows)` branch in rf-app is gone
 and `cfg(unix)` gates are dropped (always true). The launcher's "New window" action keeps
-`--new-window`. Still to go: the rf-linux stubs that only mirrored rf-win's API (shortcuts,
-signatures, the hotkey, the tray…), the `rf_win` alias, and the in-window/popup-window split
-with the gpui-windows shim.
+`--new-window`.
+
+**rf-linux's Windows stand-ins** fourth. rf-linux began as stubs of every rf-win module; the
+ones only Windows features used are deleted with those features: `.lnk` shortcuts (the
+Properties Shortcut tab, "Create shortcut" and "Paste shortcut", which showed on Linux but did
+nothing, and their preview), Authenticode signatures (the Digital signatures tab), Windows
+Search (`search_index`), the global quick-search hotkey (the desktop's shortcut runs
+`rfiles --quick-search`), "Unblock" for downloaded files, NTFS compression and encryption,
+Windows shares, and the unused `compat`, `dialog_reg`, `jumplist`, `shell_window` and
+`removal`. Home's Recent section read Windows' Recent folder; it stays empty until
+`recently-used.xbel` is read. rf-app now names the crate `rf_linux` (the `rf_win` alias is
+gone). Left for the last step: Libraries and shell folders (with rf-core's `Location`), the
+shell context menu, Windows preview handlers (with rf-player's and rustdecoder's Windows media
+paths), the popup-window menus and the gpui-windows shim, and rf-linux's crate-wide
+`#![allow(unused)]`.

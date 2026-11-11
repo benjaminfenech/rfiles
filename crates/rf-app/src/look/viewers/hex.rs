@@ -35,7 +35,7 @@ impl Viewer for HexViewer {
             && !f.head.is_empty()
             && !looks_like_text(&f.head)
             && !INFO_CARD.contains(&f.ext.as_str())
-            && rf_win::apppkg::kind_of(&f.path).is_none()
+            && rf_linux::apppkg::kind_of(&f.path).is_none()
             && !f.head.starts_with(b"ELF")
     }
     fn prepare(&mut self, f: &Probe, cx: &mut App) -> Prepared {

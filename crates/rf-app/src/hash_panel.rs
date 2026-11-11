@@ -20,7 +20,7 @@ use gpui_kit::component::{Icon, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 use rf_core::format;
-use rf_win::hash::{Cancelled, Hashes};
+use rf_linux::hash::{Cancelled, Hashes};
 
 use crate::theme::{self, Palette};
 
@@ -105,7 +105,7 @@ impl HashPanel {
                 let last = std::cell::Cell::new(Instant::now() - Duration::from_secs(1));
                 let ptx = tx.clone();
                 let c2 = cancel.clone();
-                let r = rf_win::hash::compute(
+                let r = rf_linux::hash::compute(
                     &path,
                     &mut |d, t| {
                         if last.get().elapsed() >= Duration::from_millis(80) || d >= t {

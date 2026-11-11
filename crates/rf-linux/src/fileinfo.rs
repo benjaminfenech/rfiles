@@ -143,26 +143,6 @@ pub fn set_attrs_tree(dir: &Path, set: u32, clear: u32, cancel: &dyn Fn() -> boo
     Ok(changed)
 }
 
-/// NTFS compression: not on Linux.
-pub fn set_compressed(_path: &Path, _on: bool) -> std::io::Result<()> {
-    Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "compression is a Windows (NTFS) feature"))
-}
-
-/// EFS encryption: not on Linux.
-pub fn set_encrypted(_path: &Path, _on: bool) -> std::io::Result<()> {
-    Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "encryption is a Windows (EFS) feature"))
-}
-
-/// Whether the volume supports (compression, encryption) as Windows does them: never on Linux.
-pub fn volume_caps(_path: &Path) -> (bool, bool) {
-    (false, false)
-}
-
-/// The folder's Windows share name: none on Linux.
-pub fn share_of(_dir: &Path) -> Option<String> {
-    None
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -198,18 +178,7 @@ mod tests {
         assert_eq!(n, 2, "the two read-only files, the folders were writable already");
         assert!(!std::fs::metadata(d.join("sub/a")).unwrap().permissions().readonly());
         assert_eq!(set_attrs(&d.join("b"), ARCHIVE | NOT_INDEXED, 0).ok(), Some(()), "Windows-only bits are ignored");
-        assert_eq!(volume_caps(&d), (false, false));
         let _ = std::fs::remove_dir_all(&d);
     }
 }
 
-/// Whether Windows treats the file as downloaded (its Zone.Identifier stream). Linux has no
-/// such mark (browsers don't block what they download): never.
-pub fn zone_blocked(_path: &Path) -> bool {
-    false
-}
-
-/// Removes the downloaded mark. Linux: there is none.
-pub fn unblock(_path: &Path) -> std::io::Result<()> {
-    Ok(())
-}

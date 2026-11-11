@@ -44,7 +44,7 @@ pub struct LookWindow {
     /// Her yüklemede artar: içerik geçiş animasyonu yeniden başlar.
     load_gen: u64,
     /// Otomatik yeniden yükleme: dosyanın klasörü izlenir.
-    _watch: Option<rf_win::watch::DirWatch>,
+    _watch: Option<rf_linux::watch::DirWatch>,
     _watch_task: Option<Task<()>>,
     focus: FocusHandle,
     _hide: Option<Task<()>>,
@@ -208,7 +208,7 @@ impl LookWindow {
         self.viewer.cleanup();
         self._loading = None;
         self.busy = false;
-        if rf_win::drives::slow_to_read(&self.path) {
+        if rf_linux::drives::slow_to_read(&self.path) {
             self.load_in_background(resize, window, cx);
             return;
         }
@@ -290,7 +290,7 @@ impl LookWindow {
         let Some(dir) = self.path.parent().map(|d| d.to_path_buf()) else { return };
         let stamp = |p: &std::path::Path| std::fs::metadata(p).ok().map(|m| (m.modified().ok(), m.len()));
         let (tx, mut rx) = futures::channel::mpsc::unbounded::<()>();
-        let Ok(w) = rf_win::watch::watch_dir(&dir, Duration::from_millis(300), move || {
+        let Ok(w) = rf_linux::watch::watch_dir(&dir, Duration::from_millis(300), move || {
             let _ = tx.unbounded_send(());
         }) else {
             return;
@@ -328,7 +328,7 @@ impl LookWindow {
 
     pub(crate) fn set_topmost(&mut self, on: bool, cx: &mut Context<Self>) {
         self.topmost = on;
-        rf_win::look::win::set_topmost(self.hwnd, on);
+        rf_linux::look::win::set_topmost(self.hwnd, on);
         cx.notify();
     }
 
@@ -355,8 +355,8 @@ impl LookWindow {
 
     fn open_file(&self) {
         let p = self.path.clone();
-        rf_win::sta::run(move |_| {
-            if let Err(e) = rf_win::shell::open(&p) {
+        rf_linux::sta::run(move |_| {
+            if let Err(e) = rf_linux::shell::open(&p) {
                 log::warn!("look open: {e:#}");
             }
         });
@@ -364,8 +364,8 @@ impl LookWindow {
 
     fn open_with(&self) {
         let p = self.path.clone();
-        rf_win::sta::run(move |_| {
-            if let Err(e) = rf_win::shell::open_with(&p) {
+        rf_linux::sta::run(move |_| {
+            if let Err(e) = rf_linux::shell::open_with(&p) {
                 log::warn!("look open with: {e:#}");
             }
         });
@@ -375,8 +375,8 @@ impl LookWindow {
         let items = vec![self.path.clone()];
         let ui_thread = crate::sys::current_thread_id();
         crate::sys::release_capture();
-        rf_win::sta::run(move |owner| {
-            if let Err(e) = rf_win::dnd::drag_out(owner, ui_thread, &items) {
+        rf_linux::sta::run(move |owner| {
+            if let Err(e) = rf_linux::dnd::drag_out(owner, ui_thread, &items) {
                 log::warn!("look drag: {e:#}");
             }
         });

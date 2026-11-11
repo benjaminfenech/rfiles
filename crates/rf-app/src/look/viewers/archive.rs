@@ -30,7 +30,7 @@ impl Viewer for ArchiveViewer {
     }
     fn can_handle(&self, f: &Probe) -> bool {
         // app packages (APK, MSIX, IPA, NuGet) are zips too, but what they are says more: the info card
-        f.is_file() && rf_archive::is_supported(&f.path) && rf_win::apppkg::kind_of(&f.path).is_none()
+        f.is_file() && rf_archive::is_supported(&f.path) && rf_linux::apppkg::kind_of(&f.path).is_none()
     }
     fn prepare(&mut self, f: &Probe, cx: &mut App) -> Prepared {
         self.path = f.path.clone();
@@ -73,8 +73,8 @@ pub fn rfiles_launch(path: &Path) -> (String, String) {
 fn open_in_rfiles(path: PathBuf) {
     std::thread::spawn(move || {
         let (msg, arg) = rfiles_launch(&path);
-        rf_win::look::win::allow_any_foreground();
-        if rf_win::single_instance::send_to("rfiles", &msg) {
+        rf_linux::look::win::allow_any_foreground();
+        if rf_linux::single_instance::send_to("rfiles", &msg) {
             return;
         }
         let exe = std::env::current_exe().map(|e| e.with_file_name(format!("rfiles{}", std::env::consts::EXE_SUFFIX)));

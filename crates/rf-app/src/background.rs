@@ -20,8 +20,8 @@ pub fn quitting() -> bool {
     QUITTING.load(Ordering::Relaxed)
 }
 
-fn labels() -> rf_win::tray::Labels {
-    rf_win::tray::Labels {
+fn labels() -> rf_linux::tray::Labels {
+    rf_linux::tray::Labels {
         tooltip: "rfiles".into(),
         open: t!("rfiles'ı aç").into(),
         new_window: t!("Yeni pencere").into(),
@@ -42,9 +42,9 @@ pub fn sync_tray(on: bool) {
         return;
     }
     if on {
-        rf_win::tray::show(labels());
+        rf_linux::tray::show(labels());
     } else {
-        rf_win::tray::hide();
+        rf_linux::tray::hide();
     }
     // One icon in the notification area: while ours is there, DirectLook leaves its own out
     // (it reads this setting when told to reload; see look::app::tray_wanted).
@@ -53,8 +53,8 @@ pub fn sync_tray(on: bool) {
 
 /// Routes tray clicks to the app (call once at startup).
 pub fn init(cx: &mut App) {
-    let (tx, mut rx) = futures::channel::mpsc::unbounded::<rf_win::tray::TrayEvent>();
-    rf_win::tray::set_handler(move |e| {
+    let (tx, mut rx) = futures::channel::mpsc::unbounded::<rf_linux::tray::TrayEvent>();
+    rf_linux::tray::set_handler(move |e| {
         let _ = tx.unbounded_send(e);
     });
     cx.spawn(async move |cx| {
@@ -66,8 +66,8 @@ pub fn init(cx: &mut App) {
     .detach();
 }
 
-fn on_tray(e: rf_win::tray::TrayEvent, cx: &mut App) {
-    use rf_win::tray::TrayEvent;
+fn on_tray(e: rf_linux::tray::TrayEvent, cx: &mut App) {
+    use rf_linux::tray::TrayEvent;
     match e {
         TrayEvent::Open => {
             // bring an open window forward, or open one (restoring the last session)
@@ -108,7 +108,7 @@ pub fn op_finished(ops: &Entity<Ops>, id: u64, cx: &mut App) {
         OpPhase::Failed(e) => (t!("İşlem başarısız oldu"), format!("{title}\n{e}")),
         OpPhase::Cancelled | OpPhase::Running => return,
     };
-    rf_win::tray::notify(head, &body);
+    rf_linux::tray::notify(head, &body);
 }
 
 /// Whether one of our windows has the focus. Linux has no foreground-window query that works

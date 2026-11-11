@@ -1,5 +1,5 @@
 //! File categorization → symbol icon (Lucide) + type label.
-//! Native shell icons/thumbnails come later via rf-win; this is the instant, zero-I/O fallback.
+//! Native icons/thumbnails come later via rf-linux; this is the instant, zero-I/O fallback.
 
 use crate::t;
 use gpui_kit::assets::IconName as L;
@@ -58,7 +58,7 @@ pub fn has_thumbnail(e: &Entry) -> bool {
     }
     matches!(category(e), Category::Image | Category::Video | Category::Pdf)
         || matches!(&*e.ext, "docx" | "pptx" | "xlsx" | "psd" | "blend" | "3mf" | "stl" | "glb")
-        || rf_win::design::is_design_ext(&e.ext)
+        || rf_linux::design::is_design_ext(&e.ext)
 }
 
 pub fn icon_for(cat: Category) -> L {

@@ -18,14 +18,14 @@ const TEXT_LIMIT: usize = 48 * 1024;
 const PREVIEW_PX: u32 = 384;
 
 /// Shared folder-size cache (Size column, preview pane, Properties window).
-pub fn size_cache() -> &'static rf_win::foldersize::FolderSizeCache {
-    rf_win::foldersize::shared_cache()
+pub fn size_cache() -> &'static rf_linux::foldersize::FolderSizeCache {
+    rf_linux::foldersize::shared_cache()
 }
 
 pub struct Preview {
     target: Option<(PathBuf, Entry)>,
     text: Option<(PathBuf, SharedString)>,
-    folder_size: Option<(PathBuf, Option<rf_win::foldersize::FolderSize>)>,
+    folder_size: Option<(PathBuf, Option<rf_linux::foldersize::FolderSize>)>,
     hash: Option<Entity<crate::hash_panel::HashPanel>>,
     /// Media/document properties (duration, resolution, …) for the current target.
     media: Option<(PathBuf, Vec<(&'static str, String)>)>,
@@ -68,7 +68,7 @@ struct PlayerUi {
     started: bool,
     /// The video's screen rect last sent to the host.
     rect: Option<[i32; 4]>,
-    state: Option<rf_win::preview_host::MediaState>,
+    state: Option<rf_linux::preview_host::MediaState>,
     /// The seek bar's bounds (window coordinates), for click-to-seek.
     bar: std::rc::Rc<std::cell::Cell<Option<Bounds<Pixels>>>>,
     _poll: Option<Task<()>>,
@@ -78,7 +78,7 @@ struct PlayerUi {
 impl Drop for Preview {
     fn drop(&mut self) {
         if self.player.as_ref().is_some_and(|p| p.started) {
-            rf_win::sta::run(|_| rf_win::preview_host::hide());
+            rf_linux::sta::run(|_| rf_linux::preview_host::hide());
         }
     }
 }
@@ -86,7 +86,6 @@ impl Drop for Preview {
 enum Extra {
     /// (name, is folder, size) of the top-level entries, and how many there are in total.
     Archive(Vec<(String, bool, u64)>, usize),
-    Shortcut { target: String, args: String, dir: String },
 }
 
 fn is_markdown(e: &Entry) -> bool {
@@ -307,20 +306,20 @@ impl Preview {
 
     fn hide_host(&mut self) {
         if self.host.take().is_some() {
-            rf_win::sta::run(|_| rf_win::preview_host::hide());
+            rf_linux::sta::run(|_| rf_linux::preview_host::hide());
         }
     }
 
     /// Stops our player (and hides its video).
     fn stop_player(&mut self) {
         if self.player.take().is_some_and(|p| p.started) {
-            rf_win::sta::run(|_| rf_win::preview_host::hide());
+            rf_linux::sta::run(|_| rf_linux::preview_host::hide());
         }
     }
 
     /// Audio / video with no Windows preview handler: our own player.
     fn playable(&self, path: &Path, e: &Entry) -> bool {
-        !e.is_dir() && !e.is_cloud_placeholder() && matches!(icons::category(e), Category::Video | Category::Audio) && rf_win::preview_host::is_playable(path)
+        !e.is_dir() && !e.is_cloud_placeholder() && matches!(icons::category(e), Category::Video | Category::Audio) && rf_linux::preview_host::is_playable(path)
     }
 
     fn owner(window: &Window) -> Option<isize> {
@@ -349,14 +348,14 @@ impl Preview {
         let pl = self.player.get_or_insert_with(|| PlayerUi { path: path.clone(), started: false, rect: None, state: None, bar: Default::default(), _poll: None });
         let playing = pl.state.is_some_and(|s| s.playing);
         if playing {
-            rf_win::sta::run(|_| rf_win::preview_host::media_pause());
+            rf_linux::sta::run(|_| rf_linux::preview_host::media_pause());
         } else if !video {
             // audio: no window to show
             pl.started = true;
-            rf_win::sta::run(move |_| rf_win::preview_host::media_play(owner, &path, None));
+            rf_linux::sta::run(move |_| rf_linux::preview_host::media_play(owner, &path, None));
         } else if pl.started {
             let rect = pl.rect.map(|r| crate::sys::Rect { left: r[0], top: r[1], right: r[2], bottom: r[3] });
-            rf_win::sta::run(move |_| rf_win::preview_host::media_play(owner, &path, rect));
+            rf_linux::sta::run(move |_| rf_linux::preview_host::media_play(owner, &path, rect));
         } else {
             // the video box takes its place on the next frame and starts playback there
             pl.started = true;
@@ -368,8 +367,8 @@ impl Preview {
                 loop {
                     cx.background_executor().timer(std::time::Duration::from_millis(250)).await;
                     let (tx, rx) = futures::channel::oneshot::channel();
-                    rf_win::sta::run(move |_| {
-                        let _ = tx.send(rf_win::preview_host::media_state());
+                    rf_linux::sta::run(move |_| {
+                        let _ = tx.send(rf_linux::preview_host::media_state());
                     });
                     let st = rx.await.ok().flatten();
                     idle = if st.is_some_and(|s| s.playing) { 0 } else { idle + 1 };
@@ -408,11 +407,11 @@ impl Preview {
         let first = pl.rect.is_none();
         pl.rect = Some(r);
         let rect = crate::sys::Rect { left: r[0], top: r[1], right: r[2], bottom: r[3] };
-        rf_win::sta::run(move |_| {
+        rf_linux::sta::run(move |_| {
             if first {
-                rf_win::preview_host::media_play(owner, &path, Some(rect));
+                rf_linux::preview_host::media_play(owner, &path, Some(rect));
             } else {
-                rf_win::preview_host::media_reposition(rect);
+                rf_linux::preview_host::media_reposition(rect);
             }
         });
     }
@@ -488,7 +487,7 @@ impl Preview {
                             let w = f32::from(b.size.width).max(1.0);
                             let f = ((f32::from(e.position.x) - f32::from(b.origin.x)) / w).clamp(0.0, 1.0) as f64;
                             if this.player.as_ref().is_some_and(|pl| pl.started) {
-                                rf_win::sta::run(move |_| rf_win::preview_host::media_seek(f));
+                                rf_linux::sta::run(move |_| rf_linux::preview_host::media_seek(f));
                                 if let Some(st) = this.player.as_mut().and_then(|pl| pl.state.as_mut()) {
                                     st.position = st.duration * f;
                                 }
@@ -520,7 +519,7 @@ impl Preview {
         // Design files show the picture saved inside them (their thumbnail): CorelDRAW's preview
         // handler draws only the page, an empty sheet when the design sits beside it. Adobe's
         // handler for Illustrator / EPS draws the artwork itself, so it stays when installed.
-        if rf_win::design::is_design_ext(&ext) && !matches!(ext.as_str(), "ai" | "eps" | "epsf") {
+        if rf_linux::design::is_design_ext(&ext) && !matches!(ext.as_str(), "ai" | "eps" | "epsf") {
             return false;
         }
         match self.handlers.get(&ext) {
@@ -528,7 +527,7 @@ impl Preview {
             None => {
                 self.handlers.insert(ext.clone(), false);
                 let p = path.to_path_buf();
-                let task = cx.background_spawn(async move { rf_win::preview_host::handler_for(&p).is_some() });
+                let task = cx.background_spawn(async move { rf_linux::preview_host::handler_for(&p).is_some() });
                 cx.spawn(async move |this, cx| {
                     let ok = task.await;
                     let _ = this.update(cx, |pv, cx| {
@@ -571,16 +570,16 @@ impl Preview {
         };
         let dark = Palette::for_window(window).dark;
         let rect = crate::sys::Rect { left: r[0], top: r[1], right: r[2], bottom: r[3] };
-        rf_win::sta::run(move |_| {
+        rf_linux::sta::run(move |_| {
             if same_file {
-                rf_win::preview_host::reposition(rect);
+                rf_linux::preview_host::reposition(rect);
             } else {
                 let colors = if dark {
-                    rf_win::preview_host::Colors { background: 0x2B2B2B, text: 0xF0F0F0 }
+                    rf_linux::preview_host::Colors { background: 0x2B2B2B, text: 0xF0F0F0 }
                 } else {
-                    rf_win::preview_host::Colors { background: 0xF9F9F9, text: 0x1B1B1B }
+                    rf_linux::preview_host::Colors { background: 0xF9F9F9, text: 0x1B1B1B }
                 };
-                rf_win::preview_host::show(owner, &path, rect, &colors);
+                rf_linux::preview_host::show(owner, &path, rect, &colors);
             }
         });
     }
@@ -621,15 +620,6 @@ impl Preview {
                     v.truncate(200);
                     Some(Extra::Archive(v, total))
                 }))
-            } else if &*e.ext == "lnk" {
-                Some(cx.background_spawn(async move {
-                    let s = rf_win::shortcut::resolve(&p).ok()?;
-                    Some(Extra::Shortcut {
-                        target: s.target.to_string_lossy().into_owned(),
-                        args: s.args,
-                        dir: s.working_dir.to_string_lossy().into_owned(),
-                    })
-                }))
             } else {
                 None
             };
@@ -654,7 +644,7 @@ impl Preview {
             if rich && !e.is_dir() && !e.is_cloud_placeholder() {
                 let p = path.clone();
                 let p2 = path.clone();
-                let work = cx.background_spawn(async move { rf_win::props::media_props(&p2) });
+                let work = cx.background_spawn(async move { rf_linux::props::media_props(&p2) });
                 self._media_task = Some(cx.spawn(async move |this, cx| {
                     let props = work.await;
                     let _ = this.update(cx, |v, cx| {
@@ -754,7 +744,7 @@ fn read_text_head(path: &Path) -> Option<String> {
         return Some(String::from_utf16_lossy(&u));
     }
     // UTF-8 (with or without BOM), else the locale's legacy ANSI page (Turkish: Windows-1254)
-    let s = rf_win::encoding::decode_text(buf.strip_prefix(&[0xEF, 0xBB, 0xBF]).unwrap_or(&buf));
+    let s = rf_linux::encoding::decode_text(buf.strip_prefix(&[0xEF, 0xBB, 0xBF]).unwrap_or(&buf));
     // keep it light: at most 400 lines
     Some(s.lines().take(400).collect::<Vec<_>>().join("\n"))
 }
@@ -787,13 +777,6 @@ fn render_extra(p: &Palette, x: &Extra) -> AnyElement {
                 .children(rows)
                 .into_any_element()
         }
-        Extra::Shortcut { target, args, dir } => v_flex()
-            .w_full()
-            .gap_1p5()
-            .child(prop_row(p, t!("Hedef"), crate::sys::wrap_path(&target)))
-            .when(!args.is_empty(), |d| d.child(prop_row(p, t!("Bağımsız değişkenler"), args.clone())))
-            .when(!dir.is_empty(), |d| d.child(prop_row(p, t!("Başlangıç yeri"), crate::sys::wrap_path(&dir))))
-            .into_any_element(),
     }
 }
 
