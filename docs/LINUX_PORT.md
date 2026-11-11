@@ -637,3 +637,18 @@ rf-archive and rf-player, with rf-player's Direct3D presenter; and the `windows`
 `windows-core` dependencies and the `[patch]` pointing GPUI's Windows backend at upstream's
 fork. rf-linux's `#![allow(unused)]` is gone, the crate-wide one and the 24 per-file ones the
 stub generator left (with the dead helpers they hid). The shell context menu module stays: on Linux it is "Open with".
+
+## Updates
+
+Settings → About checks GitHub Releases (`rf_linux::update`, `rf-app/src/about.rs`): 30 s after
+start, then every 24 hours while "Check for updates automatically" is on, and on "Check now".
+A newer release shows in the status bar and on the About page. Install picks the release file
+for how this copy was installed (`dpkg-query -S`, `rpm -qf`, `pacman -Qo` on the running exe,
+or Flatpak) and the CPU, downloads it to `~/.cache/rfiles/updates`, checks it against the
+SHA-256 GitHub publishes for each release file (no digest, no install), and installs it with
+`pkexec apt-get install` / `dnf install` / `zypper install` / `pacman -U`, or
+`flatpak install --reinstall --bundle` (`--user` or `--system`, as installed). Restart waits for
+this process (or Flatpak instance) to end and starts the installed one. Test copies
+(`RFILES_CONFIG_DIR`) don't check by themselves. `cargo run -p rf-linux --example update_check
+-- --download` tries the check and a verified download without installing.
+

@@ -2648,6 +2648,29 @@ impl Workspace {
                             )
                     }))
                     .children(ide_button)
+                    // a newer release (or one installed, waiting for a restart): to Settings → About
+                    .children(match crate::about::update_state() {
+                        crate::about::UpdateState::Available(r) => Some(format!("rfiles {} available", r.version)),
+                        crate::about::UpdateState::Installed(_) => Some("Restart to update".to_string()),
+                        _ => None,
+                    }
+                    .map(|label| {
+                        h_flex()
+                            .id("update-available")
+                            .h(px(22.))
+                            .px_2()
+                            .gap_1()
+                            .items_center()
+                            .rounded(theme::RADIUS_SM)
+                            .text_color(p.accent)
+                            .hover(|s| s.bg(p.hover))
+                            .child(Icon::new(L::Download).size(px(12.)))
+                            .child(label)
+                            .on_click(cx.listener(|this, _, window, cx| {
+                                crate::settings_view::open_page(crate::settings_view::Page::About, cx);
+                                this.navigate(Location::Settings, window, cx);
+                            }))
+                    }))
                     .children(ms.filter(|_| in_folder && perf).map(|ms| format!("{ms} ms"))),
             )
     }

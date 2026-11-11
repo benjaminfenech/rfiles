@@ -33,6 +33,13 @@ Download the package for your system from the
 | Arch, CachyOS, Manjaro | `rfiles-git-…-x86_64.pkg.tar.zst` | `sudo pacman -U ./rfiles-git-*.pkg.tar.zst` |
 | Any distribution | `rfiles-….x86_64.flatpak` / `.aarch64.flatpak` | `flatpak install --user ./rfiles-*.flatpak` |
 
+**Updates:** rfiles looks for a newer release soon after it starts and then once a day, and
+says so in the status bar and in Settings → About (where the automatic check can be turned off).
+Install there takes the same kind of package you installed, checks its SHA-256 against GitHub's,
+and installs it: .deb, .rpm and Arch packages through `pkexec` (your desktop asks for your
+password), the Flatpak with `flatpak install`. Then Restart runs the new version. A copy built
+from source only gets a link to the release.
+
 **Arch from source:** `packaging/arch/PKGBUILD` builds `rfiles-git` from the latest
 commit. Run `makepkg -si` there again to update.
 
@@ -166,7 +173,7 @@ have them:
 - **Windows shell features:** jump lists, the taskbar preview and taskbar progress, Libraries, Windows Search, OneDrive status, devices under This PC, preview handlers, rfiles as other apps' Open/Save dialog, `.lnk` shortcuts, the global hotkey, and the speed test against File Explorer.
 - **Properties tabs:** Shortcut, Compatibility, Security (Windows ACLs), Digital signatures (Authenticode), Sharing, Customize (desktop.ini folder icons), Disk Cleanup, "Unblock", and the archive, indexing, compression and encryption attributes. Hidden is a dot name on Linux, and read-only is the write permission.
 - **Prompts:** upstream's strips asking for a GitHub star or a donation are gone. Settings → About still has the links.
-- **Platform plumbing:** Velopack install and auto-update (packages update through your package manager), Mica, the hybrid GPU/CPU renderer and its popup-window menus, protected system files, and upstream's Direct3D video engine (rustdecoder). Video plays through rf-player and FFmpeg.
+- **Platform plumbing:** Velopack install and auto-update (rfiles has its own updater for the Linux packages), Mica, the hybrid GPU/CPU renderer and its popup-window menus, protected system files, and upstream's Direct3D video engine (rustdecoder). Video plays through rf-player and FFmpeg.
 
 ## Pending
 

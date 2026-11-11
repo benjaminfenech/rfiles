@@ -21,6 +21,9 @@ parking_lot.workspace = true
 smallvec.workspace = true
 crossbeam-channel.workspace = true
 dirs.workspace = true
+# the updater: GitHub's release API and the download (rustls, no system TLS library)
+ureq = "3.5"
+serde_json.workspace = true
 libc = "0.2"
 chrono.workspace = true
 notify.workspace = true

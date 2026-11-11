@@ -283,7 +283,8 @@ pub struct Settings {
     pub show_perf_info: bool,
     /// A notification when a long operation finishes while rfiles is not in front.
     pub notify_long_ops: bool,
-    /// Updates (GitHub Releases) are looked for and downloaded in the background.
+    /// Newer releases (GitHub Releases) are looked for in the background (never installed
+    /// without asking).
     pub auto_update: bool,
     /// The one-time "star it on GitHub" strip: first start (Unix ms), starts so far, and
     /// whether it was answered (starred or dismissed).

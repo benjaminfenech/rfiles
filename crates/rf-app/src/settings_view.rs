@@ -1602,9 +1602,10 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
     out
 }
 
-fn open_url(url: &'static str) {
+fn open_url(url: &str) {
+    let url = url.to_string();
     std::thread::spawn(move || {
-        let _ = rf_linux::shell::open(std::path::Path::new(url));
+        let _ = rf_linux::shell::open(std::path::Path::new(&url));
     });
 }
 
@@ -1613,6 +1614,47 @@ const ISSUES_URL: &str = "https://github.com/benjaminfenech/rfiles/issues/new";
 const RELEASES_URL: &str = "https://github.com/benjaminfenech/rfiles/releases";
 /// The project rfiles grew out of.
 const UPSTREAM_URL: &str = "https://github.com/gelenmedya/rustyfiles";
+
+/// Updates from GitHub Releases: where things stand and the button that fits.
+fn update_card(p: &Palette) -> AnyElement {
+    use crate::about::UpdateState as S;
+    let check = |p: &Palette| {
+        button("upd-check", p, "Check now", |window, cx| {
+            crate::about::run(cx, || crate::about::check(true));
+            window.refresh();
+        })
+    };
+    let (icon, text, control): (L, String, AnyElement) = match crate::about::update_state() {
+        S::Idle => (L::RefreshCw, "Updates come from rfiles' releases on GitHub.".into(), check(p)),
+        S::Checking => (L::RefreshCw, "Checking…".into(), div().into_any_element()),
+        S::UpToDate => (L::CircleCheck, format!("rfiles {} is the latest version.", crate::about::version()), check(p)),
+        S::Available(r) => {
+            let url = r.url.clone();
+            let notes = button("upd-notes", p, "Release notes", move |_, _| open_url(&url));
+            let action = if crate::about::installable() {
+                button("upd-install", p, "Install", |window, cx| {
+                    crate::about::run(cx, crate::about::install_available);
+                    window.refresh();
+                })
+            } else {
+                // built from source: the release page has the packages
+                let url = r.url.clone();
+                button("upd-page", p, "Download", move |_, _| open_url(&url))
+            };
+            let how = if crate::about::installable() { "Your desktop may ask for your password to install it." } else { "This copy wasn't installed from a package: download it from the release page." };
+            (L::Download, format!("rfiles {} is available. {how}", r.version), h_flex().gap_2().child(notes).child(action).into_any_element())
+        }
+        S::Downloading(v, pct) => (L::Download, format!("Downloading rfiles {v}… {pct}%"), div().into_any_element()),
+        S::Installing(v) => (L::Download, format!("Installing rfiles {v}…"), div().into_any_element()),
+        S::Installed(v) => (
+            L::CircleCheck,
+            format!("rfiles {v} is installed. Restart to use it."),
+            button("upd-restart", p, "Restart rfiles", |_, cx| crate::about::restart(cx)),
+        ),
+        S::Failed(e) => (L::TriangleAlert, format!("Update failed: {e}"), check(p)),
+    };
+    card(p, icon, "Updates", Some(&text), control)
+}
 
 fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
     let ver = crate::about::version_full();
@@ -1625,6 +1667,14 @@ fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
             "rfiles",
             Some(&version),
             button("copy-ver", p, t!("Kopyala"), move |_, cx| cx.write_to_clipboard(ClipboardItem::new_string(format!("rfiles {ver}")))),
+        ),
+        update_card(p),
+        card(
+            p,
+            L::RefreshCw,
+            "Check for updates automatically",
+            Some("Soon after rfiles starts, then once a day. Nothing is installed without asking."),
+            sw("auto-upd", p, cx.global::<Settings>().auto_update, |s, v| s.auto_update = v),
         ),
         section(p, "GitHub"),
         link_row(p, "gh-star", L::Star, t!("GitHub'da yıldız ver"), Some(t!("rfiles işinize yarıyorsa başkalarının da bulmasına yardım eder.")), |_, _| open_url(REPO_URL)),

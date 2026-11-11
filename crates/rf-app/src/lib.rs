@@ -390,6 +390,8 @@ pub fn main() {
         // With "run in the background" on, the app stays in the notification area instead.
         background::init(cx);
         quick_search::init(cx);
+        // updates from GitHub Releases (Settings → About)
+        about::spawn_checks(cx);
         // GPUI would quit by itself when the last window closes (QuitMode::Default on Windows):
         // that cut running copies in half and makes background mode impossible. We decide.
         cx.set_quit_mode(gpui_kit::QuitMode::Explicit);
