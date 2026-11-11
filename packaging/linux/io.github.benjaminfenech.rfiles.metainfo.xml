@@ -31,4 +31,14 @@
     <mediatype>inode/directory</mediatype>
   </provides>
   <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.7.0" date="2026-11-11">
+      <description>
+        <p>
+          The first release as rfiles (was rustyfiles): Home lists recently used files, dates
+          follow the date setting everywhere, and the app never asks for stars or donations.
+        </p>
+      </description>
+    </release>
+  </releases>
 </component>
