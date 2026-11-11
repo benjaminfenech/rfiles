@@ -343,7 +343,13 @@ Merge `upstream/main` into a `sync/upstream-<version>` branch (merge commit, nev
 New `rf-win` API that the app calls needs a Linux counterpart in `rf-linux` (the build says
 which); new `rf-win` examples get the `support/<name>_win.rs` wrapper with a stub `main`;
 new features need checking for Windows-only assumptions the compiler can't see (`\\`
-separators, case-insensitive paths, drive letters). `README.md` is this fork's own (Linux only, since 2026-11-11): when upstream's README
+separators, case-insensitive paths, drive letters). **No prompts on Linux** (2026-11-11): the app never asks for a GitHub star or a donation by
+itself. `installer::ASKS` (`cfg!(windows)`) gates the bottom-of-window star strip
+(`star_due`) and the speed test's star card; Settings → About keeps the star and coffee
+links, which only show when someone goes looking. Upstream's "buy me a coffee" strip
+(`1c0eec3`, after 0.6.0: `donate.rs`, `installer::donate_due`) arrives with the next sync:
+make `donate_due` return `ASKS && …` the same way, and extend `linux_asks_for_nothing`.
+`README.md` is this fork's own (Linux only, since 2026-11-11): when upstream's README
 changes, keep ours (`git checkout --ours README.md`) and carry over anything that matters
 on Linux, such as a new feature or shortcut.
 
