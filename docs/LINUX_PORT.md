@@ -591,3 +591,13 @@ old id. Flatpak can't carry an install over between ids: the old one is uninstal
 release build, about 25 minutes) and upstream's Velopack `release.yml` are gone; the
 "Protect main" ruleset now requires only the `linux` check. The Linux release no longer
 waits for a Windows release on a hand-pushed tag: it creates the release itself.
+
+**The Windows crates** next: `rf-win` (upstream's Windows layer, 23.7k lines) and `rf-dialog`
+(the Open/Save dialog DLL) are deleted, with `tools/gpustress` (a Direct3D load generator for
+the hybrid renderer), the winget manifests, `scripts/install.ps1`, the `.rc` files and
+`rustyfiles.ico`, and rf-app's Windows dependencies (Velopack, the GPUI Windows fork,
+`windows-registry`, `embed-resource`). The four files rf-linux shared from rf-win by
+`#[path]` (`hash`, `apppkg` with `apppkg/vector`, `elf`, `design`) now live in rf-linux.
+`picker` (rfiles as other apps' Open/Save dialog, which only the DLL starts) keeps compiling
+with rf-dialog's message types in `rf-app/src/picker_proto.rs`, until the rest of rf-app's
+Windows code goes. Code under `cfg(windows)` is untouched here: it's never compiled on Linux.

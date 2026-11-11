@@ -249,8 +249,7 @@ next to it.
 | Crate | What it holds |
 |---|---|
 | `crates/rf-app` | The interface, and the two programs: `rfiles` and `directlook` (`src/look/`) |
-| `crates/rf-linux` | The Linux platform layer: the same modules and functions as `rf-win`, used under its name in Linux builds |
-| `crates/rf-win` | rustyfiles' Windows layer, no longer maintained (Windows builds only; a few files with no Windows code are shared with `rf-linux`) |
+| `crates/rf-linux` | The Linux platform layer (the app still calls it by its old name, `rf_win`) |
 | `crates/gpui-windows-shim` | Linux stand-in for the few calls rf-app makes into rustyfiles' GPUI Windows fork |
 | `crates/rf-core` | The model: locations, history, entries, formatting |
 | `crates/rf-archive` | Archive operations: browse, extract, create, edit |

@@ -17,8 +17,6 @@ path = "src/bin/directlook.rs"
 # the speed test asks rustyfiles.com for a short result link (already in the tree through velopack)
 ureq = "3.5"
 rf-core.workspace = true
-# the Open/Save dialog request types (the DLL itself is a separate build output)
-rf-dialog = { path = "../rf-dialog" }
 rf-archive.workspace = true
 rf-player.workspace = true
 rustdecoder.workspace = true
@@ -48,15 +46,3 @@ chrono.workspace = true
 rf-linux.workspace = true
 # no-op stand-in for the Windows fork's `gpui_windows::…` API
 gpui-windows-shim = { path = "../gpui-windows-shim" }
-
-[target.'cfg(windows)'.dependencies]
-rf-win.workspace = true
-# installer and auto-update (GitHub Releases)
-velopack = "=1.2.161"
-# Our fork (github.com/gelenmedya/gpui-pre-windows, hybrid GPU/CPU renderer); `gpui_windows::hybrid` is the public API.
-gpui-pre-windows = "0.3.11"
-windows-registry = "0.6"
-windows.workspace = true
-
-[build-dependencies]
-embed-resource = "3"

@@ -38,14 +38,9 @@ pub mod fileops;
 pub mod foldersize;
 pub mod sysparams;
 pub mod git;
-// Shared with rf-win as they are (no Windows code in them): upstream's fixes arrive with each sync
-#[path = "../../rf-win/src/hash.rs"]
 pub mod hash;
-#[path = "../../rf-win/src/apppkg.rs"]
 pub mod apppkg;
-#[path = "../../rf-win/src/elf.rs"]
 pub mod elf;
-#[path = "../../rf-win/src/design.rs"]
 pub mod design;
 pub mod journal;
 pub mod known;

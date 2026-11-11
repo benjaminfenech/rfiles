@@ -13,7 +13,7 @@ use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 use rf_core::Location;
-use rustyfiles_dialog::proto::{Mode, Request, Response, first_ext, read_msg, write_msg};
+use crate::picker_proto::{Mode, Request, Response, first_ext, read_msg, write_msg};
 
 use crate::t;
 use crate::theme::{self, Palette};
