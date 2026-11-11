@@ -6,6 +6,7 @@
 use std::collections::HashSet;
 
 use gpui_kit::assets::IconName as L;
+use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::{Icon, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
@@ -14,7 +15,7 @@ use crate::fluent_menu::{self, Item, Menu, MenuIcon};
 use crate::select_box::{Choice, select_box};
 use crate::i18n::Lang;
 use crate::settings::{
-    self, AnimPref, BackdropPref, ClickPref, DatePref, DefaultView, DeletePref, IdePref, Settings, StartupPref, ThemePref,
+    self, AnimPref, BackdropPref, ClickPref, DefaultView, DeletePref, IdePref, Settings, StartupPref, ThemePref,
 };
 use crate::t;
 use crate::look::config::LookSettings;
@@ -51,12 +52,15 @@ const PAGES: [(Page, L, &str); 10] = [
 struct Ui {
     page: Page,
     open: HashSet<&'static str>,
+    /// The date pattern field (made on first show; it needs a window), and the pattern it last
+    /// saved, to tell a change made elsewhere (an import) from the user's typing.
+    date_input: Option<(Entity<InputState>, String)>,
 }
 impl Global for Ui {}
 
 fn ui(cx: &mut App) -> &mut Ui {
     if !cx.has_global::<Ui>() {
-        cx.set_global(Ui { page: Page::General, open: HashSet::new() });
+        cx.set_global(Ui { page: Page::General, open: HashSet::new(), date_input: None });
     }
     cx.global_mut::<Ui>()
 }
@@ -227,7 +231,7 @@ fn link_row(p: &Palette, id: &'static str, icon: L, title: &str, desc: Option<&s
 
 // ---------------------------------------------------------------- page
 
-pub fn render(p: &Palette, cx: &mut App) -> AnyElement {
+pub fn render(p: &Palette, window: &mut Window, cx: &mut App) -> AnyElement {
     let page = ui(cx).page;
     let s = cx.global::<Settings>().clone();
     let mut nav = v_flex().w(px(232.)).flex_shrink_0().h_full().px_3().pt_5().gap_0p5().child(
@@ -257,7 +261,7 @@ pub fn render(p: &Palette, cx: &mut App) -> AnyElement {
     }
     let title = PAGES.iter().find(|x| x.0 == page).map(|x| crate::i18n::t(x.2)).unwrap_or_default();
     let body: Vec<AnyElement> = match page {
-        Page::General => general(p, &s, cx),
+        Page::General => general(p, &s, window, cx),
         Page::Appearance => appearance(p, &s, cx),
         Page::Layout => layout(p, &s, cx),
         Page::Files => files(p, &s, cx),
@@ -358,7 +362,98 @@ fn quick_search_cards(p: &Palette, s: &Settings) -> Vec<AnyElement> {
     ]
 }
 
-fn general(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
+/// The date pattern field, kept between frames (it is made once, with the window).
+fn date_input(current: &str, window: &mut Window, cx: &mut App) -> Entity<InputState> {
+    if let Some((inp, written)) = ui(cx).date_input.clone() {
+        // changed elsewhere (settings imported): show the new pattern
+        if written != current && inp.read(cx).value() != current {
+            let v = current.to_string();
+            inp.update(cx, |s, cx| s.set_value(v.clone(), window, cx));
+            ui(cx).date_input = Some((inp.clone(), v));
+        }
+        return inp;
+    }
+    let inp = cx.new(|cx| {
+        let mut s = InputState::new(window, cx).placeholder(rf_core::format::DEFAULT_DATE_PATTERN);
+        s.set_value(current.to_string(), window, cx);
+        s
+    });
+    // a valid pattern is saved as it is typed; an invalid one only shows why (below the field)
+    cx.subscribe(&inp, |inp, ev: &InputEvent, cx| {
+        if !matches!(ev, InputEvent::Change) {
+            return;
+        }
+        let v = inp.read(cx).value().trim().to_string();
+        if rf_core::format::parse_date_pattern(&v).is_ok() {
+            if let Some((_, written)) = &mut ui(cx).date_input {
+                *written = v.clone();
+            }
+            settings::update(cx, |s| s.date_pattern = v);
+        }
+        cx.refresh_windows();
+    })
+    .detach();
+    ui(cx).date_input = Some((inp.clone(), current.to_string()));
+    inp
+}
+
+/// Date format: a pattern field, with a preview (or what is wrong) under the title.
+fn date_pattern_card(p: &Palette, s: &Settings, window: &mut Window, cx: &mut App) -> AnyElement {
+    let inp = date_input(&s.date_pattern, window, cx);
+    let typed = inp.read(cx).value().trim().to_string();
+    let now = chrono::Local::now().timestamp_millis();
+    let desc = match rf_core::format::preview_date_pattern(&typed, now) {
+        Some(sample) => format!("Now: {sample}"),
+        None => match rf_core::format::parse_date_pattern(&typed) {
+            Err(bad) if !bad.is_empty() => format!("\"{bad}\" isn't a date field; still using {}", s.date_pattern),
+            _ => format!("Type a format, e.g. dd/mm/yyyy hh:mm; still using {}", s.date_pattern),
+        },
+    };
+    card(p, L::CalendarClock, t!("Tarih biçimi"), Some(&desc), div().w(px(220.)).child(Input::new(&inp)).into_any_element())
+}
+
+/// What the date pattern accepts, and a few to pick from.
+fn date_help(p: &Palette) -> AnyElement {
+    const PRESETS: [&str; 4] = ["dd/mm/yyyy hh:mm", "dd-mm-yyyy hh:mm", "yyyy-mm-dd hh:mm", "dd.mm.yyyy hh:mm"];
+    let chips = PRESETS.iter().enumerate().map(|(i, pat)| {
+        let pat = *pat;
+        div()
+            .id(("date-preset", i))
+            .px_2()
+            .py_0p5()
+            .rounded(theme::RADIUS_SM)
+            .border_1()
+            .border_color(p.border)
+            .text_xs()
+            .font_family(crate::sys::mono_font())
+            .cursor_pointer()
+            .hover(|d| d.bg(p.hover))
+            .child(pat)
+            .on_click(move |_, window, cx| {
+                if let Some((inp, _)) = ui(cx).date_input.clone() {
+                    inp.update(cx, |s, cx| s.set_value(pat.to_string(), window, cx));
+                    ui(cx).date_input = Some((inp, pat.to_string()));
+                }
+                settings::update(cx, |s| s.date_pattern = pat.to_string());
+                window.refresh();
+            })
+    });
+    v_flex()
+        .pl(px(56.))
+        .pr_4()
+        .pb_2()
+        .gap_1p5()
+        .text_xs()
+        .text_color(p.text_secondary)
+        .child(
+            "dd day · mm month (mmm Nov, mmmm November) · yy or yyyy year · hh hour · mm right after hh: minutes · ss seconds. \
+             Upper or lower case; anything else (: . / - , spaces) is shown as typed.",
+        )
+        .child(h_flex().gap_1p5().flex_wrap().children(chips))
+        .into_any_element()
+}
+
+fn general(p: &Palette, s: &Settings, window: &mut Window, cx: &mut App) -> Vec<AnyElement> {
     let mut v = vec![
         card(
             p,
@@ -375,23 +470,14 @@ fn general(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                 |s, v| s.language = v,
             ),
         ),
+        date_pattern_card(p, s, window, cx),
+        date_help(p),
         card(
             p,
             L::CalendarClock,
-            t!("Tarih biçimi"),
-            Some(t!("Uygulama: \"5 dakika önce\"; Sistem: 05.11.2026 13:45; Evrensel: 2026-11-05 13:45; Gün/ay/yıl: 05/11/2026 13:45")),
-            dropdown(
-                "datefmt",
-                p,
-                s.date_format,
-                vec![
-                    (DatePref::Application, t!("Uygulama").into()),
-                    (DatePref::System, t!("Sistem").into()),
-                    (DatePref::Universal, t!("Evrensel").into()),
-                    (DatePref::DayMonthYear, t!("Gün/ay/yıl").into()),
-                ],
-                |s, v| s.date_format = v,
-            ),
+            "Recent times as \"5 minutes ago\"",
+            Some("In the file list, for the last week; older dates use the format above"),
+            sw("relative-dates", p, s.relative_dates, |s, v| s.relative_dates = v),
         ),
     ];
     let startup_dd = dropdown(
