@@ -1,7 +1,6 @@
 
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
 use std::path::{Path, PathBuf};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DriveKind {

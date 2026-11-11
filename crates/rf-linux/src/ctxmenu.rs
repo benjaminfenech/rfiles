@@ -4,10 +4,7 @@
 //! chosen app. The app's own items cover the rest.
 // The rest of this file mirrors rf-win's API; functions without a Linux meaning return
 // "not available" results.
-#![allow(unused)]
 use std::path::{Path, PathBuf};
-const CMIC_MASK_UNICODE: u32 = 0x4000;
-use crate::wide::wide;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MenuOutcome {
     Dismissed,
@@ -25,52 +22,13 @@ pub struct ExtraItem {
     pub label: String,
     pub enabled: bool,
 }
-const EXTRA_BASE: u32 = 0x9000;
-struct Pidl(*mut crate::Opaque);
-impl Drop for Pidl {
-    fn drop(&mut self) {}
-}
-fn parse(path: &Path) -> anyhow::Result<Pidl> {
-    Err(anyhow::anyhow!("rf-linux: `parse` is not implemented on Linux yet").into())
-}
-fn folder(path: &Path) -> anyhow::Result<crate::Opaque> {
-    Err(anyhow::anyhow!("rf-linux: `folder` is not implemented on Linux yet").into())
-}
-fn menu_for_items(
-    owner: crate::Opaque,
-    items: &[PathBuf],
-) -> anyhow::Result<crate::Opaque> {
-    Err(
-        anyhow::anyhow!("rf-linux: `menu_for_items` is not implemented on Linux yet")
-            .into(),
-    )
-}
-/// Bound through the item's real parent in the shell namespace, so drive roots (`C:\`,
-/// parent = "This PC") work too.
-fn menu_for_one(owner: crate::Opaque, item: &Path) -> anyhow::Result<crate::Opaque> {
-    Err(
-        anyhow::anyhow!("rf-linux: `menu_for_one` is not implemented on Linux yet")
-            .into(),
-    )
-}
-fn menu_for_background(
-    owner: crate::Opaque,
-    dir: &Path,
-) -> anyhow::Result<crate::Opaque> {
-    Err(
-        anyhow::anyhow!(
-            "rf-linux: `menu_for_background` is not implemented on Linux yet"
-        )
-            .into(),
-    )
-}
 /// Must be called on the shell STA thread (see `sta::run`) with its owner window.
 pub fn show_for_items(
-    owner: crate::Opaque,
-    items: &[PathBuf],
-    screen: (i32, i32),
-    extended: bool,
-    extra: &[ExtraItem],
+    _owner: crate::Opaque,
+    _items: &[PathBuf],
+    _screen: (i32, i32),
+    _extended: bool,
+    _extra: &[ExtraItem],
 ) -> anyhow::Result<MenuOutcome> {
     Err(
         anyhow::anyhow!("rf-linux: `show_for_items` is not implemented on Linux yet")
@@ -79,11 +37,11 @@ pub fn show_for_items(
 }
 /// Menu for one item (used by the sidebar).
 pub fn show_for_one(
-    owner: crate::Opaque,
-    item: &Path,
-    screen: (i32, i32),
-    extended: bool,
-    extra: &[ExtraItem],
+    _owner: crate::Opaque,
+    _item: &Path,
+    _screen: (i32, i32),
+    _extended: bool,
+    _extra: &[ExtraItem],
 ) -> anyhow::Result<MenuOutcome> {
     Err(
         anyhow::anyhow!("rf-linux: `show_for_one` is not implemented on Linux yet")
@@ -92,11 +50,11 @@ pub fn show_for_one(
 }
 /// Background (empty space) menu of a folder.
 pub fn show_for_background(
-    owner: crate::Opaque,
-    dir: &Path,
-    screen: (i32, i32),
-    extended: bool,
-    extra: &[ExtraItem],
+    _owner: crate::Opaque,
+    _dir: &Path,
+    _screen: (i32, i32),
+    _extended: bool,
+    _extra: &[ExtraItem],
 ) -> anyhow::Result<MenuOutcome> {
     Err(
         anyhow::anyhow!(
@@ -136,14 +94,6 @@ pub struct ShellItem {
     pub separator: bool,
     pub children: Vec<ShellItem>,
 }
-struct Session {
-    id: u64,
-    cm: crate::Opaque,
-    hmenu: crate::Opaque,
-}
-impl Drop for Session {
-    fn drop(&mut self) {}
-}
 /// The live menu's commands: id - 1 → (app ID, files).
 static LIVE: std::sync::Mutex<Option<(u64, Vec<(String, Vec<PathBuf>)>)>> = std::sync::Mutex::new(None);
 static NEXT_SESSION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
@@ -171,7 +121,7 @@ fn app_icon(app: &crate::xdg_apps::App) -> Option<ShellIcon> {
 /// Builds the shell part of the menu for `target`: on Linux an "Open with" submenu (the
 /// default app first, then the others for the type and its parent types, then "Choose
 /// another app" with every installed app). The background of a folder has none.
-pub fn build(owner: crate::Opaque, target: &ShellTarget, extended: bool) -> anyhow::Result<(u64, Vec<ShellItem>)> {
+pub fn build(_owner: crate::Opaque, target: &ShellTarget, _extended: bool) -> anyhow::Result<(u64, Vec<ShellItem>)> {
     let session = NEXT_SESSION.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let files: Vec<PathBuf> = match target {
         ShellTarget::Items(v) => v.clone(),
@@ -191,7 +141,7 @@ pub fn build(owner: crate::Opaque, target: &ShellTarget, extended: bool) -> anyh
         suits.retain(|a| other.iter().any(|o| o.id == a.id));
     }
     let mut commands: Vec<(String, Vec<PathBuf>)> = Vec::new();
-    let mut row = |app: &crate::xdg_apps::App, commands: &mut Vec<(String, Vec<PathBuf>)>| {
+    let row = |app: &crate::xdg_apps::App, commands: &mut Vec<(String, Vec<PathBuf>)>| {
         commands.push((app.id.clone(), files.clone()));
         ShellItem { id: commands.len() as u32, label: app.name.clone(), hint: None, verb: String::new(), icon: app_icon(app), enabled: true, separator: false, children: Vec::new() }
     };
@@ -211,10 +161,10 @@ pub fn build(owner: crate::Opaque, target: &ShellTarget, extended: bool) -> anyh
 }
 
 /// Runs command `id` of session `session` (from [`build`]): launches that app on the files.
-pub fn invoke(owner: crate::Opaque, session: u64, id: u32, screen: (i32, i32)) -> anyhow::Result<MenuOutcome> {
+pub fn invoke(_owner: crate::Opaque, session: u64, id: u32, _screen: (i32, i32)) -> anyhow::Result<MenuOutcome> {
     let cmd = {
         let live = LIVE.lock().unwrap();
-        let Some((s, cmds)) = live.as_ref().filter(|(s, _)| *s == session) else { anyhow::bail!("the menu is gone") };
+        let Some((_s, cmds)) = live.as_ref().filter(|(s, _)| *s == session) else { anyhow::bail!("the menu is gone") };
         cmds.get((id as usize).wrapping_sub(1)).cloned()
     };
     let Some((app_id, files)) = cmd else { anyhow::bail!("no such command") };
@@ -238,7 +188,7 @@ pub fn release(session: u64) {
 /// Invokes a canonical verb on `target` without showing a menu. Linux knows "openas" (the
 /// desktop's app chooser); Explorer verbs ("properties", "Windows.ModernShare"…) have no
 /// equivalent.
-pub fn invoke_verb(owner: crate::Opaque, target: &ShellTarget, verb: &str, screen: (i32, i32)) -> anyhow::Result<()> {
+pub fn invoke_verb(_owner: crate::Opaque, target: &ShellTarget, verb: &str, _screen: (i32, i32)) -> anyhow::Result<()> {
     let path = match target {
         ShellTarget::Items(v) => v.first().cloned(),
         ShellTarget::One(p) | ShellTarget::Background(p) => Some(p.clone()),
@@ -269,36 +219,12 @@ pub fn clean_label(raw: &str) -> (String, Option<String>) {
     }
     (out.trim().to_string(), hint)
 }
-unsafe fn read_menu(
-    cm: &crate::Opaque,
-    cm3: Option<&crate::Opaque>,
-    cm2: Option<&crate::Opaque>,
-    hmenu: crate::Opaque,
-    depth: u32,
-) -> Vec<ShellItem> {
-    Default::default()
-}
-/// Reads a menu item bitmap as BGRA. Special `HBMMENU_*` values (owner-drawn callbacks,
-/// system glyphs) yield `None`.
-unsafe fn bitmap_bgra(hbm: crate::Opaque) -> Option<ShellIcon> {
-    None
-}
-fn run_menu(
-    owner: crate::Opaque,
-    cm: &crate::Opaque,
-    _: (i32, i32),
-    extended: bool,
-    can_rename: bool,
-    extra: &[ExtraItem],
-) -> anyhow::Result<MenuOutcome> {
-    Err(anyhow::anyhow!("rf-linux: `run_menu` is not implemented on Linux yet").into())
-}
 /// A plain popup menu of app items at `screen` (no shell items). Returns the chosen id.
 /// Call on the shell STA thread with its owner window.
 pub fn show_simple(
-    owner: crate::Opaque,
-    screen: (i32, i32),
-    items: &[ExtraItem],
+    _owner: crate::Opaque,
+    _screen: (i32, i32),
+    _items: &[ExtraItem],
 ) -> Option<u32> {
     None
 }

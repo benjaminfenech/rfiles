@@ -3,7 +3,6 @@
 //! names only). Blocking: call off the UI thread; slow network paths just answer late.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
 use std::path::{Path, PathBuf};
 /// Splits `C:\Users\oz` into (`C:\Users\`, `oz`). `None` when there is no directory part.
 fn split(input: &str) -> Option<(PathBuf, String)> {

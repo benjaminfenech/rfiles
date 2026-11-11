@@ -1,10 +1,7 @@
 //! Volume details and safe removal. Blocking (disks can stall): call off the UI thread.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
 use std::path::{Path, PathBuf};
-use crate::shell::ensure_com;
-use crate::wide::{from_wide, wide};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VolumeInfo {
     pub root: PathBuf,
@@ -35,18 +32,14 @@ pub fn drive_type_name(t: u32) -> &'static str {
     }
 }
 /// Details of the volume at `root` (e.g. `C:\`). Size fields stay 0 when the media is missing.
-pub fn volume_info(root: &Path) -> anyhow::Result<VolumeInfo> {
+pub fn volume_info(_root: &Path) -> anyhow::Result<VolumeInfo> {
     Err(
         anyhow::anyhow!("rf-linux: `volume_info` is not implemented on Linux yet").into(),
     )
 }
-struct Pidl(*mut crate::Opaque);
-impl Drop for Pidl {
-    fn drop(&mut self) {}
-}
 /// Ejects a removable (or optical) drive by invoking the shell's "Eject" verb, which is exactly
 /// what Explorer does (flushes, locks, dismounts and asks the device to power down).
 /// Fails when files are still open on the drive.
-pub fn eject(drive_letter: char) -> anyhow::Result<()> {
+pub fn eject(_drive_letter: char) -> anyhow::Result<()> {
     Err(anyhow::anyhow!("rf-linux: `eject` is not implemented on Linux yet").into())
 }

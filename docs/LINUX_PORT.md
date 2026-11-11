@@ -635,5 +635,5 @@ and Libraries (`Location::Shell` and `Location::Library` in rf-core, `shellfolde
 `libraries`, `shell_view.rs`, Home's Devices group); every `cfg(windows)` branch in rf-core,
 rf-archive and rf-player, with rf-player's Direct3D presenter; and the `windows` /
 `windows-core` dependencies and the `[patch]` pointing GPUI's Windows backend at upstream's
-fork. rf-linux's crate-wide `#![allow(unused)]` is gone (24 of its files still carry their own,
-from the stub generator). The shell context menu module stays: on Linux it is "Open with".
+fork. rf-linux's `#![allow(unused)]` is gone, the crate-wide one and the 24 per-file ones the
+stub generator left (with the dead helpers they hid). The shell context menu module stays: on Linux it is "Open with".

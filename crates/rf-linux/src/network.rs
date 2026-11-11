@@ -2,11 +2,7 @@
 //! user's network shortcuts. Blocking and potentially slow (SMB timeouts): off the UI thread.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
 use std::path::{Path, PathBuf};
-use crate::wide::wide;
-const MAX_PREFERRED_LENGTH: u32 = u32::MAX;
-const ERROR_MORE_DATA: u32 = 234;
 /// `\\server` or `\\server\` (no share part) → `Some("server")`.
 pub fn server_root(path: &Path) -> Option<String> {
     let s = path.to_str()?;
@@ -23,7 +19,7 @@ pub struct Share {
     pub remark: String,
 }
 /// Disk shares of `server` (hidden `$` and admin shares excluded).
-pub fn shares(server: &str) -> std::io::Result<Vec<Share>> {
+pub fn shares(_server: &str) -> std::io::Result<Vec<Share>> {
     Err(
         std::io::Error::new(
             std::io::ErrorKind::Unsupported,
@@ -95,6 +91,6 @@ mod tests {
 
 /// Windows' own "Map network drive" dialog (drive letter, folder, reconnect at sign-in,
 /// other credentials). Modal to `owner`; returns when it closes.
-pub fn map_drive_dialog(owner: isize) {}
+pub fn map_drive_dialog(_owner: isize) {}
 /// Windows' "Disconnect network drive" dialog.
-pub fn disconnect_drive_dialog(owner: isize) {}
+pub fn disconnect_drive_dialog(_owner: isize) {}

@@ -3,12 +3,10 @@
 //! `GetACP()`, which is 65001 when "Use Unicode UTF-8 for worldwide language support" is on).
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
-use std::sync::OnceLock;
 pub fn legacy_ansi_codepage() -> u32 {
     Default::default()
 }
-fn decode(raw: &[u8], cp: u32) -> Option<String> {
+fn decode(_raw: &[u8], _cp: u32) -> Option<String> {
     None
 }
 /// Text from bytes of unknown encoding: UTF-8 if valid (a truncated trailing sequence is

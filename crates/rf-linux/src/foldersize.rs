@@ -18,16 +18,13 @@
 //! for; the fresh result replaces the guess.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, SystemTime};
 use parking_lot::{Condvar, Mutex};
-use rf_core::attrs;
 pub use crate::hash::Cancelled;
-use crate::wide::{from_wide, wide};
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct FolderSize {
     /// Sum of logical file sizes.
@@ -57,7 +54,7 @@ impl Counters {
     }
 }
 /// Bytes per cluster of the volume holding `dir`.
-fn cluster_size(dir: &Path) -> Option<u64> {
+fn cluster_size(_dir: &Path) -> Option<u64> {
     None
 }
 /// Folder sizes shared by the Size column, the preview pane and Properties.

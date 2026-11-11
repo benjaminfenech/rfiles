@@ -2,9 +2,7 @@
 //! (disk / registry): call off the UI thread.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
 use std::path::Path;
-use crate::wide::{from_wide, wide};
 #[derive(Debug, Clone, Default)]
 pub struct Info {
     pub is_dir: bool,
@@ -54,10 +52,7 @@ pub fn info(path: &Path) -> std::io::Result<Info> {
     })
 }
 /// Bytes the file occupies: compressed size rounded up to whole clusters.
-pub fn size_on_disk(path: &Path) -> Option<u64> {
-    None
-}
-fn cluster_size(path: &Path) -> Option<u64> {
+pub fn size_on_disk(_path: &Path) -> Option<u64> {
     None
 }
 /// Friendly name of the default app for the file's type.
