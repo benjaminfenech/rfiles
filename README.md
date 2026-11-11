@@ -166,6 +166,7 @@ Linux:
 - **Explorer integration:** DirectLook over Explorer and the desktop, the Explorer context menu and its shell extensions, `shell:` paths, Win+E.
 - **Windows shell features:** jump lists, the taskbar preview and taskbar progress, Libraries, Windows Search, OneDrive status, devices under This PC, preview handlers.
 - **Properties tabs:** Compatibility, Security (Windows ACLs), Digital signatures (Authenticode), Sharing, Customize (desktop.ini folder icons), Disk Cleanup, and the archive, indexing, compression and encryption attributes. Hidden is a dot name on Linux, and read-only is the write permission.
+- **Prompts:** upstream's strips asking for a GitHub star or a donation never appear on Linux. Settings → About still has the links.
 - **Platform plumbing:** Velopack install and auto-update (packages update through your package manager), Mica, the hybrid GPU/CPU renderer, protected system files.
 
 ## Pending

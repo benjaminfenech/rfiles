@@ -738,7 +738,7 @@ pub fn page(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
         out.push(e);
     }
     let star_asked = cx.global::<Settings>().star_asked;
-    if !star_asked {
+    if crate::installer::ASKS && !star_asked {
         out.push(star_card(p, &r));
     }
     out.push(share_card(p, note_text));

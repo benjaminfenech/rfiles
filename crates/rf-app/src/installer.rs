@@ -270,8 +270,18 @@ pub fn restart_to_update() {
     }
 }
 
+/// Whether the app may ask for anything (a GitHub star, a donation) on its own: strips at
+/// the bottom of the window, the speed test's star card. The Linux port never does; Settings
+/// → About keeps the links, which only show when someone goes looking.
+pub const ASKS: bool = cfg!(windows);
+
 /// The one-time "star it on GitHub" strip: after a week and 30 starts, until answered.
+/// Never on Linux ([`ASKS`]).
 pub fn star_due(s: &crate::settings::Settings) -> bool {
+    ASKS && star_due_by(s)
+}
+
+fn star_due_by(s: &crate::settings::Settings) -> bool {
     let now = chrono::Utc::now().timestamp_millis();
     !s.star_asked && s.first_start_ms > 0 && s.starts >= 30 && now - s.first_start_ms >= 7 * 24 * 3600 * 1000
 }
@@ -292,7 +302,17 @@ pub fn count_start(cx: &mut gpui_kit::App) {
 
 #[cfg(test)]
 mod tests {
-    use super::star_due;
+    use super::star_due_by as star_due;
+
+    /// The Linux port asks for nothing: a strip whose time has come still doesn't show.
+    #[test]
+    fn linux_asks_for_nothing() {
+        let mut s = crate::settings::Settings::default();
+        s.first_start_ms = 1;
+        s.starts = 1000;
+        assert!(super::star_due_by(&s), "the strip's time has come");
+        assert_eq!(super::star_due(&s), cfg!(windows), "but only Windows shows it");
+    }
 
     #[test]
     fn star_strip_waits_a_week_and_30_starts() {
