@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/rf-core", "crates/rf-win", "crates/rf-linux", "crates/gpui-windows-shim", "crates/rf-app", "crates/rf-archive", "crates/rf-dialog", "crates/rf-player", "crates/rustdecoder", "tools/gpustress"]
+members = ["crates/rf-core", "crates/rf-linux", "crates/gpui-windows-shim", "crates/rf-app", "crates/rf-archive", "crates/rf-player", "crates/rustdecoder"]
 
 [workspace.package]
 version = "0.6.0"
@@ -10,7 +10,6 @@ publish = false
 
 [workspace.dependencies]
 rf-core = { path = "crates/rf-core" }
-rf-win = { path = "crates/rf-win" }
 rf-linux = { path = "crates/rf-linux" }
 rf-player = { path = "crates/rf-player" }
 rustdecoder = { path = "crates/rustdecoder" }

@@ -7,8 +7,6 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::Path;
 
-// rf-linux includes this file by #[path], where a plain `mod vector;` would look in src/
-#[path = "apppkg/vector.rs"]
 mod vector;
 
 /// The kind of package (the card names it).

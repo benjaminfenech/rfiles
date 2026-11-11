@@ -1,5 +1,6 @@
-//! What the DLL asks rustyfiles and what it gets back, over a named pipe: a little-endian u32
-//! length, then that many bytes of JSON.
+//! What an app's Open/Save dialog (Windows' rf-dialog DLL, now removed) asks rfiles and what it
+//! gets back, over a named pipe: a little-endian u32 length, then that many bytes of JSON.
+//! Kept from rf-dialog for `picker`, until the rest of the Windows code goes.
 
 use std::io::{Read, Write};
 
@@ -69,41 +70,6 @@ pub fn read_msg<T: for<'a> Deserialize<'a>>(r: &mut impl Read) -> std::io::Resul
     serde_json::from_slice(&body).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
 }
 
-/// Does `name` match one of the patterns of `spec` ("*.txt;*.md", "*.*", "*")?
-pub fn matches(spec: &str, name: &str) -> bool {
-    let name = name.to_lowercase();
-    spec.split(';').map(|p| p.trim().to_lowercase()).filter(|p| !p.is_empty()).any(|p| glob(&p, &name))
-}
-
-fn glob(p: &str, s: &str) -> bool {
-    if p == "*" || p == "*.*" {
-        return true;
-    }
-    // '*' any run, '?' one char
-    let (p, s): (Vec<char>, Vec<char>) = (p.chars().collect(), s.chars().collect());
-    let (mut pi, mut si, mut star, mut mark) = (0, 0, None, 0);
-    while si < s.len() {
-        if pi < p.len() && (p[pi] == '?' || p[pi] == s[si]) {
-            pi += 1;
-            si += 1;
-        } else if pi < p.len() && p[pi] == '*' {
-            star = Some(pi);
-            mark = si;
-            pi += 1;
-        } else if let Some(st) = star {
-            pi = st + 1;
-            mark += 1;
-            si = mark;
-        } else {
-            return false;
-        }
-    }
-    while pi < p.len() && p[pi] == '*' {
-        pi += 1;
-    }
-    pi == p.len()
-}
-
 /// The first concrete extension of a spec ("*.txt;*.md" -> "txt"), for adding to saved names.
 pub fn first_ext(spec: &str) -> Option<String> {
     spec.split(';').map(str::trim).find_map(|p| p.strip_prefix("*.").filter(|e| !e.is_empty() && !e.contains(['*', '?'])).map(str::to_string))
@@ -123,11 +89,6 @@ mod tests {
 
     #[test]
     fn patterns() {
-        assert!(matches("*.txt;*.md", "Notlar.MD"));
-        assert!(!matches("*.txt;*.md", "a.rs"));
-        assert!(matches("*.*", "README"));
-        assert!(matches("rapor-??.pdf", "rapor-01.pdf"));
-        assert!(!matches("rapor-??.pdf", "rapor-1.pdf"));
         assert_eq!(first_ext("*.jpg;*.jpeg"), Some("jpg".into()));
         assert_eq!(first_ext("*.*"), None);
     }

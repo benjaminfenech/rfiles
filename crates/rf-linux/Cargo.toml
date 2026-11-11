@@ -1,6 +1,6 @@
 [package]
 name = "rf-linux"
-description = "Linux platform layer: the same API as rf-win"
+description = "The Linux platform layer"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

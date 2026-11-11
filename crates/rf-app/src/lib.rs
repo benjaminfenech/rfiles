@@ -41,6 +41,7 @@ mod image_cache;
 mod installer;
 mod ops;
 mod picker;
+mod picker_proto;
 mod places;
 mod settings;
 mod shell_view;
