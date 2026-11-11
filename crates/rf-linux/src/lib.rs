@@ -69,6 +69,8 @@ pub mod rotate;
 pub mod thumbs;
 /// Linux only: running command-line tools.
 pub mod tool;
+/// Updates from GitHub Releases.
+pub mod update;
 pub mod tray;
 pub mod watch;
 pub mod window;
