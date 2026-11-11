@@ -6609,7 +6609,7 @@ dependencies = [
 
 [[package]]
 name = "rf-app"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6637,7 +6637,7 @@ dependencies = [
 
 [[package]]
 name = "rf-archive"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "bzip2",
@@ -6660,7 +6660,7 @@ dependencies = [
 
 [[package]]
 name = "rf-core"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "chardetng",
@@ -6678,7 +6678,7 @@ dependencies = [
 
 [[package]]
 name = "rf-linux"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "ashpd",
@@ -6713,7 +6713,7 @@ dependencies = [
 
 [[package]]
 name = "rf-player"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "cpal",
