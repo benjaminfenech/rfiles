@@ -2,9 +2,7 @@
 //! so run them on a worker thread — shell extensions can block for seconds.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
 use std::path::Path;
-use crate::wide::wide;
 /// Initializes an STA on the current thread (idempotent; errors ignored when already initialized).
 pub fn ensure_com() {}
 /// Runs a launcher detached; a waiter thread reaps it so no zombie is left behind.
@@ -19,7 +17,7 @@ pub(crate) fn spawn_detached(cmd: &mut std::process::Command) -> std::io::Result
 
 /// `verb` None = open with the default app (`xdg-open`). "Open with" and the properties
 /// dialog are Windows shell verbs: Phase 1 (`.desktop` files) and rfiles' own window.
-fn exec(path: &Path, verb: Option<&str>, args: Option<&str>) -> anyhow::Result<()> {
+fn exec(path: &Path, verb: Option<&str>, _args: Option<&str>) -> anyhow::Result<()> {
     match verb {
         None => {
             spawn_detached(crate::sandbox::launch("xdg-open").arg(path))
@@ -63,14 +61,14 @@ pub fn open_terminal(dir: &Path) -> anyhow::Result<()> {
     anyhow::bail!("no terminal found (set $TERMINAL)")
 }
 /// Yes/No warning box owned by `owner` (call on the STA shell thread). True on "Yes".
-pub fn confirm(owner: crate::Opaque, title: &str, text: &str) -> bool {
+pub fn confirm(_owner: crate::Opaque, _title: &str, _text: &str) -> bool {
     false
 }
 /// Information box owned by `owner` (call on the STA shell thread).
-pub fn alert(owner: crate::Opaque, title: &str, text: &str) {}
+pub fn alert(_owner: crate::Opaque, _title: &str, _text: &str) {}
 /// `shell:Downloads`, `shell:startup`, `shell:sendto`… → file-system path (None for virtual
 /// folders like `shell:RecycleBinFolder`). Blocking (shell namespace): off the UI thread.
-pub fn resolve_shell_path(s: &str) -> Option<std::path::PathBuf> {
+pub fn resolve_shell_path(_s: &str) -> Option<std::path::PathBuf> {
     None
 }
 /// No "There is no disk in the drive" / "Insert a disk" system boxes when touching an empty
@@ -79,4 +77,4 @@ pub fn resolve_shell_path(s: &str) -> Option<std::path::PathBuf> {
 pub fn suppress_critical_error_dialogs() {}
 /// Tells the shell (Explorer windows, desktop, file dialogs) that `dir`'s contents changed,
 /// the way the shell's own copy engine does when it finishes.
-pub fn notify_updated(dir: &std::path::Path) {}
+pub fn notify_updated(_dir: &std::path::Path) {}

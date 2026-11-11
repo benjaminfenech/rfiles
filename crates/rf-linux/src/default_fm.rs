@@ -11,7 +11,6 @@
 //!
 //! `classes_root` is Windows' registry root ([`CLASSES`]: the user's real folders); tests pass a
 //! scratch folder instead (with `config/` and `data/` under it).
-#![allow(unused)]
 use std::path::{Path, PathBuf};
 
 pub const CLASSES: &str = r"Software\Classes";

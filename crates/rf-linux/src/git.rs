@@ -4,12 +4,10 @@
 //! (ignore rules, submodules, sparse checkout, ...). Blocking: call off the UI thread.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use anyhow::{Result, bail};
-const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FileState {
     Modified,

@@ -2,19 +2,10 @@
 //! rfiles itself) with the standard shell data object and drag image.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
 use std::path::{Path, PathBuf};
 use crate::fileops::Transfer;
-use crate::wide::wide;
-struct Pidl(*mut crate::Opaque);
-impl Drop for Pidl {
-    fn drop(&mut self) {}
-}
-fn parse(path: &Path) -> anyhow::Result<Pidl> {
-    Err(anyhow::anyhow!("rf-linux: `parse` is not implemented on Linux yet").into())
-}
 /// Shell data object for items that share one parent folder.
-pub fn data_object(items: &[PathBuf]) -> anyhow::Result<crate::Opaque> {
+pub fn data_object(_items: &[PathBuf]) -> anyhow::Result<crate::Opaque> {
     Err(
         anyhow::anyhow!("rf-linux: `data_object` is not implemented on Linux yet").into(),
     )
@@ -23,9 +14,9 @@ pub fn data_object(items: &[PathBuf]) -> anyhow::Result<crate::Opaque> {
 /// `ui_thread` is the id of the thread that owns the window where the drag started; its input
 /// state is attached so this thread can take mouse capture while the button is still down.
 pub fn drag_out(
-    owner: crate::Opaque,
-    ui_thread: u32,
-    items: &[PathBuf],
+    _owner: crate::Opaque,
+    _ui_thread: u32,
+    _items: &[PathBuf],
 ) -> anyhow::Result<crate::Opaque> {
     Err(anyhow::anyhow!("rf-linux: `drag_out` is not implemented on Linux yet").into())
 }

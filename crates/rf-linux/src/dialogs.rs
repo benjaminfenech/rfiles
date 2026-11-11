@@ -2,9 +2,7 @@
 //! Windows" Run entry (on Linux: the XDG autostart entry). Dialogs are modal to `owner`: call them on the shell STA thread.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
 use std::path::{Path, PathBuf};
-use crate::wide::wide;
 pub enum Pick<'a> {
     /// Open an existing file; filters are (label, pattern) pairs like ("Ayar dosyası", "*.toml").
     File { filters: &'a [(&'a str, &'a str)] },
@@ -15,7 +13,7 @@ pub enum Pick<'a> {
 }
 /// Shows the dialog; `None` when cancelled. Linux: the desktop's file chooser through
 /// xdg-desktop-portal (KDE's, GNOME's or GTK's dialog, as the desktop sets it up). Blocks.
-pub fn pick(owner: crate::Opaque, title: &str, kind: Pick<'_>) -> Option<PathBuf> {
+pub fn pick(_owner: crate::Opaque, title: &str, kind: Pick<'_>) -> Option<PathBuf> {
     use ashpd::desktop::file_chooser::SelectedFiles;
     let filters = |list: &[(&str, &str)]| -> Vec<_> { list.iter().map(|(label, pats)| portal_filter(label, pats)).collect() };
     let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/"));

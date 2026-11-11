@@ -10,10 +10,8 @@
 //! Blocking + COM: call off the UI thread.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use crate::shell::ensure_com;
-use crate::wide::wide;
 /// Formats we can rotate.
 pub fn can_rotate(p: &Path) -> bool {
     let e = p
@@ -71,13 +69,13 @@ fn is_jpeg(p: &Path) -> bool {
         .unwrap_or_default();
     matches!(e.as_str(), "jpg" | "jpeg" | "jfif" | "jpe")
 }
-fn rotate_by_tag(path: &Path, clockwise: bool) -> anyhow::Result<()> {
+fn rotate_by_tag(_path: &Path, _clockwise: bool) -> anyhow::Result<()> {
     Err(
         anyhow::anyhow!("rf-linux: `rotate_by_tag` is not implemented on Linux yet")
             .into(),
     )
 }
-fn rotate_pixels(path: &Path, clockwise: bool) -> anyhow::Result<()> {
+fn rotate_pixels(_path: &Path, _clockwise: bool) -> anyhow::Result<()> {
     Err(
         anyhow::anyhow!("rf-linux: `rotate_pixels` is not implemented on Linux yet")
             .into(),

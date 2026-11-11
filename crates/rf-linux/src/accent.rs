@@ -2,7 +2,6 @@
 //! wears the same color as the taskbar, Start and Files.
 // Generated from rf-win's public API by a one-off stub generator, then edited by hand.
 // Functions return safe defaults until they get a Linux implementation.
-#![allow(unused)]
 /// Shades of the accent, as 0xRRGGBB: `[light3, light2, light1, base, dark1, dark2, dark3]`.
 /// Fluent uses `light2` for accents on dark surfaces and `dark1` on light ones.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
