@@ -324,8 +324,9 @@ certificates for the info card.
   `.desktop`), Read-only in Properties (write permission), the sidebar's Properties (our own
   window). "Recycle Bin" reads "Trash" through a small Linux table in `i18n::t` (Turkish and
   English; a test fails if upstream rewords a key).
-- Later: Windows' "Recent" on the home page reads `%APPDATA%\Microsoft\Windows\Recent`;
-  Linux has `~/.local/share/recently-used.xbel`.
+- Home's "Recent" reads the desktop's recently used files (`$XDG_DATA_HOME/recently-used.xbel`,
+  written by GTK, KDE and most apps) where Windows read `%APPDATA%\Microsoft\Windows\Recent`:
+  local files that still exist, newest first. In Flatpak this is the host's file.
 
 ### Not ported
 
@@ -620,8 +621,8 @@ nothing, and their preview), Authenticode signatures (the Digital signatures tab
 Search (`search_index`), the global quick-search hotkey (the desktop's shortcut runs
 `rfiles --quick-search`), "Unblock" for downloaded files, NTFS compression and encryption,
 Windows shares, and the unused `compat`, `dialog_reg`, `jumplist`, `shell_window` and
-`removal`. Home's Recent section read Windows' Recent folder; it stays empty until
-`recently-used.xbel` is read. rf-app now names the crate `rf_linux` (the `rf_win` alias is
+`removal`. Home's Recent section read Windows' Recent folder (it now reads
+`recently-used.xbel`). rf-app now names the crate `rf_linux` (the `rf_win` alias is
 gone). Left for the last step: Libraries and shell folders (with rf-core's `Location`), the
 shell context menu, Windows preview handlers (with rf-player's and rustdecoder's Windows media
 paths), the popup-window menus and the gpui-windows shim, and rf-linux's crate-wide
