@@ -66,6 +66,7 @@ impl CopyVerify {
     }
 }
 
+/// The date choice of older versions (before the pattern field), read once by `migrate`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum DatePref {
@@ -300,7 +301,15 @@ pub struct Settings {
     pub window: Option<[f32; 5]>,
 
     // ---- General
+    /// Older versions' date choice: turned into `date_pattern` / `relative_dates` once, never
+    /// written again.
+    #[serde(skip_serializing)]
     pub date_format: DatePref,
+    /// How dates are written, e.g. "dd/mm/yyyy hh:mm" (see `rf_core::format::parse_date_pattern`).
+    /// Empty only in files from before the field (see `migrate`).
+    pub date_pattern: String,
+    /// The file list shows recent times as "5 min ago".
+    pub relative_dates: bool,
     pub startup: StartupPref,
     pub startup_pages: Vec<String>,
     /// Switch to tabs opened with Ctrl+click / middle click / "Open in new tab".
@@ -425,6 +434,8 @@ impl Default for Settings {
             keybindings: Default::default(),
             window: None,
             date_format: DatePref::Application,
+            date_pattern: String::new(),
+            relative_dates: true,
             startup: StartupPref::Continue,
             startup_pages: Vec::new(),
             focus_new_tab: false,
@@ -572,6 +583,16 @@ impl Settings {
 
     /// Brings settings written by older versions up to date.
     fn migrate(&mut self) {
+        // the date dropdown became a pattern and a switch: carry the old choice over
+        if self.date_pattern.trim().is_empty() {
+            self.date_pattern = match self.date_format {
+                DatePref::Universal => "yyyy-mm-dd hh:mm",
+                DatePref::DayMonthYear => "dd/mm/yyyy hh:mm",
+                DatePref::Application | DatePref::System => rf_core::format::DEFAULT_DATE_PATTERN,
+            }
+            .to_string();
+            self.relative_dates = self.date_format == DatePref::Application;
+        }
         // older files: "restore_session = false" means "start with a new tab"
         if !self.restore_session && self.startup == StartupPref::Continue {
             self.startup = StartupPref::NewTab;
@@ -607,7 +628,9 @@ impl Settings {
 
     /// For "Import settings".
     pub fn parse_lenient_pub(text: &str) -> Result<Settings, toml::de::Error> {
-        Self::parse_lenient(text)
+        let mut s = Self::parse_lenient(text)?;
+        s.migrate();
+        Ok(s)
     }
 
     fn apply_side_effects(&self) {
@@ -615,12 +638,7 @@ impl Settings {
         crate::i18n::set(self.language);
         crate::aliases::set(self.folder_aliases.clone());
         crate::background::sync_tray(self.run_in_background);
-        rf_core::format::set_date_style(match self.date_format {
-            DatePref::Application => rf_core::format::DateStyle::Relative,
-            DatePref::System => rf_core::format::DateStyle::Local,
-            DatePref::Universal => rf_core::format::DateStyle::Universal,
-            DatePref::DayMonthYear => rf_core::format::DateStyle::DayMonthYear,
-        });
+        rf_core::format::set_date_format(&self.date_pattern, self.relative_dates);
         rf_core::format::set_decimal_sizes(self.decimal_sizes);
         SOLID.store(self.backdrop == BackdropPref::Solid, Ordering::Relaxed);
         ANIM.store(self.animations as u8, Ordering::Relaxed);
@@ -692,6 +710,25 @@ pub fn update(cx: &mut App, f: impl FnOnce(&mut Settings)) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn old_date_choices_become_patterns() {
+        let load = |text: &str| {
+            let mut s = super::Settings::parse_lenient(text).unwrap();
+            s.migrate();
+            (s.date_pattern, s.relative_dates)
+        };
+        assert_eq!(load(""), ("dd.mm.yyyy hh:mm".to_string(), true));
+        assert_eq!(load("date_format = \"application\"\n"), ("dd.mm.yyyy hh:mm".to_string(), true));
+        assert_eq!(load("date_format = \"system\"\n"), ("dd.mm.yyyy hh:mm".to_string(), false));
+        assert_eq!(load("date_format = \"universal\"\n"), ("yyyy-mm-dd hh:mm".to_string(), false));
+        assert_eq!(load("date_format = \"daymonthyear\"\n"), ("dd/mm/yyyy hh:mm".to_string(), false));
+        // once there is a pattern, the old field says nothing any more
+        assert_eq!(load("date_format = \"universal\"\ndate_pattern = \"dd-mm-yyyy\"\nrelative_dates = true\n"), ("dd-mm-yyyy".to_string(), true));
+        // and it isn't written back
+        let text = toml::to_string(&super::Settings::default()).unwrap();
+        assert!(!text.contains("date_format"), "{text}");
+    }
+
     #[test]
     fn details_moves_to_adaptive_once() {
         // a file from before the move: details becomes adaptive
