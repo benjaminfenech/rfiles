@@ -2621,6 +2621,9 @@ impl Workspace {
         }
         let hidden = cx.global::<crate::settings::Settings>().sidebar_hidden.clone();
         let shown = |k: &str| !hidden.iter().any(|h| h == k);
+        // Linux: network shares go under Network, with the network locations (Windows keeps
+        // mapped drives with the others, as Explorer does)
+        let (shares, drives): (Vec<_>, Vec<_>) = if cfg!(windows) { (Vec::new(), drives) } else { drives.into_iter().partition(|d| d.kind == rf_win::DriveKind::Network) };
         let drives = if shown("drives") { drives } else { Vec::new() };
         if !drives.is_empty() {
             col = col.child(header(t!("Sürücüler")));
@@ -2671,8 +2674,13 @@ impl Workspace {
             }
         }
         let network = self.places.read(cx).network.clone();
-        if !network.is_empty() && shown("network") {
+        if (!network.is_empty() || !shares.is_empty()) && shown("network") {
             col = col.child(header(t!("Ağ")));
+            for (i, d) in shares.into_iter().enumerate() {
+                let loc = Location::Path(d.root.clone());
+                let active = cur == loc;
+                col = col.child(self.sidebar_item(("sb-share", i).into(), places::drive_icon(&d), p.text_secondary, crate::places::drive_name(&d), loc, active, None, p, cx));
+            }
             for (i, (name, target)) in network.into_iter().enumerate() {
                 let loc = Location::Path(target);
                 let active = cur == loc;
