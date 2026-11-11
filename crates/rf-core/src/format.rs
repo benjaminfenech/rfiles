@@ -77,9 +77,18 @@ pub fn datetime(ms: i64) -> String {
     datetime_with(ms, date_style(), now, ENGLISH.load(Ordering::Relaxed))
 }
 
-/// Always the full local date-time "05.11.2026 03:51" (details, tooltips).
+/// The full date-time in the chosen [`DateStyle`] (Properties, tooltips, cards): never
+/// relative, so the app's style gives the local "05.11.2026 03:51".
 pub fn datetime_full(ms: i64) -> String {
-    datetime_with(ms, DateStyle::Local, 0, false)
+    datetime_with(ms, full(date_style()), 0, false)
+}
+
+/// The exact style for a [`DateStyle`]: relative times become the local date.
+fn full(style: DateStyle) -> DateStyle {
+    match style {
+        DateStyle::Relative => DateStyle::Local,
+        s => s,
+    }
 }
 
 fn datetime_with(ms: i64, style: DateStyle, now: i64, en: bool) -> String {
@@ -137,6 +146,10 @@ mod tests {
         assert_eq!(datetime_with(now - 2 * 86_400_000, DateStyle::Relative, now, false), "2 gün önce");
         assert!(datetime_with(now - 30 * 86_400_000, DateStyle::Relative, now, false).contains('.'));
         assert_eq!(datetime_with(now, DateStyle::Universal, now, false).len(), 16);
+        // the full form keeps the chosen style, except that relative times become dates
+        assert_eq!(full(DateStyle::Relative), DateStyle::Local);
+        assert_eq!(full(DateStyle::DayMonthYear), DateStyle::DayMonthYear);
+        assert_eq!(full(DateStyle::Universal), DateStyle::Universal);
         let dmy = datetime_with(now, DateStyle::DayMonthYear, now, false);
         assert_eq!((dmy.len(), &dmy[2..3], &dmy[5..6]), (16, "/", "/"), "{dmy}");
         assert_eq!(size_with(1500, false, true), "1,50 KB");
