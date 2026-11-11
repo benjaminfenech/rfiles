@@ -1,5 +1,4 @@
-//! Dragging files on Linux, with GPUI's own drag (Windows uses a shell OLE drag instead, see
-//! `ops::start_drag_out`).
+//! Dragging files, with GPUI's own drag.
 //!
 //! Every drop target takes `ExternalPaths` (what other apps drop), so our drags carry that
 //! type too: then dropping on a folder, a tab, the sidebar or another window works with the

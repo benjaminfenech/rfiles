@@ -9,13 +9,12 @@ use gpui_kit::assets::IconName as L;
 use gpui_kit::component::{Icon, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
-use gpui_windows::hybrid;
 
 use crate::fluent_menu::{self, Item, Menu, MenuIcon};
 use crate::select_box::{Choice, select_box};
 use crate::i18n::Lang;
 use crate::settings::{
-    self, AnimPref, BackdropPref, ClickPref, DatePref, DefaultView, DeletePref, IdePref, RendererPref, Settings, StartupPref, ThemePref,
+    self, AnimPref, BackdropPref, ClickPref, DatePref, DefaultView, DeletePref, IdePref, Settings, StartupPref, ThemePref,
 };
 use crate::t;
 use crate::look::config::LookSettings;
@@ -32,11 +31,10 @@ pub enum Page {
     Look,
     Dev,
     Advanced,
-    Speed,
     About,
 }
 
-const PAGES: [(Page, L, &str); 11] = [
+const PAGES: [(Page, L, &str); 10] = [
     (Page::General, L::Settings, "Genel"),
     (Page::Appearance, L::Palette, "Görünüm"),
     (Page::Layout, L::LayoutGrid, "Sayfa düzeni"),
@@ -46,7 +44,6 @@ const PAGES: [(Page, L, &str); 11] = [
     (Page::Look, L::Eye, "DirectLook"),
     (Page::Dev, L::SquareTerminal, "Geliştirici araçları"),
     (Page::Advanced, L::Wrench, "Gelişmiş"),
-    (Page::Speed, L::Gauge, "Hız testi"),
     (Page::About, L::Info, "Hakkında"),
 ];
 
@@ -209,16 +206,6 @@ fn sub(p: &Palette, title: &str, desc: Option<&str>, control: AnyElement) -> Any
         .into_any_element()
 }
 
-/// Whether this build runs on Windows: rows for Windows features (Explorer, the registry, the
-/// tray, Velopack updates…) are hidden elsewhere.
-const ON_WINDOWS: bool = cfg!(windows);
-
-/// A row for a Windows feature: elsewhere a hidden element (no space, no gap), so lists keep
-/// the shape upstream gave them.
-fn windows_only(row: AnyElement) -> AnyElement {
-    if ON_WINDOWS { row } else { div().hidden().into_any_element() }
-}
-
 fn section(p: &Palette, title: &str) -> AnyElement {
     div().pt_5().pb_1().text_sm().font_weight(FontWeight::SEMIBOLD).text_color(p.text).child(title.to_string()).into_any_element()
 }
@@ -247,10 +234,6 @@ pub fn render(p: &Palette, cx: &mut App) -> AnyElement {
         div().px_2().pb_3().text_xl().font_weight(FontWeight::SEMIBOLD).child(t!("Ayarlar")),
     );
     for (i, (pg, icon, label)) in PAGES.iter().copied().enumerate() {
-        // the speed test races File Explorer: Windows only
-        if pg == Page::Speed && !cfg!(windows) {
-            continue;
-        }
         let on = pg == page;
         nav = nav.child(
             h_flex()
@@ -283,7 +266,6 @@ pub fn render(p: &Palette, cx: &mut App) -> AnyElement {
         Page::Look => look(p, &s, cx),
         Page::Dev => dev(p, &s),
         Page::Advanced => advanced(p, &s),
-        Page::Speed => crate::bench_view::page(p, cx),
         Page::About => about(p, cx),
     };
     h_flex()
@@ -307,11 +289,9 @@ pub fn render(p: &Palette, cx: &mut App) -> AnyElement {
 
 /// What a desktop shortcut runs to open the quick search (Linux has no global hotkey).
 /// The command a desktop shortcut runs for quick search (Linux).
-#[cfg_attr(windows, allow(dead_code))]
 fn qs_command() -> &'static str {
     static CMD: std::sync::OnceLock<String> = std::sync::OnceLock::new();
     CMD.get_or_init(|| {
-        #[cfg(unix)]
         if let Some(id) = rf_win::sandbox::flatpak_id() {
             return format!("flatpak run {id} --quick-search");
         }
@@ -319,7 +299,6 @@ fn qs_command() -> &'static str {
     })
 }
 
-#[cfg_attr(windows, allow(dead_code))]
 fn qs_command_desc() -> &'static str {
     static DESC: std::sync::OnceLock<String> = std::sync::OnceLock::new();
     DESC.get_or_init(|| {
@@ -328,36 +307,8 @@ fn qs_command_desc() -> &'static str {
     })
 }
 
-/// Quick search: on/off, its shortcut (recorded like the keyboard shortcuts), web engine,
-/// bookmarks.
-fn quick_search_cards(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
-    let capture = crate::quick_search::CAPTURE_ACTION;
-    let waiting = crate::keymap_editor::capturing(cx).as_deref() == Some(capture);
-    let shown: SharedString = if waiting { t!("Tuşlara basın…").into() } else { crate::keymap_editor::pretty(&s.quick_search_keys).into() };
-    let keys_desc = match crate::quick_search::problem() {
-        Some(rf_win::hotkey::HotkeyError::Taken) if s.quick_search => t!("Bu kısayolu başka bir uygulama kullanıyor (ChatGPT, Gemini, PowerToys…): başka bir kısayol seçin"),
-        Some(rf_win::hotkey::HotkeyError::Invalid) if s.quick_search => t!("Bu kısayol kullanılamıyor: Ctrl, Alt, Shift ya da Win ile bir tuş seçin"),
-        _ => t!("Değiştirmek için tıklayıp yeni tuşlara basın"),
-    };
-    let warn = s.quick_search && crate::quick_search::problem().is_some();
-    let pill = div()
-        .id("qs-keys")
-        .px_3()
-        .py_1()
-        .rounded(px(4.))
-        .border_1()
-        .border_color(if warn { p.danger } else { p.border })
-        .text_sm()
-        .cursor_pointer()
-        .text_color(if waiting { p.accent } else { p.text })
-        .hover(|d| d.bg(p.pressed))
-        .when(waiting, |d| d.bg(p.selection))
-        .child(shown)
-        .on_click(move |_, window, cx| {
-            crate::keymap_editor::start(capture.to_string(), cx);
-            window.refresh();
-        })
-        .into_any_element();
+/// Quick search: on/off, the command a desktop shortcut runs, web engine, bookmarks.
+fn quick_search_cards(p: &Palette, s: &Settings) -> Vec<AnyElement> {
     vec![
         section(p, t!("Hızlı arama")),
         card(
@@ -371,19 +322,14 @@ fn quick_search_cards(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement
             }),
             sw("quick-search", p, s.quick_search, |s, v| s.quick_search = v),
         ),
-        // Linux: Wayland gives apps no global shortcuts; the desktop's own shortcut starts it
-        if ON_WINDOWS {
-            card(p, L::Keyboard, t!("Kısayol"), Some(keys_desc), pill)
-        } else {
-            let _ = (keys_desc, pill);
-            card(
-                p,
-                L::Keyboard,
-                t!("Kısayol"),
-                Some(qs_command_desc()),
-                button("qs-copy-command", p, "Copy command", |_, cx| cx.write_to_clipboard(gpui_kit::ClipboardItem::new_string(qs_command().to_string()))),
-            )
-        },
+        // Wayland gives apps no global shortcuts; the desktop's own shortcut starts it
+        card(
+            p,
+            L::Keyboard,
+            t!("Kısayol"),
+            Some(qs_command_desc()),
+            button("qs-copy-command", p, "Copy command", |_, cx| cx.write_to_clipboard(gpui_kit::ClipboardItem::new_string(qs_command().to_string()))),
+        ),
         card(
             p,
             L::Globe,
@@ -549,17 +495,10 @@ fn general(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         },
         cx,
     ));
-    v.push(windows_only(card(
-        p,
-        L::Ellipsis,
-        t!("Kabuk uzantılarını alt menüye taşı"),
-        Some(t!("Kapalıyken diğer uygulamaların öğeleri menünün sonunda listelenir.")),
-        sw("shell-sub", p, s.menu.shell_submenu, |s, v| s.menu.shell_submenu = v),
-    )));
 
     v.push(section(p, t!("Kaydırma")));
     v.push(card(p, L::ChevronsUpDown, t!("Akıcı kaydırma"), None, sw("smooth", p, s.smooth_scroll, |s, v| s.smooth_scroll = v)));
-    v.extend(quick_search_cards(p, s, cx));
+    v.extend(quick_search_cards(p, s));
     v
 }
 
@@ -601,30 +540,17 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
             p,
             L::Layers,
             t!("Arka plan malzemesi"),
-            Some(if ON_WINDOWS {
-                t!("Mica masaüstü renginden ton alır; Mica Alt daha renklidir.")
-            } else {
-                t!("Translucent windows let the desktop show through; with blur, compositors that support it (KDE, Hyprland) blur it.")
-            }),
+            Some(t!("Translucent windows let the desktop show through; with blur, compositors that support it (KDE, Hyprland) blur it.")),
             dropdown(
                 "backdrop",
                 p,
                 s.backdrop,
-                if ON_WINDOWS {
-                    vec![
-                        (BackdropPref::Mica, "Mica".into()),
-                        (BackdropPref::MicaAlt, "Mica Alt".into()),
-                        (BackdropPref::Acrylic, t!("Akrilik").into()),
-                        (BackdropPref::Solid, t!("Düz").into()),
-                    ]
-                } else {
-                    // Mica Alt looks like Mica here: both are a see-through window
-                    vec![
-                        (BackdropPref::Mica, t!("Translucent").into()),
-                        (BackdropPref::Acrylic, t!("Translucent with blur").into()),
-                        (BackdropPref::Solid, t!("Düz").into()),
-                    ]
-                },
+                // Mica Alt looks like Mica here: both are a see-through window
+                vec![
+                    (BackdropPref::Mica, t!("Translucent").into()),
+                    (BackdropPref::Acrylic, t!("Translucent with blur").into()),
+                    (BackdropPref::Solid, t!("Düz").into()),
+                ],
                 |s, v| s.backdrop = v,
             ),
         ),
@@ -638,7 +564,7 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                 p,
                 s.animations,
                 vec![
-                    (AnimPref::System, if ON_WINDOWS { t!("Windows ayarına uy") } else { t!("Sistem ayarını kullan") }.into()),
+                    (AnimPref::System, t!("Sistem ayarını kullan").into()),
                     (AnimPref::On, t!("Açık").into()),
                     (AnimPref::Off, t!("Kapalı").into()),
                 ],
@@ -761,7 +687,6 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     v.push(card(p, L::PanelBottom, t!("Durum çubuğunu göster"), None, sw("statusbar", p, s.show_statusbar, |s, v| s.show_statusbar = v)));
     v.push(card(p, L::PanelRight, t!("Önizleme paneli"), Some("Alt+P"), sw("preview", p, s.preview_open, |s, v| s.preview_open = v)));
     let hidden = s.sidebar_hidden.clone();
-    let libs = s.show_libraries;
     let pp = *p;
     v.push(expander(
         "sidebar",
@@ -777,13 +702,10 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                     let on = shown("drives");
                     move |_, cx| settings::update(cx, |s| show_section(s, "drives", !on))
                 })),
-                sub(&pp, if ON_WINDOWS { t!("Bulut ve Linux") } else { t!("Cloud folders") }, None, switch("sb-cloud", &pp, shown("cloud"), {
+                sub(&pp, t!("Cloud folders"), None, switch("sb-cloud", &pp, shown("cloud"), {
                     let on = shown("cloud");
                     move |_, cx| settings::update(cx, |s| show_section(s, "cloud", !on))
                 })),
-                windows_only(sub(&pp, t!("Kütüphaneler"), Some(t!("Sabitlenenlerle aynı klasörleri gösterir")), switch("sb-libs", &pp, libs, move |_, cx| {
-                    settings::update(cx, |s| s.show_libraries = !libs)
-                }))),
                 sub(&pp, t!("Ağ"), None, switch("sb-net", &pp, shown("network"), {
                     let on = shown("network");
                     move |_, cx| settings::update(cx, |s| show_section(s, "network", !on))
@@ -927,7 +849,7 @@ fn layout(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
             rows.into_iter()
                 .enumerate()
                 // the sync status is OneDrive's (cloud placeholders): Windows only
-                .filter(|(_, (label, _, _))| ON_WINDOWS || *label != t!("Eşitleme durumu"))
+                .filter(|(_, (label, _, _))| *label != t!("Eşitleme durumu"))
                 .map(|(i, (label, on, set))| sub(&pp, label, None, switch(("col-sw", i), &pp, on, move |_, cx| settings::update(cx, |s| set(s, !on)))))
                 .collect()
         },
@@ -948,7 +870,7 @@ pub fn group_ix(g: &str) -> usize {
 
 fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     let mut v = vec![section(p, t!("Görünüm"))];
-    let (h, sys, dot) = (s.show_hidden, s.show_system_files, s.show_dot_files);
+    let (h, dot) = (s.show_hidden, s.show_dot_files);
     let pp = *p;
     v.push(expander(
         "hidden",
@@ -960,12 +882,6 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         move || {
             vec![
                 sub(&pp, t!("Gizli öğeleri göster"), Some("Ctrl+H"), switch("h1", &pp, h, move |_, cx| settings::update(cx, |s| s.show_hidden = !h))),
-                windows_only(sub(
-                    &pp,
-                    t!("Korunan işletim sistemi dosyalarını göster"),
-                    Some(t!("desktop.ini, thumbs.db gibi sistem dosyaları")),
-                    switch("h2", &pp, sys, move |_, cx| settings::update(cx, |s| s.show_system_files = !sys)),
-                )),
                 sub(
                     &pp,
                     t!("Nokta ile başlayan dosyaları göster"),
@@ -980,7 +896,6 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     v.push(card(p, L::Image, t!("Küçük resimleri göster"), None, sw("thumbs", p, s.show_thumbnails, |s, v| s.show_thumbnails = v)));
     v.push(card(p, L::SquareCheck, t!("Seçerken onay kutularını göster"), None, sw("checkboxes", p, s.show_checkboxes, |s, v| s.show_checkboxes = v)));
     // Linux has no drive letters: people name drives differently
-    #[cfg(unix)]
     v.push(card(
         p,
         L::HardDrive,
@@ -999,7 +914,6 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
             |s, v| s.drive_names = v,
         ),
     ));
-    #[cfg(unix)]
     v.push(card(
         p,
         L::Network,
@@ -1051,13 +965,6 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         Some(t!("ZIP, 7z ve tar dosyalarının içine çift tıklayarak girilir; içindeki dosyalar açılınca geçici bir klasöre çıkarılır")),
         sw("browse-arc", p, s.browse_archives, |s, v| s.browse_archives = v),
     ));
-    v.push(windows_only(card(
-        p,
-        L::Search,
-        t!("Aramada Windows dizinini kullan"),
-        Some(t!("Dizinlenmiş klasörlerde dosya içerikleri de aranır ve kind:picture, size:>10MB gibi filtreler çalışır")),
-        sw("search-index", p, s.search_index, |s, v| s.search_index = v),
-    )));
     // the name index covers NTFS/ReFS drives (Linux: the home folder and local data disks)
     v.push(card(
         p,
@@ -1426,37 +1333,6 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     if !enabled {
         return v;
     }
-    // Wayland has no global hotkeys: DirectLook works inside rfiles only
-    v.push(windows_only(card(
-        p,
-        L::Monitor,
-        t!("Explorer ve masaüstünde de Boşluk ile önizle"),
-        Some(t!("DirectLook arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge); rfiles kapalıyken de")),
-        switch("look-wide", p, l.look_system_wide, {
-            let on = l.look_system_wide;
-            move |_, cx| {
-                look_update(cx, |s| s.look_system_wide = !on);
-                if let Some(exe) = crate::look::ipc::exe() {
-                    if let Err(e) = rf_win::dialogs::set_start_with_windows_as("DirectLook", &exe, &["--background"], !on) {
-                        log::warn!("DirectLook start with Windows: {e}");
-                    }
-                }
-                crate::look::ipc::send(crate::look::ipc::Msg::Wake, true);
-            }
-        }),
-    )));
-    if ON_WINDOWS && l.look_system_wide && !l.look_ignore_quicklook && crate::look::system::quicklook_running() {
-        v.push(card(
-            p,
-            L::TriangleAlert,
-            t!("QuickLook çalışıyor"),
-            Some(t!("İki uygulama aynı tuşu dinlemesin diye sistem geneli kısayol başlatılmadı")),
-            button("look-force", p, t!("Yine de aç"), |window, cx| {
-                look_update(cx, |s| s.look_ignore_quicklook = true);
-                window.refresh();
-            }),
-        ));
-    }
     let _ = cx;
     v.extend([
         section(p, t!("Pencere")),
@@ -1469,38 +1345,20 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                 "look-backdrop",
                 p,
                 l.look_backdrop,
-                if ON_WINDOWS {
-                    vec![
-                        (LookBackdrop::Mica, "Mica".into()),
-                        (LookBackdrop::Acrylic, "Acrylic".into()),
-                        (LookBackdrop::Tabbed, t!("Mica (sekmeli)").into()),
-                        (LookBackdrop::None, t!("Düz renk").into()),
-                    ]
-                } else {
-                    vec![
-                        (LookBackdrop::Mica, t!("Translucent").into()),
-                        (LookBackdrop::Acrylic, t!("Translucent with blur").into()),
-                        (LookBackdrop::None, t!("Düz renk").into()),
-                    ]
-                },
+                vec![
+                    (LookBackdrop::Mica, t!("Translucent").into()),
+                    (LookBackdrop::Acrylic, t!("Translucent with blur").into()),
+                    (LookBackdrop::None, t!("Düz renk").into()),
+                ],
                 |s, v| s.look_backdrop = v,
             ),
         ),
         card(p, L::PictureInPicture, t!("Her zaman üstte"), None, lsw("look-top", p, l.look_topmost, |s, v| s.look_topmost = v)),
-        windows_only(card(p, L::PanelBottom, t!("Görev çubuğunda göster"), None, lsw("look-taskbar", p, l.look_show_in_taskbar, |s, v| s.look_show_in_taskbar = v))),
-        // Linux: DirectLook has no tray icon of its own (it runs inside rfiles only)
-        windows_only(card(
-            p,
-            L::AppWindow,
-            t!("Bildirim alanında DirectLook simgesi"),
-            Some(t!("rfiles arka planda çalışırken gösterilmez: tek simge rfiles'ınkidir")),
-            lsw("look-tray", p, l.look_tray_icon, |s, v| s.look_tray_icon = v),
-        )),
         card(
             p,
             L::MousePointerClick,
             t!("Açılınca pencereyi odakla"),
-            Some(if ON_WINDOWS { t!("Kapalıyken klavye Explorer'da kalır: oklarla dosyalar arasında gezinilir") } else { t!("When off, the keyboard stays in rfiles: arrow keys move between files") }),
+            Some(t!("When off, the keyboard stays in rfiles: arrow keys move between files")),
             lsw("look-focus", p, l.look_focus_on_open, |s, v| s.look_focus_on_open = v),
         ),
         card(p, L::CircleX, t!("Başka pencereye geçince kapat"), Some(t!("Sabitlenmiş pencereler açık kalır")), lsw("look-lostfocus", p, l.look_close_on_lost_focus, |s, v| s.look_close_on_lost_focus = v)),
@@ -1629,50 +1487,13 @@ mod ext_tests {
 
 fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
     let start_on = rf_win::dialogs::starts_with_windows();
-    let load = hybrid::load_snapshot();
-    let pct = |v: Option<f32>| v.map(crate::i18n::pct).unwrap_or_else(|| "—".into());
-    let live = format!(
-        "{} {} · {} {} · {} {} · {} {:.1} ms · {} {}",
-        t!("Şu an:"),
-        hybrid::current_backend_label(),
-        t!("GPU yükü"),
-        pct(load.gpu_percent),
-        t!("CPU yükü"),
-        pct(load.cpu_percent),
-        t!("son kare"),
-        load.last_frame_ms,
-        hybrid::switch_count(),
-        t!("geçiş")
-    );
     let dfm_on = crate::DEFAULT_FM.load(std::sync::atomic::Ordering::Relaxed);
-    let dialogs_on = crate::FILE_DIALOGS.load(std::sync::atomic::Ordering::Relaxed);
-    // (only looks: the copy is made when the switch is turned on)
-    let has_dll = std::env::current_exe().is_ok_and(|e| e.with_file_name(rf_win::dialog_reg::DLL_NAME).exists());
-    // while rfiles is the default file manager: archives can be given to it too (only the
-    // user can pick the default app, in Windows' own page)
-    let archives = dfm_on.then(|| {
-        card(
-            p,
-            L::FileArchive,
-            t!("Arşivleri rfiles ile aç"),
-            Some(t!("Zip, 7z, rar, tar için varsayılan uygulama Windows'ta seçilir. Açılan sayfada rfiles'ı varsayılan yapın.")),
-            button("dfm-arch", p, t!("Varsayılan uygulamalar"), |_, _| {
-                let page = format!("ms-settings:defaultapps?registeredAppUser={}", rf_win::default_fm::APP_NAME);
-                if let Err(e) = rf_win::shell::open(std::path::Path::new(&page)) {
-                    log::warn!("default apps page: {e:#}");
-                }
-            }),
-        )
-    });
     let mut out = vec![
         link_row(p, "export", L::Upload, t!("Ayarları dışa aktar"), None, |window, cx| pick_into(window, cx, t!("Ayarları dışa aktar"), PickTarget::Export)),
         link_row(p, "import", L::Download, t!("Ayarları içe aktar"), None, |window, cx| pick_into(window, cx, t!("Ayarları içe aktar"), PickTarget::Import)),
         link_row(p, "edit-file", L::FilePen, t!("Ayar dosyasını düzenle"), Some(t!("settings.toml metin düzenleyicide açılır")), |_, _| {
             if let Some(path) = settings::path() {
                 std::thread::spawn(move || {
-                    #[cfg(windows)]
-                    let _ = std::process::Command::new("notepad.exe").arg(path).spawn();
-                    #[cfg(not(windows))]
                     let _ = rf_win::shell::open(&path);
                 });
             }
@@ -1680,7 +1501,7 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         card(
             p,
             L::Power,
-            if ON_WINDOWS { t!("Windows başladığında rfiles'ı aç") } else { t!("Open rfiles when you log in") },
+            t!("Open rfiles when you log in"),
             None,
             switch("start-win", p, start_on, move |window, _| {
                 if let Ok(exe) = std::env::current_exe() {
@@ -1710,11 +1531,7 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             p,
             L::Zap,
             t!("Hızlı dosya işlemleri"),
-            Some(if ON_WINDOWS {
-                t!("Kopyalama, başka sürücüye taşıma ve kalıcı silme kendi paralel motorumuzla. Kapalıyken her şey Windows'un motoruyla yapılır.")
-            } else {
-                t!("Copying, moving to another drive and permanent deletion use our parallel engine. When off, files are copied one at a time.")
-            }),
+            Some(t!("Copying, moving to another drive and permanent deletion use our parallel engine. When off, files are copied one at a time.")),
             sw("fast-ops", p, s.fast_file_ops, |s, v| s.fast_file_ops = v),
         ),
         card(
@@ -1754,33 +1571,12 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             Some(t!("Klasörün listelenme süresi ve çizim yöntemi (GPU / CPU)")),
             sw("perf-info", p, s.show_perf_info, |s, v| s.show_perf_info = v),
         ),
-        // GPU / CPU switching is the Windows renderer's (gpui-windows)
-        windows_only(shell(p)
-            .child(card_body(
-                p,
-                L::Activity,
-                t!("Çizim yöntemi").into(),
-                Some(t!("Otomatik: açılışta ekran kartı denetlenir, sorun yoksa arayüz GPU ile çizilir. GPU doluyken (oyun, render) CPU'ya geçer, boşalınca geri döner. Geçiş fark edilmez.").into()),
-                Some(dropdown(
-                    "renderer",
-                    p,
-                    s.renderer,
-                    vec![(RendererPref::Auto, t!("Otomatik").into()), (RendererPref::Gpu, "GPU".into()), (RendererPref::Cpu, "CPU".into())],
-                    |s, v| s.renderer = v,
-                )),
-            ))
-            .child(div().pl(px(56.)).pr_4().pb_3().text_xs().text_color(p.text_tertiary).child(live))
-            .into_any_element()),
         section(p, t!("Deneysel")),
         card(
             p,
             L::AppWindow,
             t!("Varsayılan dosya yöneticisi olarak ayarla"),
-            Some(if ON_WINDOWS {
-                t!("Klasörler ve Win+E rfiles ile açılır. Yalnızca bu kullanıcı için; istediğiniz an geri alınır.")
-            } else {
-                t!("Folders opened from other apps, and \"Show in folder\" in browsers, open in rfiles. Applies to this user only; turning it off brings back the previous file manager.")
-            }),
+            Some(t!("Folders opened from other apps, and \"Show in folder\" in browsers, open in rfiles. Applies to this user only; turning it off brings back the previous file manager.")),
             switch("dfm", p, dfm_on, move |window, _| {
                 let exe = std::env::current_exe().map(|e| e.display().to_string()).unwrap_or_default();
                 std::thread::spawn(move || {
@@ -1795,36 +1591,6 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             }),
         ),
     ];
-    out.extend(archives.filter(|_| ON_WINDOWS));
-    // other apps' Open / Save / folder dialogs show rfiles (needs rustyfiles_dialog.dll)
-    out.push(windows_only(card(
-        p,
-        L::FolderOpen,
-        t!("Aç / Kaydet pencerelerinde rfiles"),
-        Some(if has_dll {
-            t!("Uygulamaların dosya açma, kaydetme ve klasör seçme pencereleri rfiles ile açılır. Pencereye kendi seçeneklerini ekleyen uygulamalarda Windows'un penceresi açılır. Açık uygulamalarda, yeniden başlatınca geçerli olur.")
-        } else {
-            t!("rustyfiles_dialog.dll bulunamadı: rfiles'ı kurulum betiğiyle kurun.")
-        }),
-        switch("dlg", p, dialogs_on, move |window, _| {
-            if !has_dll && !dialogs_on {
-                return;
-            }
-            std::thread::spawn(move || {
-                let classes = rf_win::dialog_reg::CLASSES;
-                let r = match (dialogs_on, crate::dialog_dll()) {
-                    (true, _) => rf_win::dialog_reg::disable(classes),
-                    (false, Some(dll)) => rf_win::dialog_reg::enable(&dll, classes),
-                    (false, None) => Ok(()),
-                };
-                if let Err(e) = r {
-                    log::warn!("file dialogs: {e:#}");
-                }
-                crate::FILE_DIALOGS.store(rf_win::dialog_reg::is_enabled(classes), std::sync::atomic::Ordering::Relaxed);
-            });
-            window.refresh();
-        }),
-    )));
     out.extend([
         card(
             p,
@@ -1843,101 +1609,6 @@ fn open_url(url: &'static str) {
     });
 }
 
-/// Update status and the button that fits it (Settings → About).
-fn update_card(p: &Palette, s: &Settings) -> AnyElement {
-    use crate::installer::State;
-    let state = crate::installer::state();
-    let text = match &state {
-        State::NotInstalled => t!("Bu kopya kurulum programıyla kurulmadı: güncellemeleri GitHub'dan indirin.").to_string(),
-        State::Idle => t!("Güncellemeler GitHub'dan gelir.").to_string(),
-        State::Checking => t!("Denetleniyor…").to_string(),
-        State::UpToDate => t!("rfiles güncel.").to_string(),
-        State::Downloading(v, pct) => format!("{} {v} · %{pct}", t!("İndiriliyor:")),
-        State::Ready(v) => format!("{} {v}. {}", t!("İndirildi:"), t!("Yeniden başlatınca uygulanır.")),
-        State::Failed(e) => format!("{} {e}", t!("Denetlenemedi:")),
-    };
-    let control = match state {
-        State::NotInstalled => button("upd-web", p, t!("Sürümler sayfası"), |_, _| open_url(RELEASES_URL)),
-        State::Ready(_) => button("upd-restart", p, t!("Yeniden başlat ve güncelle"), |_, _| {
-            std::thread::spawn(crate::installer::restart_to_update);
-        }),
-        State::Checking | State::Downloading(..) => div().into_any_element(),
-        _ => button("upd-check", p, t!("Güncellemeleri denetle"), |window, cx| {
-            check_updates_now(cx);
-            window.refresh();
-        }),
-    };
-    let _ = s;
-    let icon = match state {
-        State::Downloading(..) => L::Download,
-        State::Ready(_) => L::CircleCheck,
-        _ => L::RefreshCw,
-    };
-    // behind the row: a light sweeping while checking, a bar filling while downloading, full when done
-    let tint = p.accent;
-    let layer = match state {
-        State::Checking => Some(
-            glow(tint, 0.22)
-                .w(relative(0.3))
-                .with_animation(
-                    "upd-sweep",
-                    Animation::new(std::time::Duration::from_millis(1200)).repeat().with_easing(ease_in_out),
-                    |el, t| el.left(relative(-0.3 + 1.3 * t)),
-                )
-                .into_any_element(),
-        ),
-        State::Downloading(_, pct) => Some(
-            div()
-                .absolute()
-                .top_0()
-                .bottom_0()
-                .left_0()
-                .w(relative(pct as f32 / 100.0))
-                .overflow_hidden()
-                .bg(tint.opacity(0.18))
-                .child(
-                    // a soft highlight running along the filled part
-                    glow(tint, 0.2)
-                        .w(px(120.))
-                        .with_animation(
-                            "upd-run",
-                            Animation::new(std::time::Duration::from_millis(1000)).repeat(),
-                            |el, t| el.left(relative(-0.2 + 1.2 * t)),
-                        ),
-                )
-                .into_any_element(),
-        ),
-        State::Ready(_) => Some(div().absolute().inset_0().bg(tint.opacity(0.14)).into_any_element()),
-        _ => None,
-    };
-    shell(p)
-        .relative()
-        .overflow_hidden()
-        .when(matches!(state, State::Ready(_)), |d| d.border_color(tint.opacity(0.6)))
-        .children(layer)
-        .child(card_body(p, icon, t!("Güncellemeler").into(), Some(text.into()), Some(control)))
-        .into_any_element()
-}
-
-/// A soft band of light: transparent at both edges, `alpha` in the middle.
-fn glow(c: Hsla, alpha: f32) -> Div {
-    let half = |from: f32, to: f32| {
-        div().flex_1().h_full().bg(linear_gradient(90., linear_color_stop(c.opacity(from), 0.), linear_color_stop(c.opacity(to), 1.)))
-    };
-    div().absolute().top_0().bottom_0().flex().child(half(0., alpha)).child(half(alpha, 0.))
-}
-
-/// "Check for updates": runs off the UI thread and redraws while it checks and downloads.
-pub(crate) fn check_updates_now(cx: &mut App) {
-    cx.spawn(async move |cx| {
-        let run = cx.background_executor().spawn(async { crate::installer::check() });
-        crate::installer::redraw_while_busy(cx).await;
-        run.await;
-        cx.update(|cx| cx.refresh_windows());
-    })
-    .detach();
-}
-
 const REPO_URL: &str = "https://github.com/benjaminfenech/rfiles";
 const ISSUES_URL: &str = "https://github.com/benjaminfenech/rfiles/issues/new";
 const RELEASES_URL: &str = "https://github.com/benjaminfenech/rfiles/releases";
@@ -1945,10 +1616,9 @@ const RELEASES_URL: &str = "https://github.com/benjaminfenech/rfiles/releases";
 const UPSTREAM_URL: &str = "https://github.com/gelenmedya/rustyfiles";
 
 fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
-    let ver = crate::installer::version_full();
+    let ver = crate::about::version_full();
     let version = format!("{} {ver}", t!("Sürüm:"));
     let pp = *p;
-    let s = cx.global::<Settings>().clone();
     vec![
         card(
             p,
@@ -1957,15 +1627,6 @@ fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
             Some(&version),
             button("copy-ver", p, t!("Kopyala"), move |_, cx| cx.write_to_clipboard(ClipboardItem::new_string(format!("rfiles {ver}")))),
         ),
-        // Velopack updates are Windows' installer; Linux gets updates from its package
-        windows_only(update_card(p, &s)),
-        windows_only(card(
-            p,
-            L::Download,
-            t!("Güncellemeleri kendiliğinden indir"),
-            Some(t!("Arka planda denetlenir ve indirilir; bir sonraki açılışta uygulanır.")),
-            sw("auto-upd", p, s.auto_update, |s, v| s.auto_update = v),
-        )),
         section(p, "GitHub"),
         link_row(p, "gh-star", L::Star, t!("GitHub'da yıldız ver"), Some(t!("rfiles işinize yarıyorsa başkalarının da bulmasına yardım eder.")), |_, _| open_url(REPO_URL)),
         link_row(p, "gh-issue", L::MessageSquare, t!("Hata bildir ya da öneride bulun"), None, |_, _| open_url(ISSUES_URL)),
@@ -1982,9 +1643,6 @@ fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
         link_row(p, "open-log", L::FolderOpen, t!("Kayıt ve ayar klasörünü aç"), settings::app_dir().map(|d| d.display().to_string()).as_deref(), |_, _| {
             if let Some(d) = settings::app_dir() {
                 std::thread::spawn(move || {
-                    #[cfg(windows)]
-                    let _ = std::process::Command::new("explorer.exe").arg(d).spawn();
-                    #[cfg(not(windows))]
                     let _ = rf_win::shell::open(&d);
                 });
             }
@@ -2001,15 +1659,12 @@ fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
                 [
                     ("GPUI", "Apache-2.0"),
                     ("gpui-kit", "Apache-2.0"),
-                    ("Velopack", "MIT"),
-                    ("windows-rs", "MIT / Apache-2.0"),
                     ("Lucide icons", "ISC"),
                     ("zip, sevenz-rust2, tar, flate2, zstd", "MIT / Apache-2.0"),
                     ("notify", "CC0 / Artistic-2.0"),
                     ("chrono, serde, toml", "MIT / Apache-2.0"),
                 ]
                 .iter()
-                .filter(|(n, _)| ON_WINDOWS || !matches!(*n, "Velopack" | "windows-rs"))
                 .map(|(n, l)| sub(&pp, n, Some(l), div().into_any_element()))
                 .collect()
             },
@@ -2033,17 +1688,15 @@ enum PickTarget {
     Import,
 }
 
-/// Runs a file dialog (Windows' own; Linux: the desktop's, through the portal) on the shell
-/// thread and applies the result.
+/// Runs the desktop's file dialog (through the portal) on the shell thread and applies the
+/// result.
 fn pick_into(_window: &mut Window, cx: &mut App, title: &str, target: PickTarget) {
     let title = title.to_string();
     let (tx, rx) = futures::channel::oneshot::channel::<Option<std::path::PathBuf>>();
     let images = [(t!("Resimler"), "*.png;*.jpg;*.jpeg;*.webp;*.bmp;*.gif")];
-    let exe = [(t!("Programlar"), "*.exe;*.cmd;*.bat")];
     let toml = [(t!("Ayar dosyası"), "*.toml")];
-    let (images, exe, toml) = (
+    let (images, toml) = (
         images.map(|(a, b)| (a.to_string(), b.to_string())),
-        exe.map(|(a, b)| (a.to_string(), b.to_string())),
         toml.map(|(a, b)| (a.to_string(), b.to_string())),
     );
     let kind = match target {
@@ -2060,7 +1713,7 @@ fn pick_into(_window: &mut Window, cx: &mut App, title: &str, target: PickTarget
         let r = match kind {
             0 => pick(owner, &title, Pick::File { filters: &f(&images) }),
             // Linux programs have no extension to filter on
-            1 => pick(owner, &title, Pick::File { filters: &if cfg!(windows) { f(&exe) } else { Vec::new() } }),
+            1 => pick(owner, &title, Pick::File { filters: &Vec::new() }),
             2 => pick(owner, &title, Pick::Save { filters: &f(&toml), default_name: "rfiles-ayarlar.toml" }),
             _ => pick(owner, &title, Pick::File { filters: &f(&toml) }),
         };
@@ -2109,7 +1762,7 @@ fn name_index_status() -> String {
                 rf_win::indexer::State::Building => format!("{r} {}", t!("hazırlanıyor…")),
                 rf_win::indexer::State::Failed => format!("{r} {}", t!("dizinlenemedi")),
                 rf_win::indexer::State::Ready => {
-                    t!("{root} {n} öğe, {mb} MB").replace("{root}", &r).replace("{n}", &crate::bench_view::count(live as u64)).replace("{mb}", &(mem >> 20).to_string())
+                    t!("{root} {n} öğe, {mb} MB").replace("{root}", &r).replace("{n}", &crate::disk_usage::count(live as u64)).replace("{mb}", &(mem >> 20).to_string())
                 }
             }
         })
@@ -2167,13 +1820,12 @@ fn index_exclusions(p: &Palette, s: &Settings) -> AnyElement {
                         .child(div().text_xs().text_color(p.text_secondary).child(format!(
                             "{} {defaults}{}. {}",
                             t!("Her zaman:"),
-                            if cfg!(windows) { ", Windows" } else { "" },
+                            "",
                             t!("Bu klasörlerin içinde arama diskte yapılır. Bir klasörü sağ tıklayıp \"Aramada dizine alma\" ile de ekleyebilirsiniz.")
                         ))),
                 )
                 .child(button("idx-excl-add", p, t!("Klasör ekle…"), |_window, cx| {
                     // Linux: the desktop's folder dialog through the portal, on the shell thread
-                    #[cfg(not(windows))]
                     {
                         let (tx, rx) = futures::channel::oneshot::channel::<Option<std::path::PathBuf>>();
                         let title = t!("Dizine alınmayacak klasör").to_string();
@@ -2192,22 +1844,6 @@ fn index_exclusions(p: &Palette, s: &Settings) -> AnyElement {
                             });
                         })
                         .detach();
-                    }
-                    #[cfg(windows)]
-                    {
-                        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-                        let owner = match HasWindowHandle::window_handle(_window).map(|h| h.as_raw()) {
-                            Ok(RawWindowHandle::Win32(h)) => windows::Win32::Foundation::HWND(h.hwnd.get() as *mut _),
-                            _ => windows::Win32::Foundation::HWND::default(),
-                        };
-                        if let Some(dir) = rf_win::dialogs::pick(owner, t!("Dizine alınmayacak klasör"), rf_win::dialogs::Pick::Folder) {
-                            let d = dir.to_string_lossy().trim_end_matches('\\').to_string();
-                            settings::update(cx, |s| {
-                                if !s.index_excluded.iter().any(|e| e.eq_ignore_ascii_case(&d)) {
-                                    s.index_excluded.push(d);
-                                }
-                            });
-                        }
                     }
                 })),
         )

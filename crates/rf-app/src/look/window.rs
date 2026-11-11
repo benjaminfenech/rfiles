@@ -265,17 +265,7 @@ impl LookWindow {
             let old = Rect { x: f32::from(b.origin.x), y: f32::from(b.origin.y), w: cur.0, h: cur.1 };
             let r = geometry::relocate(old, size, work);
             self.resizing_until = Some(std::time::Instant::now() + Duration::from_millis(400));
-            // Windows: not from inside this update: SetWindowPos delivers the new size at once, while
-            // the app is still borrowed, and GPUI drops it ("handling resize: RefCell already
-            // borrowed"); the window then grows but the content stays at the old size. A task runs
-            // after the update, when the size change reaches GPUI normally.
-            #[cfg(windows)]
-            {
-                let (hwnd, rect, scale) = (self.hwnd, [r.x, r.y, r.w, r.h], window.scale_factor());
-                cx.spawn(async move |_, _| rf_win::look::win::set_rect(hwnd, rect, scale)).detach();
-            }
             // Linux: GPUI's own resize request, which the compositor answers later anyway
-            #[cfg(not(windows))]
             crate::sys::set_window_rect(self.hwnd, [r.x, r.y, r.w, r.h], window);
             self.programmatic = size;
         }
@@ -372,17 +362,6 @@ impl LookWindow {
         });
     }
 
-    fn share(&self) {
-        let p = self.path.clone();
-        rf_win::sta::run(move |owner| {
-            let pt = crate::sys::cursor_pos();
-            let target = rf_win::ctxmenu::ShellTarget::Items(vec![p]);
-            if let Err(e) = rf_win::ctxmenu::invoke_verb(owner, &target, "Windows.ModernShare", pt) {
-                log::warn!("look share: {e:#}");
-            }
-        });
-    }
-
     fn open_with(&self) {
         let p = self.path.clone();
         rf_win::sta::run(move |_| {
@@ -440,7 +419,6 @@ impl LookWindow {
                 v.set_topmost(on, cx);
             })))
             // Share is Windows' share sheet
-            .when(cfg!(windows), |d| d.child(self.button("look-share", L::Share, t!("Paylaş").into(), false, p).on_click(cx.listener(|v, _, _, _| v.share()))))
             .child(
                 self.button("look-openwith", L::SquareArrowOutUpRight, t!("Birlikte aç").into(), false, p)
                     .on_click(cx.listener(|v, _, _, _| v.open_with())),

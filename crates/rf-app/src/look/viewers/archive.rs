@@ -386,22 +386,6 @@ impl Render for ArchiveView {
 #[cfg(test)]
 mod tests {
     use super::{build_tree, rows};
-    #[cfg(windows)]
-    use super::rfiles_launch;
-
-    // Windows paths and Explorer's launch format
-    #[cfg(windows)]
-    #[test]
-    fn archives_open_in_rfiles_as_folder_or_selected() {
-        let zip = std::path::Path::new(r"C:\a b\x.zip");
-        assert_eq!(rfiles_launch(zip), (r"C:\a b\x.zip".to_string(), r"C:\a b\x.zip".to_string()));
-        let gz = std::path::Path::new(r"C:\a\log.gz");
-        let (msg, arg) = rfiles_launch(gz);
-        assert_eq!(msg, format!("{}C:\\a\\log.gz", crate::workspace::SELECT_PREFIX));
-        assert_eq!(arg, r"/select,C:\a\log.gz");
-        // ileti rfiles tarafında doğru çözülür
-        assert_eq!(crate::workspace::parse_launch(&msg).1.as_deref(), Some("log.gz"));
-    }
 
     fn e(path: &str, is_dir: bool, size: u64) -> rf_archive::ArchiveEntry {
         rf_archive::ArchiveEntry { path: path.into(), size, packed: size / 2, is_dir, modified_ms: 0, encrypted: false }

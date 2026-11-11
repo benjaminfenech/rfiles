@@ -5,14 +5,8 @@
 //!   downloaded file. A drive shows its file system and how full it is instead.
 //! - Shortcut (.lnk): target, arguments, start in, comment, how it runs, run as administrator,
 //!   its icon.
-//! - Compatibility (programs and shortcuts to them): compatibility mode, reduced colour, 640×480,
-//!   full-screen optimisations, run as administrator, restart registration, ICC, high-DPI
-//!   override — per user, as Windows stores them.
-//! - Security: who may do what (read from the file's ACL), and the owner.
 //! - Details: the version resource of programs, media / document properties, the file facts.
 //! - Digital signatures: the embedded Authenticode signatures and whether Windows trusts them.
-//! - Sharing (folders): the network name it is shared as.
-//! - Customize (folders): the folder's own icon.
 //! - Hashes (files).
 //!
 //! Every disk access happens on background threads; the window never waits on a slow drive.
@@ -27,7 +21,6 @@ use gpui_kit::component::{Icon, TitleBar, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 use rf_core::{Entry, EntryKind, format};
-use rf_win::compat::Compat;
 use rf_win::fileinfo::{ARCHIVE, COMPRESSED, ENCRYPTED, Info, NOT_INDEXED};
 
 use crate::image_cache::ImageCache;
@@ -62,12 +55,8 @@ pub fn open(paths: Vec<PathBuf>, images: Entity<ImageCache>, cx: &mut App) {
 enum Page {
     General,
     Shortcut,
-    Compat,
-    Security,
     Details,
     Signatures,
-    Sharing,
-    Customize,
     Hashes,
 }
 
@@ -168,15 +157,9 @@ struct Loaded {
     /// The volume can compress / encrypt.
     caps: (bool, bool),
     drive: Option<rf_win::drives::Drive>,
-    share: Option<String>,
     pe: Option<rf_win::pe::PeInfo>,
     signatures: Option<rf_win::signature::Signatures>,
     link: Option<rf_win::shortcut::Details>,
-    /// The program the Compatibility tab is about (the file, or the shortcut's target).
-    compat_exe: Option<PathBuf>,
-    compat: Compat,
-    compat_all_users: bool,
-    folder_icon: Option<(String, i32)>,
 }
 
 /// The shortcut tab's text fields.
@@ -199,28 +182,19 @@ pub struct PropsView {
     attrs: Attrs,
     /// The volume can compress / encrypt (Advanced attributes shows those only then).
     caps: (bool, bool),
-    advanced_open: bool,
     /// A folder's attribute change goes down its whole tree too.
     recurse: bool,
     /// A single downloaded file (Windows may block it), and whether the user ticked "Unblock".
     blocked: bool,
     unblock: bool,
     drive: Option<rf_win::drives::Drive>,
-    share: Option<String>,
     pe: Option<rf_win::pe::PeInfo>,
     signatures: Option<rf_win::signature::Signatures>,
     sig_sel: usize,
     security: Option<Result<rf_win::security::Security, String>>,
-    sec_sel: usize,
     link: Option<rf_win::shortcut::Details>,
     link_loaded: Option<rf_win::shortcut::Details>,
     link_inputs: Option<LinkInputs>,
-    compat_exe: Option<PathBuf>,
-    compat: Compat,
-    compat_loaded: Compat,
-    compat_all_users: bool,
-    folder_icon: Option<(String, i32)>,
-    folder_icon_loaded: Option<(String, i32)>,
     hash: Option<Entity<crate::hash_panel::HashPanel>>,
     error: Option<SharedString>,
     busy: bool,
@@ -253,10 +227,9 @@ fn signable(p: &Path) -> bool {
     is_pe(p) || matches!(ext_of(p).as_str(), "msi" | "msp" | "cab" | "cat" | "ps1" | "psm1" | "psd1" | "vbs" | "js" | "appx" | "msix" | "appxbundle" | "msixbundle")
 }
 
-/// A drive's root ("C:\").
+/// The root, "/" (other drives are mount points, found in the drive list instead).
 fn is_root(p: &Path) -> bool {
-    // Linux: "/" (other drives are mount points, found in the drive list instead)
-    p.parent().is_none() && (!cfg!(windows) || p.to_string_lossy().contains(':'))
+    p.parent().is_none()
 }
 
 /// Text with a breaking point after each backslash (long paths wrap at folders).
@@ -288,26 +261,17 @@ impl PropsView {
             name,
             attrs: Attrs::default(),
             caps: (false, false),
-            advanced_open: false,
             recurse: false,
             blocked: false,
             unblock: false,
             drive: None,
-            share: None,
             pe: None,
             signatures: None,
             sig_sel: 0,
             security: None,
-            sec_sel: 0,
             link: None,
             link_loaded: None,
             link_inputs: None,
-            compat_exe: None,
-            compat: Compat::default(),
-            compat_loaded: Compat::default(),
-            compat_all_users: false,
-            folder_icon: None,
-            folder_icon_loaded: None,
             hash: None,
             error: None,
             busy: false,
@@ -336,15 +300,8 @@ impl PropsView {
                     v.blocked = l.blocked;
                     v.caps = l.caps;
                     v.drive = l.drive;
-                    v.share = l.share;
                     v.pe = l.pe;
                     v.signatures = l.signatures;
-                    v.compat_exe = l.compat_exe;
-                    v.compat = l.compat.clone();
-                    v.compat_loaded = l.compat;
-                    v.compat_all_users = l.compat_all_users;
-                    v.folder_icon = l.folder_icon.clone();
-                    v.folder_icon_loaded = l.folder_icon;
                     if let Some(d) = l.link {
                         let mk = |s: &str, window: &mut Window, cx: &mut Context<Self>| {
                             let s = s.to_string();
@@ -529,8 +486,6 @@ impl PropsView {
             || self.attrs.changed()
             || (self.blocked && self.unblock)
             || self.link_now(cx) != self.link_loaded
-            || self.compat != self.compat_loaded
-            || self.folder_icon != self.folder_icon_loaded
     }
 
     /// Applies the edits on a helper thread; `close` closes the window when it worked.
@@ -570,8 +525,6 @@ impl PropsView {
         let paths = self.paths.clone();
         let unblock = self.blocked && self.unblock;
         let link = self.link_now(cx).filter(|d| Some(d) != self.link_loaded.as_ref());
-        let compat = (self.compat != self.compat_loaded).then(|| (self.compat_exe.clone(), self.compat.clone()));
-        let icon = (self.folder_icon != self.folder_icon_loaded).then(|| self.folder_icon.clone());
         let cancel = self.cancel.clone();
         self.busy = true;
         self.error = None;
@@ -609,12 +562,6 @@ impl PropsView {
             if let Some(d) = &link {
                 rf_win::shortcut::save(&paths[0], d).map_err(|e| named(&paths[0], &format!("{e:#}")))?;
             }
-            if let Some((Some(exe), c)) = &compat {
-                rf_win::compat::write(exe, c).map_err(|e| named(exe, &format!("{e:#}")))?;
-            }
-            if let Some(icon) = &icon {
-                rf_win::folder_custom::set_folder_icon(&paths[0], icon.as_ref().map(|(f, i)| (f.as_str(), *i))).map_err(|e| named(&paths[0], &format!("{e:#}")))?;
-            }
             let mut renamed = None;
             if let Some(n) = new_name {
                 let from = paths[0].clone();
@@ -645,8 +592,6 @@ impl PropsView {
                         }
                         v.link_loaded = v.link_now(cx);
                         v.link = v.link_loaded.clone();
-                        v.compat_loaded = v.compat.clone();
-                        v.folder_icon_loaded = v.folder_icon.clone();
                         if close {
                             window.remove_window();
                         }
@@ -657,13 +602,6 @@ impl PropsView {
             });
         })
         .detach();
-    }
-
-    fn windows_properties(&self) {
-        let p = self.paths[0].clone();
-        rf_win::sta::run(move |_| {
-            let _ = rf_win::shell::properties(&p);
-        });
     }
 
     /// The HWND of this window, for dialogs it owns.
@@ -681,10 +619,7 @@ impl PropsView {
         let owner = Self::hwnd(window);
         let (tx, rx) = futures::channel::oneshot::channel();
         rf_win::sta::run(move |_| {
-            #[cfg(windows)]
-            let _ = rf_win::shell::open_with_dialog(windows::Win32::Foundation::HWND(owner as *mut _), &p);
             // Linux: the desktop's app chooser (it returns before the choice is made)
-            #[cfg(not(windows))]
             let _ = (owner, rf_win::shell::open_with(&p));
             let _ = tx.send(rf_win::fileinfo::opens_with(&p));
         });
@@ -701,27 +636,20 @@ impl PropsView {
         .detach();
     }
 
-    /// Windows' "Change Icon" dialog; `apply` takes the choice to the shortcut or the folder.
-    fn pick_icon(&mut self, start: (String, i32), for_link: bool, window: &mut Window, cx: &mut Context<Self>) {
+    /// Windows' "Change Icon" dialog; `apply` takes the choice to the shortcut.
+    fn pick_icon(&mut self, start: (String, i32), window: &mut Window, cx: &mut Context<Self>) {
         let owner = Self::hwnd(window);
         let (tx, rx) = futures::channel::oneshot::channel();
         rf_win::sta::run(move |_| {
-            #[cfg(windows)]
-            let _ = tx.send(rf_win::folder_custom::pick_icon(windows::Win32::Foundation::HWND(owner as *mut _), &start.0, start.1));
-            // Linux shows neither the Customize tab nor .lnk shortcuts
-            #[cfg(not(windows))]
+            // Linux shows no .lnk shortcuts
             let _ = (owner, start, tx.send(None));
         });
         cx.spawn(async move |this, cx| {
             if let Ok(Some((file, index))) = rx.await {
                 let _ = this.update(cx, |v, cx| {
-                    if for_link {
-                        if let Some(d) = &mut v.link {
-                            d.icon = file;
-                            d.icon_index = index;
-                        }
-                    } else {
-                        v.folder_icon = Some((file, index));
+                    if let Some(d) = &mut v.link {
+                        d.icon = file;
+                        d.icon_index = index;
                     }
                     cx.notify();
                 });
@@ -737,23 +665,14 @@ impl PropsView {
         Some(Entry::new(&file_name(p), kind, i.size, i.modified_ms, i.created_ms, i.attrs))
     }
 
-    fn is_dir(&self) -> bool {
-        matches!(&self.info, Some(Ok(i)) if i.is_dir)
-    }
-
     fn pages(&self) -> Vec<(Page, &'static str)> {
         let mut pages = vec![(Page::General, t!("Genel"))];
-        let Some(path) = self.single() else { return pages };
+        if self.single().is_none() {
+            return pages;
+        }
         let Some(Ok(info)) = &self.info else { return pages };
         if self.link.is_some() {
             pages.push((Page::Shortcut, t!("Kısayol")));
-        }
-        // Linux: no Windows compatibility layers or access-control lists
-        if cfg!(windows) && self.compat_exe.is_some() {
-            pages.push((Page::Compat, t!("Uyumluluk")));
-        }
-        if cfg!(windows) {
-            pages.push((Page::Security, t!("Güvenlik")));
         }
         if !info.is_dir {
             pages.push((Page::Details, t!("Ayrıntılar")));
@@ -761,13 +680,7 @@ impl PropsView {
         if self.signatures.is_some() {
             pages.push((Page::Signatures, t!("Dijital imzalar")));
         }
-        // Linux: no Windows shares or desktop.ini folder icons
-        if info.is_dir && cfg!(windows) {
-            pages.push((Page::Sharing, t!("Paylaşım")));
-            if self.drive.is_none() && !is_root(path) {
-                pages.push((Page::Customize, t!("Özelleştir")));
-            }
-        } else {
+        if !info.is_dir {
             pages.push((Page::Hashes, t!("Karmalar")));
         }
         pages
@@ -777,7 +690,7 @@ impl PropsView {
 
     fn render_general(&self, p: &Palette, cx: &mut Context<Self>) -> Vec<AnyElement> {
         if let Some(d) = &self.drive {
-            return self.render_drive(d, p, cx);
+            return self.render_drive(d, p);
         }
         let mut out = Vec::new();
         let mut card1 = Vec::new();
@@ -875,18 +788,11 @@ impl PropsView {
                 ],
             ));
         }
-        // Linux has no Windows properties dialog
-        out.extend(cfg!(windows).then(|| {
-            link_button(p, "win-props", L::ExternalLink, t!("Windows özellikleri (önceki sürümler ve diğerleri)…"))
-                .on_click(cx.listener(|v, _, _, _| v.windows_properties()))
-                .into_any_element()
-        }));
         out
     }
 
     fn render_attrs(&self, p: &Palette, cx: &mut Context<Self>) -> AnyElement {
         let a = self.attrs;
-        let dir = self.is_dir() || self.paths.iter().any(|p| p.is_dir());
         let flag = |id: &'static str, label: &'static str, f: Flag, pick: fn(&mut Attrs) -> &mut Flag, cx: &mut Context<Self>| {
             check_row(p, id, label, f.now, cx.listener(move |v, _, _, cx| {
                 pick(&mut v.attrs).toggle();
@@ -900,61 +806,12 @@ impl PropsView {
                 cx.notify();
             }))
         };
-        let mut rows = vec![
-            section(p, t!("Öznitelikler")),
-            flag("ro", if dir && cfg!(windows) { t!("Salt okunur (yalnızca klasördeki dosyalar için geçerlidir)") } else { t!("Salt okunur") }, a.readonly, |a| &mut a.readonly, cx),
-        ];
-        // Linux: hidden is a name starting with a dot, and the advanced ones are Windows'
-        if !cfg!(windows) {
-            return card(p, rows);
-        }
-        rows.push(flag("hid", t!("Gizli"), a.hidden, |a| &mut a.hidden, cx));
-        let open = self.advanced_open;
-        rows.push(
-            h_flex()
-                .id("adv")
-                .gap_1p5()
-                .py(px(6.))
-                .items_center()
-                .text_sm()
-                .text_color(p.accent)
-                .cursor_pointer()
-                .hover(|s| s.opacity(0.8))
-                .child(Icon::new(if open { L::ChevronDown } else { L::ChevronRight }).size(px(14.)))
-                .child(t!("Gelişmiş öznitelikler"))
-                .on_click(cx.listener(move |v, _, _, cx| {
-                    v.advanced_open = !open;
-                    cx.notify();
-                }))
-                .into_any_element(),
-        );
-        if open {
-            rows.push(flag("arch", if dir { t!("Klasör arşivlenmeye hazır") } else { t!("Dosya arşivlenmeye hazır") }, a.archive, |a| &mut a.archive, cx));
-            rows.push(flag(
-                "idx",
-                if dir { t!("Bu klasördeki dosyaların içeriğinin dizinlenmesine izin ver") } else { t!("Bu dosyanın içeriğinin dizinlenmesine izin ver") },
-                a.indexed,
-                |a| &mut a.indexed,
-                cx,
-            ));
-            if self.caps.0 {
-                rows.push(flag("comp", t!("Disk alanından tasarruf etmek için içeriği sıkıştır"), a.compressed, |a| &mut a.compressed, cx));
-            }
-            if self.caps.1 {
-                rows.push(flag("enc", t!("Verileri korumak için içeriği şifrele"), a.encrypted, |a| &mut a.encrypted, cx));
-            }
-        }
-        if dir && self.attrs.changed() {
-            let on = self.recurse;
-            rows.push(check_row(p, "recurse", t!("Değişiklikleri alt klasörlere ve dosyalara da uygula"), Some(on), cx.listener(move |v, _, _, cx| {
-                v.recurse = !on;
-                cx.notify();
-            })));
-        }
+        // hidden is a name starting with a dot; the advanced attributes are Windows'
+        let rows = vec![section(p, t!("Öznitelikler")), flag("ro", t!("Salt okunur"), a.readonly, |a| &mut a.readonly, cx)];
         card(p, rows)
     }
 
-    fn render_drive(&self, d: &rf_win::drives::Drive, p: &Palette, cx: &mut Context<Self>) -> Vec<AnyElement> {
+    fn render_drive(&self, d: &rf_win::drives::Drive, p: &Palette) -> Vec<AnyElement> {
         use rf_win::drives::DriveKind;
         let kind = match d.kind {
             DriveKind::Removable => t!("Çıkarılabilir disk"),
@@ -998,22 +855,6 @@ impl PropsView {
                 div().text_xs().text_color(p.text_secondary).child(format!("{} %{:.0}", t!("Dolu:"), frac * 100.0)).into_any_element(),
             ],
         ));
-        if cfg!(windows) && d.kind != DriveKind::Network && d.kind != DriveKind::Optical {
-            let letter = d.letter;
-            out.push(
-                link_button(p, "cleanup", L::Eraser, t!("Disk Temizleme…"))
-                    .on_click(move |_, _, _| {
-                        // cleanmgr runs as the user; only its "system files" button asks for more
-                        let _ = std::process::Command::new("cleanmgr.exe").arg(format!("/d{letter}")).spawn();
-                    })
-                    .into_any_element(),
-            );
-        }
-        out.extend(cfg!(windows).then(|| {
-            link_button(p, "win-props", L::ExternalLink, t!("Windows özellikleri (araçlar, donanım, kota)…"))
-                .on_click(cx.listener(|v, _, _, _| v.windows_properties()))
-                .into_any_element()
-        }));
         out
     }
 
@@ -1107,7 +948,7 @@ impl PropsView {
                     h_flex()
                         .gap_4()
                         .py_1()
-                        .child(link_button(p, "lnk-icon", L::Palette, t!("Simge değiştir…")).on_click(cx.listener(move |v, _, window, cx| v.pick_icon(icon_start.clone(), true, window, cx))))
+                        .child(link_button(p, "lnk-icon", L::Palette, t!("Simge değiştir…")).on_click(cx.listener(move |v, _, window, cx| v.pick_icon(icon_start.clone(), window, cx))))
                         .child(link_button(p, "lnk-open", L::FolderOpen, t!("Dosya konumunu aç")).on_click(move |_, _, cx| {
                             let dir = t2.parent().map(Path::to_path_buf).unwrap_or_else(|| t2.clone());
                             crate::workspace::route_ipc(dir.to_string_lossy().into_owned(), cx);
@@ -1116,215 +957,6 @@ impl PropsView {
                 ],
             ),
         ]
-    }
-
-    fn render_compat(&self, p: &Palette, cx: &mut Context<Self>) -> Vec<AnyElement> {
-        use rf_win::compat::{Color, Dpi, Mode};
-        let Some(exe) = &self.compat_exe else { return vec![] };
-        let c = &self.compat;
-        let me = cx.entity().downgrade();
-        let set = move |f: Box<dyn Fn(&mut Compat)>| {
-            let me = me.clone();
-            move |_: &mut Window, cx: &mut App| {
-                let _ = me.update(cx, |v, cx| {
-                    f(&mut v.compat);
-                    cx.notify();
-                });
-            }
-        };
-        let toggle = |id: &'static str, label: &'static str, on: bool, f: fn(&mut Compat), cx: &mut Context<Self>| {
-            check_row(p, id, label, Some(on), cx.listener(move |v, _, _, cx| {
-                f(&mut v.compat);
-                cx.notify();
-            }))
-        };
-        let mode = c.mode;
-        let mode_box = {
-            let set = set.clone();
-            select_box("compat-mode", p, mode.unwrap_or(Mode::Win8).label(), move |_| {
-                Mode::ALL.iter().map(|m| {
-                    let m = *m;
-                    Choice::new(m.label(), mode == Some(m), set(Box::new(move |c| c.mode = Some(m))))
-                }).collect()
-            })
-        };
-        let color = c.color;
-        let color_box = {
-            let set = set.clone();
-            let label = |c: Color| match c {
-                Color::C256 => t!("8 bit (256) renk"),
-                Color::C16Bit => t!("16 bit (65536) renk"),
-            };
-            select_box("compat-color", p, label(color.unwrap_or(Color::C256)), move |_| {
-                [Color::C256, Color::C16Bit].iter().map(|k| {
-                    let k = *k;
-                    Choice::new(label(k), color == Some(k), set(Box::new(move |c| c.color = Some(k))))
-                }).collect()
-            })
-        };
-        let dpi = c.dpi;
-        let dpi_box = {
-            let set = set.clone();
-            let label = |d: Dpi| match d {
-                Dpi::Application => t!("Uygulama"),
-                Dpi::System => t!("Sistem"),
-                Dpi::SystemEnhanced => t!("Sistem (Gelişmiş)"),
-            };
-            select_box("compat-dpi", p, label(dpi.unwrap_or(Dpi::Application)), move |_| {
-                [Dpi::Application, Dpi::System, Dpi::SystemEnhanced].iter().map(|k| {
-                    let k = *k;
-                    Choice::new(label(k), dpi == Some(k), set(Box::new(move |c| c.dpi = Some(k))))
-                }).collect()
-            })
-        };
-        let indent = |e: AnyElement, on: bool| div().pl(px(30.)).pb_1().when(!on, |d| d.opacity(0.5)).child(e).into_any_element();
-        let mut out = Vec::new();
-        if self.link.is_some() {
-            out.push(note(p, &format!("{} {}", t!("Bu ayarlar kısayolun hedefi için geçerlidir:"), breakable(&exe.to_string_lossy()))));
-        }
-        out.push(card(
-            p,
-            vec![
-                section(p, t!("Uyumluluk modu")),
-                toggle("c-mode", t!("Bu programı şunun için uyumluluk modunda çalıştır:"), mode.is_some(), |c| c.mode = if c.mode.is_some() { None } else { Some(Mode::Win8) }, cx),
-                indent(mode_box, mode.is_some()),
-            ],
-        ));
-        out.push(card(
-            p,
-            vec![
-                section(p, t!("Ayarlar")),
-                toggle("c-color", t!("Azaltılmış renk modu"), color.is_some(), |c| c.color = if c.color.is_some() { None } else { Some(Color::C256) }, cx),
-                indent(color_box, color.is_some()),
-                toggle("c-640", t!("640 × 480 ekran çözünürlüğünde çalıştır"), c.res_640, |c| c.res_640 = !c.res_640, cx),
-                toggle("c-fso", t!("Tam ekran iyileştirmelerini devre dışı bırak"), c.disable_fso, |c| c.disable_fso = !c.disable_fso, cx),
-                toggle("c-admin", t!("Bu programı yönetici olarak çalıştır"), c.run_as_admin, |c| c.run_as_admin = !c.run_as_admin, cx),
-                toggle("c-restart", t!("Bu programı yeniden başlatma için kaydet"), c.register_restart, |c| c.register_restart = !c.register_restart, cx),
-                toggle("c-icc", t!("Eski görüntü ICC renk yönetimini kullan"), c.legacy_icc, |c| c.legacy_icc = !c.legacy_icc, cx),
-            ],
-        ));
-        out.push(card(
-            p,
-            vec![
-                section(p, t!("Yüksek DPI")),
-                toggle("c-dpi", t!("Yüksek DPI ölçeklendirme davranışını geçersiz kıl. Ölçeklendirmeyi yapan:"), dpi.is_some(), |c| c.dpi = if c.dpi.is_some() { None } else { Some(Dpi::Application) }, cx),
-                indent(dpi_box, dpi.is_some()),
-            ],
-        ));
-        out.push(note(
-            p,
-            if self.compat_all_users {
-                t!("Ayarlar yalnızca sizin hesabınız için kaydedilir. Bu program için tüm kullanıcılara ait ayarlar da var; onları Windows özelliklerinden değiştirebilirsiniz.")
-            } else {
-                t!("Ayarlar yalnızca sizin hesabınız için kaydedilir.")
-            },
-        ));
-        out
-    }
-
-    fn render_security(&self, p: &Palette, cx: &mut Context<Self>) -> Vec<AnyElement> {
-        use rf_win::security::{RIGHTS, Right};
-        let s = match &self.security {
-            None => return vec![note(p, t!("Yükleniyor…"))],
-            Some(Err(e)) => return vec![card(p, vec![row(p, t!("Hata"), e.clone())]), self.win_props_link(p, cx)],
-            Some(Ok(s)) => s,
-        };
-        let is_dir = self.is_dir();
-        let mut out = vec![card(
-            p,
-            vec![
-                row(p, t!("Nesne adı"), breakable(&self.paths[0].to_string_lossy())),
-                row(p, t!("Sahip"), s.owner.clone().unwrap_or_else(|| "—".into())),
-            ],
-        )];
-        if s.null_dacl {
-            out.push(note(p, t!("Bu öğenin izin listesi yok: herkes her şeyi yapabilir.")));
-            out.push(self.win_props_link(p, cx));
-            return out;
-        }
-        let sel = self.sec_sel.min(s.entries.len().saturating_sub(1));
-        let mut list = vec![section(p, t!("Grup veya kullanıcı adları"))];
-        for (k, e) in s.entries.iter().enumerate() {
-            let on = k == sel;
-            let group = e.sid.starts_with("S-1-5-32-") || e.sid == "S-1-1-0" || e.sid == "S-1-5-11" || e.sid.starts_with("S-1-15-");
-            list.push(
-                h_flex()
-                    .id(("ace", k))
-                    .gap_2()
-                    .px_2()
-                    .py(px(5.))
-                    .rounded(px(4.))
-                    .items_center()
-                    .text_sm()
-                    .cursor_pointer()
-                    .when(on, |d| d.bg(p.hover))
-                    .hover(|d| d.bg(p.hover))
-                    .child(Icon::new(if group { L::Users } else { L::User }).size(px(14.)).text_color(p.text_secondary))
-                    .child(div().flex_1().min_w_0().truncate().child(e.name.clone()))
-                    .on_click(cx.listener(move |v, _, _, cx| {
-                        v.sec_sel = k;
-                        cx.notify();
-                    }))
-                    .into_any_element(),
-            );
-        }
-        out.push(card(p, list));
-        if let Some(e) = s.entries.get(sel) {
-            let allow = rf_win::security::ticks(e.allow, is_dir);
-            let deny = rf_win::security::ticks(e.deny, is_dir);
-            let mark = |on: bool| {
-                div()
-                    .w(px(70.))
-                    .flex()
-                    .justify_center()
-                    .children(on.then(|| Icon::new(L::Check).size(px(14.)).text_color(p.accent)))
-            };
-            let mut rows = vec![
-                h_flex()
-                    .py(px(5.))
-                    .text_xs()
-                    .text_color(p.text_secondary)
-                    .child(div().flex_1().min_w_0().truncate().child(format!("{} {}", e.name, t!("için izinler"))))
-                    .child(div().w(px(70.)).flex().justify_center().child(t!("İzin ver")))
-                    .child(div().w(px(70.)).flex().justify_center().child(t!("Reddet")))
-                    .into_any_element(),
-            ];
-            for r in RIGHTS {
-                if r == Right::List && !is_dir {
-                    continue;
-                }
-                let label = match r {
-                    Right::Full => t!("Tam denetim"),
-                    Right::Modify => t!("Değiştirme"),
-                    Right::ReadExecute => t!("Okuma ve yürütme"),
-                    Right::List => t!("Klasör içeriğini listeleme"),
-                    Right::Read => t!("Okuma"),
-                    Right::Write => t!("Yazma"),
-                    Right::Special => t!("Özel izinler"),
-                };
-                rows.push(
-                    h_flex()
-                        .py(px(5.))
-                        .text_sm()
-                        .items_center()
-                        .child(div().flex_1().child(label))
-                        .child(mark(allow.contains(&r)))
-                        .child(mark(deny.contains(&r)))
-                        .into_any_element(),
-                );
-            }
-            out.push(card(p, rows));
-        }
-        if s.protected {
-            out.push(note(p, t!("Bu öğe izinlerini üst klasörden devralmıyor.")));
-        }
-        out.push(note(p, t!("İzinleri değiştirmek için Windows'un Güvenlik penceresini kullanın (yönetici izni isteyebilir).")));
-        out.push(self.win_props_link(p, cx));
-        out
-    }
-
-    fn win_props_link(&self, p: &Palette, cx: &mut Context<Self>) -> AnyElement {
-        link_button(p, "win-props2", L::ExternalLink, t!("Windows özellikleri…")).on_click(cx.listener(|v, _, _, _| v.windows_properties())).into_any_element()
     }
 
     fn render_details(&self, p: &Palette) -> Vec<AnyElement> {
@@ -1453,52 +1085,6 @@ impl PropsView {
         }
         out
     }
-
-    fn render_sharing(&self, p: &Palette, cx: &mut Context<Self>) -> Vec<AnyElement> {
-        let mut rows = vec![section(p, t!("Ağ dosya ve klasör paylaşımı"))];
-        match &self.share {
-            Some(s) => {
-                rows.push(row(p, t!("Durum"), t!("Paylaşılıyor").to_string()));
-                rows.push(row(p, t!("Ağ yolu"), s.clone()));
-            }
-            None => rows.push(row(p, t!("Durum"), t!("Paylaşılmıyor").to_string())),
-        }
-        vec![
-            card(p, rows),
-            note(p, t!("Paylaşımı açmak ya da değiştirmek yönetici izni gerektirir; Windows'un Paylaşım penceresinden yapılır.")),
-            self.win_props_link(p, cx),
-        ]
-    }
-
-    fn render_customize(&self, p: &Palette, cx: &mut Context<Self>) -> Vec<AnyElement> {
-        let current = match &self.folder_icon {
-            Some((f, i)) => format!("{}, {i}", file_name(Path::new(f))),
-            None => t!("Varsayılan").to_string(),
-        };
-        let start = self.folder_icon.clone().unwrap_or_else(|| (r"%SystemRoot%\System32\shell32.dll".to_string(), 3));
-        let custom = self.folder_icon.is_some();
-        vec![
-            card(
-                p,
-                vec![
-                    section(p, t!("Klasör simgesi")),
-                    row(p, t!("Simge"), current),
-                    h_flex()
-                        .gap_4()
-                        .py_1()
-                        .child(link_button(p, "dir-icon", L::Palette, t!("Simge değiştir…")).on_click(cx.listener(move |v, _, window, cx| v.pick_icon(start.clone(), false, window, cx))))
-                        .when(custom, |d| {
-                            d.child(link_button(p, "dir-icon-reset", L::RotateCcw, t!("Varsayılana geri yükle")).on_click(cx.listener(|v, _, _, cx| {
-                                v.folder_icon = None;
-                                cx.notify();
-                            })))
-                        })
-                        .into_any_element(),
-                ],
-            ),
-            note(p, t!("Simge, klasöre bir desktop.ini dosyası yazılarak ayarlanır; Dosya Gezgini de aynı simgeyi gösterir.")),
-        ]
-    }
 }
 
 /// Everything the window shows about one item, read on a background thread.
@@ -1509,19 +1095,11 @@ fn load_one(p: &Path) -> Loaded {
     let is_file = info.as_ref().is_ok_and(|i| !i.is_dir);
     l.blocked = is_file && rf_win::fileinfo::zone_blocked(p);
     l.caps = rf_win::fileinfo::volume_caps(p);
-    if is_dir && is_root(p) && cfg!(windows) {
-        let letter = p.to_string_lossy().chars().next().unwrap_or('C').to_ascii_uppercase();
-        l.drive = rf_win::drives::list_drives().into_iter().find(|d| d.letter.to_ascii_uppercase() == letter);
-    }
-    // Linux: a drive is its mount point
-    if is_dir && !cfg!(windows) {
+    // a drive is its mount point
+    if is_dir {
         l.drive = rf_win::drives::list_drives().into_iter().find(|d| d.root == p);
     }
     if is_dir {
-        l.share = rf_win::fileinfo::share_of(p);
-        if l.drive.is_none() {
-            l.folder_icon = rf_win::folder_custom::folder_icon(p);
-        }
     }
     if is_file {
         if is_pe(p) {
@@ -1532,16 +1110,6 @@ fn load_one(p: &Path) -> Loaded {
         }
         if ext_of(p) == "lnk" {
             l.link = rf_win::shortcut::details(p).ok();
-        }
-        // the program the Compatibility tab is about
-        let exe = match &l.link {
-            Some(d) => Some(PathBuf::from(rf_win::localized::expand_env(&d.target))),
-            None => Some(p.to_path_buf()),
-        };
-        l.compat_exe = exe.filter(|e| ext_of(e) == "exe");
-        if let Some(e) = &l.compat_exe {
-            l.compat = rf_win::compat::read(e);
-            l.compat_all_users = rf_win::compat::read_all_users(e) != Compat::default();
         }
     }
     l.info = Some(info);
@@ -1590,14 +1158,6 @@ fn walk(dir: &Path, cancel: &AtomicBool) -> Vec<PathBuf> {
             }
             let p = e.path();
             if ft.is_dir() {
-                // a junction is a directory with a reparse point
-                #[cfg(windows)]
-                {
-                    use std::os::windows::fs::MetadataExt;
-                    if e.metadata().is_ok_and(|m| m.file_attributes() & 0x400 != 0) {
-                        continue;
-                    }
-                }
                 stack.push(p.clone());
             }
             out.push(p);
@@ -1799,7 +1359,7 @@ impl Render for PropsView {
                                 let path = v.paths[0].clone();
                                 v.hash = Some(cx.new(|cx| crate::hash_panel::HashPanel::new(path, cx)));
                             }
-                            Page::Security | Page::Details => v.load_security(cx),
+                            Page::Details => v.load_security(cx),
                             _ => {}
                         }
                         cx.notify();
@@ -1810,12 +1370,8 @@ impl Render for PropsView {
         let body: Vec<AnyElement> = match self.page {
             Page::General => self.render_general(&p, cx),
             Page::Shortcut => self.render_shortcut(&p, cx),
-            Page::Compat => self.render_compat(&p, cx),
-            Page::Security => self.render_security(&p, cx),
             Page::Details => self.render_details(&p),
             Page::Signatures => self.render_signatures(&p, cx),
-            Page::Sharing => self.render_sharing(&p, cx),
-            Page::Customize => self.render_customize(&p, cx),
             Page::Hashes => self.hash.clone().map(|h| vec![card(&p, vec![div().py_2().child(h).into_any_element()])]).unwrap_or_default(),
         };
 
@@ -1912,11 +1468,7 @@ mod tests {
     fn kinds_of_files() {
         assert!(is_pe(Path::new(r"C:\a\b.EXE")) && is_pe(Path::new("x.dll")) && !is_pe(Path::new("x.txt")));
         assert!(signable(Path::new("kur.msi")) && signable(Path::new("a.ps1")) && !signable(Path::new("a.png")));
-        if cfg!(windows) {
-            assert!(is_root(Path::new(r"C:\")) && !is_root(Path::new(r"C:\Windows")));
-        } else {
-            assert!(is_root(Path::new("/")) && !is_root(Path::new("/home")));
-        }
+        assert!(is_root(Path::new("/")) && !is_root(Path::new("/home")));
     }
 
     #[test]

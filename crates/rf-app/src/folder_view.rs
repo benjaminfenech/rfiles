@@ -126,8 +126,6 @@ pub enum FolderEvent {
     QuickLook,
     /// Browsing into a protected archive: (archive, the given password was wrong).
     NeedPassword(PathBuf, bool),
-    /// Open/Save dialog: files were opened (double click, Enter): they are the answer.
-    Picked(Vec<PathBuf>),
 }
 
 /// Details columns shown right now (see `FolderView::visible_cols`).
@@ -320,8 +318,6 @@ pub struct FolderView {
     reselect_many: Option<(Vec<String>, Instant)>,
     /// Begin inline rename on the next render (needs a Window).
     pending_rename: bool,
-    /// Shown by the Open/Save dialog: opening a file picks it instead.
-    picking: bool,
     /// The mouse went down on an item's name (set by the name label, read by the row).
     name_hit: bool,
     /// Explorer's "click the name of the selected item again": (entry, serial) armed until the
@@ -467,7 +463,6 @@ impl FolderView {
             rename_after_load: false,
             reselect_many: None,
             pending_rename: false,
-            picking: false,
             name_hit: false,
             slow_click: None,
             slow_click_serial: 0,
@@ -504,7 +499,6 @@ impl FolderView {
         // Linux: a tab or window that starts at a drive or network location to mount (from
         // the command line, another app, the sidebar's "open in new tab") starts at Home and
         // goes there once it is mounted
-        #[cfg(unix)]
         if let Location::Path(target) = this.location().clone()
             && (is_block_device(&target) || rf_win::remote::is_remote(&target))
         {
@@ -573,7 +567,6 @@ impl FolderView {
     pub fn navigate(&mut self, to: Location, cx: &mut Context<Self>) {
         // Linux: an unmounted drive (sidebar, Home) is its device, a network location a URL
         // (smb://, sftp://, ftp://… or \\server\share): mount it, then go there
-        #[cfg(unix)]
         if let Location::Path(target) = &to
             && (is_block_device(target) || rf_win::remote::is_remote(target))
         {
@@ -593,7 +586,6 @@ impl FolderView {
     /// network location through kio-fuse / gvfs (`url` is `target`, maybe with a login added);
     /// asks for a user name and password when the server wants one, and tells the user why
     /// when it can't.
-    #[cfg(unix)]
     fn mount_and_open(&mut self, target: PathBuf, url: String, cx: &mut Context<Self>) {
         let remote = rf_win::remote::is_remote(&target);
         let work = cx.background_spawn({
@@ -629,7 +621,6 @@ impl FolderView {
     }
 
     /// The server wants a login: asks for the user name, then the password, then tries again.
-    #[cfg(unix)]
     fn ask_login(&mut self, target: PathBuf, url: String, retry: bool, win: AnyWindowHandle, cx: &mut Context<Self>) {
         use crate::prompt::{self, Button, Kind};
         let me = cx.entity().downgrade();
@@ -1785,7 +1776,6 @@ impl FolderView {
         };
         self.adaptive_pending = adaptive;
     }
-
 }
 
 /// Known folders with a layout of their own in adaptive mode.
@@ -1806,7 +1796,6 @@ fn known_kind(p: &std::path::Path) -> Option<KnownKind> {
             .collect()
     });
     // Linux: paths are case-sensitive and '/'-separated; compare them part by part
-    #[cfg(unix)]
     return paths.iter().find_map(|(root, kind)| match kind {
         KnownKind::Downloads => (p == root.as_path()).then_some(*kind),
         KnownKind::Pictures => p.starts_with(root).then_some(*kind),
@@ -2225,7 +2214,7 @@ impl FolderView {
         .detach();
     }
 
-    fn on_drag_motion(&mut self, ev: &MouseMoveEvent, window: &mut Window, cx: &mut Context<Self>) {
+    fn on_drag_motion(&mut self, ev: &MouseMoveEvent) {
         let Some(start) = self.drag_origin else { return };
         if ev.pressed_button != Some(MouseButton::Left) {
             self.drag_origin = None;
@@ -2234,8 +2223,8 @@ impl FolderView {
         let d = ev.position - start;
         if d.x.abs() + d.y.abs() > px(8.) {
             self.drag_origin = None;
+            // (the row itself is the drag source, see `draggable`)
             self.slow_click = None;
-            self.start_drag_out(window, cx);
         }
     }
 
@@ -2423,13 +2412,6 @@ impl FolderView {
         v.into_iter().filter_map(|i| self.path_of(i)).collect()
     }
 
-    /// The selection, each with whether it is a folder (no disk access).
-    pub fn selection_with_kind(&self) -> Vec<(PathBuf, bool)> {
-        let mut v: Vec<u32> = self.selected.iter().copied().collect();
-        v.sort_unstable();
-        v.into_iter().filter_map(|i| self.path_of(i).map(|p| (p, self.entries[i as usize].is_dir()))).collect()
-    }
-
     pub fn item_count(&self) -> usize {
         self.visible.len()
     }
@@ -2574,13 +2556,9 @@ impl FolderView {
         }
     }
 
-    /// Linux: the row of entry `ei` can be dragged — onto folders, tabs, the sidebar, other
-    /// windows, and out to other apps (see `file_drag`). Windows drags through the shell
-    /// instead (`start_drag_out`).
+    /// The row of entry `ei` can be dragged — onto folders, tabs, the sidebar, other windows,
+    /// and out to other apps (see `file_drag`).
     fn draggable<E: StatefulInteractiveElement>(&self, el: E, ei: u32, cx: &mut Context<Self>) -> E {
-        if cfg!(windows) {
-            return el;
-        }
         let Some(path) = self.path_of(ei) else { return el };
         let me = cx.entity().downgrade();
         el.on_drag(ExternalPaths(smallvec::smallvec![path]), move |p: &ExternalPaths, _, _, cx| {
@@ -2670,18 +2648,6 @@ impl FolderView {
         self.rename_after_load = false;
     }
 
-    /// Open/Save dialog mode: which files show (patterns like "*.txt;*.md", empty = all; none
-    /// when picking a folder), and opening a file picks it.
-    pub(crate) fn set_picking(&mut self, patterns: String, folders_only: bool, cx: &mut Context<Self>) {
-        self.picking = true;
-        if self.filter.patterns != patterns || self.filter.folders_only != folders_only {
-            self.filter.patterns = patterns;
-            self.filter.folders_only = folders_only;
-            self.rebuild_visible();
-            cx.notify();
-        }
-    }
-
     pub(crate) fn request_rename(&mut self) {
         self.pending_rename = true;
     }
@@ -2728,15 +2694,13 @@ impl FolderView {
                 return false;
             }
             // an item on a phone: the shell fetches it and opens it with its default app
-            // (a dialog asking for a file cannot be answered with one)
-            if !self.picking {
-                let parsing = child.parsing;
-                std::thread::spawn(move || {
-                    if let Err(e) = rf_win::shellfolder::open(&parsing) {
-                        log::warn!("open {parsing}: {e:#}");
-                    }
-                });
-            }
+            let parsing = child.parsing;
+            std::thread::spawn(move || {
+                if let Err(e) = rf_win::shellfolder::open(&parsing) {
+                    log::warn!("open {parsing}: {e:#}");
+                }
+            });
+
             return true;
         };
         if cx.global::<crate::settings::Settings>().open_folders_in_new_tab {
@@ -2769,8 +2733,6 @@ impl FolderView {
             } else {
                 self.navigate(Location::Path(path), cx);
             }
-        } else if self.picking {
-            cx.emit(FolderEvent::Picked(vec![path]));
         } else {
             open_in_background(path, cx);
         }
@@ -2783,11 +2745,6 @@ impl FolderView {
         };
         if sel.len() == 1 {
             self.open_entry(sel[0], cx);
-        } else if self.picking {
-            let files: Vec<PathBuf> = sel.iter().filter(|&&i| !self.entries[i as usize].is_dir()).filter_map(|&i| self.path_of(i)).collect();
-            if !files.is_empty() {
-                cx.emit(FolderEvent::Picked(files));
-            }
         } else {
             let mut in_archive = Vec::new();
             for i in sel {
@@ -3502,7 +3459,7 @@ impl FolderView {
                             this.show_context_menu(true, window, cx);
                         }),
                     )
-                    .on_mouse_move(cx.listener(|this, ev: &MouseMoveEvent, window, cx| {
+                    .on_mouse_move(cx.listener(|this, ev: &MouseMoveEvent, _, cx| {
                         if this.marquee.is_some() {
                             if ev.pressed_button == Some(MouseButton::Left) {
                                 this.update_marquee(ev.position, cx);
@@ -3512,7 +3469,7 @@ impl FolderView {
                             }
                             return;
                         }
-                        this.on_drag_motion(ev, window, cx)
+                        this.on_drag_motion(ev)
                     }))
                     .on_mouse_up(
                         MouseButton::Left,
@@ -4133,7 +4090,6 @@ fn trace_live() -> bool {
 }
 
 /// A block device (`/dev/sdb1`): an unmounted drive in the sidebar.
-#[cfg(unix)]
 fn is_block_device(p: &std::path::Path) -> bool {
     use std::os::unix::fs::FileTypeExt;
     p.starts_with("/dev/") && std::fs::metadata(p).is_ok_and(|m| m.file_type().is_block_device())

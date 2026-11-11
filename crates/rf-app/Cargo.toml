@@ -14,8 +14,6 @@ name = "directlook"
 path = "src/bin/directlook.rs"
 
 [dependencies]
-# the speed test asks rustyfiles.com for a short result link (already in the tree through velopack)
-ureq = "3.5"
 rf-core.workspace = true
 rf-archive.workspace = true
 rf-player.workspace = true
@@ -40,8 +38,6 @@ futures.workspace = true
 image.workspace = true
 raw-window-handle.workspace = true
 chrono.workspace = true
-
-[target.'cfg(unix)'.dependencies]
 # the Linux platform layer, used under rf-win's name (see lib.rs)
 rf-linux.workspace = true
 # no-op stand-in for the Windows fork's `gpui_windows::…` API

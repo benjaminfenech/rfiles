@@ -8,12 +8,10 @@ use rf_win::{Drive, DriveKind, KnownFolder};
 
 /// Linux: the drive's name as Settings → Files and folders → "Show drives as" asks (there are
 /// no drive letters).
-#[cfg(unix)]
 pub fn drive_name(d: &Drive) -> String {
     linux_drive_name(d, crate::settings::drive_names())
 }
 
-#[cfg(unix)]
 fn linux_drive_name(d: &Drive, style: crate::settings::DriveNames) -> String {
     use crate::settings::DriveNames;
     let mount = d.root.to_string_lossy().into_owned();
@@ -44,7 +42,6 @@ fn linux_drive_name(d: &Drive, style: crate::settings::DriveNames) -> String {
 
 /// A network share as "share (server)": `//10.0.0.9/media` (SMB), `nas:/export/media` (NFS),
 /// `me@host:/srv/files` (sshfs). Local devices: None.
-#[cfg(unix)]
 fn share_name(source: &str) -> Option<String> {
     let last = |p: &str| p.trim_end_matches('/').rsplit('/').next().filter(|s| !s.is_empty()).map(str::to_string);
     if let Some(rest) = source.strip_prefix("//") {
@@ -63,22 +60,6 @@ fn share_name(source: &str) -> Option<String> {
         Some(name) => format!("{name} ({host})"),
         None => host.to_string(),
     })
-}
-
-/// Drive display name with the generic fallback labels translated ("Yerel Disk (C:)").
-#[cfg(not(unix))]
-pub fn drive_name(d: &Drive) -> String {
-    if d.label.is_empty() {
-        let kind = match d.kind {
-            DriveKind::Removable => crate::t!("USB Sürücü"),
-            DriveKind::Network => crate::t!("Ağ Sürücüsü"),
-            DriveKind::Optical => crate::t!("DVD Sürücü"),
-            _ => crate::t!("Yerel Disk"),
-        };
-        format!("{kind} ({}:)", d.letter)
-    } else {
-        d.display_name()
-    }
 }
 
 #[derive(Clone)]
@@ -158,20 +139,6 @@ fn load_cloud_and_wsl() -> Vec<Pinned> {
     }
     for letter in ['G', 'H'] {
         add("Google Drive".into(), PathBuf::from(format!("{letter}:\\My Drive")), L::Cloud);
-    }
-    // WSL distributions registered for this user
-    #[cfg(windows)]
-    if let Ok(lxss) = windows_registry::CURRENT_USER.open(r"Software\Microsoft\Windows\CurrentVersion\Lxss") {
-        if let Ok(keys) = lxss.keys() {
-            for k in keys {
-                if let Ok(d) = lxss.open(&k) {
-                    if let Ok(name) = d.get_string("DistributionName") {
-                        let path = PathBuf::from(format!(r"\\wsl.localhost\{name}"));
-                        out.push(Pinned { title: format!("WSL: {name}"), path, icon: L::SquareTerminal });
-                    }
-                }
-            }
-        }
     }
     out
 }
@@ -269,7 +236,6 @@ impl Places {
             #[allow(unused_mut)]
             let mut drives = rf_win::list_drives();
             // Linux: connected but not mounted (opening one mounts it)
-            #[cfg(unix)]
             drives.extend(rf_win::drives::unmounted_drives());
             let recent = load_recent(14);
             let cloud = load_cloud_and_wsl();
@@ -308,13 +274,7 @@ pub fn known_icon(k: KnownFolder) -> L {
 /// Linux: a connected drive that isn't mounted yet (its `root` is the device; opening it
 /// mounts it). Never on Windows.
 pub fn unmounted(d: &Drive) -> bool {
-    #[cfg(unix)]
     return rf_win::drives::is_unmounted(d);
-    #[cfg(not(unix))]
-    {
-        let _ = d;
-        false
-    }
 }
 
 pub fn drive_icon(d: &Drive) -> L {
