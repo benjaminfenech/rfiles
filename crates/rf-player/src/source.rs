@@ -64,7 +64,6 @@ pub struct Media {
 pub fn open(path: &Path) -> anyhow::Result<Media> {
     // formats FilmCraft doesn't list go straight to FFmpeg (it may open the container, e.g. Ogg,
     // without seeing the Theora video inside)
-    #[cfg(target_os = "linux")]
     if path.extension().and_then(|e| e.to_str()).is_some_and(|e| crate::ffmpeg::EXTRA_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str())) {
         return Ok(Media { src: crate::ffmpeg::open(path)? });
     }
@@ -72,7 +71,6 @@ pub fn open(path: &Path) -> anyhow::Result<Media> {
     let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
     let opened = open_reader_within(&name, Arc::new(reader), &filmcraft_codecs::reader_openers(), &filmcraft_codecs::openers(), WHOLE_FILE_MAX);
     // Linux: FFmpeg plays what FilmCraft can't (Windows uses Media Foundation in the app)
-    #[cfg(target_os = "linux")]
     let opened = match opened {
         Ok(src) => Ok(crate::ffmpeg::with_fallback(src, path)),
         Err(e) => crate::ffmpeg::open(path).map_err(|ff| anyhow!("{name}: {e}; {ff:#}")),
@@ -84,7 +82,6 @@ pub fn open(path: &Path) -> anyhow::Result<Media> {
 /// Uzantısına göre bu oynatıcının deneyeceği bir dosya mı.
 pub fn can_open(path: &Path) -> bool {
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
-    #[cfg(target_os = "linux")]
     if crate::ffmpeg::EXTRA_EXTENSIONS.contains(&ext.as_str()) {
         return true;
     }

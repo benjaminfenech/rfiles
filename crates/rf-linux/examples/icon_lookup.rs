@@ -1,7 +1,6 @@
 //! Shows which icon theme is used and which files icons resolve to:
 //! `cargo run -p rf-linux --example icon_lookup -- [ext…]`
 
-#[cfg(unix)]
 fn main() {
     use rf_linux::xdg_icons::*;
     println!("theme: {}", current_theme_name());
@@ -16,7 +15,3 @@ fn main() {
     }
 }
 
-#[cfg(not(unix))]
-fn main() {
-    eprintln!("this example is for the Linux build (rf-linux)");
-}

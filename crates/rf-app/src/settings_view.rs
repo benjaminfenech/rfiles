@@ -1567,7 +1567,7 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             p,
             L::Activity,
             t!("Durum çubuğunda performans bilgisi"),
-            Some(t!("Klasörün listelenme süresi ve çizim yöntemi (GPU / CPU)")),
+            Some("How long the current folder took to list"),
             sw("perf-info", p, s.show_perf_info, |s, v| s.show_perf_info = v),
         ),
         section(p, t!("Deneysel")),

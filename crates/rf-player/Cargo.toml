@@ -1,6 +1,6 @@
 [package]
 name = "rf-player"
-description = "Pure-Rust media player for the preview: FilmCraft decoders, WASAPI audio, D3D11 video"
+description = "Pure-Rust media player for the preview: FilmCraft decoders, ALSA audio (cpal)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -15,11 +15,7 @@ filmcraft-frame.workspace = true
 filmcraft-color.workspace = true
 filmcraft-time.workspace = true
 
-[target.'cfg(windows)'.dependencies]
-windows.workspace = true
-
-# sound on Linux: ALSA (PipeWire and PulseAudio serve it through their ALSA plugins)
-[target.'cfg(target_os = "linux")'.dependencies]
+# sound: ALSA (PipeWire and PulseAudio serve it through their ALSA plugins)
 cpal = "0.18"
 # reads ffprobe's JSON (FFmpeg fallback)
 serde.workspace = true

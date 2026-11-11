@@ -1,7 +1,6 @@
 //! Lists the apps "Open with" offers for files, and the command each would run (nothing is
 //! launched): `cargo run -p rf-linux --example open_with -- <file>…`
 
-#[cfg(unix)]
 fn main() {
     use rf_linux::xdg_apps::*;
     let files: Vec<std::path::PathBuf> = std::env::args().skip(1).map(Into::into).collect();
@@ -18,7 +17,3 @@ fn main() {
     println!("other apps: {}", all_apps().len());
 }
 
-#[cfg(not(unix))]
-fn main() {
-    eprintln!("this example is for the Linux build (rf-linux)");
-}

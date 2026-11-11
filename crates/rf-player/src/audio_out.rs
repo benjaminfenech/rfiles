@@ -1,4 +1,4 @@
-//! Ses çıkışı: WASAPI (paylaşımlı mod), Linux'ta cpal ve testler için sessiz, gerçek zamanlı ilerleyen `NullSink`.
+//! Ses çıkışı: cpal (ALSA) ve testler için sessiz, gerçek zamanlı ilerleyen `NullSink`.
 
 use std::time::Instant;
 
@@ -83,25 +83,13 @@ impl AudioSink for NullSink {
     }
 }
 
-#[cfg(windows)]
-pub use wasapi::wasapi_sink;
+/// The system's default output through cpal (ALSA; PipeWire and PulseAudio serve it through
+/// their ALSA plugins).
+pub use cpal_out::cpal_sink;
 
-/// On Linux the system's default output through cpal (ALSA; PipeWire and PulseAudio serve it
-/// through their ALSA plugins). Keeps the Windows name so callers stay the same.
-#[cfg(target_os = "linux")]
-pub use cpal_out::cpal_sink as wasapi_sink;
-
-/// No audio output on other platforms: callers fall back to [`NullSink`], so playback runs
-/// silently on the same clock.
-#[cfg(not(any(windows, target_os = "linux")))]
-pub fn wasapi_sink() -> anyhow::Result<Box<dyn AudioSink>> {
-    anyhow::bail!("audio output is not implemented on this platform yet")
-}
-
-#[cfg(target_os = "linux")]
 mod cpal_out {
     //! cpal pulls audio from a callback on its own thread; the player pushes. A queue of about
-    //! 100 ms sits between them (as WASAPI's buffer does on Windows). The clock counts what
+    //! 100 ms sits between them. The clock counts what
     //! the callback took, minus what the device still holds (cpal's predicted playback time),
     //! and moves smoothly between callbacks.
 
@@ -400,166 +388,3 @@ mod cpal_out {
     }
 }
 
-#[cfg(windows)]
-mod wasapi {
-    use super::AudioSink;
-    use anyhow::Context;
-    use windows::Win32::Media::Audio::{
-        AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM, AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY, IAudioClient,
-        IAudioClock, IAudioRenderClient, IMMDeviceEnumerator, MMDeviceEnumerator, WAVEFORMATEX, eConsole, eRender,
-    };
-    use windows::Win32::System::Com::{CLSCTX_ALL, COINIT_MULTITHREADED, CoCreateInstance, CoInitializeEx, CoTaskMemFree};
-
-    const WAVE_FORMAT_IEEE_FLOAT: u16 = 3;
-    /// Arabellek süresi (100 ns birimi): 100 ms.
-    const BUFFER_HNS: i64 = 1_000_000;
-
-    struct Wasapi {
-        client: IAudioClient,
-        render: IAudioRenderClient,
-        clock: IAudioClock,
-        clock_freq: u64,
-        buffer_frames: u32,
-        rate: u32,
-        channels: u16,
-        volume: f32,
-        started: bool,
-        paused: bool,
-        /// Atlamada temizlenen kuyruk saat konumunu geri götürmesin diye eklenen düzeltme.
-        played_offset: u64,
-    }
-
-    // WASAPI nesneleri serbest iş parçacıklıdır (MTA); çıkış tek bir iş parçacığından sürülür.
-    unsafe impl Send for Wasapi {}
-
-    /// Varsayılan hoparlöre paylaşımlı modda açılan çıkış (aygıtın örnekleme hızı ve kanal sayısıyla, 32 bit kayan nokta).
-    pub fn wasapi_sink() -> anyhow::Result<Box<dyn AudioSink>> {
-        unsafe {
-            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-            let en: IMMDeviceEnumerator = CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL).context("MMDeviceEnumerator")?;
-            let dev = en.GetDefaultAudioEndpoint(eRender, eConsole).context("default audio endpoint")?;
-            let client: IAudioClient = dev.Activate(CLSCTX_ALL, None).context("IAudioClient")?;
-            let mix = client.GetMixFormat()?;
-            let (rate, channels) = ((*mix).nSamplesPerSec, (*mix).nChannels);
-            CoTaskMemFree(Some(mix as *const _));
-            let block = channels * 4;
-            let fmt = WAVEFORMATEX {
-                wFormatTag: WAVE_FORMAT_IEEE_FLOAT,
-                nChannels: channels,
-                nSamplesPerSec: rate,
-                nAvgBytesPerSec: rate * block as u32,
-                nBlockAlign: block,
-                wBitsPerSample: 32,
-                cbSize: 0,
-            };
-            client.Initialize(
-                AUDCLNT_SHAREMODE_SHARED,
-                AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
-                BUFFER_HNS,
-                0,
-                &fmt,
-                None,
-            )?;
-            let buffer_frames = client.GetBufferSize()?;
-            let render: IAudioRenderClient = client.GetService()?;
-            let clock: IAudioClock = client.GetService()?;
-            let clock_freq = clock.GetFrequency()?;
-            Ok(Box::new(Wasapi {
-                client,
-                render,
-                clock,
-                clock_freq,
-                buffer_frames,
-                rate,
-                channels,
-                volume: 1.0,
-                started: false,
-                paused: true,
-                played_offset: 0,
-            }))
-        }
-    }
-
-    impl Wasapi {
-        fn device_played(&self) -> u64 {
-            let mut pos = 0u64;
-            if unsafe { self.clock.GetPosition(&mut pos, None) }.is_err() || self.clock_freq == 0 {
-                return 0;
-            }
-            (pos as u128 * self.rate as u128 / self.clock_freq as u128) as u64
-        }
-    }
-
-    impl AudioSink for Wasapi {
-        fn sample_rate(&self) -> u32 {
-            self.rate
-        }
-        fn channels(&self) -> u16 {
-            self.channels
-        }
-        fn write(&mut self, interleaved: &[f32]) -> usize {
-            let ch = self.channels as usize;
-            let padding = unsafe { self.client.GetCurrentPadding() }.unwrap_or(self.buffer_frames);
-            let room = self.buffer_frames.saturating_sub(padding) as usize;
-            let n = (interleaved.len() / ch).min(room);
-            if n == 0 {
-                return 0;
-            }
-            unsafe {
-                let Ok(ptr) = self.render.GetBuffer(n as u32) else { return 0 };
-                let out = std::slice::from_raw_parts_mut(ptr as *mut f32, n * ch);
-                for (o, i) in out.iter_mut().zip(interleaved) {
-                    *o = i * self.volume;
-                }
-                let _ = self.render.ReleaseBuffer(n as u32, 0);
-                if !self.started && !self.paused {
-                    let _ = self.client.Start();
-                    self.started = true;
-                }
-            }
-            n
-        }
-        fn played_frames(&self) -> u64 {
-            self.device_played() + self.played_offset
-        }
-        fn pause(&mut self, on: bool) {
-            self.paused = on;
-            unsafe {
-                if on {
-                    let _ = self.client.Stop();
-                    self.started = false;
-                } else if !self.started {
-                    let _ = self.client.Start();
-                    self.started = true;
-                }
-            }
-        }
-        fn set_volume(&mut self, v: f32) {
-            self.volume = v.clamp(0.0, 1.0);
-        }
-        fn flush(&mut self) {
-            let before = self.played_frames();
-            unsafe {
-                let _ = self.client.Stop();
-                let _ = self.client.Reset();
-            }
-            // Reset aygıt saatini sıfırlar: sayaç geri gitmesin.
-            self.played_offset = before.saturating_sub(self.device_played());
-            self.started = false;
-            if !self.paused {
-                unsafe {
-                    let _ = self.client.Start();
-                }
-                self.started = true;
-            }
-        }
-    }
-
-    impl Drop for Wasapi {
-        fn drop(&mut self) {
-            unsafe {
-                let _ = self.client.Stop();
-            }
-        }
-    }
-}

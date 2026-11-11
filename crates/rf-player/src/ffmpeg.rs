@@ -54,7 +54,7 @@ fn tool(prog: &str) -> Command {
         seen.push((p.to_string(), found));
         found
     };
-    if cfg!(unix) && Path::new("/.flatpak-info").exists() && on_host(prog) {
+    if Path::new("/.flatpak-info").exists() && on_host(prog) {
         let mut c = Command::new("flatpak-spawn");
         c.args(["--host", "--watch-bus", prog]);
         return c;

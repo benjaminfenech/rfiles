@@ -1,6 +1,5 @@
 //! Linux: files FilmCraft can't decode play through FFmpeg. The test files are made with
 //! `ffmpeg` itself; without it the tests are skipped.
-#![cfg(target_os = "linux")]
 
 use std::path::{Path, PathBuf};
 use std::process::Command;

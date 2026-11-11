@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/rf-core", "crates/rf-linux", "crates/gpui-windows-shim", "crates/rf-app", "crates/rf-archive", "crates/rf-player", "crates/rustdecoder"]
+members = ["crates/rf-core", "crates/rf-linux", "crates/rf-app", "crates/rf-archive", "crates/rf-player"]
 
 [workspace.package]
 version = "0.6.0"
@@ -12,7 +12,6 @@ publish = false
 rf-core = { path = "crates/rf-core" }
 rf-linux = { path = "crates/rf-linux" }
 rf-player = { path = "crates/rf-player" }
-rustdecoder = { path = "crates/rustdecoder" }
 # FilmCraft (MIT OR Apache-2.0): saf Rust kapsayıcı ve kodek çözücüleri, sabit commit.
 filmcraft-media = { git = "https://github.com/storytold/filmcraft", rev = "c2f65871e998cca4700a74dbcf9348cab51fb06b" }
 filmcraft-codecs = { git = "https://github.com/storytold/filmcraft", rev = "c2f65871e998cca4700a74dbcf9348cab51fb06b" }
@@ -54,63 +53,6 @@ hadris-io = "3.0.0-rc.3"
 hadris-udf = { version = "3.0.0-rc.3", default-features = false, features = ["std", "sync"] }
 hadris-storage = "3.0.0-rc.3"
 lzma-rust2 = { version = "0.25", default-features = false, features = ["std", "xz", "encoder"] }
-windows = { version = "0.62", features = [
-    "Data_Pdf",
-    "Storage",
-    "Storage_Streams",
-    "Foundation",
-    "Win32_Foundation",
-    "Win32_Security_Cryptography",
-    "Win32_Storage_FileSystem",
-    "Win32_Storage_Xps",
-    "Win32_NetworkManagement_NetManagement",
-    "Win32_Networking_WinInet",
-    "Win32_System_Com",
-    "Win32_System_Com_StructuredStorage",
-    "Win32_System_Ole",
-    "Win32_System_Threading",
-    "Win32_System_Search",
-    "Win32_System_Variant",
-    "Win32_System_SystemServices",
-    "Win32_System_Performance",
-    "Win32_System_ProcessStatus",
-    "Win32_System_SystemInformation",
-    "Win32_System_IO",
-    "Win32_System_Ioctl",
-    "Win32_System_DataExchange",
-    "Win32_System_Memory",
-    "Win32_System_Registry",
-    "Win32_System_LibraryLoader",
-    "Win32_System_Pipes",
-    "Win32_System_Diagnostics_Debug",
-    "Win32_System_Diagnostics_ToolHelp",
-    "Win32_Storage_EnhancedStorage",
-    "Win32_UI_Input_KeyboardAndMouse",
-    "Win32_Security",
-    "Win32_Security_Authorization",
-    "Win32_Security_WinTrust",
-    "Win32_UI_Accessibility",
-    "Win32_UI_HiDpi",
-    "Win32_UI_Shell",
-    "Win32_UI_Shell_Common",
-    "Win32_UI_Shell_PropertiesSystem",
-    "Win32_UI_WindowsAndMessaging",
-    "Win32_UI_Controls",
-    "Win32_Globalization",
-    "Win32_Graphics_Gdi",
-    "Win32_Graphics_GdiPlus",
-    "Win32_Graphics_Direct3D",
-    "Win32_Graphics_Direct3D_Fxc",
-    "Win32_Graphics_Direct3D11",
-    "Win32_Graphics_Dxgi",
-    "Win32_Graphics_Dxgi_Common",
-    "Win32_Graphics_Dwm",
-    "Win32_Graphics_Imaging",
-    "Win32_NetworkManagement_WNet",
-    "Win32_Media_Audio",
-    "Win32_Media_MediaFoundation",
-] }
-windows-core = "0.62"
 
 [profile.dev]
 # Keep debug builds snappy: optimize deps, keep our code debuggable.
@@ -135,13 +77,9 @@ debug = false
 # Iterating on optimized builds: release without LTO, incremental. A one-line change in rf-app
 # took 144 s with --release (thin LTO links the two exes) against ~10 s in dev (measured by the
 # rustbuilder session). Speed numbers and published builds still come from --release.
-#   cargo build --profile fast -p rf-app   →   target/fast/rfiles.exe
+#   cargo build --profile fast -p rf-app   →   target/fast/rfiles
 [profile.fast]
 inherits = "release"
 lto = false
 codegen-units = 16
 incremental = true
-
-[patch.crates-io]
-# our fork of GPUI's Windows layer (GPU/CPU hot-swap renderer), see its FORK.md
-gpui-pre-windows = { git = "https://github.com/gelenmedya/gpui-pre-windows", rev = "e2966a6c332e5e96ebb1acbb6eedc18ea652fab5" }

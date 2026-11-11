@@ -2,7 +2,6 @@
 //! (point those at a scratch folder to try it safely), or shows its state:
 //! `cargo run -p rf-linux --example default_fm -- enable <exe> | disable | status`
 
-#[cfg(unix)]
 fn main() -> anyhow::Result<()> {
     use rf_linux::default_fm::{CLASSES, disable, enable, is_enabled, registered_exe};
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -15,7 +14,3 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(not(unix))]
-fn main() {
-    eprintln!("this example is for the Linux build (rf-linux)");
-}

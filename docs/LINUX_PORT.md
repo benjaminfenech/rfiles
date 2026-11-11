@@ -623,7 +623,17 @@ Search (`search_index`), the global quick-search hotkey (the desktop's shortcut 
 Windows shares, and the unused `compat`, `dialog_reg`, `jumplist`, `shell_window` and
 `removal`. Home's Recent section read Windows' Recent folder (it now reads
 `recently-used.xbel`). rf-app now names the crate `rf_linux` (the `rf_win` alias is
-gone). Left for the last step: Libraries and shell folders (with rf-core's `Location`), the
-shell context menu, Windows preview handlers (with rf-player's and rustdecoder's Windows media
-paths), the popup-window menus and the gpui-windows shim, and rf-linux's crate-wide
-`#![allow(unused)]`.
+gone). 
+
+**The last Windows paths** fifth. Deleted: the `rustdecoder` crate (upstream's Direct3D 11 /
+DXVA / WASAPI video engine, 31k lines; nothing on Linux used it) with DirectLook's rustdecoder
+route and its design notes; the Media Foundation route of DirectLook's video viewer and the
+preview pane's player and Windows preview handlers (`preview_host`); the popup-window versions
+of menus, flyouts, dropdowns and the Status Center (Linux always drew them in the window), with
+the `gpui-windows-shim` crate and the hybrid GPU/CPU renderer setting and badge; shell folders
+and Libraries (`Location::Shell` and `Location::Library` in rf-core, `shellfolder`,
+`libraries`, `shell_view.rs`, Home's Devices group); every `cfg(windows)` branch in rf-core,
+rf-archive and rf-player, with rf-player's Direct3D presenter; and the `windows` /
+`windows-core` dependencies and the `[patch]` pointing GPUI's Windows backend at upstream's
+fork. rf-linux's crate-wide `#![allow(unused)]` is gone (24 of its files still carry their own,
+from the stub generator). The shell context menu module stays: on Linux it is "Open with".

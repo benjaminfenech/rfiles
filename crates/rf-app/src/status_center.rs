@@ -46,9 +46,9 @@ pub struct Ops {
     unseen_failure: bool,
     /// The window whose button opened the flyout (it is anchored there).
     owner: Option<AnyWindowHandle>,
-    /// The Acrylic popup could not be opened: draw the flyout inside the window instead.
+    /// The flyout is drawn inside the window (it follows `open`, see `sync_popup`).
     in_window: bool,
-    /// When the popup closed itself (focus left it): a click on the button right after must
+    /// When the flyout closed itself (focus left it): a click on the button right after must
     /// not reopen it.
     auto_closed: Option<Instant>,
 }
@@ -914,196 +914,18 @@ mod tests {
     }
 }
 
-// ---------- Acrylic popup (Windows 11 flyout material) ----------
+// ---------- the flyout ----------
 
-const FLYOUT_W: f32 = 400.;
-
-struct ScPopup(Option<AnyWindowHandle>);
-impl Global for ScPopup {}
-
-/// Keeps the popup window in step with `Ops::open` (call from an observer of the ops entity).
+/// Keeps the in-window flyout in step with `Ops::open` (call from an observer of the ops entity).
 pub fn sync_popup(ops: &Entity<Ops>, cx: &mut App) {
-    let (open, owner, in_window) = {
+    let (open, in_window) = {
         let o = ops.read(cx);
-        (o.open, o.owner, o.in_window)
+        (o.open, o.in_window)
     };
-    let cur = cx.try_global::<ScPopup>().and_then(|g| g.0);
-    match (open, cur) {
-        (true, None) if !in_window => {
-            let Some(owner) = owner else { return };
-            // the app window keeps its active look (Mica, caption) while the flyout has focus
-            gpui_windows::KEEP_ACTIVE_LOOK.store(true, std::sync::atomic::Ordering::Relaxed);
-            let opened = if crate::sys::separate_popups() { open_popup(ops, owner, cx) } else { None };
-            match opened {
-                Some(h) => cx.set_global(ScPopup(Some(h))),
-                None => ops.update(cx, |o, cx| {
-                    gpui_windows::KEEP_ACTIVE_LOOK.store(false, std::sync::atomic::Ordering::Relaxed);
-                    o.in_window = true;
-                    cx.notify();
-                }),
-            }
-        }
-        (false, Some(h)) => {
-            gpui_windows::KEEP_ACTIVE_LOOK.store(false, std::sync::atomic::Ordering::Relaxed);
-            cx.set_global(ScPopup(None));
-            let _ = h.update(cx, |_, w, _| w.remove_window());
-        }
-        (false, None) if in_window => ops.update(cx, |o, _| o.in_window = false),
-        _ => {}
+    if open != in_window {
+        ops.update(cx, |o, cx| {
+            o.in_window = open;
+            cx.notify();
+        });
     }
 }
-
-fn open_popup(ops: &Entity<Ops>, owner: AnyWindowHandle, cx: &mut App) -> Option<AnyWindowHandle> {
-    // anchored under the title-bar button: right edge 8 px in from the window's
-    let (origin, width, dark) = owner
-        .update(cx, |_, w, _| (w.bounds().origin, w.viewport_size().width, Palette::for_window(w).dark))
-        .ok()?;
-    let top = theme::TITLEBAR_H + px(44.);
-    let x = origin.x + width - px(8. + FLYOUT_W);
-    let bounds = Bounds::new(point(x, origin.y + top), size(px(FLYOUT_W), px(120.)));
-    let opts = WindowOptions {
-        window_bounds: Some(WindowBounds::Windowed(bounds)),
-        titlebar: None,
-        focus: true,
-        show: true,
-        kind: WindowKind::PopUp,
-        is_movable: false,
-        is_resizable: false,
-        is_minimizable: false,
-        window_background: WindowBackgroundAppearance::Blurred,
-        ..Default::default()
-    };
-    let ops = ops.clone();
-    let r = cx.open_window(opts, move |w, cx| {
-        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-        if let Ok(h) = w.window_handle() {
-            if let RawWindowHandle::Win32(h) = h.as_raw() {
-                rf_linux::window::set_dark_mode(h.hwnd.get(), dark);
-            }
-        }
-        cx.new(|cx| ScView::new(ops, w, cx))
-    });
-    match r {
-        Ok(h) => Some(h.into()),
-        Err(e) => {
-            log::warn!("status center popup: {e:#}");
-            None
-        }
-    }
-}
-
-/// The Status Center in its own Acrylic window; sizes itself to its content.
-struct ScView {
-    ops: Entity<Ops>,
-    focus: FocusHandle,
-    _subs: Vec<Subscription>,
-}
-
-impl ScView {
-    fn new(ops: Entity<Ops>, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let subs = vec![
-            cx.observe(&ops, |_, _, cx| cx.notify()),
-            // clicking anywhere else closes it, like a Windows 11 flyout
-            cx.observe_window_activation(window, |this: &mut Self, window, cx| {
-                if window.is_window_active() {
-                    return;
-                }
-                let ops = this.ops.clone();
-                cx.defer(move |cx| {
-                    ops.update(cx, |o, cx| {
-                        if o.open {
-                            o.open = false;
-                            o.auto_closed = Some(Instant::now());
-                            cx.notify();
-                        }
-                    })
-                });
-            }),
-        ];
-        let focus = cx.focus_handle();
-        window.focus(&focus, cx);
-        Self { ops, focus, _subs: subs }
-    }
-}
-
-impl Render for ScView {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let p = Palette::for_window(window);
-        let ops = self.ops.clone();
-        let panel = panel(&ops, &p, cx);
-        let vh = window.viewport_size().height;
-        v_flex()
-            .size_full()
-            .track_focus(&self.focus)
-            .text_color(p.text)
-            .on_key_down(cx.listener(|this, ev: &KeyDownEvent, _, cx| {
-                if ev.keystroke.key == "escape" {
-                    this.ops.update(cx, |o, cx| o.close(cx));
-                }
-            }))
-            .child(
-                div()
-                    .relative()
-                    .w_full()
-                    .child(panel)
-                    // measure the content; the window follows its height
-                    .child(
-                        canvas(
-                            move |b, window, _| {
-                                let h = b.size.height.ceil();
-                                if (f32::from(h) - f32::from(vh)).abs() > 1. {
-                                    window.on_next_frame(move |w, _| w.resize(size(px(FLYOUT_W), h)));
-                                }
-                            },
-                            |_, _, _, _| {},
-                        )
-                        .absolute()
-                        .inset_0(),
-                    ),
-            )
-    }
-}
-
-/// Header + list for the popup.
-fn panel(ops: &Entity<Ops>, p: &Palette, cx: &App) -> Div {
-    let o = ops.read(cx);
-    let any_finished = o.ops.iter().any(|x| x.phase != OpPhase::Running);
-    let mut list = v_flex().gap_1();
-    for op in o.ops.iter().rev() {
-        list = list.child(render_op(ops, op, p));
-    }
-    let clear_e = ops.clone();
-    let body: AnyElement = if o.ops.is_empty() {
-        div().py_6().flex().justify_center().text_sm().text_color(p.text_secondary).child(t!("Devam eden dosya işlemleri yok")).into_any_element()
-    } else {
-        div().id("sc-list").max_h(px(460.)).overflow_y_scroll().child(list).into_any_element()
-    };
-    v_flex()
-        .w_full()
-        .p_1()
-        .child(
-            h_flex()
-                .px_3()
-                .pt_2()
-                .pb_2()
-                .items_center()
-                .child(div().flex_1().text_sm().font_weight(FontWeight::SEMIBOLD).child(t!("Durum Merkezi")))
-                .child(
-                    div()
-                        .id("sc-clear")
-                        .px_2()
-                        .py_1()
-                        .rounded(theme::RADIUS_SM)
-                        .text_xs()
-                        .border_1()
-                        .border_color(p.border)
-                        .when(!any_finished, |d| d.text_color(p.text_tertiary))
-                        .when(any_finished, |d| {
-                            d.hover(|s| s.bg(p.hover)).active(|s| s.bg(p.pressed)).on_click(move |_, _, cx| clear_e.update(cx, |o, cx| o.clear_finished(cx)))
-                        })
-                        .child(t!("Tamamlananları temizle")),
-                ),
-        )
-        .child(body)
-}
-

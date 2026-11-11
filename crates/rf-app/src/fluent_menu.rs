@@ -131,7 +131,7 @@ const HOVER_DELAY: Duration = Duration::from_millis(220);
 pub struct MenuView {
     quick: Vec<Quick>,
     root: Rc<Vec<Item>>,
-    /// Bumped by `set_root` (the root popup must be rebuilt).
+    /// Bumped by `set_root`.
     root_gen: u64,
     pos: Point<Pixels>,
     /// `open[d]` = index of the open submenu row in level `d`.
@@ -141,31 +141,7 @@ pub struct MenuView {
     pending: std::collections::HashMap<&'static str, Pending>,
     hover_gen: u64,
     focus: FocusHandle,
-    /// Set when the levels live in their own Acrylic popup windows.
-    popup: Option<PopupState>,
 }
-
-/// Popup mode: each level is a borderless Acrylic window (the material of Windows 11 menus),
-/// positioned in screen space so menus are not clipped by the app window.
-struct PopupState {
-    /// Where the menu was opened, in screen (logical) coordinates.
-    anchor: Point<Pixels>,
-    /// The display the menu must stay on.
-    area: Bounds<Pixels>,
-    /// Open level windows with the layout key they were built for (shared with `Host`, so
-    /// closing never has to read the view, which may be the one being updated).
-    wins: Wins,
-}
-
-/// Identifies what a level window shows; a different key means the window is rebuilt.
-#[derive(Clone, PartialEq)]
-struct LevelKey {
-    root_gen: u64,
-    path: Vec<usize>,
-    bounds: Bounds<Pixels>,
-}
-
-type Wins = Rc<std::cell::RefCell<Vec<(AnyWindowHandle, LevelKey)>>>;
 
 #[derive(Clone)]
 struct HostState {
@@ -174,8 +150,6 @@ struct HostState {
     /// Focus to give back on close — kept here, not in the view, so closing from inside the
     /// menu's own handlers never has to read the view being updated.
     restore: Option<FocusHandle>,
-    popup: bool,
-    wins: Wins,
 }
 
 struct Host(Option<HostState>);
@@ -202,34 +176,10 @@ pub fn show(menu: Menu, pos: Point<Pixels>, window: &mut Window, cx: &mut App) -
         pending: Default::default(),
         hover_gen: 0,
         focus: cx.focus_handle(),
-        popup: None,
     });
 
-    // Acrylic popups (Windows 11); RF_INWINDOW_MENU=1, Linux (see sys::separate_popups) or a
-    // failure draw the menu inside the window.
-    if crate::sys::separate_popups() {
-        let anchor = window.bounds().origin + pos;
-        let area = window.display(cx).map(|d| d.bounds()).unwrap_or_else(|| window.bounds());
-        let wins: Wins = Default::default();
-        view.update(cx, |m, _| m.popup = Some(PopupState { anchor, area, wins: wins.clone() }));
-        cx.set_global(Host(Some(HostState { main, view: view.clone(), restore: restore.clone(), popup: true, wins })));
-        gpui_windows::KEEP_ACTIVE_LOOK.store(true, std::sync::atomic::Ordering::Relaxed);
-        if sync_popups(&view, cx) {
-            // follow level changes (submenus opening, shell items arriving)
-            cx.observe(&view, |view, cx| {
-                if host(cx).is_some_and(|h| h.view == view) {
-                    sync_popups(&view, cx);
-                }
-            })
-            .detach();
-            return view;
-        }
-        log::warn!("menu: popup window failed, drawing in-window");
-        gpui_windows::KEEP_ACTIVE_LOOK.store(false, std::sync::atomic::Ordering::Relaxed);
-        view.update(cx, |m, _| m.popup = None);
-    }
     window.focus(&view.read(cx).focus.clone(), cx);
-    cx.set_global(Host(Some(HostState { main, view: view.clone(), restore, popup: false, wins: Default::default() })));
+    cx.set_global(Host(Some(HostState { main, view: view.clone(), restore })));
     window.refresh();
     view
 }
@@ -242,180 +192,23 @@ pub fn is_open(cx: &App) -> bool {
 /// The open in-window menu, if it belongs to `window` (the workspace paints it as its top layer).
 pub fn current(window: &Window, cx: &App) -> Option<Entity<MenuView>> {
     let h = host(cx)?;
-    (!h.popup && h.main == window.window_handle()).then_some(h.view)
+    (h.main == window.window_handle()).then_some(h.view)
 }
 
-/// Closes the open menu (if any) and gives focus back. `window` is the window whose handler
-/// asks (the app window, or one of the menu's own popups).
+/// Closes the open menu (if any) and gives focus back.
 pub fn close(window: &mut Window, cx: &mut App) {
     let Some(h) = host(cx) else { return };
     cx.set_global(Host(None));
-    if !h.popup {
-        if let Some(f) = h.restore {
-            window.focus(&f, cx);
-        }
-        window.refresh();
-        return;
+    if let Some(f) = h.restore {
+        window.focus(&f, cx);
     }
-    gpui_windows::KEEP_ACTIVE_LOOK.store(false, std::sync::atomic::Ordering::Relaxed);
-    let wins: Vec<AnyWindowHandle> = h.wins.borrow().iter().map(|w| w.0).collect();
-    // after the current update: a window can't be removed while it is the one being updated
-    cx.defer(move |cx| {
-        for w in wins {
-            let _ = w.update(cx, |_, window, _| window.remove_window());
-        }
-        let _ = h.main.update(cx, |_, window, cx| {
-            window.activate_window();
-            if let Some(f) = &h.restore {
-                window.focus(f, cx);
-            }
-            window.refresh();
-        });
-    });
+    window.refresh();
 }
 
-/// Runs a menu command in the app window (never in a popup), after the menu is gone.
+/// Runs a menu command after the menu is gone.
 fn run_in_main(run: Run, window: &mut Window, cx: &mut App) {
-    let main = host(cx).filter(|h| h.popup).map(|h| h.main);
     close(window, cx);
-    match main {
-        Some(main) => cx.defer(move |cx| {
-            let _ = main.update(cx, |_, window, cx| run(window, cx));
-        }),
-        None => run(window, cx),
-    }
-}
-
-/// Opens / rebuilds / closes level windows to match the menu state. False if the root popup
-/// could not be created.
-fn sync_popups(view: &Entity<MenuView>, cx: &mut App) -> bool {
-    let (wanted, have, dark) = {
-        let m = view.read(cx);
-        let Some(pp) = &m.popup else { return false };
-        let rects = m.layout(pp.area, pp.anchor);
-        let wanted: Vec<LevelKey> = rects
-            .iter()
-            .enumerate()
-            .map(|(lv, r)| LevelKey { root_gen: m.root_gen, path: m.open[..lv].to_vec(), bounds: *r })
-            .collect();
-        let have: Vec<(AnyWindowHandle, LevelKey)> = pp.wins.borrow().clone();
-        (wanted, have, matches!(cx.window_appearance(), WindowAppearance::Dark | WindowAppearance::VibrantDark))
-    };
-    let dark = match crate::settings::theme_override() {
-        crate::settings::ThemePref::Light => false,
-        crate::settings::ThemePref::Dark => true,
-        crate::settings::ThemePref::System => dark,
-    };
-    let keep = have.iter().zip(&wanted).take_while(|(h, w)| h.1 == **w).count();
-    let mut wins: Vec<(AnyWindowHandle, LevelKey)> = have[..keep].to_vec();
-    // open the new ones first (so focus moves to a menu window, never to nothing), then drop
-    // the stale ones
-    for (lv, key) in wanted.iter().enumerate().skip(keep) {
-        match open_level(view.clone(), lv, key.bounds, lv == 0, dark, cx) {
-            Some(h) => wins.push((h, key.clone())),
-            None if lv == 0 => return false,
-            None => break,
-        }
-    }
-    let stale: Vec<AnyWindowHandle> = have[keep..].iter().map(|h| h.0).collect();
-    if let Some(pp) = &view.read(cx).popup {
-        *pp.wins.borrow_mut() = wins;
-    }
-    if !stale.is_empty() {
-        cx.defer(move |cx| {
-            for w in stale {
-                let _ = w.update(cx, |_, window, _| window.remove_window());
-            }
-        });
-    }
-    true
-}
-
-fn open_level(view: Entity<MenuView>, level: usize, bounds: Bounds<Pixels>, focus: bool, dark: bool, cx: &mut App) -> Option<AnyWindowHandle> {
-    let opts = WindowOptions {
-        window_bounds: Some(WindowBounds::Windowed(bounds)),
-        titlebar: None,
-        focus,
-        show: true,
-        kind: WindowKind::PopUp,
-        is_movable: false,
-        is_resizable: false,
-        is_minimizable: false,
-        window_background: WindowBackgroundAppearance::Blurred,
-        ..Default::default()
-    };
-    let r = cx.open_window(opts, move |w, cx| {
-        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-        if let Ok(h) = w.window_handle() {
-            if let RawWindowHandle::Win32(h) = h.as_raw() {
-                rf_linux::window::set_dark_mode(h.hwnd.get(), dark);
-            }
-        }
-        cx.new(|cx| LevelView::new(view, level, w, cx))
-    });
-    match r {
-        Ok(h) => Some(h.into()),
-        Err(e) => {
-            log::warn!("menu popup: {e:#}");
-            None
-        }
-    }
-}
-
-/// One level of a popup menu, filling its own Acrylic window.
-struct LevelView {
-    menu: Entity<MenuView>,
-    level: usize,
-    focus: FocusHandle,
-    _subs: Vec<Subscription>,
-}
-
-impl LevelView {
-    fn new(menu: Entity<MenuView>, level: usize, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let subs = vec![
-            cx.observe(&menu, |_, _, cx| cx.notify()),
-            // clicking anywhere outside the menu's windows closes it
-            cx.observe_window_activation(window, |this: &mut Self, window, cx| {
-                if window.is_window_active() {
-                    return;
-                }
-                let menu = this.menu.clone();
-                cx.defer(move |cx| {
-                    let Some(h) = host(cx).filter(|h| h.view == menu) else { return };
-                    let ours: Vec<AnyWindowHandle> = h.wins.borrow().iter().map(|w| w.0).collect();
-                    let active = cx.active_window();
-                    if active.is_none_or(|a| !ours.contains(&a)) {
-                        let _ = h.main.update(cx, |_, window, cx| close(window, cx));
-                    }
-                });
-            }),
-        ];
-        let focus = cx.focus_handle();
-        if level == 0 {
-            window.focus(&focus, cx);
-        }
-        Self { menu, level, focus, _subs: subs }
-    }
-}
-
-impl Render for LevelView {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let p = Palette::for_window(window);
-        let level = self.level;
-        let vh = f32::from(window.viewport_size().height);
-        let panel = self.menu.update(cx, |m, cx| {
-            let levels = m.levels();
-            levels.get(level).cloned().map(|items| m.render_level(level, &items, &p, Some(vh), cx))
-        });
-        div()
-            .size_full()
-            .track_focus(&self.focus)
-            .text_color(p.text)
-            .on_key_down(cx.listener(|this, ev: &KeyDownEvent, window, cx| {
-                this.menu.update(cx, |m, cx| m.on_key(ev, window, cx));
-            }))
-            .children(panel)
-    }
+    run(window, cx);
 }
 
 // ---------- shell icons: one RenderImage per distinct bitmap, reused across menus ----------
@@ -715,8 +508,8 @@ fn row_content(label: SharedString, icon: MenuIcon, hint: Option<SharedString>, 
 }
 
 impl MenuView {
-    /// Rects of every visible level inside `area`, for a menu opened at `anchor` (same space:
-    /// window-local for the in-window menu, screen for popups). Fixed width + known row heights
+    /// Rects of every visible level inside `area`, for a menu opened at `anchor` (window-local
+    /// coordinates). Fixed width + known row heights
     /// mean positions are computed, not measured, so cascading submenus flip left / move up
     /// before the first frame.
     fn layout(&self, area: Bounds<Pixels>, anchor: Point<Pixels>) -> Vec<Bounds<Pixels>> {
@@ -782,7 +575,6 @@ impl MenuView {
 }
 
 impl Render for MenuView {
-    /// The in-window fallback (popup mode renders through `LevelView`s instead).
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let p = Palette::for_window(window);
         let vp = window.viewport_size();

@@ -1,10 +1,8 @@
-//! Video ve ses görüntüleyici (rf-player: FilmCraft çözücüleri, WASAPI ses).
+//! Video ve ses görüntüleyici (rf-player: FilmCraft çözücüleri).
 //! Video: kareler pencere boyutuna ölçeklenip arka planda BGRA'ya çevrilir; başlık çubuğu ve
 //! kontroller içeriğin üstünde durur, fare durunca gizlenir. Tıklama oynat/duraklat, çift tık
 //! tam ekran, tekerlek ses düzeyi (0,04). Ses: 500×300 kart (kapak, başlık/sanatçı/albüm,
-//! süre, eşzamanlı şarkı sözü). FilmCraft'ın açamadığı dosyalar Media Foundation ile oynatılır.
-//! İsteğe bağlı: RFILES_RUSTDECODER=1 ile MP4/MOV (H.264, HEVC) kendi motorumuzla (rd_video.rs) oynatılır;
-//! açılamayan dosyalar yukarıdaki yollara düşer.
+//! süre, eşzamanlı şarkı sözü).
 
 use std::cell::Cell;
 use std::path::PathBuf;
@@ -18,7 +16,6 @@ use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 use rf_player::{AudioSink, Player, PlayerState};
 
-use super::rd_video;
 use crate::look::viewer::{Prepared, Probe, Viewer};
 use crate::look::config::LookSettings;
 use crate::t;
@@ -30,8 +27,7 @@ const TICK: Duration = Duration::from_millis(8);
 /// While the timeline is dragged the player is sent a new position at most this often (every
 /// jump makes it decode from a key frame; the bar itself follows the pointer at once).
 const SCRUB_EVERY: Duration = Duration::from_millis(80);
-/// After a jump the bar stays on its target this long at most, until the player reports it (the
-/// Media Foundation and rustdecoder routes report their position with a delay).
+/// After a jump the bar stays on its target this long at most, until the player reports it.
 const SEEK_HOLD: Duration = Duration::from_millis(800);
 
 /// The timeline being dragged (GPUI's drag: its moves arrive wherever the pointer goes).
@@ -63,13 +59,6 @@ fn open_media(path: &std::path::Path) -> Opened {
     let opened = rf_player::open(path);
     let (kind, prepared) = match opened {
         Ok(media) => match media.info().video.clone() {
-            // FilmCraft decodes on the CPU: 4K, or anything past 1080p60, doesn't keep up (4K60
-            // HEVC 10-bit: 42 frames/s on a 9800X3D with nothing else running). Windows'
-            // decoder uses the graphics card's video engine instead.
-            Some(v) if too_heavy(v.width, v.height, v.frame_rate.as_f64()) && rf_linux::preview_host::is_playable(path) && rf_linux::preview_host::mf_decodes(&v.codec) => {
-                log::info!("look: {}x{} {} at {:.2} fps is past software decoding, Media Foundation (hardware)", v.width, v.height, v.codec, v.frame_rate.as_f64());
-                (Kind::Mf, Prepared::new((960.0, 540.0), name))
-            }
             Some(v) => {
                 let par = if v.par.1 > 0 { v.par.0 as f32 / v.par.1 as f32 } else { 1.0 };
                 let size = ((v.width as f32 * par).max(160.0), (v.height as f32).max(90.0));
@@ -84,27 +73,9 @@ fn open_media(path: &std::path::Path) -> Opened {
                 (Kind::Audio(media), p)
             }
         },
-        Err(e) if rf_linux::preview_host::is_playable(path) => {
-            log::info!("look: rf-player cannot open {}, Media Foundation: {e:#}", path.display());
-            (Kind::Mf, Prepared::new((960.0, 540.0), name))
-        }
         Err(e) => (Kind::Failed(format!("{e:#}")), Prepared::new((520.0, 220.0), name)),
     };
-    // opt-in: rustdecoder plays MP4 / MOV with H.264 or HEVC; what it cannot open falls back to
-    // `kind` (decided when its decoder opens, see MediaView::rd_opened)
-    match kind {
-        Kind::Video(_) | Kind::Mf if rd_video::enabled() => match rd_video::probe(path) {
-            Some(p) => {
-                log::info!("look: rustdecoder route for {}: {} {}x{}", path.display(), p.codec, p.width, p.height);
-                Opened(Kind::Rd(Box::new(kind), p), Prepared::new((960.0, 540.0), super::file_name(path)))
-            }
-            None => {
-                log::info!("look: rustdecoder does not take {}, current route", path.display());
-                Opened(kind, prepared)
-            }
-        },
-        kind => Opened(kind, prepared),
-    }
+    Opened(kind, prepared)
 }
 
 impl Viewer for VideoViewer {
@@ -119,7 +90,7 @@ impl Viewer for VideoViewer {
         if f.ext == "ts" && !is_transport_stream(&f.head) {
             return false;
         }
-        f.is_file() && (rf_player::can_open(&f.path) || rf_linux::preview_host::is_playable(&f.path))
+        f.is_file() && rf_player::can_open(&f.path)
     }
     fn loader(&self) -> Option<fn(&Probe) -> crate::look::viewer::Loaded> {
         Some(|f| Box::new(open_media(&f.path)))
@@ -142,28 +113,6 @@ impl Viewer for VideoViewer {
     }
 }
 
-/// Pixels per second past which the CPU decoder can't be trusted to play in real time
-/// (1080p at 60 fps; 4K at any rate is past it).
-const SOFTWARE_PIXEL_RATE: f64 = 1920.0 * 1080.0 * 60.0 * 1.05;
-
-fn too_heavy(width: u32, height: u32, fps: f64) -> bool {
-    let fps = if fps > 0.0 { fps } else { 30.0 };
-    width as f64 * height as f64 * fps > SOFTWARE_PIXEL_RATE
-}
-
-#[cfg(test)]
-mod heavy_tests {
-    #[test]
-    fn past_1080p60_goes_to_hardware() {
-        assert!(!super::too_heavy(1920, 1080, 60000.0 / 1001.0));
-        assert!(!super::too_heavy(1920, 1080, 60.0));
-        assert!(super::too_heavy(3840, 2160, 24.0));
-        assert!(super::too_heavy(2160, 3840, 60000.0 / 1001.0));
-        assert!(super::too_heavy(2560, 1440, 60.0));
-        assert!(!super::too_heavy(1280, 720, 0.0));
-    }
-}
-
 /// MPEG-TS: 188 baytlık (ya da 4 bayt zaman damgalı 192 baytlık) paketlerin başında 0x47.
 pub(crate) fn is_transport_stream(head: &[u8]) -> bool {
     let synced = |start: usize, step: usize| (0..3).all(|k| head.get(start + k * step) == Some(&0x47));
@@ -173,9 +122,6 @@ pub(crate) fn is_transport_stream(head: &[u8]) -> bool {
 enum Kind {
     Video(rf_player::Media),
     Audio(rf_player::Media),
-    Mf,
-    /// rustdecoder first; the boxed kind is the fallback.
-    Rd(Box<Kind>, rd_video::Probe),
     Failed(String),
 }
 
@@ -183,7 +129,7 @@ fn sink() -> Box<dyn AudioSink> {
     if std::env::var_os("RFILES_MUTE").is_some() {
         return Box::new(rf_player::NullSink::new(48000, 2));
     }
-    rf_player::wasapi_sink().unwrap_or_else(|e| {
+    rf_player::cpal_sink().unwrap_or_else(|e| {
         log::warn!("look audio: {e:#}");
         Box::new(rf_player::NullSink::new(48000, 2))
     })
@@ -202,7 +148,6 @@ fn bgra_image(w: u32, h: u32, data: Vec<u8>) -> Option<Arc<RenderImage>> {
 pub struct MediaView {
     path: PathBuf,
     video: bool,
-    mf: bool,
     failed: Option<String>,
     player: Option<Player>,
     state: PlayerState,
@@ -223,24 +168,9 @@ pub struct MediaView {
     cover: Option<Arc<RenderImage>>,
     images: Option<Entity<crate::image_cache::ImageCache>>,
     lyrics: Vec<(f64, String)>,
-    opened_at: Instant,
     first_frame_logged: bool,
-    mf_rect: Option<[i32; 4]>,
-    mf_owner: isize,
     /// Görüntü boyutu (piksel en-boyu uygulanmış).
     dims: (f32, f32),
-    mf_state: Option<rf_linux::preview_host::MediaState>,
-    /// rustdecoder route chosen (its window may still be opening).
-    rd_mode: bool,
-    rd: Option<rd_video::RdVideo>,
-    /// What to play when rustdecoder cannot open the file.
-    rd_fallback: Option<Kind>,
-    rd_opening: bool,
-    rd_rect: Option<[i32; 4]>,
-    rd_state: Option<rd_video::WindowState>,
-    /// The video's own window reported a double click: the next render toggles fullscreen (it
-    /// has the window).
-    want_fullscreen: bool,
     /// The timeline is being dragged: the fraction under the pointer, which the bar shows
     /// instead of the player's position.
     scrub: Option<f64>,
@@ -250,8 +180,6 @@ pub struct MediaView {
     scrub_resume: bool,
     /// The last jump's target and time: the bar stays there until the player reports it.
     seek_hold: Option<(f64, Instant)>,
-    /// How long Media Foundation gets to open the file before it counts as unsupported.
-    mf_wait: Duration,
     _hide: Option<Task<()>>,
     _tasks: Vec<Task<()>>,
 }
@@ -263,7 +191,6 @@ impl MediaView {
         let mut v = Self {
             path: path.clone(),
             video: false,
-            mf: false,
             failed: None,
             player: None,
             state: PlayerState::default(),
@@ -282,25 +209,12 @@ impl MediaView {
             cover: None,
             images: None,
             lyrics: Vec::new(),
-            opened_at: Instant::now(),
             first_frame_logged: false,
-            mf_rect: None,
-            mf_owner: 0,
             dims: (16.0, 9.0),
-            mf_state: None,
-            rd_mode: false,
-            rd: None,
-            rd_fallback: None,
-            rd_opening: false,
-            rd_rect: None,
-            rd_state: None,
-            want_fullscreen: false,
             scrub: None,
             scrub_sent: None,
             scrub_resume: false,
             seek_hold: None,
-            // a network drive needs longer than a local disk to hand over the file's header
-            mf_wait: if rf_linux::drives::slow_to_read(&path) { Duration::from_secs(20) } else { Duration::from_secs(2) },
             _hide: None,
             _tasks: Vec::new(),
         };
@@ -311,10 +225,6 @@ impl MediaView {
         // pencere kapanınca: ses durur, GPU dokuları bırakılır
         cx.on_release(|v: &mut Self, cx| {
             v.player = None;
-            v.rd = None;
-            if v.mf {
-                rf_linux::sta::run(|_| rf_linux::preview_host::hide());
-            }
             for img in [v.image.take(), v.previous.take(), v.cover.take()].into_iter().flatten() {
                 cx.drop_image(img, None);
             }
@@ -324,8 +234,7 @@ impl MediaView {
         v
     }
 
-    /// Starts what `kind` says: the rf-player route, Media Foundation, the audio card, or waits
-    /// for rustdecoder's window (opened by the first `render`, which knows where it goes).
+    /// Starts what `kind` says: the video, the audio card, or the reason it can't play.
     fn start_kind(&mut self, kind: Kind, cx: &mut Context<Self>) {
         match kind {
             Kind::Video(media) | Kind::Audio(media) => {
@@ -345,124 +254,19 @@ impl MediaView {
                 self.player = Some(p);
                 self.tick(cx);
             }
-            Kind::Mf => {
-                self.video = true;
-                self.start_mf(cx);
-            }
-            Kind::Rd(fallback, probe) => {
-                self.rd_mode = true;
-                self.video = true;
-                self.controls = true;
-                self.dims = (probe.width.max(1) as f32, probe.height.max(1) as f32);
-                self.rd_fallback = Some(*fallback);
-            }
             Kind::Failed(e) => self.failed = Some(e),
         }
     }
 
-    /// Opens rustdecoder's popup over `rect` on a background thread.
-    fn rd_open(&mut self, owner: isize, rect: [i32; 4], cx: &mut Context<Self>) {
-        self.rd_opening = true;
-        let path = self.path.clone();
-        let s = rd_video::Settings { volume: self.volume, muted: self.muted, looping: self.looping };
-        let job = cx.background_spawn(async move { rd_video::RdVideo::open(&path, owner, rect, &s) });
-        self._tasks.push(cx.spawn(async move |this, cx| {
-            let r = job.await;
-            // the viewer may be gone by now: the window then goes down with `r`
-            let _ = this.update(cx, |v, cx| v.rd_opened(r, cx));
-        }));
-    }
-
-    fn rd_opened(&mut self, r: Result<rd_video::RdVideo, String>, cx: &mut Context<Self>) {
-        self.rd_opening = false;
-        match r {
-            Ok(rd) => {
-                log::info!("look: rustdecoder opened {}", self.path.display());
-                if let Some(rect) = self.rd_rect {
-                    rd.reposition(rect);
-                }
-                self.rd = Some(rd);
-                self.poll_rd(cx);
-            }
-            Err(e) => {
-                log::info!("look: rustdecoder cannot play {}: {e}; falling back", self.path.display());
-                self.rd_mode = false;
-                self.rd_rect = None;
-                if let Some(kind) = self.rd_fallback.take() {
-                    self.opened_at = Instant::now();
-                    self.start_kind(kind, cx);
-                }
-            }
-        }
-        cx.notify();
-    }
-
-    /// Takes the window's state and events (clicks, the wheel) into the controls.
-    fn poll_rd(&mut self, cx: &mut Context<Self>) {
-        self._tasks.push(cx.spawn(async move |this, cx| loop {
-            cx.background_executor().timer(Duration::from_millis(80)).await;
-            let alive = this.update(cx, |v, cx| {
-                let Some(rd) = v.rd.as_ref() else { return false };
-                let st = rd.state();
-                let events = rd.take_events();
-                let coarse = |s: &rd_video::WindowState| ((s.position * 10.0) as i64, s.playing, s.ended, (s.duration * 10.0) as i64);
-                if v.rd_state.as_ref().is_none_or(|o| coarse(o) != coarse(&st)) {
-                    cx.notify();
-                }
-                // the size on show (pixel aspect ratio and rotation applied) replaces what the
-                // container index said, so the popup's rectangle has the picture's shape
-                if st.video_size.0 > 0 && st.video_size.1 > 0 {
-                    let shown = (st.video_size.0 as f32, st.video_size.1 as f32);
-                    if shown != v.dims {
-                        v.dims = shown;
-                        cx.notify();
-                    }
-                }
-                v.rd_state = Some(st);
-                for e in events {
-                    match e {
-                        // the popup swallows the pointer, so what the viewer's own root does for the
-                        // other routes (click plays, double click is fullscreen, the wheel is the
-                        // volume, moving shows the controls) is done here from the popup's events
-                        rd_video::WindowEvent::Click => v.toggle_play(cx),
-                        // the second half of a double click: its first click's toggle is taken back
-                        rd_video::WindowEvent::DoubleClick => {
-                            v.toggle_play(cx);
-                            v.want_fullscreen = true;
-                            cx.notify();
-                        }
-                        rd_video::WindowEvent::Wheel(d) => {
-                            v.set_volume(v.volume + 0.04 * d as f32 / 120.0, cx);
-                            v.show_controls(cx);
-                        }
-                        rd_video::WindowEvent::MouseMove => v.show_controls(cx),
-                        rd_video::WindowEvent::Leave => v.arm_hide(cx),
-                        rd_video::WindowEvent::Closed => {}
-                    }
-                }
-                true
-            });
-            if !alive.unwrap_or(false) {
-                break;
-            }
-        }));
-    }
-
     /// FilmCraft bazı biçimleri (ör. 4:2:2 HEVC) açar ama karesini çözemez: ilk kare arka planda
-    /// denenir, olmazsa Media Foundation'a (o da yoksa açıklamaya) geçilir.
+    /// denenir, olmazsa açıklama gösterilir.
     fn probe_first_frame(&mut self, media: rf_player::Media, cx: &mut Context<Self>) {
         let probe = cx.background_spawn(async move { media.frame_at(0.0).err().map(|e| format!("{e:#}")) });
         self._tasks.push(cx.spawn(async move |this, cx| {
             let Some(err) = probe.await else { return };
             let _ = this.update(cx, |v, cx| {
                 v.player = None;
-                if rf_linux::preview_host::is_playable(&v.path) {
-                    log::info!("look: rf-player cannot decode {}, Media Foundation: {err}", v.path.display());
-                    v.opened_at = Instant::now();
-                    v.start_mf(cx);
-                } else {
-                    v.failed = Some(err);
-                }
+                v.failed = Some(err);
                 cx.notify();
             });
         }));
@@ -545,71 +349,12 @@ impl MediaView {
         }));
     }
 
-    /// The Media Foundation route: Windows draws the video in a window of its own over ours.
-    /// Clicks on the picture land there, so that window tells us what they did.
-    fn start_mf(&mut self, cx: &mut Context<Self>) {
-        self.mf = true;
-        self.controls = true;
-        let (tx, mut rx) = futures::channel::mpsc::unbounded();
-        rf_linux::preview_host::set_media_events(move |e| {
-            let _ = tx.unbounded_send(e);
-        });
-        self._tasks.push(cx.spawn(async move |this, cx| {
-            use futures::StreamExt;
-            use rf_linux::preview_host::MediaEvent;
-            while let Some(e) = rx.next().await {
-                let alive = this.update(cx, |v, cx| {
-                    match e {
-                        // the button follows at once (the state is otherwise polled)
-                        MediaEvent::Playing(playing) => {
-                            if let Some(s) = &mut v.mf_state {
-                                s.playing = playing;
-                            }
-                        }
-                        MediaEvent::DoubleClick => v.want_fullscreen = true,
-                    }
-                    cx.notify();
-                });
-                if alive.is_err() {
-                    break;
-                }
-            }
-        }));
-        self.poll_mf(cx);
-    }
-
-    fn poll_mf(&mut self, cx: &mut Context<Self>) {
-        self._tasks.push(cx.spawn(async move |this, cx| loop {
-            cx.background_executor().timer(Duration::from_millis(250)).await;
-            let (tx, rx) = futures::channel::oneshot::channel();
-            rf_linux::sta::run(move |_| {
-                let _ = tx.send(rf_linux::preview_host::media_state());
-            });
-            let st = rx.await.ok().flatten();
-            let gone = this.update(cx, |v, cx| {
-                v.mf_state = st;
-                // Media Foundation de açamadıysa (süre gelmedi): oynatıcı kapanır, açıklama gösterilir
-                if v.failed.is_none() && v.opened_at.elapsed() > v.mf_wait && st.is_none_or(|s| s.duration <= 0.0) {
-                    v.failed = Some(t!("Bu biçim desteklenmiyor (ne FilmCraft ne de Windows çözebildi)").to_string());
-                    v.mf = false;
-                    v.video = false;
-                    rf_linux::sta::run(|_| rf_linux::preview_host::hide());
-                }
-                cx.notify();
-                v.failed.is_some()
-            });
-            if gone.unwrap_or(true) {
-                break;
-            }
-        }));
-    }
-
     fn arm_hide(&mut self, cx: &mut Context<Self>) {
         self._hide = Some(cx.spawn(async move |this, cx| {
             cx.background_executor().timer(HIDE_AFTER).await;
             let _ = this.update(cx, |v, cx| {
                 // (hover is not reported while the timeline is dragged: the drag keeps them up)
-                if !v.hovered_controls && v.scrub.is_none() && v.video && !v.mf {
+                if !v.hovered_controls && v.scrub.is_none() && v.video {
                     v.controls = false;
                     cx.notify();
                 }
@@ -626,21 +371,6 @@ impl MediaView {
     }
 
     fn toggle_play(&mut self, cx: &mut Context<Self>) {
-        if self.rd_mode {
-            if let Some(rd) = &self.rd {
-                rd.toggle();
-            }
-            return;
-        }
-        if self.mf {
-            // decided by the player's own thread from its real state (our copy is polled, up to
-            // 250 ms old: a second press decided from it repeated the first command); the button
-            // follows its event (see `start_mf`)
-            rf_linux::sta::run(|_| {
-                rf_linux::preview_host::media_toggle();
-            });
-            return;
-        }
         if let Some(p) = &mut self.player {
             if p.state().playing {
                 p.pause();
@@ -692,13 +422,7 @@ impl MediaView {
     fn seek_fraction(&mut self, f: f64) {
         let f = f.clamp(0.0, 1.0);
         self.seek_hold = Some((f, Instant::now()));
-        if self.rd_mode {
-            if let Some(rd) = &self.rd {
-                rd.seek_fraction(f);
-            }
-        } else if self.mf {
-            rf_linux::sta::run(move |_| rf_linux::preview_host::media_seek(f));
-        } else if let Some(p) = &mut self.player {
+        if let Some(p) = &mut self.player {
             let d = p.state().duration;
             p.seek(f * d);
         }
@@ -709,21 +433,12 @@ impl MediaView {
         if let Some(p) = &mut self.player {
             p.set_volume(self.volume);
         }
-        if let Some(rd) = &self.rd {
-            rd.set_volume(self.volume);
-        }
         crate::look::config::update(cx, |s| s.look_volume = self.volume);
         cx.notify();
     }
 
     fn render_controls(&self, light_text: bool, cx: &mut Context<Self>) -> AnyElement {
-        let (playing, pos, dur) = if self.rd_mode {
-            self.rd_state.as_ref().map_or((false, 0.0, 0.0), |s| (s.playing, s.position, s.duration))
-        } else if self.mf {
-            self.mf_state.map_or((false, 0.0, 0.0), |s| (s.playing, s.position, s.duration))
-        } else {
-            (self.state.playing, self.state.position, self.state.duration)
-        };
+        let (playing, pos, dur) = (self.state.playing, self.state.position, self.state.duration);
         let reported = if dur > 0.0 { (pos / dur).clamp(0.0, 1.0) } else { 0.0 };
         // the pointer's place while dragging; after a jump its target, until the player is there
         let held = self.seek_hold.filter(|(f, at)| at.elapsed() < SEEK_HOLD && (reported - f).abs() > 0.01).map(|(f, _)| f);
@@ -822,14 +537,10 @@ impl MediaView {
                     .on_mouse_up(MouseButton::Left, cx.listener(|v, _: &MouseUpEvent, _, cx| v.end_scrub(cx)))
                     .on_mouse_up_out(MouseButton::Left, cx.listener(|v, _: &MouseUpEvent, _, cx| v.end_scrub(cx))),
             )
-            .when(!self.mf, |d| {
-                d.child(btn("media-loop", L::RotateCw, self.looping).on_click(cx.listener(|v, _, _, cx| {
+            .child(btn("media-loop", L::RotateCw, self.looping).on_click(cx.listener(|v, _, _, cx| {
                     v.looping = !v.looping;
                     if let Some(p) = &mut v.player {
                         p.set_loop(v.looping);
-                    }
-                    if let Some(rd) = &v.rd {
-                        rd.set_looping(v.looping);
                     }
                     let on = v.looping;
                     crate::look::config::update(cx, |s| s.look_loop = on);
@@ -841,13 +552,9 @@ impl MediaView {
                     if let Some(p) = &mut v.player {
                         p.set_mute(m);
                     }
-                    if let Some(rd) = &v.rd {
-                        rd.set_muted(m);
-                    }
                     cx.notify();
                 })))
-                .child(div().w(px(34.)).text_right().child(format!("{:.0}%", self.volume * 100.0)))
-            })
+            .child(div().w(px(34.)).text_right().child(format!("{:.0}%", self.volume * 100.0)))
             .into_any_element()
     }
 }
@@ -880,10 +587,7 @@ impl Render for MediaView {
         // GPU stretching the picture (a 1080p clip full screen on 4K was scaled to 33 MB a frame)
         let k = ((vw / (dw * scale)).min(vh / (dh * scale))).min(1.0);
         self.target = (((dw * scale * k) as u32).max(2), ((dh * scale * k) as u32).max(2));
-        let controls = self.controls || self.mf;
-        if std::mem::take(&mut self.want_fullscreen) {
-            window.toggle_fullscreen();
-        }
+        let controls = self.controls;
         let mut root = div()
             .id("look-media")
             .relative()
@@ -913,41 +617,7 @@ impl Render for MediaView {
                     window.toggle_fullscreen();
                 }
             }));
-        // the video's own window (Media Foundation, rustdecoder) goes over this rectangle (screen
-        // pixels); the controls stay at the bottom
-        let rect = [
-            ((f32::from(window.bounds().origin.x) + (aw - dw) / 2.0) * scale) as i32,
-            ((f32::from(window.bounds().origin.y) + (ah - 48.0 - dh.min(ah - 48.0)) / 2.0) * scale) as i32,
-            ((f32::from(window.bounds().origin.x) + (aw + dw) / 2.0) * scale) as i32,
-            ((f32::from(window.bounds().origin.y) + (ah - 48.0 + dh.min(ah - 48.0)) / 2.0) * scale) as i32,
-        ];
-        if self.rd_mode {
-            if self.rd_rect != Some(rect) {
-                self.rd_rect = Some(rect);
-                if let Some(rd) = &self.rd {
-                    rd.reposition(rect);
-                } else if !self.rd_opening && self.rd_fallback.is_some() {
-                    let owner = crate::look::window::hwnd_of(window);
-                    self.rd_open(owner, rect, cx);
-                }
-            }
-        } else if self.mf {
-            if self.mf_rect != Some(rect) {
-                let first = self.mf_rect.is_none();
-                self.mf_rect = Some(rect);
-                let owner = crate::look::window::hwnd_of(window);
-                self.mf_owner = owner;
-                let path = self.path.clone();
-                let r = crate::sys::Rect { left: rect[0], top: rect[1], right: rect[2], bottom: rect[3] };
-                rf_linux::sta::run(move |_| {
-                    if first {
-                        rf_linux::preview_host::media_play(owner, &path, Some(r));
-                    } else {
-                        rf_linux::preview_host::media_reposition(r);
-                    }
-                });
-            }
-        } else if let Some(img) = self.image.clone() {
+        if let Some(img) = self.image.clone() {
             root = root.child(
                 gpui_kit::img(img)
                     .absolute()

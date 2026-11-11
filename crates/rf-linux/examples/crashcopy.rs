@@ -4,7 +4,6 @@
 //! speed limit keeps a big file copying long enough to be cut off mid-file.
 //! `crashcopy --resume <journal folder>` lists the cut-off jobs and resumes them, as the app's
 //! Resume button does.
-#[cfg(unix)]
 fn main() {
     use rf_linux::fileops::{Tracker, Transfer};
     use std::path::PathBuf;
@@ -43,5 +42,3 @@ fn main() {
     eprintln!("finished before the crash: {r:?}");
 }
 
-#[cfg(not(unix))]
-fn main() {}

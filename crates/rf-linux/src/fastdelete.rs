@@ -40,9 +40,10 @@ fn remove_link_or_dir(p: &Path) -> std::io::Result<()> {
     std::fs::remove_dir(p)
 }
 
-/// Walks `root` without following links: files (including links to files), folder links,
-/// and real folders in walk order (parents before children).
-fn walk(root: &Path, files: &mut Vec<PathBuf>, links: &mut Vec<PathBuf>, dirs: &mut Vec<PathBuf>) -> std::io::Result<()> {
+/// Walks `root` without following links: files (symlinks included, whatever they point to)
+/// and real folders in walk order (parents before children). `_links` stays empty: on Linux a
+/// link to a folder is unlinked like a file (Windows' junctions needed their own pass).
+fn walk(root: &Path, files: &mut Vec<PathBuf>, _links: &mut Vec<PathBuf>, dirs: &mut Vec<PathBuf>) -> std::io::Result<()> {
     let mut stack = vec![root.to_path_buf()];
     while let Some(d) = stack.pop() {
         for e in std::fs::read_dir(&d)? {

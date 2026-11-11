@@ -3,8 +3,6 @@
 //! functions; the Windows-only ones are being removed (see docs/LINUX_PORT.md).
 //!
 //! Every function here may block (disk, network, shell extensions). Never call them on the UI thread.
-#![cfg(unix)]
-#![allow(unused)]
 
 /// Stands in for Windows handles (HWND and friends) in signatures kept from rf-win.
 pub type Opaque = isize;
@@ -42,7 +40,6 @@ pub mod elf;
 pub mod design;
 pub mod journal;
 pub mod known;
-pub mod libraries;
 pub mod ftp;
 pub mod keys;
 pub mod look;
@@ -61,12 +58,10 @@ pub mod remote;
 pub mod folder_custom;
 pub mod security;
 pub mod sandbox;
-pub mod preview_host;
 pub mod props;
 pub mod recycle;
 pub mod search;
 pub mod shell;
-pub mod shellfolder;
 pub mod single_instance;
 pub mod sta;
 pub mod taskbar_progress;

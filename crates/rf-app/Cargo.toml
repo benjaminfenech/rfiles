@@ -17,7 +17,6 @@ path = "src/bin/directlook.rs"
 rf-core.workspace = true
 rf-archive.workspace = true
 rf-player.workspace = true
-rustdecoder.workspace = true
 gpui-kit.workspace = true
 anyhow.workspace = true
 log.workspace = true
@@ -40,5 +39,3 @@ raw-window-handle.workspace = true
 chrono.workspace = true
 # the Linux platform layer
 rf-linux.workspace = true
-# no-op stand-in for the Windows fork's `gpui_windows::…` API
-gpui-windows-shim = { path = "../gpui-windows-shim" }

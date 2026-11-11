@@ -1,7 +1,6 @@
 //! Shows the tray icon for `secs` seconds (default 10) and prints clicks and menu choices; with
 //! `notify`, sends a notification first:
 //! `cargo run -p rf-linux --example tray -- [notify] [secs]`
-#[cfg(unix)]
 fn main() {
     use rf_linux::tray;
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -16,5 +15,3 @@ fn main() {
     std::thread::sleep(std::time::Duration::from_millis(300));
 }
 
-#[cfg(not(unix))]
-fn main() {}

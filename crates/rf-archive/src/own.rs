@@ -121,53 +121,7 @@ impl DiskSink<'_> {
 #[cfg_attr(not(windows), allow(dead_code))]
 struct IoPriority(i32, i32);
 
-#[cfg(windows)]
-#[link(name = "kernel32")]
-unsafe extern "system" {
-    fn GetCurrentThread() -> isize;
-    fn GetThreadPriority(thread: isize) -> i32;
-    fn SetThreadPriority(thread: isize, priority: i32) -> i32;
-    fn GetThreadPriorityBoost(thread: isize, disabled: *mut i32) -> i32;
-    fn SetThreadPriorityBoost(thread: isize, disable: i32) -> i32;
-}
-
-#[cfg(windows)]
-impl IoPriority {
-    fn raise() -> Self {
-        // SAFETY: plain Win32 calls on the current thread's pseudo-handle
-        unsafe {
-            let t = GetCurrentThread();
-            let old = GetThreadPriority(t);
-            let mut no_boost = 0;
-            GetThreadPriorityBoost(t, &mut no_boost);
-            if old < 0 {
-                SetThreadPriority(t, 0);
-            }
-            if no_boost != 0 {
-                SetThreadPriorityBoost(t, 0);
-            }
-            IoPriority(old, no_boost)
-        }
-    }
-}
-
-#[cfg(windows)]
-impl Drop for IoPriority {
-    fn drop(&mut self) {
-        // SAFETY: as above
-        unsafe {
-            if self.0 < 0 {
-                SetThreadPriority(GetCurrentThread(), self.0);
-            }
-            if self.1 != 0 {
-                SetThreadPriorityBoost(GetCurrentThread(), 1);
-            }
-        }
-    }
-}
-
 /// No thread-priority boost to borrow on Linux: a no-op.
-#[cfg(not(windows))]
 impl IoPriority {
     fn raise() -> Self {
         IoPriority(0, 0)

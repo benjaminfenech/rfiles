@@ -1,7 +1,6 @@
 //! Decodes an image the way DirectLook does and prints its size, timing and EXIF field count:
 //! `cargo run -p rf-linux --example look_decode -- <file> [max side] [out.png]`
 
-#[cfg(unix)]
 fn main() -> anyhow::Result<()> {
     use rf_linux::look::decode;
     let mut a = std::env::args().skip(1);
@@ -39,7 +38,3 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(not(unix))]
-fn main() {
-    eprintln!("this example is for the Linux build (rf-linux)");
-}

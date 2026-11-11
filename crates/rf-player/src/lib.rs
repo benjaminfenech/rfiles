@@ -4,17 +4,12 @@ mod audio_out;
 mod clock;
 mod convert;
 /// Linux only: FFmpeg for what FilmCraft can't play.
-#[cfg(target_os = "linux")]
 pub mod ffmpeg;
 mod player;
-#[cfg(windows)]
-mod present;
 mod source;
 
-pub use audio_out::{AudioSink, NullSink, wasapi_sink};
+pub use audio_out::{AudioSink, NullSink, cpal_sink};
 pub use clock::Clock;
 pub use convert::to_bgra;
 pub use player::{Player, PlayerState};
-#[cfg(windows)]
-pub use present::{Presenter, render_offscreen};
 pub use source::{Frame, Media, Planes, can_open, open};

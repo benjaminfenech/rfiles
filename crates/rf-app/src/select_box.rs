@@ -1,6 +1,6 @@
 //! Select box: a bordered field showing the current value with up/down chevrons; its options
-//! open in an Acrylic popup right under it (the material of the context menus), at least as
-//! wide as the field, the chosen one ticked on the right. More than [`SEARCH_FROM`] options get
+//! open in a panel right under it (drawn on the workspace's top layer), at least as wide as
+//! the field, the chosen one ticked on the right. More than [`SEARCH_FROM`] options get
 //! a search box. Keys: ↑ ↓, PgUp/PgDn, Home/End, Enter, Esc. Clicking elsewhere closes it.
 
 use std::cell::Cell;
@@ -37,10 +37,7 @@ impl Choice {
     }
 }
 
-/// The open popup (one at a time), and which field closed one last: a click on the field that
-/// owns the open popup first deactivates the popup (closing it); that same click must not
-/// reopen it.
-/// A dropdown drawn inside its owner window (Linux; see `sys::separate_popups`).
+/// The open dropdown (one at a time), drawn inside its owner window.
 struct Inline {
     owner: AnyWindowHandle,
     view: Entity<SelectView>,
@@ -50,9 +47,10 @@ struct Inline {
     restore: Option<FocusHandle>,
 }
 
+/// The open dropdown, and which field closed one last: a click on the field that owns the open
+/// dropdown first dismisses it; that same click must not reopen it.
 #[derive(Default)]
 struct Host {
-    open: Option<AnyWindowHandle>,
     inline: Option<Inline>,
     closed: Option<(SharedString, Instant)>,
 }
@@ -146,7 +144,7 @@ fn open(key: SharedString, field: Bounds<Pixels>, choices: Vec<Choice>, window: 
     }
     close_open(cx);
     let search = choices.len() > SEARCH_FROM;
-    // wide enough for the longest label (estimated: the popup is sized before it is drawn)
+    // wide enough for the longest label (estimated: the list is sized before it is drawn)
     let longest = choices.iter().map(|c| c.label.chars().count()).max().unwrap_or(0) as f32;
     let fw = f32::from(field.size.width);
     let w = (longest * 7.4 + 64.).clamp(fw.max(180.), fw.max(440.));
@@ -154,68 +152,21 @@ fn open(key: SharedString, field: Bounds<Pixels>, choices: Vec<Choice>, window: 
     let h = list_h + 2. * PAD + if search { SEARCH_H } else { 0. };
 
     let main = window.window_handle();
-    if !crate::sys::separate_popups() {
-        // inside the window: below the field when it fits, else above, kept on screen
-        let vp = window.viewport_size();
-        let (vw, vh) = (f32::from(vp.width), f32::from(vp.height));
-        let fx = f32::from(field.origin.x);
-        let ftop = f32::from(field.origin.y);
-        let fbottom = ftop + f32::from(field.size.height);
-        let x = fx.clamp(EDGE, (vw - EDGE - w).max(EDGE));
-        let y = if fbottom + 4. + h <= vh - EDGE { fbottom + 4. } else { (ftop - 4. - h).max(EDGE) };
-        let restore = window.focused(cx);
-        let view = cx.new(|cx| SelectView::new(key, choices, search, main, window, cx));
-        cx.default_global::<Host>().inline = Some(Inline { owner: main, view, bounds: Bounds::new(point(px(x), px(y)), size(px(w), px(h))), restore });
-        window.refresh();
-        return;
-    }
-    let win = window.bounds();
-    let area = window.display(cx).map(|d| d.bounds()).unwrap_or(win);
-    let (ax, ay) = (f32::from(area.origin.x), f32::from(area.origin.y));
-    let (right, bottom) = (ax + f32::from(area.size.width), ay + f32::from(area.size.height));
-    let fx = f32::from(win.origin.x + field.origin.x);
-    let ftop = f32::from(win.origin.y + field.origin.y);
+    // below the field when it fits, else above, kept in the window
+    let vp = window.viewport_size();
+    let (vw, vh) = (f32::from(vp.width), f32::from(vp.height));
+    let fx = f32::from(field.origin.x);
+    let ftop = f32::from(field.origin.y);
     let fbottom = ftop + f32::from(field.size.height);
-    let x = fx.clamp(ax + EDGE, (right - EDGE - w).max(ax + EDGE));
-    let y = if fbottom + 4. + h <= bottom - EDGE { fbottom + 4. } else { (ftop - 4. - h).max(ay + EDGE) };
-
-    let dark = match crate::settings::theme_override() {
-        crate::settings::ThemePref::Light => false,
-        crate::settings::ThemePref::Dark => true,
-        crate::settings::ThemePref::System => matches!(cx.window_appearance(), WindowAppearance::Dark | WindowAppearance::VibrantDark),
-    };
-    let opts = WindowOptions {
-        window_bounds: Some(WindowBounds::Windowed(Bounds::new(point(px(x), px(y)), size(px(w), px(h))))),
-        titlebar: None,
-        focus: true,
-        show: true,
-        kind: WindowKind::PopUp,
-        is_movable: false,
-        is_resizable: false,
-        is_minimizable: false,
-        window_background: WindowBackgroundAppearance::Blurred,
-        ..Default::default()
-    };
-    let opened = cx.open_window(opts, move |w, cx| {
-        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-        if let Ok(h) = w.window_handle() {
-            if let RawWindowHandle::Win32(h) = h.as_raw() {
-                rf_linux::window::set_dark_mode(h.hwnd.get(), dark);
-            }
-        }
-        cx.new(|cx| SelectView::new(key, choices, search, main, w, cx))
-    });
-    match opened {
-        Ok(h) => {
-            // the app window keeps its active look while the popup has the keyboard
-            gpui_windows::KEEP_ACTIVE_LOOK.store(true, std::sync::atomic::Ordering::Relaxed);
-            cx.default_global::<Host>().open = Some(h.into());
-        }
-        Err(e) => log::warn!("select popup: {e:#}"),
-    }
+    let x = fx.clamp(EDGE, (vw - EDGE - w).max(EDGE));
+    let y = if fbottom + 4. + h <= vh - EDGE { fbottom + 4. } else { (ftop - 4. - h).max(EDGE) };
+    let restore = window.focused(cx);
+    let view = cx.new(|cx| SelectView::new(key, choices, search, main, window, cx));
+    cx.default_global::<Host>().inline = Some(Inline { owner: main, view, bounds: Bounds::new(point(px(x), px(y)), size(px(w), px(h))), restore });
+    window.refresh();
 }
 
-/// Closes the open popup (if any), after the current update.
+/// Closes the open dropdown (if any), after the current update.
 fn close_open(cx: &mut App) {
     if let Some(i) = cx.default_global::<Host>().inline.take() {
         cx.defer(move |cx| {
@@ -226,13 +177,7 @@ fn close_open(cx: &mut App) {
                 window.refresh();
             });
         });
-        return;
     }
-    let Some(w) = cx.default_global::<Host>().open.take() else { return };
-    gpui_windows::KEEP_ACTIVE_LOOK.store(false, std::sync::atomic::Ordering::Relaxed);
-    cx.defer(move |cx| {
-        let _ = w.update(cx, |_, window, _| window.remove_window());
-    });
 }
 
 /// The in-window dropdown, if one is open in `window`: a click-away layer with the list on it.

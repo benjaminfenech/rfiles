@@ -10,13 +10,6 @@ pub enum Location {
     Settings,
     /// All files carrying a tag (see `tags::TagStore`).
     Tag(u32),
-    /// A Windows library (`.library-ms`), shown as the merged contents of its folders.
-    Library { file: PathBuf, name: String },
-    /// A folder of the shell namespace without a file-system path (an MTP phone under This PC,
-    /// Phone Link's mobile devices, Network…). `parsing` is the desktop-absolute parsing name
-    /// the shell takes back; `name` is what it shows (may be empty: then the last part of
-    /// `parsing` stands in until the shell has been asked).
-    Shell { parsing: String, name: String },
     /// Where the space goes under a folder or drive (the disk usage view).
     DiskUsage(PathBuf),
 }
@@ -95,10 +88,7 @@ impl Location {
             },
             Location::Search { root, .. } => Some(Location::Path(root.clone())),
             Location::DiskUsage(p) => Some(Location::Path(p.clone())),
-            Location::RecycleBin | Location::Settings | Location::Tag(_) | Location::Library { .. } => {
-                Some(Location::Home)
-            }
-            Location::Shell { parsing, .. } => Some(shell_parent(parsing)),
+            Location::RecycleBin | Location::Settings | Location::Tag(_) => Some(Location::Home),
             Location::Home => None,
         }
     }
@@ -110,44 +100,10 @@ impl Location {
             Location::Settings => "Ayarlar".into(),
             Location::Tag(_) => "Etiket".into(),
             Location::Search { query, .. } => format!("Arama: {query}"),
-            Location::Library { name, .. } => name.clone(),
-            Location::Shell { parsing, name } if name.is_empty() => shell_last_segment(parsing).to_string(),
-            Location::Shell { name, .. } => name.clone(),
             Location::DiskUsage(p) => format!("Disk kullanımı — {}", display_name(p)),
             Location::Path(p) => display_name(p),
         }
     }
-}
-
-/// Last part of a shell parsing name (`::{GUID}\Foo` → `Foo`).
-pub fn shell_last_segment(parsing: &str) -> &str {
-    let t = parsing.trim_end_matches('\\');
-    t.rsplit('\\').next().unwrap_or(t)
-}
-
-const THIS_PC_PARSING: &str = "::{20d04fe0-3aea-1069-a2d8-08002b30309d}";
-
-/// The folder above a shell parsing name, by its text: `…\Internal storage\DCIM` →
-/// `…\Internal storage`. A device's own name starts with `\\?\` (`::{This PC}\\?\usb#…`), so a
-/// cut that would land inside that prefix goes to what precedes it. This PC and the roots of
-/// the namespace go to Home.
-pub fn shell_parent(parsing: &str) -> Location {
-    let t = parsing.trim_end_matches('\\');
-    let up = match t.rfind('\\') {
-        None => "",
-        Some(cut) => {
-            let head = &t[..cut];
-            if head.ends_with(r"\\?") || head.ends_with('\\') {
-                head.trim_end_matches(['?', '\\'])
-            } else {
-                head
-            }
-        }
-    };
-    if up.is_empty() || up.eq_ignore_ascii_case(THIS_PC_PARSING) {
-        return Location::Home;
-    }
-    Location::Shell { parsing: up.to_string(), name: String::new() }
 }
 
 fn is_ftp_root(p: &Path) -> bool {
@@ -294,43 +250,6 @@ mod tests {
     }
 
     #[test]
-    fn shell_locations_go_up_the_namespace() {
-        let sh = |p: &str| Location::Shell { parsing: p.into(), name: String::new() };
-        let pc = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}";
-        // a root of the namespace → Home
-        assert_eq!(sh("::{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}").parent(), Some(Location::Home));
-        // a device under This PC → Home (our This PC)
-        let dev = format!(r"{pc}\\?\usb#vid_04e8&pid_6860#abc#{{6ac27878-a6fa-4155-ba85-f98f491d4f33}}");
-        assert_eq!(sh(&dev).parent(), Some(Location::Home));
-        // storage and folders on it go up one level at a time
-        let storage = format!(r"{dev}\SID-{{10001,,128}}");
-        let dcim = format!(r"{storage}\{{0001}}");
-        assert_eq!(sh(&dcim).parent(), Some(sh(&storage)));
-        assert_eq!(sh(&storage).parent(), Some(sh(&dev)));
-        assert_eq!(sh(&format!(r"{storage}\")).parent(), Some(sh(&dev)));
-        assert_eq!(sh(r"::{A}\Docs").parent(), Some(sh("::{A}")));
-    }
-
-    #[test]
-    fn shell_titles() {
-        let l = |name: &str| Location::Shell { parsing: r"::{A}\Foo".into(), name: name.into() };
-        assert_eq!(l("Internal storage").title(), "Internal storage");
-        assert_eq!(l("").title(), "Foo");
-        assert_eq!(l("x").path(), None);
-        assert_eq!(l("x").cleaned(), l("x"));
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn non_ascii_paths_do_not_panic() {
-        let up = |s: &str| Location::Path(PathBuf::from(s)).parent();
-        assert_eq!(up(r"C:\Öğrenci\x"), Some(Location::Path(PathBuf::from(r"C:\Öğrenci"))));
-        assert_eq!(up(r"C:\aaç"), Some(Location::Path(PathBuf::from(r"C:\"))));
-        assert_eq!(up(r"\\wsl.localhost\Ubuntu"), Some(Location::Home));
-        assert_eq!(up("ftp://host"), Some(Location::Home));
-    }
-
-    #[test]
     fn redacts() {
         assert_eq!(redact_credentials("ftp://u:pw@h/x"), "ftp://u@h/x");
         assert_eq!(redact_credentials("ftp://u@h/x"), "ftp://u@h/x");
@@ -338,44 +257,9 @@ mod tests {
         assert_eq!(redact_credentials(r"C:\a@b:c"), r"C:\a@b:c");
     }
 
-    #[cfg(windows)]
-    #[test]
-    fn unc_up() {
-        let up = |s: &str| Location::Path(PathBuf::from(s)).parent();
-        assert_eq!(up(r"\\nas\share"), Some(Location::Path(PathBuf::from(r"\\nas"))));
-        assert_eq!(up(r"\\nas\share\"), Some(Location::Path(PathBuf::from(r"\\nas"))));
-        assert_eq!(up(r"\\nas\share\dir"), Some(Location::Path(PathBuf::from(r"\\nas\share\"))));
-        assert_eq!(up(r"C:\x"), Some(Location::Path(PathBuf::from(r"C:\"))));
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn back_forward() {
-        let mut h = History::new(Location::Home);
-        h.navigate(Location::Path("C:\\".into()));
-        h.navigate(Location::Path("C:\\Users".into()));
-        assert_eq!(h.back(), Some(&Location::Path("C:\\".into())));
-        assert!(h.can_forward());
-        h.navigate(Location::Path("D:\\".into()));
-        assert!(!h.can_forward());
-        assert_eq!(h.back(), Some(&Location::Path("C:\\".into())));
-        assert_eq!(h.back(), Some(&Location::Home));
-        assert_eq!(h.back(), None);
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn parent_of_root_is_home() {
-        assert_eq!(Location::Path("C:\\".into()).parent(), Some(Location::Home));
-        assert_eq!(
-            Location::Path("C:\\Users".into()).parent(),
-            Some(Location::Path("C:\\".into()))
-        );
-        assert_eq!(display_name(Path::new("C:\\")), "C:");
-    }
 }
 
-#[cfg(all(test, not(windows)))]
+#[cfg(test)]
 mod unix_tests {
     use super::*;
 
@@ -405,64 +289,10 @@ mod unix_tests {
     }
 }
 
-/// Tidies a path typed, pasted or passed in, the way Explorer reads it: `/` becomes a
-/// backslash, doubled separators collapse, `.` and `..` resolve lexically, the drive letter
-/// is upper case, and there's no trailing separator except on a root. URLs (`ftp://…`),
-/// shell names (`shell:…`, `::{…}`), device / verbatim paths and relative paths are left
-/// as they are.
-#[cfg(windows)]
-pub fn clean_path(p: &Path) -> PathBuf {
-    const B: char = '\\';
-    let Some(s) = p.to_str() else { return p.to_path_buf() };
-    let lower = s.to_ascii_lowercase();
-    let verbatim = s.starts_with("\\\\?\\") || s.starts_with("\\\\.\\");
-    if s.contains("://") || lower.starts_with("shell:") || s.starts_with("::") || verbatim {
-        return p.to_path_buf();
-    }
-    let s = s.replace('/', "\\");
-    // the prefix: `C:` or a UNC `\\server\share`
-    let (prefix, rest) = if let Some(body) = s.strip_prefix("\\\\") {
-        let mut it = body.split(B).filter(|x| !x.is_empty());
-        match (it.next(), it.next()) {
-            (Some(server), Some(share)) => {
-                let after_share = body.find(share).map_or(body.len(), |i| i + share.len());
-                (format!("{B}{B}{server}{B}{share}"), body[after_share..].to_string())
-            }
-            (Some(server), None) => return PathBuf::from(format!("{B}{B}{server}")),
-            _ => return p.to_path_buf(),
-        }
-    } else if s.len() >= 2 && s.as_bytes()[1] == b':' && s.as_bytes()[0].is_ascii_alphabetic() {
-        (s[..2].to_ascii_uppercase(), s[2..].to_string())
-    } else {
-        return PathBuf::from(s); // relative: nothing to anchor `..` to
-    };
-    let mut parts: Vec<&str> = Vec::new();
-    for c in rest.split(B) {
-        match c {
-            "" | "." => {}
-            ".." => {
-                parts.pop();
-            }
-            c => parts.push(c),
-        }
-    }
-    let mut out = prefix;
-    let unc = out.starts_with(B);
-    if parts.is_empty() && !unc {
-        out.push(B);
-    }
-    for c in parts {
-        out.push(B);
-        out.push_str(c);
-    }
-    PathBuf::from(out)
-}
-
 /// Tidies a path typed, pasted or passed in: doubled `/` collapse, `.` and `..` resolve
 /// lexically (`..` never climbs above `/`), and there's no trailing `/` except on the root.
 /// URLs (`ftp://…`) and relative paths are left as they are. Backslashes are ordinary
 /// file-name characters on Unix and are kept.
-#[cfg(not(windows))]
 pub fn clean_path(p: &Path) -> PathBuf {
     let Some(s) = p.to_str() else { return p.to_path_buf() };
     if s.contains("://") || !s.starts_with('/') {
@@ -492,27 +322,6 @@ pub fn clean_path(p: &Path) -> PathBuf {
 mod clean_tests {
     use super::*;
 
-    #[cfg(windows)]
-    #[test]
-    fn clean_paths() {
-        let c = |s: &str| clean_path(Path::new(s)).to_string_lossy().replace('\\', "|");
-        assert_eq!(c("C:/Users/x/./y/../z/"), "C:|Users|x|z");
-        assert_eq!(c("c:||a||b".replace('|', "\\").as_str()), "C:|a|b");
-        assert_eq!(c("d:"), "D:|");
-        assert_eq!(c("D:/"), "D:|");
-        assert_eq!(c("C:|..|..".replace('|', "\\").as_str()), "C:|");
-        assert_eq!(c("//server/share/a/b/"), "||server|share|a|b");
-        assert_eq!(c("||server|share".replace('|', "\\").as_str()), "||server|share");
-        assert_eq!(c("||server".replace('|', "\\").as_str()), "||server");
-        assert_eq!(c("ftp://host/a/b"), "ftp://host/a/b");
-        assert_eq!(c("shell:Downloads"), "shell:Downloads");
-        assert_eq!(c("::{20D04FE0-3AEA-1069-A2D8-08002B30309D}"), "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}");
-        assert_eq!(c("||?|C:|a/b".replace('|', "\\").as_str()), "||?|C:|a/b");
-        assert_eq!(c("C:/Fotoğraflar/Tatil"), "C:|Fotoğraflar|Tatil");
-        assert_eq!(c("klasör/alt"), "klasör|alt");
-    }
-
-    #[cfg(not(windows))]
     #[test]
     fn clean_unix_paths() {
         let c = |s: &str| clean_path(Path::new(s)).to_string_lossy().into_owned();

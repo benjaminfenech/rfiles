@@ -1,6 +1,5 @@
 //! Opens a network location the way the app does and lists it:
 //! `cargo run -p rf-linux --example remote -- smb://server/share | sftp://host/path | ftp://…`
-#[cfg(unix)]
 fn main() -> anyhow::Result<()> {
     let url = std::env::args().nth(1).unwrap_or_default();
     let dir = rf_linux::remote::mount(&url)?;
@@ -11,5 +10,3 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(not(unix))]
-fn main() {}

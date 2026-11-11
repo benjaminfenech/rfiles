@@ -1406,7 +1406,7 @@ mod tests {
         std::fs::create_dir_all(dst.join("kaynak")).unwrap();
         std::fs::write(dst.join("kaynak/eski.bin"), b"eski hali").unwrap();
         journals();
-        let t = answering(Resolve::Replace);
+        let _t = answering(Resolve::Replace);
         let mut p = plan(std::slice::from_ref(&src), &dst, false);
         p.resolve(&vec![Resolve::Replace; p.conflicts.len()]);
         p.jobs = order(std::mem::take(&mut p.jobs));

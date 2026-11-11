@@ -1,6 +1,5 @@
 //! Walks a folder with the disk usage engine (the "Show disk usage" view's) and prints the time,
 //! the totals and the biggest entries: `cargo run --release -p rf-linux --example diskusage -- ~`
-#[cfg(unix)]
 fn main() {
     use rf_linux::diskusage::{DiskTree, Metric, Progress};
     use std::sync::atomic::AtomicBool;
@@ -25,5 +24,3 @@ fn main() {
     }
 }
 
-#[cfg(not(unix))]
-fn main() {}

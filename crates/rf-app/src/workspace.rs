@@ -205,18 +205,13 @@ pub const NEW_WINDOW_ARG: &str = "--new-window";
 /// selected in place, or its folder opened when no window shows it.
 pub const SELECT_HERE_PREFIX: &str = "\u{1}select-here:";
 
-/// A second launch on a shell folder (a phone, Network…) reaches the running window as this
-/// prefix plus the folder's parsing name (and, in a saved session, a tab and its name).
-pub const SHELL_PREFIX: &str = "rfiles-shell:";
-
-/// How a tab is kept in the saved session: a folder's path, a search's folder, the Recycle Bin
-/// and shell folders (a phone…) by name; other places come back as Home ("").
+/// How a tab is kept in the saved session: a folder's path, a search's folder, the Recycle Bin;
+/// other places come back as Home ("").
 fn session_text(loc: &Location) -> String {
     match loc {
         Location::Path(p) => rf_core::history::redact_credentials(&p.to_string_lossy()),
         Location::Search { root, .. } => root.to_string_lossy().into_owned(),
         Location::RecycleBin => "shell:RecycleBinFolder".into(),
-        Location::Shell { parsing, name } => format!("{SHELL_PREFIX}{parsing}\t{name}"),
         _ => String::new(),
     }
 }
@@ -224,10 +219,6 @@ fn session_text(loc: &Location) -> String {
 /// What a launch message opens: a folder (or Home), and maybe a name to select there.
 pub fn parse_launch(msg: &str) -> (Location, Option<String>) {
     let m = msg.trim();
-    if let Some(rest) = m.strip_prefix(SHELL_PREFIX) {
-        let (parsing, name) = rest.split_once('\t').unwrap_or((rest, ""));
-        return (Location::Shell { parsing: parsing.to_string(), name: name.to_string() }, None);
-    }
     if let Some(loc) = Location::from_shell_name(m) {
         return (loc, None);
     }
@@ -443,22 +434,6 @@ impl Workspace {
             }
         }));
 
-        // Repaint the status-bar renderer badge when the hybrid renderer switches devices.
-        cx.spawn(async move |this, cx| {
-            let mut last = (gpui_windows::hybrid::switch_count(), gpui_windows::hybrid::mode());
-            loop {
-                cx.background_executor().timer(std::time::Duration::from_millis(800)).await;
-                let now = (gpui_windows::hybrid::switch_count(), gpui_windows::hybrid::mode());
-                if now != last {
-                    last = now;
-                    if this.update(cx, |_, cx| cx.notify()).is_err() {
-                        break;
-                    }
-                }
-            }
-        })
-        .detach();
-
         cx.observe_global::<crate::settings::Settings>(|this, cx| {
             let s = cx.global::<crate::settings::Settings>();
             // a file dialog keeps its own preview state (shown by default)
@@ -469,9 +444,7 @@ impl Workspace {
             cx.notify();
         })
         .detach();
-        // the hosted preview (its own window) follows the app window when it moves
-        cx.observe_window_bounds(window, |this: &mut Self, _, cx| {
-            this.preview.update(cx, |pv, _| pv.invalidate_host());
+        cx.observe_window_bounds(window, |_: &mut Self, _, cx| {
             cx.notify();
         })
         .detach();
@@ -996,10 +969,7 @@ impl Workspace {
     }
 
     fn close_quick_look(&mut self, cx: &mut Context<Self>) {
-        if let Some(ql) = self.quick_look.take() {
-            // release the hosted preview window before the pane takes it back
-            ql.update(cx, |pv, _| pv.set_occluded(true));
-        }
+        self.quick_look = None;
         crate::folder_view::QUICK_LOOK_OPEN.store(false, std::sync::atomic::Ordering::Relaxed);
         cx.notify();
     }
@@ -2039,7 +2009,7 @@ impl Workspace {
         let (sel, _, _) = tab.selection_summary();
         let has_sel = sel > 0;
         // a phone's folder is read-only here: changing commands are greyed out, not refused later
-        let writable_sel = has_sel && !matches!(tab.location(), Location::Shell { .. });
+        let writable_sel = has_sel ;
         let preview_open = self.preview_open;
         let filter_on = self.filter_bar;
         let paste_ok = in_folder && rf_linux::clipboard::has_files();
@@ -2166,7 +2136,6 @@ impl Workspace {
         let crumbs: Vec<(String, Location)> = match loc {
             Location::Path(path) | Location::Search { root: path, .. } => breadcrumbs(path),
             // the shell's own name for the folder (the location may carry none)
-            Location::Shell { .. } => vec![(self.active_tab().read(cx).title(cx), loc.clone())],
             Location::DiskUsage(path) => vec![(crate::disk_usage::title(path), loc.clone())],
             other => vec![(crate::i18n::td(&other.title()), other.clone())],
         };
@@ -2506,16 +2475,6 @@ impl Workspace {
                 col = col.child(self.sidebar_item(("sb-cloud", i).into(), c.icon, p.accent, crate::i18n::td(&c.title), loc, active, None, p, cx));
             }
         }
-        let libraries = self.places.read(cx).libraries.clone();
-        // Libraries duplicate the pinned folders: off unless turned on in Settings
-        if !libraries.is_empty() && cx.global::<crate::settings::Settings>().show_libraries {
-            col = col.child(header(t!("Kütüphaneler")));
-            for (i, l) in libraries.into_iter().enumerate() {
-                let loc = Location::Library { file: l.file.clone(), name: l.name.clone() };
-                let active = cur == loc;
-                col = col.child(self.sidebar_item(("sb-lib", i).into(), L::Library, p.accent, l.name, loc, active, None, p, cx));
-            }
-        }
         let network = self.places.read(cx).network.clone();
         if (!network.is_empty() || !shares.is_empty()) && shown("network") {
             col = col.child(header(t!("Ağ")));
@@ -2587,7 +2546,7 @@ impl Workspace {
         let (sel, sel_size, has_dir) = tab.selection_summary();
         let loading = tab.loading;
         let ms = tab.load_ms;
-        let in_folder = tab.location().path().is_some() || matches!(tab.location(), Location::Tag(_) | Location::Library { .. });
+        let in_folder = tab.location().path().is_some() || matches!(tab.location(), Location::Tag(_));
         let git = tab.git.clone();
         // Settings → Developer tools → "Open in editor" button
         let ide_button = {
@@ -2689,8 +2648,7 @@ impl Workspace {
                             )
                     }))
                     .children(ide_button)
-                    .children(ms.filter(|_| in_folder && perf).map(|ms| format!("{ms} ms")))
-                    .children(perf.then(|| render_backend_badge(p))),
+                    .children(ms.filter(|_| in_folder && perf).map(|ms| format!("{ms} ms"))),
             )
     }
 }
@@ -2784,40 +2742,6 @@ fn drop_files(paths: &ExternalPaths, dest: PathBuf, cx: &mut App) {
     let (ctrl, shift) = (crate::sys::ctrl_down(), crate::sys::shift_down());
     let kind = rf_linux::dnd::default_transfer(&sources, &dest, ctrl, shift);
     crate::status_center::transfer(cx, kind, sources, dest);
-}
-
-/// Shows which device draws the window (hybrid renderer) and cycles Auto → GPU → CPU on click.
-fn render_backend_badge(p: &Palette) -> impl IntoElement + use<> {
-    use gpui_windows::hybrid::{self, RendererMode};
-    let mode = hybrid::mode();
-    let backend = hybrid::current_backend_label();
-    let mode_label = match mode {
-        RendererMode::Auto => t!("Oto"),
-        RendererMode::Gpu => t!("Sabit"),
-        RendererMode::Cpu => t!("Sabit"),
-    };
-    let is_cpu = backend == "CPU";
-    h_flex()
-        .id("renderer-badge")
-        .px_2()
-        .py_0p5()
-        .gap_1()
-        .items_center()
-        .rounded_full()
-        .bg(p.hover)
-        .hover(|s| s.bg(p.pressed))
-        .cursor_pointer()
-        .child(Icon::new(if is_cpu { L::Cpu } else { L::Gauge }).size(px(12.)).text_color(if is_cpu { p.danger } else { p.accent }))
-        .child(format!("{backend} · {mode_label}"))
-        .on_click(|_, _, cx| {
-            use crate::settings::RendererPref;
-            let next = match hybrid::mode() {
-                RendererMode::Auto => RendererPref::Gpu,
-                RendererMode::Gpu => RendererPref::Cpu,
-                RendererMode::Cpu => RendererPref::Auto,
-            };
-            crate::settings::update(cx, |s| s.renderer = next);
-        })
 }
 
 /// "C:\Users\x" → [("C:", C:\), ("Users", C:\Users), ("x", C:\Users\x)]
@@ -2990,7 +2914,7 @@ impl Render for Workspace {
         let commandbar = self.render_commandbar(&p, cx);
         let filter_strip = self.render_filter_bar(&p, window, cx);
         // the command bar acts on folder contents: not on Home, Settings, the Recycle Bin…
-        let show_commandbar = matches!(self.active_tab().read(cx).location(), Location::Path(_) | Location::Search { .. } | Location::Library { .. } | Location::Tag(_) | Location::Shell { .. });
+        let show_commandbar = matches!(self.active_tab().read(cx).location(), Location::Path(_) | Location::Search { .. } | Location::Tag(_));
         // Adaptive layout (as Files does): a narrow window gives the list its room first by
         // hiding the preview, then the sidebar. The settings themselves are not changed.
         const LIST_MIN: f32 = 380.;
@@ -3085,11 +3009,6 @@ impl Render for Workspace {
                 .child(self.shelf.clone())
         });
         let pane_shown = self.preview_open && self.compact.is_none() && room_for_preview && self.active_tab().read(cx).location().path().is_some();
-        // the hosted preview handler is a separate window: hide it whenever something of ours
-        // could be under it (pane closed, a dialog or the Status Center open, palette, bulk rename)
-        let overlay_open = crate::prompt::current(window, cx).is_some() || crate::conflict_dialog::current(window, cx).is_some() || self.ops.read(cx).open || self.palette.is_some() || self.bulk.is_some();
-        let covered = !pane_shown || overlay_open || self.quick_look.is_some();
-        self.preview.update(cx, |pv, _| pv.set_occluded(covered));
         // Hızlı Bakış penceresi uygulamadan açıldıysa odaktaki öğeyi izler (oklar burada çalışır)
         let look_open = crate::folder_view::QUICK_LOOK_OPEN.load(std::sync::atomic::Ordering::Relaxed);
         if look_open && window.is_window_active() {
@@ -3107,10 +3026,7 @@ impl Render for Workspace {
             self.close_quick_look(cx);
         }
         let quick_look_layer = self.quick_look.clone().map(|ql| {
-            ql.update(cx, |pv, cx| {
-                pv.set_occluded(overlay_open);
-                pv.set_target(ql_target, cx);
-            });
+            ql.update(cx, |pv, cx| pv.set_target(ql_target, cx));
             div()
                 .id("quick-look")
                 .absolute()
@@ -3360,7 +3276,7 @@ impl Render for Workspace {
             .children(crate::fluent_menu::current(window, cx))
             .children(crate::prompt::current(window, cx))
             .children(crate::conflict_dialog::current(window, cx))
-            // in-window flyouts and dropdowns (Linux; see sys::separate_popups), over dialogs
+            // flyouts and dropdowns, over dialogs
             .children(crate::flyout::current(window, cx))
             .children(crate::select_box::current(window, cx))
             .children(self.bulk.clone().map(|br| {
@@ -3416,11 +3332,7 @@ mod launch_tests {
 
     #[test]
     fn session_tabs_come_back_as_they_were() {
-        let phone = Location::Shell {
-            parsing: r"::{20D04FE0-3AEA-1069-A2D8-08002B30309D}\\?\usb#vid_04e8&pid_6860#r58n#{6ac27878-a6fa-4155-ba85-f98f491d4f33}".into(),
-            name: "Galaxy S24".into(),
-        };
-        for loc in [Location::Path(PathBuf::from(r"C:\Kullanıcılar\Özer")), Location::RecycleBin, phone] {
+        for loc in [Location::Path(PathBuf::from("/home/özer/Belgeler")), Location::RecycleBin] {
             assert_eq!(parse_launch(&super::session_text(&loc)).0, loc);
         }
         // places a session can't keep come back as Home

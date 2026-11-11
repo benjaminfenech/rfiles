@@ -72,7 +72,7 @@ pub fn watch_dir_changes(dir: &Path, debounce: Duration, on_change: impl Fn(Chan
     std::thread::Builder::new().name("rf-watch".into()).spawn(move || {
         while let Ok(first) = rx.recv() {
             let mut ch = Changes::default();
-            let mut add = |s: Seen, ch: &mut Changes| match s {
+            let add = |s: Seen, ch: &mut Changes| match s {
                 Seen::Rescan => ch.rescan = true,
                 Seen::Name(n) => {
                     if !ch.rescan && !ch.names.contains(&n) {

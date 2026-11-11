@@ -33,12 +33,6 @@ pub struct Preview {
     size_cancel: std::sync::Arc<std::sync::atomic::AtomicBool>,
     images: Entity<ImageCache>,
     _task: Option<Task<()>>,
-    /// Extension → a Windows preview handler exists (looked up off the UI thread).
-    handlers: std::collections::HashMap<String, bool>,
-    /// What the hosted preview handler currently shows: (file, screen rect).
-    host: Option<(PathBuf, [i32; 4])>,
-    /// Pane hidden or covered by a dialog/flyout: the host window must not show.
-    occluded: bool,
     /// Quick Look (Space): one big visual and a one-line summary instead of the pane layout.
     large: bool,
     /// Quick Look: size of the visual box (measured while painting).
@@ -46,9 +40,6 @@ pub struct Preview {
     /// Archive top level / shortcut target for the current target.
     extra: Option<(PathBuf, Extra)>,
     _extra_task: Option<Task<()>>,
-    /// Our own audio / video player for the current target (Media Foundation, in the host
-    /// window): created on the first Play, never by just selecting a file.
-    player: Option<PlayerUi>,
     /// The last thumbnail shown, and when the target last changed: while the next file's
     /// thumbnail loads, the previous one stays up briefly instead of flashing the type icon.
     last_thumb: Option<std::sync::Arc<RenderImage>>,
@@ -61,27 +52,6 @@ pub struct Preview {
 
 /// How long the previous thumbnail may stand in for one that is still loading.
 const HOLD: std::time::Duration = std::time::Duration::from_millis(300);
-
-struct PlayerUi {
-    path: PathBuf,
-    /// Play was pressed at least once: a video now shows in the host window.
-    started: bool,
-    /// The video's screen rect last sent to the host.
-    rect: Option<[i32; 4]>,
-    state: Option<rf_linux::preview_host::MediaState>,
-    /// The seek bar's bounds (window coordinates), for click-to-seek.
-    bar: std::rc::Rc<std::cell::Cell<Option<Bounds<Pixels>>>>,
-    _poll: Option<Task<()>>,
-}
-
-/// A closing window (or tab) must not leave audio playing: the app can stay in the tray.
-impl Drop for Preview {
-    fn drop(&mut self) {
-        if self.player.as_ref().is_some_and(|p| p.started) {
-            rf_linux::sta::run(|_| rf_linux::preview_host::hide());
-        }
-    }
-}
 
 enum Extra {
     /// (name, is folder, size) of the top-level entries, and how many there are in total.
@@ -110,14 +80,10 @@ impl Preview {
             size_cancel: Default::default(),
             images,
             _task: None,
-            handlers: Default::default(),
-            host: None,
-            occluded: false,
             large: false,
             ql_box: Default::default(),
             extra: None,
             _extra_task: None,
-            player: None,
             last_thumb: None,
             archive_copy: None,
             _archive_task: None,
@@ -152,45 +118,8 @@ impl Preview {
         let p = Palette::for_window(window);
         let cat = icons::category(&e);
         let dir = path.parent().map(Path::to_path_buf).unwrap_or_default();
-        let handler = !self.occluded && self.wants_handler(&path, &e, cx);
         let text = self.text.as_ref().filter(|(tp, _)| *tp == path).map(|(_, t)| t.clone());
-        // audio / video: our player, as in the pane
-        let playable = !handler && self.playable(&path, &e);
-        let video = matches!(cat, Category::Video);
-        let video_on = playable && video && !self.occluded && self.player.as_ref().is_some_and(|pl| pl.path == path && pl.started);
-        let visual: AnyElement = if video_on {
-            let me = cx.entity().downgrade();
-            let hp = path.clone();
-            div()
-                .size_full()
-                .bg(gpui_kit::black())
-                .child(
-                    canvas(
-                        move |bounds, window, cx| {
-                            let _ = me.update(cx, |pv, _| pv.place_video(hp.clone(), bounds, window));
-                        },
-                        |_, _, _, _| {},
-                    )
-                    .size_full(),
-                )
-                .into_any_element()
-        } else if handler {
-            let me = cx.entity().downgrade();
-            let hp = path.clone();
-            div()
-                .size_full()
-                .child(
-                    canvas(
-                        move |bounds, window, cx| {
-                            let _ = me.update(cx, |pv, _| pv.place_host(hp.clone(), bounds, window));
-                        },
-                        |_, _, _, _| {},
-                    )
-                    .size_full(),
-                )
-                .into_any_element()
-        } else if let Some(text) = text {
-            self.hide_host();
+        let visual: AnyElement = if let Some(text) = text {
             div()
                 .id("ql-text")
                 .size_full()
@@ -203,7 +132,6 @@ impl Preview {
                 .when(is_markdown(&e), |d| d.child(gpui_kit::component::text::TextView::markdown("ql-md", text.clone())))
                 .into_any_element()
         } else {
-            self.hide_host();
             let thumb = self.thumb_or_hold(&dir, &e, 1280, cx);
             match thumb {
                 Some(im) => {
@@ -263,7 +191,6 @@ impl Preview {
             .gap_3()
             // absolute child = a definite box, so `contain` fits instead of overflowing
             .child(div().flex_1().min_h_0().w_full().relative().overflow_hidden().child(div().absolute().inset_0().child(visual)))
-            .when(playable, |c| c.child(self.render_player_bar(&p, video, cx)))
             .child(
                 h_flex()
                     .w_full()
@@ -275,313 +202,13 @@ impl Preview {
             .into_any_element()
     }
 
-    /// The workspace reports each frame whether the pane is shown and uncovered.
-    pub fn set_occluded(&mut self, occluded: bool) {
-        if occluded && !self.occluded {
-            self.hide_host();
-            // a video window would float over the menu / dialog: stop (audio may keep playing)
-            if self.player.as_ref().is_some_and(|pl| pl.rect.is_some()) {
-                self.stop_player();
-            }
-        }
-        self.occluded = occluded;
-    }
-
-    /// The window moved: re-send the host position on the next frame.
-    pub fn invalidate_host(&mut self) {
-        if let Some((_, r)) = &mut self.host {
-            *r = [i32::MIN; 4];
-        }
-    }
-
     /// The drive is about to be ejected: drop a target on it (a hosted preview handler keeps
     /// the file open, which would block the removal).
     pub fn release_where(&mut self, on_it: impl Fn(&std::path::Path) -> bool, cx: &mut Context<Self>) {
         if self.target.as_ref().is_some_and(|(p, _)| on_it(p)) {
-            self.hide_host();
             self.set_target(None, cx);
             cx.notify();
         }
-    }
-
-    fn hide_host(&mut self) {
-        if self.host.take().is_some() {
-            rf_linux::sta::run(|_| rf_linux::preview_host::hide());
-        }
-    }
-
-    /// Stops our player (and hides its video).
-    fn stop_player(&mut self) {
-        if self.player.take().is_some_and(|p| p.started) {
-            rf_linux::sta::run(|_| rf_linux::preview_host::hide());
-        }
-    }
-
-    /// Audio / video with no Windows preview handler: our own player.
-    fn playable(&self, path: &Path, e: &Entry) -> bool {
-        !e.is_dir() && !e.is_cloud_placeholder() && matches!(icons::category(e), Category::Video | Category::Audio) && rf_linux::preview_host::is_playable(path)
-    }
-
-    fn owner(window: &Window) -> Option<isize> {
-        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-        match HasWindowHandle::window_handle(window).map(|h| h.as_raw()) {
-            Ok(RawWindowHandle::Win32(h)) => Some(h.hwnd.get()),
-            _ => None,
-        }
-    }
-
-    fn screen_rect(bounds: Bounds<Pixels>, window: &Window) -> [i32; 4] {
-        let scale = window.scale_factor();
-        let origin = window.bounds().origin;
-        [
-            ((f32::from(origin.x) + f32::from(bounds.origin.x)) * scale).round() as i32,
-            ((f32::from(origin.y) + f32::from(bounds.origin.y)) * scale).round() as i32,
-            ((f32::from(origin.x) + f32::from(bounds.origin.x + bounds.size.width)) * scale).round() as i32,
-            ((f32::from(origin.y) + f32::from(bounds.origin.y + bounds.size.height)) * scale).round() as i32,
-        ]
-    }
-
-    /// Play / pause pressed.
-    fn player_toggle(&mut self, video: bool, window: &mut Window, cx: &mut Context<Self>) {
-        let Some((path, _)) = self.target.clone() else { return };
-        let Some(owner) = Self::owner(window) else { return };
-        let pl = self.player.get_or_insert_with(|| PlayerUi { path: path.clone(), started: false, rect: None, state: None, bar: Default::default(), _poll: None });
-        let playing = pl.state.is_some_and(|s| s.playing);
-        if playing {
-            rf_linux::sta::run(|_| rf_linux::preview_host::media_pause());
-        } else if !video {
-            // audio: no window to show
-            pl.started = true;
-            rf_linux::sta::run(move |_| rf_linux::preview_host::media_play(owner, &path, None));
-        } else if pl.started {
-            let rect = pl.rect.map(|r| crate::sys::Rect { left: r[0], top: r[1], right: r[2], bottom: r[3] });
-            rf_linux::sta::run(move |_| rf_linux::preview_host::media_play(owner, &path, rect));
-        } else {
-            // the video box takes its place on the next frame and starts playback there
-            pl.started = true;
-        }
-        if pl._poll.is_none() {
-            pl._poll = Some(cx.spawn(async move |this, cx| {
-                // stops after ~2 s without playback (idle: no wake-ups); Play starts it again
-                let mut idle = 0u32;
-                loop {
-                    cx.background_executor().timer(std::time::Duration::from_millis(250)).await;
-                    let (tx, rx) = futures::channel::oneshot::channel();
-                    rf_linux::sta::run(move |_| {
-                        let _ = tx.send(rf_linux::preview_host::media_state());
-                    });
-                    let st = rx.await.ok().flatten();
-                    idle = if st.is_some_and(|s| s.playing) { 0 } else { idle + 1 };
-                    let alive = this.update(cx, |pv, cx| {
-                        let Some(pl) = pv.player.as_mut() else { return false };
-                        if pl.state != st {
-                            pl.state = st;
-                            cx.notify();
-                        }
-                        if idle >= 8 {
-                            pl._poll = None; // drops this task after the update
-                            return false;
-                        }
-                        true
-                    });
-                    if !matches!(alive, Ok(true)) {
-                        break;
-                    }
-                }
-            }));
-        }
-        cx.notify();
-    }
-
-    /// Keeps the video window over `bounds`; the first call starts playback.
-    fn place_video(&mut self, path: PathBuf, bounds: Bounds<Pixels>, window: &Window) {
-        if self.occluded {
-            return;
-        }
-        let r = Self::screen_rect(bounds, window);
-        let Some(owner) = Self::owner(window) else { return };
-        let Some(pl) = self.player.as_mut().filter(|p| p.path == path && p.started) else { return };
-        if pl.rect == Some(r) {
-            return;
-        }
-        let first = pl.rect.is_none();
-        pl.rect = Some(r);
-        let rect = crate::sys::Rect { left: r[0], top: r[1], right: r[2], bottom: r[3] };
-        rf_linux::sta::run(move |_| {
-            if first {
-                rf_linux::preview_host::media_play(owner, &path, Some(rect));
-            } else {
-                rf_linux::preview_host::media_reposition(rect);
-            }
-        });
-    }
-
-    /// Play / pause, a seek bar and the time, under the visual.
-    fn render_player_bar(&self, p: &Palette, video: bool, cx: &mut Context<Self>) -> AnyElement {
-        let st = self.player.as_ref().and_then(|pl| pl.state);
-        let playing = st.is_some_and(|s| s.playing);
-        let (pos, dur) = st.map_or((0.0, 0.0), |s| (s.position, s.duration));
-        let frac = if dur > 0.0 { (pos / dur).clamp(0.0, 1.0) as f32 } else { 0.0 };
-        let clock = |t: f64| {
-            let t = t.max(0.0) as u64;
-            if t >= 3600 { format!("{}:{:02}:{:02}", t / 3600, t / 60 % 60, t % 60) } else { format!("{}:{:02}", t / 60, t % 60) }
-        };
-        // before the first Play: the length from the file's properties ("Süre", 00:01:23)
-        let known_len = self
-            .media
-            .as_ref()
-            .filter(|(mp, _)| self.target.as_ref().is_some_and(|(t, _)| t == mp))
-            .and_then(|(_, list)| list.iter().find(|(k, _)| *k == "Süre"))
-            .and_then(|(_, v)| v.split(':').try_fold(0u64, |acc, part| part.trim().parse::<u64>().ok().map(|n| acc * 60 + n)))
-            .map(|secs| secs as f64);
-        let bar_cell = self.player.as_ref().map(|pl| pl.bar.clone()).unwrap_or_default();
-        let bar_for_click = bar_cell.clone();
-        h_flex()
-            .w_full()
-            .h(px(36.))
-            .gap_2()
-            .items_center()
-            .child(
-                div()
-                    .id("pl-toggle")
-                    .size(px(32.))
-                    .flex_shrink_0()
-                    .flex()
-                    .items_center()
-                    .justify_center()
-                    .rounded_full()
-                    .bg(p.accent)
-                    .cursor_pointer()
-                    .hover(|s| s.opacity(0.85))
-                    .child(Icon::new(if playing { L::Pause } else { L::Play }).size(px(16.)).text_color(gpui_kit::white()))
-                    .on_click(cx.listener(move |this, _, window, cx| this.player_toggle(video, window, cx))),
-            )
-            .child(
-                div()
-                    .id("pl-seek")
-                    .flex_1()
-                    .h(px(16.))
-                    .flex()
-                    .items_center()
-                    .cursor_pointer()
-                    .child(
-                        div()
-                            .w_full()
-                            .h(px(4.))
-                            .rounded_full()
-                            .bg(p.pressed)
-                            .child(div().h_full().rounded_full().bg(p.accent).w(relative(frac))),
-                    )
-                    .child(
-                        canvas(
-                            move |bounds, _, _| bar_cell.set(Some(bounds)),
-                            |_, _, _, _| {},
-                        )
-                        .absolute()
-                        .size_full(),
-                    )
-                    .on_mouse_down(
-                        MouseButton::Left,
-                        cx.listener(move |this, e: &MouseDownEvent, _, cx| {
-                            let Some(b) = bar_for_click.get() else { return };
-                            let w = f32::from(b.size.width).max(1.0);
-                            let f = ((f32::from(e.position.x) - f32::from(b.origin.x)) / w).clamp(0.0, 1.0) as f64;
-                            if this.player.as_ref().is_some_and(|pl| pl.started) {
-                                rf_linux::sta::run(move |_| rf_linux::preview_host::media_seek(f));
-                                if let Some(st) = this.player.as_mut().and_then(|pl| pl.state.as_mut()) {
-                                    st.position = st.duration * f;
-                                }
-                                cx.notify();
-                            }
-                        }),
-                    ),
-            )
-            .child(
-                div()
-                    .flex_shrink_0()
-                    .text_xs()
-                    .text_color(p.text_secondary)
-                    .child(format!("{} / {}", clock(pos), if dur > 0.0 { clock(dur) } else { known_len.map_or_else(|| "–".to_string(), clock) })),
-            )
-            .into_any_element()
-    }
-
-    /// Whether `path` should go to a Windows preview handler (Office, PDF, video, fonts…):
-    /// everything we don't preview ourselves, when a handler is registered.
-    fn wants_handler(&mut self, path: &Path, e: &Entry, cx: &mut Context<Self>) -> bool {
-        if e.is_dir() || e.is_cloud_placeholder() || matches!(icons::category(e), Category::Image) || is_text_like(e) {
-            return false;
-        }
-        let ext = e.ext.to_string();
-        if ext.is_empty() {
-            return false;
-        }
-        // Design files show the picture saved inside them (their thumbnail): CorelDRAW's preview
-        // handler draws only the page, an empty sheet when the design sits beside it. Adobe's
-        // handler for Illustrator / EPS draws the artwork itself, so it stays when installed.
-        if rf_linux::design::is_design_ext(&ext) && !matches!(ext.as_str(), "ai" | "eps" | "epsf") {
-            return false;
-        }
-        match self.handlers.get(&ext) {
-            Some(v) => *v,
-            None => {
-                self.handlers.insert(ext.clone(), false);
-                let p = path.to_path_buf();
-                let task = cx.background_spawn(async move { rf_linux::preview_host::handler_for(&p).is_some() });
-                cx.spawn(async move |this, cx| {
-                    let ok = task.await;
-                    let _ = this.update(cx, |pv, cx| {
-                        pv.handlers.insert(ext, ok);
-                        if ok {
-                            cx.notify();
-                        }
-                    });
-                })
-                .detach();
-                false
-            }
-        }
-    }
-
-    /// Shows / moves the hosted preview over `bounds` (window coordinates).
-    fn place_host(&mut self, path: PathBuf, bounds: Bounds<Pixels>, window: &Window) {
-        if self.occluded {
-            return;
-        }
-        let scale = window.scale_factor();
-        let origin = window.bounds().origin;
-        let r = [
-            ((f32::from(origin.x) + f32::from(bounds.origin.x)) * scale).round() as i32,
-            ((f32::from(origin.y) + f32::from(bounds.origin.y)) * scale).round() as i32,
-            ((f32::from(origin.x) + f32::from(bounds.origin.x + bounds.size.width)) * scale).round() as i32,
-            ((f32::from(origin.y) + f32::from(bounds.origin.y + bounds.size.height)) * scale).round() as i32,
-        ];
-        if self.host.as_ref().is_some_and(|(p, rr)| *p == path && *rr == r) {
-            return;
-        }
-        let same_file = self.host.as_ref().is_some_and(|(p, _)| *p == path);
-        self.host = Some((path.clone(), r));
-        let owner = {
-            use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-            match HasWindowHandle::window_handle(window).map(|h| h.as_raw()) {
-                Ok(RawWindowHandle::Win32(h)) => h.hwnd.get(),
-                _ => return,
-            }
-        };
-        let dark = Palette::for_window(window).dark;
-        let rect = crate::sys::Rect { left: r[0], top: r[1], right: r[2], bottom: r[3] };
-        rf_linux::sta::run(move |_| {
-            if same_file {
-                rf_linux::preview_host::reposition(rect);
-            } else {
-                let colors = if dark {
-                    rf_linux::preview_host::Colors { background: 0x2B2B2B, text: 0xF0F0F0 }
-                } else {
-                    rf_linux::preview_host::Colors { background: 0xF9F9F9, text: 0x1B1B1B }
-                };
-                rf_linux::preview_host::show(owner, &path, rect, &colors);
-            }
-        });
     }
 
     /// Called by the workspace whenever the focused item may have changed.
@@ -601,7 +228,6 @@ impl Preview {
             cx.background_executor().timer(HOLD).await;
             let _ = this.update(cx, |_, cx| cx.notify());
         }));
-        self.stop_player();
         self._task = None;
         self.media = None;
         self._media_task = None;
@@ -795,7 +421,6 @@ impl Render for Preview {
         let p = Palette::for_window(window);
         let mut col = v_flex().id("preview").size_full().p_3().gap_3().overflow_y_scroll();
         let Some((path, e)) = self.target.clone() else {
-            self.hide_host();
             return col
                 .items_center()
                 .justify_center()
@@ -808,51 +433,7 @@ impl Render for Preview {
         }
         let cat = icons::category(&e);
         let dir = path.parent().map(Path::to_path_buf).unwrap_or_default();
-        let handler = !self.occluded && self.wants_handler(&path, &e, cx);
-        let playable = !handler && self.playable(&path, &e);
-        let video = matches!(cat, Category::Video);
-        let video_on = playable && video && !self.occluded && self.player.as_ref().is_some_and(|pl| pl.path == path && pl.started);
-        let visual_box: AnyElement = if video_on {
-            // our player draws the video here (its own window, kept over this box)
-            let me = cx.entity().downgrade();
-            let hp = path.clone();
-            div()
-                .w_full()
-                .h(px(232.))
-                .flex_shrink_0()
-                .rounded(theme::RADIUS)
-                .bg(gpui_kit::black())
-                .child(
-                    canvas(
-                        move |bounds, window, cx| {
-                            let _ = me.update(cx, |pv, _| pv.place_video(hp.clone(), bounds, window));
-                        },
-                        |_, _, _, _| {},
-                    )
-                    .size_full(),
-                )
-                .into_any_element()
-        } else if handler {
-            // a Windows preview handler draws here (in its own window, kept over this box)
-            let me = cx.entity().downgrade();
-            let hp = path.clone();
-            div()
-                .w_full()
-                .h(px(420.))
-                .rounded(theme::RADIUS)
-                .bg(p.hover)
-                .child(
-                    canvas(
-                        move |bounds, window, cx| {
-                            let _ = me.update(cx, |pv, _| pv.place_host(hp.clone(), bounds, window));
-                        },
-                        |_, _, _, _| {},
-                    )
-                    .size_full(),
-                )
-                .into_any_element()
-        } else {
-            self.hide_host();
+        let visual_box: AnyElement = {
             let thumb = self.thumb_or_hold(&dir, &e, PREVIEW_PX, cx);
             let visual: AnyElement = match thumb {
                 Some(im) => img(im).w_full().h(px(220.)).object_fit(ObjectFit::Contain).into_any_element(),
@@ -874,7 +455,6 @@ impl Render for Preview {
         };
         col = col
             .child(visual_box)
-            .when(playable, |c| c.child(self.render_player_bar(&p, video, cx)))
             .child(
                 div()
                     .text_sm()

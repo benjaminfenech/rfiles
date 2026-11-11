@@ -2214,9 +2214,9 @@ checksum = "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48"
 
 [[package]]
 name = "fixedbitset"
-version = "0.5.7"
+version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d674e81391d1e1ab681a28d99df07927c6d4aa5b027d7da16ba32d1d21ecd99"
+checksum = "5905ec755cc8386d7928353e4d356d2be3e89e81e5ca01fe630a1ca4d08dc175"
 
 [[package]]
 name = "flate2"
@@ -3230,7 +3230,8 @@ dependencies = [
 [[package]]
 name = "gpui-pre-windows"
 version = "0.3.11"
-source = "git+https://github.com/gelenmedya/gpui-pre-windows?rev=e2966a6c332e5e96ebb1acbb6eedc18ea652fab5#e2966a6c332e5e96ebb1acbb6eedc18ea652fab5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5141a3db59bab761a16ab19529fe4117a86e91922e8fc00af6dfc4829cb1744d"
 dependencies = [
  "accesskit",
  "accesskit_windows",
@@ -3271,10 +3272,6 @@ name = "gpui-pre-ztracing-macro"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "99b18b06f5026b3d312488eacfdddbe78f82b4bf32bb2d2bc3186e31e552b797"
-
-[[package]]
-name = "gpui-windows-shim"
-version = "0.6.0"
 
 [[package]]
 name = "granit-parser"
@@ -6621,7 +6618,6 @@ dependencies = [
  "env_logger",
  "futures",
  "gpui-kit",
- "gpui-windows-shim",
  "image",
  "log",
  "mail-parser",
@@ -6631,7 +6627,6 @@ dependencies = [
  "rf-core",
  "rf-linux",
  "rf-player",
- "rustdecoder",
  "serde",
  "serde_json",
  "smallvec",
@@ -6659,7 +6654,6 @@ dependencies = [
  "rarchive",
  "sevenz-rust2",
  "tar",
- "windows 0.62.2",
  "zip",
  "zstd",
 ]
@@ -6731,7 +6725,6 @@ dependencies = [
  "rayon",
  "serde",
  "serde_json",
- "windows 0.62.2",
 ]
 
 [[package]]
@@ -6891,19 +6884,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
 dependencies = [
  "semver",
-]
-
-[[package]]
-name = "rustdecoder"
-version = "0.6.0"
-dependencies = [
- "crc32fast",
- "flate2",
- "log",
- "rayon",
- "thiserror 2.0.21",
- "windows 0.62.2",
- "windows-core 0.62.2",
 ]
 
 [[package]]

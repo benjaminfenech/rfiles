@@ -166,7 +166,7 @@ have them:
 - **Windows shell features:** jump lists, the taskbar preview and taskbar progress, Libraries, Windows Search, OneDrive status, devices under This PC, preview handlers, rfiles as other apps' Open/Save dialog, `.lnk` shortcuts, the global hotkey, and the speed test against File Explorer.
 - **Properties tabs:** Shortcut, Compatibility, Security (Windows ACLs), Digital signatures (Authenticode), Sharing, Customize (desktop.ini folder icons), Disk Cleanup, "Unblock", and the archive, indexing, compression and encryption attributes. Hidden is a dot name on Linux, and read-only is the write permission.
 - **Prompts:** upstream's strips asking for a GitHub star or a donation are gone. Settings → About still has the links.
-- **Platform plumbing:** Velopack install and auto-update (packages update through your package manager), Mica, the hybrid GPU/CPU renderer, protected system files.
+- **Platform plumbing:** Velopack install and auto-update (packages update through your package manager), Mica, the hybrid GPU/CPU renderer and its popup-window menus, protected system files, and upstream's Direct3D video engine (rustdecoder). Video plays through rf-player and FFmpeg.
 
 ## Pending
 
@@ -249,12 +249,10 @@ next to it.
 | Crate | What it holds |
 |---|---|
 | `crates/rf-app` | The interface, and the two programs: `rfiles` and `directlook` (`src/look/`) |
-| `crates/rf-linux` | The Linux platform layer (the app still calls it by its old name, `rf_win`) |
-| `crates/gpui-windows-shim` | Linux stand-in for the few calls rf-app makes into rustyfiles' GPUI Windows fork |
+| `crates/rf-linux` | The Linux platform layer: files, drives, trash, icons, thumbnails, the desktop |
 | `crates/rf-core` | The model: locations, history, entries, formatting |
 | `crates/rf-archive` | Archive operations: browse, extract, create, edit |
 | `crates/rf-player` | DirectLook's video and audio player |
-| `crates/rustdecoder` | rustyfiles' own video engine (work in progress) |
 
 The interface is built with [GPUI](https://gpui.rs), the framework behind the Zed editor.
 

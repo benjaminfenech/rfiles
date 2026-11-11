@@ -205,9 +205,6 @@ impl TextFile {
 /// Fills `buf` from `file` at `pos`, without moving a shared cursor.
 fn read_at(file: &File, mut buf: &mut [u8], mut pos: u64) -> std::io::Result<()> {
     while !buf.is_empty() {
-        #[cfg(windows)]
-        let n = std::os::windows::fs::FileExt::seek_read(file, buf, pos)?;
-        #[cfg(unix)]
         let n = std::os::unix::fs::FileExt::read_at(file, buf, pos)?;
         if n == 0 {
             return Err(std::io::ErrorKind::UnexpectedEof.into());
