@@ -2478,10 +2478,15 @@ impl Workspace {
         let network = self.places.read(cx).network.clone();
         if (!network.is_empty() || !shares.is_empty()) && shown("network") {
             col = col.child(header(t!("Ağ")));
+            let offline = self.places.read(cx).offline.clone();
             for (i, d) in shares.into_iter().enumerate() {
                 let loc = Location::Path(d.root.clone());
                 let active = cur == loc;
-                col = col.child(self.sidebar_item(("sb-share", i).into(), places::drive_icon(&d), p.text_secondary, crate::places::drive_name(&d), loc, active, None, p, cx));
+                // its server doesn't answer (away from home): dimmed, with a note under the name
+                let off = offline.contains_key(&d.root);
+                let note = off.then(|| div().text_xs().text_color(p.text_tertiary).child(t!("Offline")).into_any_element());
+                let icon_color = if off { p.text_tertiary } else { p.text_secondary };
+                col = col.child(self.sidebar_item(("sb-share", i).into(), places::drive_icon(&d), icon_color, crate::places::drive_name(&d), loc, active, note, p, cx));
             }
             for (i, (name, target)) in network.into_iter().enumerate() {
                 let loc = Location::Path(target);

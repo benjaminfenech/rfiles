@@ -3299,6 +3299,7 @@ impl FolderView {
         let places = self.places.read(cx);
         let pinned = places.pinned.clone();
         let drives = places.drives.clone();
+        let offline = places.offline.clone();
         let recent = places.recent.clone();
         let card = |id: ElementId| {
             v_flex()
@@ -3335,13 +3336,15 @@ impl FolderView {
             let frac = d.used_fraction();
             let bar_color = if frac > 0.9 { p.danger } else { p.accent };
             let unmounted = places::unmounted(&d);
+            // a share whose server doesn't answer (away from home)
+            let offline_at = offline.get(&d.root).cloned();
             drive_grid = drive_grid.child(
                 card(("drive", i).into())
                     .child(
                         h_flex()
                             .gap_3()
                             .items_center()
-                            .child(Icon::new(places::drive_icon(&d)).size(px(28.)).text_color(p.text_secondary))
+                            .child(Icon::new(places::drive_icon(&d)).size(px(28.)).text_color(if offline_at.is_some() { p.text_tertiary } else { p.text_secondary }))
                             .child(
                                 v_flex()
                                     .flex_1()
@@ -3357,7 +3360,9 @@ impl FolderView {
                                                 .child(div().h_full().rounded_full().bg(bar_color).w(relative(frac))),
                                         )
                                     })
-                                    .child(div().text_xs().text_color(p.text_secondary).child(if unmounted {
+                                    .child(div().text_xs().text_color(p.text_secondary).child(if let Some(server) = &offline_at {
+                                        format!("{} · {}", t!("Offline"), t!("can't reach {server}").replace("{server}", server))
+                                    } else if unmounted {
                                         // Linux: connected, not mounted yet (a click mounts it)
                                         format!("{} · {}", format::size(d.total), t!("Not mounted"))
                                     } else if d.total > 0 {
