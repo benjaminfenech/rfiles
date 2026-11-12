@@ -32,6 +32,14 @@
   </provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.8.2" date="2026-11-12">
+      <description>
+        <p>
+          Error messages and other texts that showed in Turkish whatever the language now
+          follow the chosen language, and Turkish becomes an ordinary translation.
+        </p>
+      </description>
+    </release>
     <release version="0.8.1" date="2026-11-12">
       <description>
         <p>
