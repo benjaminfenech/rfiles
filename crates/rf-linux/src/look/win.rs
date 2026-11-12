@@ -17,7 +17,7 @@ pub fn set_topmost(hwnd: isize, on: bool) {}
 pub fn set_rect(hwnd: isize, rect: [f32; 4], scale: f32) {}
 thread_local! {
     #[doc =
-    " Görev çubuğunda görünmeyecek pencerelerin gizli sahibi (pencerenin iş parçacığında yaratılır)."]
+    " Hidden owner of windows that must not show on the taskbar (created on the window's thread)."]
     static OWNER : std::cell::Cell < isize > = const { std::cell::Cell::new(0) };
 }
 fn hidden_owner() -> isize {

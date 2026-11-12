@@ -179,7 +179,7 @@ impl Viewer for CsvViewer {
                     if i < body_rows {
                         row(i + 1, &table.rows[i + 1], &widths)
                     } else {
-                        div().h(px(26.)).px_3().flex().items_center().text_xs().text_color(p.text_secondary).child(format!("+{} {}", table.more, crate::t!("satır daha"))).into_any_element()
+                        div().h(px(26.)).px_3().flex().items_center().text_xs().text_color(p.text_secondary).child(format!("+{} {}", table.more, crate::t!("more rows"))).into_any_element()
                     }
                 })
                 .collect()

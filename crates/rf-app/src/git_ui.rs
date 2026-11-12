@@ -34,21 +34,21 @@ pub fn sync_menu(view: View, root: PathBuf, ahead: u32, behind: u32, pos: Point<
     let mut items = Vec::new();
     if remote.is_some() {
         items.extend([
-            item(t!("Çek (pull)"), L::ArrowDown, (behind > 0).then(|| format!("↓{behind}")), "Çekiliyor", git::pull),
-            item(t!("Gönder (push)"), L::ArrowUp, (ahead > 0).then(|| format!("↑{ahead}")), "Gönderiliyor", git::push),
-            item(t!("Eşitle"), L::RefreshCw, None, "Eşitleniyor", git::sync),
+            item(t!("Pull"), L::ArrowDown, (behind > 0).then(|| format!("↓{behind}")), "Pulling", git::pull),
+            item(t!("Push"), L::ArrowUp, (ahead > 0).then(|| format!("↑{ahead}")), "Pushing", git::push),
+            item(t!("Sync"), L::RefreshCw, None, "Syncing", git::sync),
             Item::Separator,
-            item(t!("Uzak depodan getir (fetch)"), L::CloudDownload, None, "Getiriliyor", git::fetch),
+            item(t!("Fetch"), L::CloudDownload, None, "Fetching", git::fetch),
             Item::Separator,
         ]);
     }
     {
         let (view, root) = (view.clone(), root.clone());
-        items.push(Item::action(t!("Değişiklikleri kaydet (commit)…"), MenuIcon::Lucide(L::GitCommitHorizontal), move |window, cx| commit_dialog(view.clone(), root.clone(), window, cx)));
+        items.push(Item::action(t!("Commit changes…"), MenuIcon::Lucide(L::GitCommitHorizontal), move |window, cx| commit_dialog(view.clone(), root.clone(), window, cx)));
     }
     {
         let (view, root, current) = (view.clone(), root.clone(), remote.clone());
-        let label = if remote.is_some() { t!("Uzak depo adresini değiştir…") } else { t!("Uzak depoya bağla…") };
+        let label = if remote.is_some() { t!("Change remote address…") } else { t!("Connect to a remote…") };
         items.push(Item::action(label, MenuIcon::Lucide(L::Link), move |window, cx| connect_dialog(view.clone(), root.clone(), current.clone(), window, cx)));
     }
     fluent_menu::show(Menu { quick: Vec::new(), items }, pos, window, cx);
@@ -72,13 +72,13 @@ fn run_op(cx: &mut App, title: String, root: PathBuf, op: fn(&Path, &mut dyn FnM
 
 /// "Commit changes…": a message, then everything is staged and committed.
 fn commit_dialog(view: View, root: PathBuf, window: &mut Window, cx: &mut App) {
-    let go = Button::new(t!("Kaydet"), Kind::Primary, move |msg, _, cx| {
+    let go = Button::new(t!("Save"), Kind::Primary, move |msg, _, cx| {
         let msg = msg.unwrap_or_default().trim().to_string();
         if msg.is_empty() {
-            return Err(t!("Ne değiştiğini kısaca yazın").into());
+            return Err(t!("Describe the change in a few words").into());
         }
         let (root, view) = (root.clone(), view.clone());
-        let title = format!("{} {}", t!("Kaydediliyor:"), repo_name(&root));
+        let title = format!("{} {}", t!("Committing:"), repo_name(&root));
         crate::status_center::start_with(
             cx,
             title,
@@ -91,9 +91,9 @@ fn commit_dialog(view: View, root: PathBuf, window: &mut Window, cx: &mut App) {
         Ok(())
     });
     prompt::show(
-        t!("Değişiklikleri kaydet"),
-        Some(t!("Bu depodaki bütün değişiklikler (yeni dosyalar dahil) tek bir kayıt olarak saklanır.").to_string()),
-        Some((String::new(), t!("Örneğin: Kapak resmi güncellendi").to_string())),
+        t!("Commit changes"),
+        Some(t!("Every change in this repository (new files included) is saved as one commit.").to_string()),
+        Some((String::new(), t!("For example: Updated the cover image").to_string())),
         vec![go, Button::cancel()],
         window,
         cx,
@@ -107,10 +107,10 @@ fn connect_dialog(view: View, root: PathBuf, current: Option<String>, window: &m
         move |url: Option<String>, _: &mut Window, cx: &mut App| -> Result<(), String> {
             let url = url.unwrap_or_default().trim().to_string();
             if url.is_empty() {
-                return Err(t!("Depo adresini girin").into());
+                return Err(t!("Enter the repository address").into());
             }
             let (root, view) = (root.clone(), view.clone());
-            let title = format!("{} {}", t!("Uzak depoya bağlanıyor:"), repo_name(&root));
+            let title = format!("{} {}", t!("Connecting to remote:"), repo_name(&root));
             crate::status_center::start_with(
                 cx,
                 title,
@@ -128,15 +128,15 @@ fn connect_dialog(view: View, root: PathBuf, current: Option<String>, window: &m
     };
     let mut buttons = Vec::new();
     if current.is_none() {
-        buttons.push(Button::new(t!("Bağla ve gönder"), Kind::Primary, start(true, view.clone(), root.clone())));
-        buttons.push(Button::new(t!("Yalnızca bağla"), Kind::Normal, start(false, view.clone(), root.clone())));
+        buttons.push(Button::new(t!("Connect and push"), Kind::Primary, start(true, view.clone(), root.clone())));
+        buttons.push(Button::new(t!("Connect only"), Kind::Normal, start(false, view.clone(), root.clone())));
     } else {
-        buttons.push(Button::new(t!("Değiştir"), Kind::Primary, start(false, view.clone(), root.clone())));
+        buttons.push(Button::new(t!("Replace"), Kind::Primary, start(false, view.clone(), root.clone())));
     }
     buttons.push(Button::cancel());
     prompt::show(
-        if current.is_none() { t!("Uzak depoya bağla") } else { t!("Uzak depo adresi") },
-        Some(t!("GitHub, GitLab ya da başka bir sunucudaki boş bir deponun adresi. Önce orada bir depo oluşturun.").to_string()),
+        if current.is_none() { t!("Connect to a remote") } else { t!("Remote address") },
+        Some(t!("The address of an empty repository on GitHub, GitLab or another server. Create the repository there first.").to_string()),
         Some((current.unwrap_or_default(), "https://github.com/kullanici/depo.git".to_string())),
         buttons,
         window,
@@ -146,7 +146,7 @@ fn connect_dialog(view: View, root: PathBuf, current: Option<String>, window: &m
 
 /// "Initialize Git repository" for a folder that is not in one.
 pub fn init_repo(view: View, dir: PathBuf, cx: &mut App) {
-    let title = format!("{} {}", t!("Git deposu başlatılıyor:"), repo_name(&dir));
+    let title = format!("{} {}", t!("Initializing Git repository:"), repo_name(&dir));
     crate::status_center::start_with(
         cx,
         title,
@@ -160,13 +160,13 @@ pub fn init_repo(view: View, dir: PathBuf, cx: &mut App) {
 
 /// "Clone repository…": asks for the address, clones into a new folder inside `dir`.
 pub fn clone_dialog(view: View, dir: PathBuf, window: &mut Window, cx: &mut App) {
-    let go = Button::new(t!("Klonla"), Kind::Primary, move |url, _, cx| {
+    let go = Button::new(t!("Clone"), Kind::Primary, move |url, _, cx| {
         let url = url.unwrap_or_default().trim().to_string();
         if url.is_empty() {
-            return Err(t!("Depo adresini girin").into());
+            return Err(t!("Enter the repository address").into());
         }
         let (dir, view) = (dir.clone(), view.clone());
-        let title = format!("{} {}", t!("Klonlanıyor:"), url.rsplit('/').next().unwrap_or(&url).trim_end_matches(".git"));
+        let title = format!("{} {}", t!("Cloning:"), url.rsplit('/').next().unwrap_or(&url).trim_end_matches(".git"));
         crate::status_center::start_with(
             cx,
             title,
@@ -183,8 +183,8 @@ pub fn clone_dialog(view: View, dir: PathBuf, window: &mut Window, cx: &mut App)
         Ok(())
     });
     prompt::show(
-        t!("Depoyu klonla"),
-        Some(t!("Depo bu klasörün içinde yeni bir klasöre klonlanır.").to_string()),
+        t!("Clone repository"),
+        Some(t!("The repository is cloned into a new folder inside this one.").to_string()),
         Some((String::new(), "https://github.com/kullanici/depo.git".to_string())),
         vec![go, Button::cancel()],
         window,
@@ -211,7 +211,7 @@ pub fn branch_menu(view: View, root: PathBuf, pos: Point<Pixels>, window: &mut W
             let mut items = Vec::new();
             {
                 let (view, root) = (view.clone(), root.clone());
-                items.push(Item::action(t!("Yeni dal oluştur…"), MenuIcon::Lucide(L::GitBranchPlus), move |window, cx| {
+                items.push(Item::action(t!("Create branch…"), MenuIcon::Lucide(L::GitBranchPlus), move |window, cx| {
                     new_branch_dialog(view.clone(), root.clone(), window, cx)
                 }));
             }
@@ -243,7 +243,7 @@ pub fn branch_menu(view: View, root: PathBuf, pos: Point<Pixels>, window: &mut W
             }
             if !remote.is_empty() {
                 items.push(Item::Separator);
-                items.push(Item::sub(t!("Uzak dallar"), MenuIcon::Lucide(L::Cloud), remote));
+                items.push(Item::sub(t!("Remote branches"), MenuIcon::Lucide(L::Cloud), remote));
             }
             fluent_menu::show(Menu { quick: Vec::new(), items }, pos, window, cx);
         });
@@ -261,20 +261,20 @@ fn checkout(view: View, root: PathBuf, branch: String, mode: CheckoutMode, windo
         let r = task.await;
         let _ = cx.update_window(handle, |_, window, cx| match r {
             Ok(()) => refresh(&view, cx),
-            Err(e) if e.starts_with("Dal değiştirilemedi: yerel değişiklikler") && matches!(mode, CheckoutMode::Normal) => {
+            Err(e) if e.starts_with("Couldn't switch branch: local changes") && matches!(mode, CheckoutMode::Normal) => {
                 // Files asks what to do with uncommitted changes
                 let (v1, r1, b1) = (view.clone(), root.clone(), branch.clone());
                 let (v2, r2, b2) = (view.clone(), root.clone(), branch.clone());
                 prompt::show(
-                    t!("Kaydedilmemiş değişiklikler var"),
-                    Some(format!("{} \"{branch}\"", t!("Değişikliklerinizle ne yapılsın? Geçilecek dal:"))),
+                    t!("You have uncommitted changes"),
+                    Some(format!("{} \"{branch}\"", t!("What should happen to your changes? Switching to"))),
                     None,
                     vec![
-                        Button::new(t!("Yanımda götür"), Kind::Primary, move |_, window, cx| {
+                        Button::new(t!("Bring them along"), Kind::Primary, move |_, window, cx| {
                             checkout(v1.clone(), r1.clone(), b1.clone(), CheckoutMode::Stash, window, cx);
                             Ok(())
                         }),
-                        Button::new(t!("Değişiklikleri at"), Kind::Danger, move |_, window, cx| {
+                        Button::new(t!("Discard changes"), Kind::Danger, move |_, window, cx| {
                             checkout(v2.clone(), r2.clone(), b2.clone(), CheckoutMode::Discard, window, cx);
                             Ok(())
                         }),
@@ -284,26 +284,26 @@ fn checkout(view: View, root: PathBuf, branch: String, mode: CheckoutMode, windo
                     cx,
                 );
             }
-            Err(e) => error_dialog(t!("Dal değiştirilemedi"), e, window, cx),
+            Err(e) => error_dialog(t!("Couldn't switch branch"), e, window, cx),
         });
     })
     .detach();
 }
 
 fn error_dialog(title: &str, message: String, window: &mut Window, cx: &mut App) {
-    prompt::show(title.to_string(), Some(crate::i18n::td(&message)), None, vec![Button::new(t!("Tamam"), Kind::Primary, |_, _, _| Ok(()))], window, cx);
+    prompt::show(title.to_string(), Some(crate::i18n::td(&message)), None, vec![Button::new(t!("OK"), Kind::Primary, |_, _, _| Ok(()))], window, cx);
 }
 
 fn new_branch_dialog(view: View, root: PathBuf, window: &mut Window, cx: &mut App) {
     prompt::show(
-        t!("Yeni dal"),
-        Some(t!("Yeni dal geçerli daldan oluşturulur ve ona geçilir.").to_string()),
-        Some((String::new(), t!("Dal adı").to_string())),
+        t!("New branch"),
+        Some(t!("The new branch starts from the current one and is checked out.").to_string()),
+        Some((String::new(), t!("Branch name").to_string())),
         vec![
-            Button::new(t!("Oluştur"), Kind::Primary, move |value, window, cx| {
+            Button::new(t!("Create"), Kind::Primary, move |value, window, cx| {
                 let name = value.unwrap_or_default().trim().to_string();
                 if !git::is_valid_branch_name(&name) {
-                    return Err(t!("Geçersiz dal adı (boşluk, .., ~ ^ : ? * [ \\ kullanılamaz)").to_string());
+                    return Err(t!("Invalid branch name (no spaces, .., ~ ^ : ? * [ \\)").to_string());
                 }
                 let (view, root) = (view.clone(), root.clone());
                 let handle = window.window_handle();
@@ -315,7 +315,7 @@ fn new_branch_dialog(view: View, root: PathBuf, window: &mut Window, cx: &mut Ap
                     let r = task.await;
                     let _ = cx.update_window(handle, |_, window, cx| match r {
                         Ok(()) => refresh(&view, cx),
-                        Err(e) => error_dialog(t!("Dal oluşturulamadı"), e, window, cx),
+                        Err(e) => error_dialog(t!("Couldn't create branch"), e, window, cx),
                     });
                 })
                 .detach();

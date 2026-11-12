@@ -65,7 +65,7 @@ fn open_pdf(path: PathBuf, wait: Duration) -> Opened {
         .name("directlook-pdf".into())
         .spawn(move || worker(path, opened_tx, req_rx, out_tx))
         .ok();
-    let result = opened_rx.recv_timeout(wait).unwrap_or_else(|_| Err(t!("PDF açılamadı.").to_string()));
+    let result = opened_rx.recv_timeout(wait).unwrap_or_else(|_| Err(t!("The PDF could not be opened.").to_string()));
     Opened { result, req, out }
 }
 
@@ -91,7 +91,7 @@ impl Viewer for PdfViewer {
         let Opened { result, req: req_tx, out: out_rx } = self.opened.take().unwrap_or_else(|| open_pdf(f.path.clone(), Duration::from_secs(5)));
         let (sizes, error) = match result {
             Ok(s) if !s.is_empty() => (s, None),
-            Ok(_) => (Vec::new(), Some(t!("Bu PDF'te sayfa yok.").to_string())),
+            Ok(_) => (Vec::new(), Some(t!("This PDF has no pages.").to_string())),
             Err(e) => (Vec::new(), Some(e)),
         };
         let pages = sizes.len();
@@ -99,8 +99,8 @@ impl Viewer for PdfViewer {
         self.view = Some(cx.new(|cx| PdfView::new(sizes, error, req_tx, out_rx, cx)));
         let title = match pages {
             0 => name,
-            1 => format!("{}: {name}", t!("1 sayfa")),
-            n => format!("{n} {}: {name}", t!("sayfa")),
+            1 => format!("{}: {name}", t!("1 page")),
+            n => format!("{n} {}: {name}", t!("pages")),
         };
         // the window takes the first page's shape, a bit wider for the margins
         let mut p = Prepared::new((first.0 + 2.0 * PAD, first.1 + 2.0 * PAD), title);
@@ -123,9 +123,9 @@ fn worker(path: PathBuf, opened: mpsc::Sender<Result<Vec<(f32, f32)>, String>>, 
         Ok(p) => p,
         Err(e) => {
             let msg = match e.downcast_ref::<PdfError>() {
-                Some(PdfError::Password) => t!("Bu PDF parola ile korunuyor; DirectLook parolalı PDF'leri henüz açmıyor."),
+                Some(PdfError::Password) => t!("This PDF is protected with a password; DirectLook doesn't open those yet."),
                 Some(PdfError::NoPoppler) => "To preview PDFs, install poppler (it provides pdfinfo and pdftoppm).",
-                _ => t!("Bu dosya PDF olarak okunamadı; bozuk olabilir."),
+                _ => t!("This file can't be read as a PDF; it may be damaged."),
             };
             let _ = opened.send(Err(msg.to_string()));
             return;

@@ -26,7 +26,7 @@ pub struct Hashes {
 
 /// Returned (inside `anyhow::Error`) when `cancelled` fired; use `err.downcast_ref::<Cancelled>()`.
 #[derive(Debug, thiserror::Error)]
-#[error("İptal edildi")]
+#[error("Cancelled")]
 pub struct Cancelled;
 
 fn hex(b: &[u8]) -> String {

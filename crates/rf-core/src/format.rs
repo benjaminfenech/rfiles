@@ -3,7 +3,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use chrono::{Local, TimeZone};
 
-static ENGLISH: AtomicBool = AtomicBool::new(false);
+static ENGLISH: AtomicBool = AtomicBool::new(true);
+static TRANSLATE: RwLock<Option<fn(&'static str) -> &'static str>> = RwLock::new(None);
 static DECIMAL: AtomicBool = AtomicBool::new(false);
 
 /// The date pattern used when none (or an invalid one) is set: "05.11.2026 13:45".
@@ -140,20 +141,29 @@ pub fn set_decimal_sizes(on: bool) {
     DECIMAL.store(on, Ordering::Relaxed);
 }
 
-/// UI language switch for the few words in number formats: English uses "bytes" and a decimal
-/// point; the default (Turkish) uses "bayt" and a decimal comma.
+/// Number style: a decimal point (the default) or, off, a decimal comma ("1,50 KB", Turkish).
 pub fn set_english(on: bool) {
     ENGLISH.store(on, Ordering::Relaxed);
 }
 
-/// "0 bayt", "512 bayt", "1,2 KB", "34,5 MB", "1,02 GB" (Turkish decimal comma).
+/// Translates the few words in these formats ("bytes", "{n} min ago") into the UI language;
+/// set by the app. Without one they stay English.
+pub fn set_translator(f: fn(&'static str) -> &'static str) {
+    *TRANSLATE.write().unwrap_or_else(|e| e.into_inner()) = Some(f);
+}
+
+fn tr(en: &'static str) -> &'static str {
+    TRANSLATE.read().ok().and_then(|f| *f).map_or(en, |f| f(en))
+}
+
+/// "0 bytes", "512 bytes", "1.2 KB", "34.5 MB", "1.02 GB" (a decimal comma in Turkish).
 pub fn size(bytes: u64) -> String {
     size_with(bytes, ENGLISH.load(Ordering::Relaxed), DECIMAL.load(Ordering::Relaxed))
 }
 
 fn size_with(bytes: u64, en: bool, decimal: bool) -> String {
     let base: f64 = if decimal { 1000.0 } else { 1024.0 };
-    let units: [&str; 6] = [if en { "bytes" } else { "bayt" }, "KB", "MB", "GB", "TB", "PB"];
+    let units: [&str; 6] = [tr("bytes"), "KB", "MB", "GB", "TB", "PB"];
     if (bytes as f64) < base {
         return format!("{bytes} {}", units[0]);
     }
@@ -178,16 +188,16 @@ fn size_with(bytes: u64, en: bool, decimal: bool) -> String {
 pub fn datetime(ms: i64) -> String {
     let now = chrono::Local::now().timestamp_millis();
     let (chrono, relative) = date_format();
-    datetime_with(ms, &chrono, relative, now, ENGLISH.load(Ordering::Relaxed))
+    datetime_with(ms, &chrono, relative, now)
 }
 
 /// The full date-time in the chosen date format (Properties, tooltips, cards, About): never
 /// relative.
 pub fn datetime_full(ms: i64) -> String {
-    datetime_with(ms, &date_format().0, false, 0, false)
+    datetime_with(ms, &date_format().0, false, 0)
 }
 
-fn datetime_with(ms: i64, chrono: &str, relative: bool, now: i64, en: bool) -> String {
+fn datetime_with(ms: i64, chrono: &str, relative: bool, now: i64) -> String {
     if ms <= 0 {
         return String::new();
     }
@@ -196,14 +206,14 @@ fn datetime_with(ms: i64, chrono: &str, relative: bool, now: i64, en: bool) -> S
         let secs = (now - ms) / 1000;
         let recent = match secs {
             s if s < 0 => None,
-            s if s < 45 => return (if en { "just now" } else { "az önce" }).to_string(),
-            s if s < 3600 => Some((((s + 30) / 60).max(1), "dakika önce", "min ago")),
-            s if s < 86_400 => Some((s / 3600, "saat önce", "h ago")),
-            s if s < 7 * 86_400 => Some((s / 86_400, "gün önce", "d ago")),
+            s if s < 45 => return tr("just now").to_string(),
+            s if s < 3600 => Some((((s + 30) / 60).max(1), tr("{n} min ago"))),
+            s if s < 86_400 => Some((s / 3600, tr("{n} h ago"))),
+            s if s < 7 * 86_400 => Some((s / 86_400, tr("{n} d ago"))),
             _ => None,
         };
-        if let Some((n, tr, enu)) = recent {
-            return if en { format!("{n} {enu}") } else { format!("{n} {tr}") };
+        if let Some((n, text)) = recent {
+            return text.replace("{n}", &n.to_string());
         }
     }
     dt.format(chrono).to_string()
@@ -223,25 +233,25 @@ mod tests {
 
     #[test]
     fn sizes() {
-        assert_eq!(size(0), "0 bayt");
-        assert_eq!(size(1023), "1023 bayt");
-        assert_eq!(size(1024), "1,00 KB");
-        assert_eq!(size(1536), "1,50 KB");
-        assert_eq!(size(10 * 1024 * 1024 + 1), "10,0 MB");
-        assert_eq!(size(500 * 1024 * 1024 * 1024), "500 GB");
+        assert_eq!(size_with(0, true, false), "0 bytes");
+        assert_eq!(size_with(1023, true, false), "1023 bytes");
+        assert_eq!(size_with(1024, false, false), "1,00 KB");
+        assert_eq!(size_with(1536, true, false), "1.50 KB");
+        assert_eq!(size_with(10 * 1024 * 1024 + 1, false, false), "10,0 MB");
+        assert_eq!(size_with(500 * 1024 * 1024 * 1024, true, false), "500 GB");
     }
 
     #[test]
     fn relative_and_formats() {
         let now = 1_800_000_000_000i64;
         let dotted = parse_date_pattern(DEFAULT_DATE_PATTERN).unwrap();
-        assert_eq!(datetime_with(now - 10_000, &dotted, true, now, false), "az önce");
-        assert_eq!(datetime_with(now - 5 * 60_000, &dotted, true, now, false), "5 dakika önce");
-        assert_eq!(datetime_with(now - 3 * 3_600_000, &dotted, true, now, true), "3 h ago");
-        assert_eq!(datetime_with(now - 2 * 86_400_000, &dotted, true, now, false), "2 gün önce");
-        assert!(datetime_with(now - 30 * 86_400_000, &dotted, true, now, false).contains('.'));
+        assert_eq!(datetime_with(now - 10_000, &dotted, true, now), "just now");
+        assert_eq!(datetime_with(now - 5 * 60_000, &dotted, true, now), "5 min ago");
+        assert_eq!(datetime_with(now - 3 * 3_600_000, &dotted, true, now), "3 h ago");
+        assert_eq!(datetime_with(now - 2 * 86_400_000, &dotted, true, now), "2 d ago");
+        assert!(datetime_with(now - 30 * 86_400_000, &dotted, true, now).contains('.'));
         // relative off: the pattern even for a minute ago
-        let dmy = datetime_with(now - 60_000, &parse_date_pattern("dd/mm/yyyy hh:mm").unwrap(), false, now, false);
+        let dmy = datetime_with(now - 60_000, &parse_date_pattern("dd/mm/yyyy hh:mm").unwrap(), false, now);
         assert_eq!((dmy.len(), &dmy[2..3], &dmy[5..6], &dmy[13..14]), (16, "/", "/", ":"), "{dmy}");
         assert_eq!(size_with(1500, false, true), "1,50 KB");
         assert_eq!(size_with(1500, false, false), "1,46 KB");

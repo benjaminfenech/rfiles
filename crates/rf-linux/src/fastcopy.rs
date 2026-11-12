@@ -830,9 +830,9 @@ fn finish(kind: Transfer, sources: &[PathBuf], dest_dir: &Path, tracker: &Arc<Tr
 }
 
 /// Error text for copies that didn't verify (translated by the app).
-pub const NOT_VERIFIED: &str = "Doğrulanamayan dosyalar";
+pub const NOT_VERIFIED: &str = "Files that failed verification";
 /// Shown while copies are read back.
-pub const VERIFYING: &str = "Doğrulanıyor…";
+pub const VERIFYING: &str = "Verifying…";
 
 /// Every folder under `dir` (and `dir`).
 fn walk_dirs(dir: &Path, out: &mut Vec<PathBuf>) {

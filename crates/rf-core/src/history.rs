@@ -95,12 +95,12 @@ impl Location {
 
     pub fn title(&self) -> String {
         match self {
-            Location::Home => "Ana Sayfa".into(),
-            Location::RecycleBin => "Geri Dönüşüm Kutusu".into(),
-            Location::Settings => "Ayarlar".into(),
-            Location::Tag(_) => "Etiket".into(),
-            Location::Search { query, .. } => format!("Arama: {query}"),
-            Location::DiskUsage(p) => format!("Disk kullanımı — {}", display_name(p)),
+            Location::Home => "Home".into(),
+            Location::RecycleBin => "Trash".into(),
+            Location::Settings => "Settings".into(),
+            Location::Tag(_) => "Tag".into(),
+            Location::Search { query, .. } => format!("Search: {query}"),
+            Location::DiskUsage(p) => format!("Disk usage — {}", display_name(p)),
             Location::Path(p) => display_name(p),
         }
     }

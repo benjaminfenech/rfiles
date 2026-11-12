@@ -104,7 +104,7 @@ impl Render for HexView {
         let rows = self.bytes.len().div_ceil(ROW);
         let partial = (self.bytes.len() as u64) < self.total;
         let note = if partial {
-            format!("{} · {}", rf_core::format::size(self.total), t!("İlk 256 KB gösteriliyor"))
+            format!("{} · {}", rf_core::format::size(self.total), t!("Showing the first 256 KB"))
         } else {
             rf_core::format::size(self.total)
         };
@@ -118,7 +118,7 @@ impl Render for HexView {
             .items_center()
             .border_b_1()
             .border_color(p.divider)
-            .child(mono().w(px(76.)).text_color(faint_c).child(t!("Ofset")))
+            .child(mono().w(px(76.)).text_color(faint_c).child(t!("Offset")))
             .child(mono().w(px(420.)).text_color(faint_c).child("00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F"))
             .child(mono().text_color(faint_c).child("ASCII"));
         let bytes = self.bytes.clone();

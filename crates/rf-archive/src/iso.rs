@@ -38,17 +38,17 @@ struct Node {
 }
 
 fn device(path: &Path) -> Result<Device> {
-    let src = open_source(path).with_context(|| format!("Arşiv açılamadı: {}", path.display()))?;
+    let src = open_source(path).with_context(|| format!("Couldn't open the archive: {}", path.display()))?;
     StreamDevice::new(ReadOnly::new(StdIo::new(src)), BlockSize::new(2048).unwrap())
-        .map_err(|e| anyhow!("ISO okunamadı: {e:?}"))
+        .map_err(|e| anyhow!("Couldn't read the ISO: {e:?}"))
 }
 
 fn open_iso(path: &Path) -> Result<IsoFs<Device>> {
-    IsoFs::mount(device(path)?, MountOptions::new()).map_err(|e| anyhow!("ISO okunamadı (bozuk olabilir): {e}"))
+    IsoFs::mount(device(path)?, MountOptions::new()).map_err(|e| anyhow!("Couldn't read the ISO (it may be damaged): {e}"))
 }
 
 fn open_udf(path: &Path) -> Result<UdfFs<Device>> {
-    UdfFs::mount(device(path)?, MountOptions::new()).map_err(|e| anyhow!("UDF okunamadı: {e}"))
+    UdfFs::mount(device(path)?, MountOptions::new()).map_err(|e| anyhow!("Couldn't read the UDF file system: {e}"))
 }
 
 /// Walks the whole tree (depth-first, directories before their children); links and special
@@ -58,11 +58,11 @@ fn walk<F: FileSystem>(fs: &mut F) -> Result<Vec<Node>> {
     let mut stack: Vec<(NodeId, String, usize)> = vec![(fs.root(), String::new(), 0)];
     while let Some((dir, prefix, depth)) = stack.pop() {
         if depth >= MAX_DEPTH {
-            bail!("ISO klasör ağacı çok derin");
+            bail!("The ISO folder tree is too deep");
         }
         let mut children = Vec::new();
         let mut cursor = DirCursor::START;
-        while let Some(e) = fs.readdir(dir, cursor).map_err(|e| anyhow!("ISO klasörü okunamadı: {e}"))? {
+        while let Some(e) = fs.readdir(dir, cursor).map_err(|e| anyhow!("Couldn't read an ISO folder: {e}"))? {
             cursor = e.next_cursor();
             let name = String::from_utf8_lossy(e.name().as_bytes()).into_owned();
             if name == "." || name == ".." || name.is_empty() {
@@ -80,7 +80,7 @@ fn walk<F: FileSystem>(fs: &mut F) -> Result<Vec<Node>> {
                 _ => {}
             }
             if out.len() + children.len() > MAX_ENTRIES {
-                bail!("ISO çok fazla girdi içeriyor");
+                bail!("The ISO has too many entries");
             }
         }
         // Emit in directory order; descend afterwards (stack keeps listing order).
@@ -172,7 +172,7 @@ fn extract_fs<F: FileSystem>(
         if !only.wants(&rel) {
             continue;
         }
-        fs.open(n.id, OpenMode::Read).map_err(|e| anyhow!("ISO dosyası açılamadı: {e}"))?;
+        fs.open(n.id, OpenMode::Read).map_err(|e| anyhow!("Couldn't open the ISO file: {e}"))?;
         let res = ex.file(&rel, &n.path, &mut NodeReader { fs: &mut *fs, node: n.id, off: 0, size: n.size }, n.mtime);
         let _ = fs.close(n.id);
         res?;

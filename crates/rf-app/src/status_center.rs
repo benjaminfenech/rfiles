@@ -230,7 +230,7 @@ pub fn start_with(
                     for e in evs {
                         match e {
                             Ev::Ask(list, reply) => {
-                                op.current = Some(t!("Hedefte aynı adlı öğeler var").to_string());
+                                op.current = Some(t!("Items with the same name exist at the destination").to_string());
                                 asks.push((list, reply));
                             }
                             Ev::Progress(t, d, cur) => {
@@ -279,7 +279,7 @@ pub fn start_with(
             // worker died without reporting (panic / spawn failure): don't spin forever
             let _ = entity.update(cx, |ops, cx| {
                 if let Some(op) = ops.ops.iter_mut().find(|o| o.id == id) {
-                    op.phase = OpPhase::Failed(t!("İşlem beklenmedik şekilde sonlandı").into());
+                    op.phase = OpPhase::Failed(t!("The operation ended unexpectedly").into());
                 }
                 ops.unseen_failure |= !ops.open;
                 cx.notify();
@@ -328,8 +328,8 @@ fn transfer_inner(
         return;
     }
     let verb = match kind {
-        Transfer::Copy => t!("Kopyalanıyor"),
-        Transfer::Move => t!("Taşınıyor"),
+        Transfer::Copy => t!("Copying"),
+        Transfer::Move => t!("Moving"),
     };
     let title = format!("{verb}: {} → {}", crate::i18n::items(sources.len()), short(&dest));
     let s = cx.global::<crate::settings::Settings>();
@@ -388,16 +388,16 @@ pub fn offer_resume(cx: &mut App) {
 fn ask_resume(job: rf_linux::fastcopy::Interrupted, window: &mut gpui_kit::Window, cx: &mut App) {
     use crate::prompt::{Button, Kind};
     let title = match job.kind {
-        Transfer::Copy => t!("Yarıda kalan bir kopyalama var"),
-        Transfer::Move => t!("Yarıda kalan bir taşıma var"),
+        Transfer::Copy => t!("A copy was cut off"),
+        Transfer::Move => t!("A move was cut off"),
     };
     let what = format!("{} → {}", crate::i18n::items(job.sources.len()), short(&job.dest));
     let msg = format!(
         "{what}\n{} / {} {}\n\n{}",
         job.done.min(job.files),
         job.files,
-        t!("dosya tamamlandı"),
-        t!("Kaldığı yerden devam edilsin mi? Tamamlanan dosyalar kaynaklarıyla yeniden karşılaştırılır, yarım kalanlar baştan kopyalanır.")
+        t!("files done"),
+        t!("Carry on where it stopped? Files already done are checked against their sources again; partly copied ones are copied again.")
     );
     let (j1, j2) = (job.clone(), job.clone());
     crate::prompt::show(
@@ -405,18 +405,18 @@ fn ask_resume(job: rf_linux::fastcopy::Interrupted, window: &mut gpui_kit::Windo
         Some(msg),
         None,
         vec![
-            Button::new(t!("Devam et"), Kind::Primary, move |_, _, cx| {
+            Button::new(t!("Resume"), Kind::Primary, move |_, _, cx| {
                 resume_job(cx, j1.clone());
                 offer_resume(cx);
                 Ok(())
             }),
-            Button::new(t!("Vazgeç"), Kind::Normal, move |_, _, cx| {
+            Button::new(t!("Discard"), Kind::Normal, move |_, _, cx| {
                 // what was copied stays where it is
                 rf_linux::fastcopy::discard(&j2.journal);
                 offer_resume(cx);
                 Ok(())
             }),
-            Button::new(t!("Sonra"), Kind::Normal, |_, _, _| Ok(())),
+            Button::new(t!("Later"), Kind::Normal, |_, _, _| Ok(())),
         ],
         window,
         cx,
@@ -426,8 +426,8 @@ fn ask_resume(job: rf_linux::fastcopy::Interrupted, window: &mut gpui_kit::Windo
 /// Carries a cut-off job on in the Status Center, with its original plan.
 pub fn resume_job(cx: &mut App, job: rf_linux::fastcopy::Interrupted) {
     let verb = match job.kind {
-        Transfer::Copy => t!("Kopyalanıyor"),
-        Transfer::Move => t!("Taşınıyor"),
+        Transfer::Copy => t!("Copying"),
+        Transfer::Move => t!("Moving"),
     };
     let title = format!("{verb}: {} → {}", crate::i18n::items(job.sources.len()), short(&job.dest));
     let limit = u64::from(cx.global::<crate::settings::Settings>().copy_speed_limit) << 20;
@@ -481,8 +481,8 @@ pub fn extract(cx: &mut App, archive: std::path::PathBuf, dest: Option<std::path
 
 fn extract_now(cx: &mut App, archive: std::path::PathBuf, dest: Option<std::path::PathBuf>) {
     let title = match &dest {
-        Some(d) => format!("{} {} → {}", t!("Çıkarılıyor:"), short(&archive), short(d)),
-        None => format!("{} {}", t!("Çıkarılıyor:"), short(&archive)),
+        Some(d) => format!("{} {} → {}", t!("Extracting:"), short(&archive), short(d)),
+        None => format!("{} {}", t!("Extracting:"), short(&archive)),
     };
     start(cx, title, move |t| {
         let dest = dest.unwrap_or_else(|| rf_archive::smart_extract_dir(&archive));
@@ -505,7 +505,7 @@ fn extract_now(cx: &mut App, archive: std::path::PathBuf, dest: Option<std::path
 
 /// Like `compress_level`, encrypted (ZIP: AES-256, 7z: AES-256 incl. names).
 pub fn compress_protected(cx: &mut App, sources: Vec<std::path::PathBuf>, dest: std::path::PathBuf, format: rf_archive::Format, level: u32, password: String) {
-    let title = format!("{} {} → {}", t!("Sıkıştırılıyor:"), crate::i18n::items(sources.len()), short(&dest));
+    let title = format!("{} {} → {}", t!("Compressing:"), crate::i18n::items(sources.len()), short(&dest));
     start(cx, title, move |t| {
         let cancel = t.cancel.clone();
         let mut prog = archive_progress(&t);
@@ -520,7 +520,7 @@ pub fn compress_protected(cx: &mut App, sources: Vec<std::path::PathBuf>, dest: 
 
 /// RAR through WinRAR's Rar.exe (`level` 0…9).
 pub fn compress_rar(cx: &mut App, sources: Vec<std::path::PathBuf>, dest: std::path::PathBuf, level: u32, password: Option<String>) {
-    let title = format!("{} {} → {}", t!("Sıkıştırılıyor:"), crate::i18n::items(sources.len()), short(&dest));
+    let title = format!("{} {} → {}", t!("Compressing:"), crate::i18n::items(sources.len()), short(&dest));
     start(cx, title, move |t| {
         let cancel = t.cancel.clone();
         let mut prog = archive_progress(&t);
@@ -538,7 +538,7 @@ pub fn compress(cx: &mut App, sources: Vec<std::path::PathBuf>, dest: std::path:
 
 /// `level`: 0 store … 9 smallest.
 pub fn compress_level(cx: &mut App, sources: Vec<std::path::PathBuf>, dest: std::path::PathBuf, format: rf_archive::Format, level: u32) {
-    let title = format!("{} {} → {}", t!("Sıkıştırılıyor:"), crate::i18n::items(sources.len()), short(&dest));
+    let title = format!("{} {} → {}", t!("Compressing:"), crate::i18n::items(sources.len()), short(&dest));
     start(cx, title, move |t| {
         let cancel = t.cancel.clone();
         let mut prog = archive_progress(&t);
@@ -556,9 +556,9 @@ pub fn delete(cx: &mut App, paths: Vec<std::path::PathBuf>, permanent: bool) {
 
 pub fn delete_ex(cx: &mut App, paths: Vec<std::path::PathBuf>, permanent: bool, record: bool) {
     let title = if permanent {
-        format!("{} {}", t!("Kalıcı olarak siliniyor:"), crate::i18n::items(paths.len()))
+        format!("{} {}", t!("Permanently deleting:"), crate::i18n::items(paths.len()))
     } else {
-        format!("{} {}", t!("Geri dönüşüm kutusuna taşınıyor:"), crate::i18n::items(paths.len()))
+        format!("{} {}", t!("Moving to Trash:"), crate::i18n::items(paths.len()))
     };
     let fast = cx.global::<crate::settings::Settings>().fast_file_ops;
     start(cx, title, move |t| {
@@ -606,7 +606,7 @@ pub fn render_button(ops: &Entity<Ops>, p: &Palette, cx: &App) -> AnyElement {
     div()
         .id("status-center")
         // no tooltip while the flyout is open: it would sit on top of the flyout
-        .when(!open, |d| d.tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Durum Merkezi")).build(w, cx)))
+        .when(!open, |d| d.tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Status Center")).build(w, cx)))
         .relative()
         .size(px(32.))
         .flex_shrink_0()
@@ -679,7 +679,7 @@ pub fn render_flyout(ops: &Entity<Ops>, p: &Palette, top: Pixels, cx: &App) -> O
             .justify_center()
             .text_sm()
             .text_color(p.text_secondary)
-            .child(t!("Devam eden dosya işlemleri yok"))
+            .child(t!("No ongoing file operations"))
             .into_any_element()
     } else {
         div().id("sc-list").max_h(px(460.)).overflow_y_scroll().child(list).into_any_element()
@@ -720,7 +720,7 @@ pub fn render_flyout(ops: &Entity<Ops>, p: &Palette, top: Pixels, cx: &App) -> O
                             .pt_2()
                             .pb_2()
                             .items_center()
-                            .child(div().flex_1().text_sm().font_weight(FontWeight::SEMIBOLD).child(t!("Durum Merkezi")))
+                            .child(div().flex_1().text_sm().font_weight(FontWeight::SEMIBOLD).child(t!("Status Center")))
                             .child(
                                 div()
                                     .id("sc-clear")
@@ -736,7 +736,7 @@ pub fn render_flyout(ops: &Entity<Ops>, p: &Palette, top: Pixels, cx: &App) -> O
                                             .active(|s| s.bg(p.pressed))
                                             .on_click(move |_, _, cx| clear_e.update(cx, |o, cx| o.clear_finished(cx)))
                                     })
-                                    .child(t!("Tamamlananları temizle")),
+                                    .child(t!("Clear completed")),
                             ),
                     )
                     .child(body),
@@ -753,25 +753,25 @@ fn render_op(ops: &Entity<Ops>, op: &OpState, p: &Palette) -> AnyElement {
     let running = op.phase == OpPhase::Running;
     let (ops_e, op_id) = (ops.clone(), op.id);
     let (status, color, icon) = match &op.phase {
-        OpPhase::Running if is_paused => (t!("Duraklatıldı").to_string(), p.text_secondary, L::Pause),
+        OpPhase::Running if is_paused => (t!("Paused").to_string(), p.text_secondary, L::Pause),
         OpPhase::Running => {
             let elapsed = op.started.elapsed().as_secs_f32();
             // ETA from the average rate so far; only once there is enough signal
             let eta = (frac > 0.03 && frac < 1.0 && elapsed > 1.5).then(|| elapsed * (1.0 - frac) / frac);
             let text = if op.total == 0 {
-                format!("{} {}", elapsed as u64, t!("sn"))
+                format!("{} {}", elapsed as u64, t!("s"))
             } else {
                 let pct = crate::i18n::pct(frac * 100.0);
                 match eta {
-                    Some(r) => format!("{pct} · {} {}", fmt_duration(r), t!("kaldı")),
-                    None => format!("{pct} · {} {}", elapsed as u64, t!("sn")),
+                    Some(r) => format!("{pct} · {} {}", fmt_duration(r), t!("left")),
+                    None => format!("{pct} · {} {}", elapsed as u64, t!("s")),
                 }
             };
             (text, p.text_secondary, L::LoaderCircle)
         }
-        OpPhase::Done => (t!("Tamamlandı").to_string(), p.accent, L::CircleCheck),
-        OpPhase::Cancelled => (t!("İptal edildi").to_string(), p.text_secondary, L::CircleSlash),
-        OpPhase::Failed(e) => (format!("{} {}", t!("Hata:"), crate::i18n::td(e)), p.danger, L::CircleAlert),
+        OpPhase::Done => (t!("Completed").to_string(), p.accent, L::CircleCheck),
+        OpPhase::Cancelled => (t!("Cancelled").to_string(), p.text_secondary, L::CircleSlash),
+        OpPhase::Failed(e) => (format!("{} {}", t!("Error:"), crate::i18n::td(e)), p.danger, L::CircleAlert),
     };
     let icon_color = match &op.phase {
         OpPhase::Running => p.accent,
@@ -827,7 +827,7 @@ fn render_op(ops: &Entity<Ops>, op: &OpState, p: &Palette) -> AnyElement {
                     .justify_center()
                     .rounded(theme::RADIUS_SM)
                     .text_color(p.text_secondary)
-                    .tooltip(move |w, cx| gpui_kit::component::tooltip::Tooltip::new(if is_paused { t!("Devam et") } else { t!("Duraklat") }).build(w, cx))
+                    .tooltip(move |w, cx| gpui_kit::component::tooltip::Tooltip::new(if is_paused { t!("Resume") } else { t!("Pause") }).build(w, cx))
                     .hover(|s| s.bg(p.pressed))
                     .child(Icon::new(if is_paused { L::Play } else { L::Pause }).size(px(12.)))
                     .on_click({
@@ -850,7 +850,7 @@ fn render_op(ops: &Entity<Ops>, op: &OpState, p: &Palette) -> AnyElement {
                 .rounded(theme::RADIUS_SM)
                 .text_color(p.text_secondary)
                 .tooltip(move |w, cx| {
-                    gpui_kit::component::tooltip::Tooltip::new(if running { t!("İptal") } else { t!("Kapat") }).build(w, cx)
+                    gpui_kit::component::tooltip::Tooltip::new(if running { t!("Cancel") } else { t!("Close") }).build(w, cx)
                 })
                 .hover(|s| s.bg(p.pressed))
                 .child(Icon::new(L::X).size(px(12.)))
@@ -870,7 +870,7 @@ fn render_op(ops: &Entity<Ops>, op: &OpState, p: &Palette) -> AnyElement {
 
 /// "~45 sn", "~3 dk", "~1 sa 5 dk" (rounded; it is an estimate).
 fn fmt_duration(secs: f32) -> String {
-    fmt_duration_with(secs, (crate::t!("sn"), crate::t!("dk"), crate::t!("sa")))
+    fmt_duration_with(secs, (crate::t!("s"), crate::t!("min"), crate::t!("h")))
 }
 
 /// Unit labels are parameters so the formatting is testable without the global language.

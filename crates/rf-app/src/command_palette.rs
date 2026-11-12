@@ -26,59 +26,59 @@ macro_rules! cmd {
 
 fn commands() -> Vec<Cmd> {
     vec![
-        cmd!("Yeni sekme", "Ctrl+T", L::Plus, NewTab),
-        cmd!("Yeni pencere", "Ctrl+N", L::AppWindow, NewWindow),
-        cmd!("Sekmeyi kapat", "Ctrl+W", L::X, CloseTab),
-        cmd!("Kapatılan sekmeyi yeniden aç", "Ctrl+Shift+T", L::RotateCcw, ReopenClosedTab),
-        cmd!("Yeni klasör", "Ctrl+Shift+N", L::FolderPlus, NewFolder),
-        cmd!("Yeni metin belgesi", "", L::FilePlus, NewTextFile),
-        cmd!("Yenile", "F5", L::RotateCw, Refresh),
-        cmd!("Ağ sürücüsüne bağlan…", "", L::Network, MapNetworkDrive),
-        cmd!("Ağ sürücüsü bağlantısını kes…", "", L::Network, DisconnectNetworkDrive),
-        cmd!("Geri", "Alt+←", L::ArrowLeft, GoBack),
-        cmd!("İleri", "Alt+→", L::ArrowRight, GoForward),
-        cmd!("Üst klasör", "Alt+↑", L::ArrowUp, GoUp),
-        cmd!("Ana sayfa", "Alt+Home", L::House, GoHome),
-        cmd!("Ayarlar", "Ctrl+,", L::Settings, GoSettings),
-        cmd!("Geri dönüşüm kutusu", "", L::Trash, GoRecycleBin),
-        cmd!("Adres çubuğuna git", "Ctrl+L", L::TextCursorInput, FocusAddress),
-        cmd!("Ara", "Ctrl+F", L::Search, FocusSearch),
-        cmd!("Gizli öğeleri göster/gizle", "Ctrl+H", L::Eye, ToggleHidden),
-        cmd!("Detay görünümü", "Ctrl+Shift+1", L::List, ViewDetails),
-        cmd!("Izgara görünümü", "Ctrl+Shift+2", L::LayoutGrid, ViewGrid),
-        cmd!("Sütun görünümü", "Ctrl+Shift+3", L::Columns3, ViewColumns),
-        cmd!("Kart görünümü", "Ctrl+Shift+4", L::LayoutList, ViewCards),
-        cmd!("Liste görünümü", "Ctrl+Shift+5", L::TextAlignJustify, ViewList),
-        cmd!("Simgeleri büyüt", "Ctrl+=", L::ZoomIn, ZoomIn),
-        cmd!("Rafa ekle", "Ctrl+Shift+S", L::Inbox, AddToShelf),
-        cmd!("Rafı göster/gizle", "", L::Inbox, ToggleShelf),
-        cmd!("Tam ekran", "F11", L::Maximize, ToggleFullscreen),
-        cmd!("Her zaman üstte", "", L::Pin, ToggleAlwaysOnTop),
-        cmd!("Kompakt görünüm", "", L::PictureInPicture2, ToggleCompactOverlay),
-        cmd!("Klasör takma adına git", "@", L::AtSign, GoToFolderAlias),
-        cmd!("Sağa döndür", "", L::RotateCw, RotateRight),
-        cmd!("Sola döndür", "", L::RotateCcw, RotateLeft),
-        cmd!("Simgeleri küçült", "Ctrl+-", L::ZoomOut, ZoomOut),
-        cmd!("Çift panel aç/kapat", "Ctrl+Shift+D", L::Columns2, ToggleDualPane),
-        cmd!("Panel değiştir", "F6", L::ArrowLeftRight, SwitchPane),
-        cmd!("Önizleme paneli", "Alt+P", L::PanelRight, TogglePreview),
-        cmd!("Kenar çubuğu", "Ctrl+B", L::PanelLeft, ToggleSidebar),
-        cmd!("Terminalde aç", "Ctrl+Shift+`", L::SquareTerminal, OpenTerminal),
-        cmd!("Tümünü seç", "Ctrl+A", L::SquareCheck, SelectAll),
-        cmd!("Seçimi tersine çevir", "", L::ArrowLeftRight, InvertSelection),
-        cmd!("Öğeyi seç/bırak", "Ctrl+Space", L::SquareCheck, ToggleSelection),
-        cmd!("Kopyala", "Ctrl+C", L::Copy, CopyItems),
-        cmd!("Kes", "Ctrl+X", L::Scissors, CutItems),
-        cmd!("Yapıştır", "Ctrl+V", L::ClipboardPaste, PasteItems),
-        cmd!("Seçili klasöre yapıştır", "Ctrl+Shift+V", L::ClipboardPaste, PasteIntoSelected),
-        cmd!("Geri dönüşüm kutusuna taşı", "Del", L::Trash, DeleteItems),
-        cmd!("Kalıcı olarak sil", "Shift+Del", L::TrashOff, DeletePermanently),
-        cmd!("Yeniden adlandır", "F2", L::Pencil, RenameItem),
-        cmd!("Geri al", "Ctrl+Z", L::Undo2, Undo),
-        cmd!("Yolu kopyala", "Ctrl+Shift+C", L::Link, CopyPath),
-        cmd!("Birlikte aç…", "", L::AppWindow, OpenWith),
-        cmd!("Özellikler", "Alt+Enter", L::Info, Properties),
-        cmd!("Sağ tık menüsü", "Shift+F10", L::Menu, ShowContextMenu),
+        cmd!("New tab", "Ctrl+T", L::Plus, NewTab),
+        cmd!("New window", "Ctrl+N", L::AppWindow, NewWindow),
+        cmd!("Close tab", "Ctrl+W", L::X, CloseTab),
+        cmd!("Reopen closed tab", "Ctrl+Shift+T", L::RotateCcw, ReopenClosedTab),
+        cmd!("New folder", "Ctrl+Shift+N", L::FolderPlus, NewFolder),
+        cmd!("New text document", "", L::FilePlus, NewTextFile),
+        cmd!("Refresh", "F5", L::RotateCw, Refresh),
+        cmd!("Map network drive…", "", L::Network, MapNetworkDrive),
+        cmd!("Disconnect network drive…", "", L::Network, DisconnectNetworkDrive),
+        cmd!("Back", "Alt+←", L::ArrowLeft, GoBack),
+        cmd!("Forward", "Alt+→", L::ArrowRight, GoForward),
+        cmd!("Up one level", "Alt+↑", L::ArrowUp, GoUp),
+        cmd!("Home", "Alt+Home", L::House, GoHome),
+        cmd!("Settings", "Ctrl+,", L::Settings, GoSettings),
+        cmd!("Trash", "", L::Trash, GoRecycleBin),
+        cmd!("Focus address bar", "Ctrl+L", L::TextCursorInput, FocusAddress),
+        cmd!("Search", "Ctrl+F", L::Search, FocusSearch),
+        cmd!("Show/hide hidden items", "Ctrl+H", L::Eye, ToggleHidden),
+        cmd!("Details view", "Ctrl+Shift+1", L::List, ViewDetails),
+        cmd!("Grid view", "Ctrl+Shift+2", L::LayoutGrid, ViewGrid),
+        cmd!("Columns view", "Ctrl+Shift+3", L::Columns3, ViewColumns),
+        cmd!("Cards view", "Ctrl+Shift+4", L::LayoutList, ViewCards),
+        cmd!("List view", "Ctrl+Shift+5", L::TextAlignJustify, ViewList),
+        cmd!("Zoom in", "Ctrl+=", L::ZoomIn, ZoomIn),
+        cmd!("Add to shelf", "Ctrl+Shift+S", L::Inbox, AddToShelf),
+        cmd!("Show/hide shelf", "", L::Inbox, ToggleShelf),
+        cmd!("Full screen", "F11", L::Maximize, ToggleFullscreen),
+        cmd!("Always on top", "", L::Pin, ToggleAlwaysOnTop),
+        cmd!("Compact overlay", "", L::PictureInPicture2, ToggleCompactOverlay),
+        cmd!("Go to folder alias", "@", L::AtSign, GoToFolderAlias),
+        cmd!("Rotate right", "", L::RotateCw, RotateRight),
+        cmd!("Rotate left", "", L::RotateCcw, RotateLeft),
+        cmd!("Zoom out", "Ctrl+-", L::ZoomOut, ZoomOut),
+        cmd!("Toggle dual pane", "Ctrl+Shift+D", L::Columns2, ToggleDualPane),
+        cmd!("Switch pane", "F6", L::ArrowLeftRight, SwitchPane),
+        cmd!("Preview pane", "Alt+P", L::PanelRight, TogglePreview),
+        cmd!("Sidebar", "Ctrl+B", L::PanelLeft, ToggleSidebar),
+        cmd!("Open in terminal", "Ctrl+Shift+`", L::SquareTerminal, OpenTerminal),
+        cmd!("Select all", "Ctrl+A", L::SquareCheck, SelectAll),
+        cmd!("Invert selection", "", L::ArrowLeftRight, InvertSelection),
+        cmd!("Toggle item selection", "Ctrl+Space", L::SquareCheck, ToggleSelection),
+        cmd!("Copy", "Ctrl+C", L::Copy, CopyItems),
+        cmd!("Cut", "Ctrl+X", L::Scissors, CutItems),
+        cmd!("Paste", "Ctrl+V", L::ClipboardPaste, PasteItems),
+        cmd!("Paste into selected folder", "Ctrl+Shift+V", L::ClipboardPaste, PasteIntoSelected),
+        cmd!("Move to Trash", "Del", L::Trash, DeleteItems),
+        cmd!("Delete permanently", "Shift+Del", L::TrashOff, DeletePermanently),
+        cmd!("Rename", "F2", L::Pencil, RenameItem),
+        cmd!("Undo", "Ctrl+Z", L::Undo2, Undo),
+        cmd!("Copy path", "Ctrl+Shift+C", L::Link, CopyPath),
+        cmd!("Open with…", "", L::AppWindow, OpenWith),
+        cmd!("Properties", "Alt+Enter", L::Info, Properties),
+        cmd!("Context menu", "Shift+F10", L::Menu, ShowContextMenu),
     ]
 }
 
@@ -154,7 +154,7 @@ fn as_path(q: &str) -> Option<PathBuf> {
 
 impl CommandPalette {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let input = cx.new(|cx| InputState::new(window, cx).placeholder(crate::t!("Komut ara veya yol yaz…")));
+        let input = cx.new(|cx| InputState::new(window, cx).placeholder(crate::t!("Search commands or type a path…")));
         let sub = cx.subscribe_in(&input, window, |this, _, ev: &InputEvent, _, cx| match ev {
             InputEvent::Change => this.refilter(cx),
             InputEvent::PressEnter { .. } => this.run_selected(cx),
@@ -224,7 +224,7 @@ impl Render for CommandPalette {
         let mut list = v_flex().gap_0p5();
         let mut ix = 0;
         if let Some(path) = self.path.clone() {
-            list = list.child(self.row(ix, L::FolderOpen, format!("{} {}", crate::t!("Git:"), path.display()), "Enter", &p, cx));
+            list = list.child(self.row(ix, L::FolderOpen, format!("{} {}", crate::t!("Go to:"), path.display()), "Enter", &p, cx));
             ix += 1;
         }
         let visible: Vec<usize> = self.filtered.iter().copied().take(12).collect();
@@ -295,7 +295,7 @@ impl Render for CommandPalette {
                     )
                     .child(list)
                     .when(self.rows() == 0, |d| {
-                        d.child(div().p_3().text_sm().text_color(p.text_secondary).child(crate::t!("Eşleşen komut yok")))
+                        d.child(div().p_3().text_sm().text_color(p.text_secondary).child(crate::t!("No matching commands")))
                     }),
             )
     }

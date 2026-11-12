@@ -44,7 +44,7 @@ pub fn undo(cx: &mut App) {
     match op {
         UndoOp::Renamed { from, to } => {
             let name = from.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-            crate::status_center::start(cx, format!("{} {name}", t!("Geri alınıyor: yeniden adlandırma →")), move |_| {
+            crate::status_center::start(cx, format!("{} {name}", t!("Undoing rename →")), move |_| {
                 rf_linux::fileops::rename(&to, &name)
             });
         }
@@ -66,20 +66,20 @@ pub fn undo(cx: &mut App) {
         }
         UndoOp::Recycled { pairs } => {
             let n = pairs.len();
-            crate::status_center::start(cx, format!("{} {}", t!("Geri dönüşüm kutusundan geri yükleniyor:"), crate::i18n::items(n)), move |_| {
+            crate::status_center::start(cx, format!("{} {}", t!("Restoring from Trash:"), crate::i18n::items(n)), move |_| {
                 let wanted: Vec<String> = pairs.iter().map(|(_, bin)| bin.to_string_lossy().to_lowercase()).collect();
                 let items: Vec<_> = rf_linux::recycle::list()?
                     .into_iter()
                     .filter(|it| wanted.contains(&it.parsing_path.to_lowercase()))
                     .collect();
-                anyhow::ensure!(!items.is_empty(), t!("öğeler geri dönüşüm kutusunda bulunamadı"));
+                anyhow::ensure!(!items.is_empty(), t!("items were not found in the Trash"));
                 rf_linux::recycle::restore(&items)?;
                 Ok(true)
             });
         }
         UndoOp::Flattened { dir, rec } => {
             let name = rf_core::history::display_name(&dir);
-            crate::status_center::start(cx, format!("{} {name}", t!("Geri alınıyor: düzleştirme →")), move |_| crate::ops::unflatten(&rec));
+            crate::status_center::start(cx, format!("{} {name}", t!("Undoing: flatten →")), move |_| crate::ops::unflatten(&rec));
         }
     }
 }
@@ -92,7 +92,7 @@ pub fn redo(cx: &mut App) {
     match op {
         UndoOp::Renamed { from, to } => {
             let name = to.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-            crate::status_center::start(cx, format!("{} {name}", t!("Yineleniyor: yeniden adlandırma →")), move |_| {
+            crate::status_center::start(cx, format!("{} {name}", t!("Redoing: rename →")), move |_| {
                 rf_linux::fileops::rename(&from, &name)
             });
         }
@@ -113,7 +113,7 @@ pub fn redo(cx: &mut App) {
         }
         UndoOp::Flattened { dir, rec } => {
             let name = rf_core::history::display_name(&dir);
-            crate::status_center::start(cx, format!("{} {name}", t!("Yineleniyor: düzleştirme →")), move |_| crate::ops::reflatten(&rec));
+            crate::status_center::start(cx, format!("{} {name}", t!("Redoing: flatten →")), move |_| crate::ops::reflatten(&rec));
         }
     }
 }

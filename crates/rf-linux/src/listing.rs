@@ -6,15 +6,15 @@ use rf_core::{Entry, EntryKind, attrs};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ListError {
-    #[error("Klasör bulunamadı")]
+    #[error("Folder not found")]
     NotFound,
-    #[error("Erişim reddedildi")]
+    #[error("Access denied")]
     AccessDenied,
-    #[error("Geçersiz klasör adı")]
+    #[error("Invalid folder name")]
     InvalidName,
-    #[error("Sürücü hazır değil")]
+    #[error("The drive is not ready")]
     NotReady,
-    #[error("Ağ yolu bulunamadı")]
+    #[error("Network path not found")]
     NetworkPath,
     /// An fstab share whose server doesn't answer (see `drives::unreachable_share`).
     #[error("Can't reach {0}. Its shares open again once you're back on its network.")]
@@ -25,7 +25,7 @@ pub enum ListError {
     /// Anything else, as the system words it ("Input/output error").
     #[error("{0}")]
     Os(String),
-    #[error("İptal edildi")]
+    #[error("Cancelled")]
     Cancelled,
 }
 

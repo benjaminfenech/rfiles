@@ -51,18 +51,18 @@ fn rar_args(sources: &[PathBuf], dest: &Path, level: u32, password: Option<&str>
 /// Turkish message for a `Rar.exe` exit code.
 fn exit_message(code: i32) -> &'static str {
     match code {
-        2 => "RAR oluşturulamadı (ölümcül hata)",
-        3 => "RAR oluşturulamadı (CRC hatası)",
-        4 => "RAR arşivi kilitli",
-        5 => "RAR dosyasına yazılamadı (disk dolu olabilir)",
-        6 => "Kaynak dosya açılamadı",
-        7 => "RAR komut satırı hatası",
-        8 => "RAR için yeterli bellek yok",
-        9 => "RAR dosyası oluşturulamadı",
-        10 => "Eklenecek dosya bulunamadı",
-        11 => "RAR parolası yanlış",
-        255 => "İşlem kullanıcı tarafından durduruldu",
-        _ => "RAR oluşturulamadı",
+        2 => "Couldn't create the RAR archive (fatal error)",
+        3 => "Couldn't create the RAR archive (CRC error)",
+        4 => "The RAR archive is locked",
+        5 => "Couldn't write the RAR file (the disk may be full)",
+        6 => "Couldn't open a source file",
+        7 => "RAR command line error",
+        8 => "Not enough memory for RAR",
+        9 => "Couldn't create the RAR file",
+        10 => "No files to add were found",
+        11 => "Wrong RAR password",
+        255 => "Stopped by the user",
+        _ => "Couldn't create the RAR archive",
     }
 }
 
@@ -78,7 +78,7 @@ pub fn compress_rar(
     progress: &mut dyn FnMut(Progress),
     cancelled: &dyn Fn() -> bool,
 ) -> Result<CompressStats> {
-    let exe = rar_exe().context("WinRAR bulunamadı")?;
+    let exe = rar_exe().context("WinRAR not found")?;
     run_rar(&exe, sources, dest, level, password, progress, cancelled)
 }
 
@@ -92,10 +92,10 @@ fn run_rar(
     cancelled: &dyn Fn() -> bool,
 ) -> Result<CompressStats> {
     if sources.is_empty() {
-        bail!("Eklenecek öğe yok");
+        bail!("Nothing to add");
     }
     if dest.exists() {
-        bail!("Dosya zaten var");
+        bail!("The file already exists");
     }
     // Used for the statistics and the progress total; also validates the sources.
     let items = collect(sources, &[dest.to_path_buf()])?;
@@ -118,7 +118,7 @@ fn run_rar(
         .stderr(Stdio::null())
         .no_console_window()
         .spawn()
-        .context("Rar.exe başlatılamadı")?;
+        .context("Couldn't start Rar.exe")?;
     let status = loop {
         if cancelled() {
             let _ = child.kill();
@@ -140,7 +140,7 @@ fn run_rar(
     // 0 = success, 1 = warning (e.g. a locked file was skipped; the archive is still valid)
     if code != 0 && code != 1 {
         let _ = std::fs::remove_file(dest);
-        bail!("{} (kod {code})", exit_message(code));
+        bail!("{} (code {code})", exit_message(code));
     }
     ctx.done = total;
     ctx.emit(true);
@@ -197,7 +197,7 @@ mod tests {
         let src = d.join("s.txt");
         std::fs::write(&src, b"s").unwrap();
         let e = run_rar(Path::new("nonexistent-rar.exe"), &[src], &dest, 3, None, &mut |_| {}, &|| false).unwrap_err();
-        assert!(format!("{e:#}").contains("Dosya zaten var"));
+        assert!(format!("{e:#}").contains("The file already exists"));
         assert_eq!(std::fs::read(&dest).unwrap(), b"x");
         let _ = std::fs::remove_dir_all(&d);
     }

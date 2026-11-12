@@ -68,7 +68,7 @@ fn unix_secs(t: Option<SystemTime>) -> Option<u32> {
 
 /// Reads and compresses one file in memory (stored when Deflate doesn't help).
 fn pack(path: &Path, level: u32) -> Result<Packed> {
-    let raw = std::fs::read(path).with_context(|| format!("Dosya okunamadı: {}", path.display()))?;
+    let raw = std::fs::read(path).with_context(|| format!("Couldn't read the file: {}", path.display()))?;
     let crc = crc32fast::hash(&raw);
     let size = raw.len() as u64;
     if level == 0 || raw.is_empty() {
@@ -295,7 +295,7 @@ pub(crate) fn write(items: &[Item], part: &Path, level: u32, ctx: &mut CompressC
         ready: Condvar::new(),
         stop: AtomicBool::new(false),
     };
-    let file = File::create(part).with_context(|| format!("Oluşturulamadı: {}", part.display()))?;
+    let file = File::create(part).with_context(|| format!("Couldn't create: {}", part.display()))?;
     let mut out = Out { w: BufWriter::with_capacity(1 << 20, file), pos: 0 };
     let mut written: Vec<Written> = Vec::with_capacity(items.len());
     let res = std::thread::scope(|s| -> Result<()> {
@@ -332,7 +332,7 @@ pub(crate) fn write(items: &[Item], part: &Path, level: u32, ctx: &mut CompressC
                     (w.method, w.crc, w.size, w.packed) = (p.method, p.crc, p.size, p.data.len() as u64);
                     let zip64 = force64 || w.size >= U32_MAX || w.packed >= U32_MAX;
                     out.put(&local_header(&w, zip64))?;
-                    out.put(&p.data).with_context(|| format!("Yazılamadı: {}", part.display()))?;
+                    out.put(&p.data).with_context(|| format!("Couldn't write: {}", part.display()))?;
                     drop(p);
                     pool.release(i);
                     ctx.done += w.size;
@@ -380,7 +380,7 @@ fn stream_big<W: Write + Seek>(out: &mut Out<W>, w: &mut Written, item: &Item, l
     let header = local_header(w, true);
     out.put(&header)?;
     let data_start = out.pos;
-    let mut src = File::open(&item.path).with_context(|| format!("Dosya açılamadı: {}", item.path.display()))?;
+    let mut src = File::open(&item.path).with_context(|| format!("Couldn't open the file: {}", item.path.display()))?;
     let mut crc = crc32fast::Hasher::new();
     let mut buf = vec![0u8; 1 << 20];
     let mut size = 0u64;
@@ -390,7 +390,7 @@ fn stream_big<W: Write + Seek>(out: &mut Out<W>, w: &mut Written, item: &Item, l
                 ctx.was_cancelled = true;
                 bail!("iptal");
             }
-            let k = src.read(&mut buf).with_context(|| format!("Okunamadı: {}", item.path.display()))?;
+            let k = src.read(&mut buf).with_context(|| format!("Couldn't read: {}", item.path.display()))?;
             if k == 0 {
                 return Ok(());
             }

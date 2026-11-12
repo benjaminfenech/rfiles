@@ -51,7 +51,7 @@ pub fn next_orientation(cur: u16, clockwise: bool) -> u16 {
 }
 /// Rotates one image by 90° (clockwise or counter-clockwise).
 pub fn rotate(path: &Path, clockwise: bool) -> anyhow::Result<()> {
-    anyhow::ensure!(can_rotate(path), "Bu dosya türü döndürülemez");
+    anyhow::ensure!(can_rotate(path), "This file type can't be rotated");
     ensure_com();
     if uses_orientation_tag(path) {
         match rotate_by_tag(path, clockwise) {

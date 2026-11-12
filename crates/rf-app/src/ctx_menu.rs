@@ -109,22 +109,22 @@ impl FolderView {
         let paste_ok = rf_linux::clipboard::has_files();
         if !with_items {
             return vec![
-                Quick::new(L::ClipboardPaste, t!("Yapıştır  (Ctrl+V)"), paste_ok, act(me, |v, w, cx| v.paste(w, cx))),
-                Quick::new(L::Wrench, t!("Özellikler  (Alt+Enter)"), true, act(me, |v, _, cx| v.folder_properties(cx))),
+                Quick::new(L::ClipboardPaste, t!("Paste  (Ctrl+V)"), paste_ok, act(me, |v, w, cx| v.paste(w, cx))),
+                Quick::new(L::Wrench, t!("Properties  (Alt+Enter)"), true, act(me, |v, _, cx| v.folder_properties(cx))),
             ];
         }
         vec![
-            Quick::new(L::Scissors, t!("Kes  (Ctrl+X)"), true, act(me, |v, w, cx| v.copy_to_clipboard(Transfer::Move, w, cx))),
-            Quick::new(L::Copy, t!("Kopyala  (Ctrl+C)"), true, act(me, |v, w, cx| v.copy_to_clipboard(Transfer::Copy, w, cx))),
+            Quick::new(L::Scissors, t!("Cut  (Ctrl+X)"), true, act(me, |v, w, cx| v.copy_to_clipboard(Transfer::Move, w, cx))),
+            Quick::new(L::Copy, t!("Copy  (Ctrl+C)"), true, act(me, |v, w, cx| v.copy_to_clipboard(Transfer::Copy, w, cx))),
             Quick::new(
                 L::ClipboardPaste,
-                t!("Yapıştır  (Ctrl+V)"),
+                t!("Paste  (Ctrl+V)"),
                 paste_ok,
                 act(me, |v, w, cx| if v.selected_is_single_dir() { v.paste_into_selected(w, cx) } else { v.paste(w, cx) }),
             ),
-            Quick::new(L::TextCursorInput, t!("Yeniden adlandır  (F2)"), true, act(me, |v, w, cx| v.rename_selection(w, cx))),
-            Quick::new(L::Trash, t!("Sil  (Del)"), true, act(me, |v, w, cx| v.delete_selected(false, w, cx))),
-            Quick::new(L::Wrench, t!("Özellikler  (Alt+Enter)"), true, act(me, |v, _, cx| v.properties(cx))),
+            Quick::new(L::TextCursorInput, t!("Rename  (F2)"), true, act(me, |v, w, cx| v.rename_selection(w, cx))),
+            Quick::new(L::Trash, t!("Delete  (Del)"), true, act(me, |v, w, cx| v.delete_selected(false, w, cx))),
+            Quick::new(L::Wrench, t!("Properties  (Alt+Enter)"), true, act(me, |v, _, cx| v.properties(cx))),
         ]
     }
 
@@ -136,32 +136,32 @@ impl FolderView {
         let (mp, show_flatten) = (prefs.menu.clone(), prefs.show_flatten);
         let mut v: Vec<Item> = Vec::new();
 
-        v.push(Item::action(t!("Aç"), icon(L::SquareArrowOutUpRight), act(me, |v, _, cx| v.open_selected(cx))).hint("Enter"));
+        v.push(Item::action(t!("Open"), icon(L::SquareArrowOutUpRight), act(me, |v, _, cx| v.open_selected(cx))).hint("Enter"));
         if single_dir {
             let (a, b) = (target_dir.clone(), target_dir.clone());
             if mp.open_in_new_tab {
-                v.push(Item::action(t!("Yeni sekmede aç"), icon(L::SquarePlus), act(me, move |_, _, cx| {
+                v.push(Item::action(t!("Open in new tab"), icon(L::SquarePlus), act(me, move |_, _, cx| {
                     cx.emit(FolderEvent::OpenInNewTab(Location::Path(a.clone())))
                 })));
             }
             if mp.open_in_new_window {
-                v.push(Item::action(t!("Yeni pencerede aç"), icon(L::AppWindow), act(me, move |_, _, cx| {
+                v.push(Item::action(t!("Open in new window"), icon(L::AppWindow), act(me, move |_, _, cx| {
                     cx.emit(FolderEvent::OpenInNewWindow(Location::Path(b.clone())))
                 })));
             }
             if self.dual {
                 let c = target_dir.clone();
-                v.push(Item::action(t!("Diğer panelde aç"), icon(L::Columns2), act(me, move |_, _, cx| {
+                v.push(Item::action(t!("Open in other pane"), icon(L::Columns2), act(me, move |_, _, cx| {
                     cx.emit(FolderEvent::OpenInOtherPane(Location::Path(c.clone())))
                 })));
             }
         }
         if has_files {
-            v.push(Item::Sub { label: t!("Şununla aç").into(), icon: icon(L::LayoutGrid), items: Sub::Pending { key: "openwith", fallback: None } });
+            v.push(Item::Sub { label: t!("Open with").into(), icon: icon(L::LayoutGrid), items: Sub::Pending { key: "openwith", fallback: None } });
         }
         if self.is_search() && items.len() == 1 {
             let p = items[0].clone();
-            v.push(Item::action(t!("Dosya konumunu aç"), icon(L::FolderOpen), act(me, move |v, _, cx| {
+            v.push(Item::action(t!("Open file location"), icon(L::FolderOpen), act(me, move |v, _, cx| {
                 if let (Some(parent), Some(name)) = (p.parent(), p.file_name()) {
                     v.set_reselect(name.to_string_lossy().into_owned());
                     v.navigate(Location::Path(parent.to_path_buf()), cx);
@@ -170,27 +170,27 @@ impl FolderView {
         }
         v.push(Item::Separator);
         if mp.copy_path {
-            v.push(Item::action(t!("Öğe yolunu kopyala"), icon(L::ClipboardCopy), act(me, |v, _, cx| v.copy_path(cx))).hint("Ctrl+Shift+C"));
+            v.push(Item::action(t!("Copy item path"), icon(L::ClipboardCopy), act(me, |v, _, cx| v.copy_path(cx))).hint("Ctrl+Shift+C"));
         }
         if !self.is_search() {
             let sel = items.to_vec();
-            v.push(Item::action(t!("Seçimle klasör oluştur"), icon(L::FolderInput), act(me, move |v, _, cx| v.folder_with_selection(sel.clone(), cx))));
+            v.push(Item::action(t!("New folder with selection"), icon(L::FolderInput), act(me, move |v, _, cx| v.folder_with_selection(sel.clone(), cx))));
         }
         if single_dir && crate::archive_view::split(&target_dir).is_none() && !rf_linux::ftp::is_ftp(&target_dir) {
             let d = target_dir.clone();
-            v.push(Item::action(t!("Disk kullanımını göster"), icon(L::ChartPie), act(me, move |_, _, cx| {
+            v.push(Item::action(t!("Show disk usage"), icon(L::ChartPie), act(me, move |_, _, cx| {
                 cx.emit(FolderEvent::OpenInNewTab(Location::DiskUsage(d.clone())))
             })));
         }
         if single_dir && mp.pin {
             let d = target_dir.clone();
-            v.push(Item::action(t!("Kenar çubuğuna sabitle"), icon(L::Pin), act(me, move |v, _, cx| v.pin(d.clone(), cx))));
+            v.push(Item::action(t!("Pin to sidebar"), icon(L::Pin), act(me, move |v, _, cx| v.pin(d.clone(), cx))));
         }
         if single_dir && crate::archive_view::split(&target_dir).is_none() {
             let d = target_dir.clone();
             let label = match crate::aliases::name_of(&d) {
-                Some(n) => format!("{} (@{n})…", t!("Takma adı düzenle")),
-                None => format!("{}…", t!("Takma ad ver")),
+                Some(n) => format!("{} (@{n})…", t!("Edit alias")),
+                None => format!("{}…", t!("Add alias")),
             };
             v.push(Item::action(label, icon(L::AtSign), move |w, cx| crate::aliases::edit_dialog(d.clone(), w, cx)));
         }
@@ -202,7 +202,7 @@ impl FolderView {
             let same = |e: &String, k: &str| e == k;
             let out = cx.global::<crate::settings::Settings>().index_excluded.iter().any(|e| same(e, &key));
             v.push(
-                Item::action(t!("Aramada dizine alma"), icon(L::SearchSlash), move |_, cx| {
+                Item::action(t!("Leave out of the search index"), icon(L::SearchSlash), move |_, cx| {
                     let key = key.clone();
                     crate::settings::update(cx, |s| {
                         if out {
@@ -217,17 +217,17 @@ impl FolderView {
         }
         if single_dir && show_flatten {
             let d = target_dir.clone();
-            v.push(Item::action(t!("Klasörü düzleştir"), icon(L::FolderTree), act(me, move |v, w, cx| v.flatten_folder(d.clone(), w, cx))));
+            v.push(Item::action(t!("Flatten folder"), icon(L::FolderTree), act(me, move |v, w, cx| v.flatten_folder(d.clone(), w, cx))));
         }
         // type-specific actions (Files: rotate, set as background, install font, run as administrator)
         if !items.is_empty() && items.iter().all(|p| rf_linux::rotate::can_rotate(p) && crate::archive_view::split(p).is_none()) {
-            v.push(Item::action(t!("Sağa döndür"), icon(L::RotateCw), act(me, |v, w, cx| v.rotate_selection(true, w, cx))));
-            v.push(Item::action(t!("Sola döndür"), icon(L::RotateCcw), act(me, |v, w, cx| v.rotate_selection(false, w, cx))));
+            v.push(Item::action(t!("Rotate right"), icon(L::RotateCw), act(me, |v, w, cx| v.rotate_selection(true, w, cx))));
+            v.push(Item::action(t!("Rotate left"), icon(L::RotateCcw), act(me, |v, w, cx| v.rotate_selection(false, w, cx))));
         }
         if items.len() == 1 {
             let p = items[0].clone();
             if rf_linux::fileactions::is_image(&p) {
-                v.push(Item::action(t!("Masaüstü arka planı yap"), icon(L::Monitor), move |_, _| {
+                v.push(Item::action(t!("Set as desktop background"), icon(L::Monitor), move |_, _| {
                     let p = p.clone();
                     std::thread::spawn(move || {
                         if let Err(e) = rf_linux::fileactions::set_wallpaper(&p) {
@@ -236,7 +236,7 @@ impl FolderView {
                     });
                 }));
             } else if rf_linux::fileactions::is_runnable(&p) {
-                v.push(Item::action(t!("Yönetici olarak çalıştır"), icon(L::ShieldCheck), move |_, _| {
+                v.push(Item::action(t!("Run as administrator"), icon(L::ShieldCheck), move |_, _| {
                     let p = p.clone();
                     rf_linux::sta::run(move |owner| {
                         if let Err(e) = rf_linux::ctxmenu::invoke_verb(owner, &ShellTarget::One(p), "runas", cursor()) {
@@ -248,9 +248,9 @@ impl FolderView {
         }
         if !items.is_empty() && items.iter().all(|p| rf_linux::fileactions::is_font(p)) {
             let fonts = items.to_vec();
-            v.push(Item::action(t!("Yazı tipini yükle"), icon(L::Type), move |w, cx| {
+            v.push(Item::action(t!("Install font"), icon(L::Type), move |w, cx| {
                 let fonts = fonts.clone();
-                let title = format!("{} {}", t!("Yazı tipi yükleniyor:"), crate::i18n::items(fonts.len()));
+                let title = format!("{} {}", t!("Installing font:"), crate::i18n::items(fonts.len()));
                 crate::status_center::start_with(cx, title, move |_| {
                     for f in &fonts {
                         rf_linux::fileactions::install_font_for_user(f)?;
@@ -268,18 +268,18 @@ impl FolderView {
         let dlg_items = items.to_vec();
         if mp.compress {
             v.push(Item::sub(
-                t!("Sıkıştır"),
+                t!("Compress"),
                 icon(L::Archive),
                 vec![
-                    Item::action(t!("Arşiv oluştur…"), icon(L::Archive), move |w, cx| create_archive_dialog(dlg_items.clone(), w, cx)),
+                    Item::action(t!("Create archive…"), icon(L::Archive), move |w, cx| create_archive_dialog(dlg_items.clone(), w, cx)),
                     Item::Separator,
-                    Item::action(t!("ZIP olarak sıkıştır"), icon(L::FileArchive), move |_, cx| compress(cx, zip_items.clone(), rf_archive::Format::Zip)),
-                    Item::action(t!("7z olarak sıkıştır"), icon(L::FileArchive), move |_, cx| compress(cx, z7_items.clone(), rf_archive::Format::SevenZ)),
+                    Item::action(t!("Compress to ZIP"), icon(L::FileArchive), move |_, cx| compress(cx, zip_items.clone(), rf_archive::Format::Zip)),
+                    Item::action(t!("Compress to 7z"), icon(L::FileArchive), move |_, cx| compress(cx, z7_items.clone(), rf_archive::Format::SevenZ)),
                 ]
                 .into_iter()
                 .chain(crate::archive_view::winrar().is_some().then(|| {
                     let rar_items = items.to_vec();
-                    Item::action(t!("RAR olarak sıkıştır"), icon(L::FileArchive), move |_, cx| {
+                    Item::action(t!("Compress to RAR"), icon(L::FileArchive), move |_, cx| {
                         if let Some((dir, stem)) = archive_stem(&rar_items) {
                             let dest = rf_linux::fileops::unique_name(&dir, &stem, ".rar");
                             crate::status_center::compress_rar(cx, rar_items.clone(), dest, 5, None);
@@ -292,39 +292,39 @@ impl FolderView {
         if mp.compress && items.len() == 1 && rf_archive::is_supported(&items[0]) {
             let (a, b) = (items[0].clone(), items[0].clone());
             v.push(Item::sub(
-                t!("Çıkar"),
+                t!("Extract"),
                 icon(L::FolderOutput),
                 vec![
-                    Item::action(t!("Buraya çıkar"), icon(L::FolderDown), move |_, cx| {
+                    Item::action(t!("Extract here"), icon(L::FolderDown), move |_, cx| {
                         let dest = a.parent().map(|p| p.to_path_buf()).unwrap_or_default();
                         crate::status_center::extract(cx, a.clone(), Some(dest));
                     }),
-                    Item::action(format!("{} {}\\", t!("Klasöre çıkar:"), crate::ops::archive_stem(&b)), icon(L::FolderInput), move |_, cx| {
+                    Item::action(format!("{} {}\\", t!("Extract to folder:"), crate::ops::archive_stem(&b)), icon(L::FolderInput), move |_, cx| {
                         crate::status_center::extract(cx, b.clone(), None)
                     }),
                 ],
             ));
         }
         if mp.tags {
-            v.push(Item::sub(t!("Etiketler"), icon(L::Tag), tag_items(me, items, cx)));
+            v.push(Item::sub(t!("Tags"), icon(L::Tag), tag_items(me, items, cx)));
         }
         if mp.shelf {
             let shelf_items = items.to_vec();
-            v.push(Item::action(t!("Rafa ekle"), icon(L::Inbox), act(me, move |_, _, cx| cx.emit(FolderEvent::AddToShelf(shelf_items.clone())))).hint("Ctrl+Shift+S"));
+            v.push(Item::action(t!("Add to shelf"), icon(L::Inbox), act(me, move |_, _, cx| cx.emit(FolderEvent::AddToShelf(shelf_items.clone())))).hint("Ctrl+Shift+S"));
         }
         if items.len() > 1 && !self.is_search() {
             let b = items.to_vec();
-            v.push(Item::action(t!("Toplu yeniden adlandır…"), icon(L::PencilLine), act(me, move |_, _, cx| cx.emit(FolderEvent::BulkRename(b.clone())))).hint("F2"));
+            v.push(Item::action(t!("Bulk rename…"), icon(L::PencilLine), act(me, move |_, _, cx| cx.emit(FolderEvent::BulkRename(b.clone())))).hint("F2"));
         }
         if self.dual {
             let (c, m) = (items.to_vec(), items.to_vec());
-            v.push(Item::action(t!("Diğer panele kopyala"), icon(L::CopyPlus), act(me, move |_, _, cx| cx.emit(FolderEvent::ToOtherPane(Transfer::Copy, c.clone())))));
-            v.push(Item::action(t!("Diğer panele taşı"), icon(L::MoveRight), act(me, move |_, _, cx| cx.emit(FolderEvent::ToOtherPane(Transfer::Move, m.clone())))));
+            v.push(Item::action(t!("Copy to other pane"), icon(L::CopyPlus), act(me, move |_, _, cx| cx.emit(FolderEvent::ToOtherPane(Transfer::Copy, c.clone())))));
+            v.push(Item::action(t!("Move to other pane"), icon(L::MoveRight), act(me, move |_, _, cx| cx.emit(FolderEvent::ToOtherPane(Transfer::Move, m.clone())))));
         }
         if single_dir && mp.terminal {
             v.push(Item::Separator);
             let d = target_dir.clone();
-            v.push(Item::action(t!("Terminalde aç"), icon(L::SquareTerminal), move |_, _| open_terminal(d.clone())).hint("Ctrl+Shift+`"));
+            v.push(Item::action(t!("Open in terminal"), icon(L::SquareTerminal), move |_, _| open_terminal(d.clone())).hint("Ctrl+Shift+`"));
         }
         Menu { quick: self.quick_clipboard(me, true), items: v }
     }
@@ -334,36 +334,36 @@ impl FolderView {
         let sort = self.sort;
         let group = self.group;
         let mut v: Vec<Item> = Vec::new();
-        v.push(Item::sub(t!("Sayfa düzeni"), icon(L::LayoutGrid), layout_items(me, mode, self.grid_style)));
-        v.push(Item::sub(t!("Sırala"), icon(L::ArrowUpDown), sort_items(me, sort)));
-        v.push(Item::sub(t!("Gruplandır"), icon(L::ListTree), group_items(me, group)));
-        v.push(Item::action(t!("Yenile"), icon(L::RotateCw), act(me, |v, _, cx| v.refresh(cx))).hint("Ctrl+R"));
+        v.push(Item::sub(t!("Layout"), icon(L::LayoutGrid), layout_items(me, mode, self.grid_style)));
+        v.push(Item::sub(t!("Sort"), icon(L::ArrowUpDown), sort_items(me, sort)));
+        v.push(Item::sub(t!("Group by"), icon(L::ListTree), group_items(me, group)));
+        v.push(Item::action(t!("Refresh"), icon(L::RotateCw), act(me, |v, _, cx| v.refresh(cx))).hint("Ctrl+R"));
         v.push(Item::Separator);
         let fallback = Rc::new(own_new_items(me));
-        v.push(Item::Sub { label: t!("Yeni").into(), icon: icon(L::CirclePlus), items: Sub::Pending { key: "new", fallback: Some(fallback) } });
+        v.push(Item::Sub { label: t!("New").into(), icon: icon(L::CirclePlus), items: Sub::Pending { key: "new", fallback: Some(fallback) } });
         let d = dir.to_path_buf();
-        v.push(Item::action(t!("Kenar çubuğuna sabitle"), icon(L::Pin), act(me, move |v, _, cx| v.pin(d.clone(), cx))));
-        v.push(Item::action(t!("Yolu kopyala"), icon(L::ClipboardCopy), act(me, |v, _, cx| v.copy_path(cx))));
+        v.push(Item::action(t!("Pin to sidebar"), icon(L::Pin), act(me, move |v, _, cx| v.pin(d.clone(), cx))));
+        v.push(Item::action(t!("Copy path"), icon(L::ClipboardCopy), act(me, |v, _, cx| v.copy_path(cx))));
         if !self.is_search() && !crate::archive_view::is_browsable_path(dir) && !rf_linux::ftp::is_ftp(dir) {
             let d = dir.to_path_buf();
-            v.push(Item::action(t!("Disk kullanımını göster"), icon(L::ChartPie), act(me, move |_, _, cx| {
+            v.push(Item::action(t!("Show disk usage"), icon(L::ChartPie), act(me, move |_, _, cx| {
                 cx.emit(FolderEvent::OpenInNewTab(Location::DiskUsage(d.clone())))
             })));
         }
         let show_hidden = self.filter.show_hidden;
-        v.push(Item::action(t!("Gizli öğeleri göster"), icon(L::Eye), act(me, |v, _, cx| v.toggle_hidden(cx))).checked(show_hidden).hint("Ctrl+H"));
+        v.push(Item::action(t!("Show hidden items"), icon(L::Eye), act(me, |v, _, cx| v.toggle_hidden(cx))).checked(show_hidden).hint("Ctrl+H"));
         v.push(Item::Separator);
         let d = dir.to_path_buf();
-        v.push(Item::action(t!("Terminalde aç"), icon(L::SquareTerminal), move |_, _| open_terminal(d.clone())).hint("Ctrl+Shift+`"));
+        v.push(Item::action(t!("Open in terminal"), icon(L::SquareTerminal), move |_, _| open_terminal(d.clone())).hint("Ctrl+Shift+`"));
         // Git (Files: initialize / clone from the folder background)
         if !self.is_search() && !crate::archive_view::is_browsable_path(dir) {
             let mut git_items = Vec::new();
             if self.git.is_none() {
                 let (m, d) = (me.clone(), dir.to_path_buf());
-                git_items.push(Item::action(t!("Git deposu başlat"), icon(L::GitBranchPlus), move |_, cx| crate::git_ui::init_repo(m.clone(), d.clone(), cx)));
+                git_items.push(Item::action(t!("Initialize Git repository"), icon(L::GitBranchPlus), move |_, cx| crate::git_ui::init_repo(m.clone(), d.clone(), cx)));
             }
             let (m, d) = (me.clone(), dir.to_path_buf());
-            git_items.push(Item::action(t!("Depoyu klonla…"), icon(L::GitFork), move |w, cx| crate::git_ui::clone_dialog(m.clone(), d.clone(), w, cx)));
+            git_items.push(Item::action(t!("Clone repository…"), icon(L::GitFork), move |w, cx| crate::git_ui::clone_dialog(m.clone(), d.clone(), w, cx)));
             v.push(Item::sub("Git", icon(L::GitBranch), git_items));
         }
         Menu { quick: self.quick_clipboard(me, false), items: v }
@@ -392,11 +392,11 @@ fn layout_items(me: &Me, mode: ViewMode, style: crate::folder_view::GridStyle) -
         Item::action(label.to_string(), icon(l), act(me, move |v, _, cx| v.set_layout(m, st, cx))).checked(on).hint(hint.to_string())
     };
     vec![
-        layout(t!("Ayrıntılar"), L::List, ViewMode::Details, GridStyle::Tiles, "Ctrl+Shift+1"),
-        layout(t!("Liste"), L::TextAlignJustify, ViewMode::Grid, GridStyle::List, "Ctrl+Shift+5"),
-        layout(t!("Kartlar"), L::LayoutList, ViewMode::Grid, GridStyle::Cards, "Ctrl+Shift+4"),
-        layout(t!("Izgara"), L::LayoutGrid, ViewMode::Grid, GridStyle::Tiles, "Ctrl+Shift+2"),
-        layout(t!("Sütunlar"), L::Columns3, ViewMode::Columns, GridStyle::Tiles, "Ctrl+Shift+3"),
+        layout(t!("Details"), L::List, ViewMode::Details, GridStyle::Tiles, "Ctrl+Shift+1"),
+        layout(t!("List"), L::TextAlignJustify, ViewMode::Grid, GridStyle::List, "Ctrl+Shift+5"),
+        layout(t!("Cards"), L::LayoutList, ViewMode::Grid, GridStyle::Cards, "Ctrl+Shift+4"),
+        layout(t!("Grid"), L::LayoutGrid, ViewMode::Grid, GridStyle::Tiles, "Ctrl+Shift+2"),
+        layout(t!("Columns"), L::Columns3, ViewMode::Columns, GridStyle::Tiles, "Ctrl+Shift+3"),
     ]
 }
 
@@ -418,14 +418,14 @@ fn sort_items(me: &Me, sort: rf_core::SortSpec) -> Vec<Item> {
         .checked(sort.dir == d)
     };
     vec![
-        by(t!("Ad"), SortKey::Name),
-        by(t!("Değiştirme tarihi"), SortKey::Modified),
-        by(t!("Oluşturma tarihi"), SortKey::Created),
-        by(t!("Tür"), SortKey::Type),
-        by(t!("Boyut"), SortKey::Size),
+        by(t!("Name"), SortKey::Name),
+        by(t!("Date modified"), SortKey::Modified),
+        by(t!("Date created"), SortKey::Created),
+        by(t!("Type"), SortKey::Type),
+        by(t!("Size"), SortKey::Size),
         Item::Separator,
-        dir_item(t!("Artan"), SortDir::Asc),
-        dir_item(t!("Azalan"), SortDir::Desc),
+        dir_item(t!("Ascending"), SortDir::Asc),
+        dir_item(t!("Descending"), SortDir::Desc),
     ]
 }
 
@@ -441,20 +441,20 @@ fn order_items(me: &Me, sort: rf_core::SortSpec) -> Vec<Item> {
         .checked(sort.dirs_first == dirs && (dirs || sort.files_first == files))
     };
     vec![
-        order(t!("Önce klasörleri sırala"), true, false),
-        order(t!("Önce dosyaları sırala"), false, true),
-        order(t!("Dosyaları ve klasörleri birlikte sırala"), false, false),
+        order(t!("Sort folders first"), true, false),
+        order(t!("Sort files first"), false, true),
+        order(t!("Sort files and folders together"), false, false),
     ]
 }
 
 fn group_items(me: &Me, group: GroupBy) -> Vec<Item> {
     let grp = |label: &str, g: GroupBy| Item::action(label.to_string(), MenuIcon::None, act(me, move |v, _, cx| v.set_group(g, cx))).checked(group == g);
     vec![
-        grp(t!("Yok"), GroupBy::None),
-        grp(t!("Ad"), GroupBy::Name),
-        grp(t!("Tür"), GroupBy::Type),
-        grp(t!("Değiştirme tarihi"), GroupBy::Modified),
-        grp(t!("Boyut"), GroupBy::Size),
+        grp(t!("None"), GroupBy::None),
+        grp(t!("Name"), GroupBy::Name),
+        grp(t!("Type"), GroupBy::Type),
+        grp(t!("Date modified"), GroupBy::Modified),
+        grp(t!("Size"), GroupBy::Size),
     ]
 }
 
@@ -496,14 +496,14 @@ impl FolderView {
                 // Files' layout: Sort ▸ / Group ▸, then the folder/file order; these apply to
                 // this folder only (each folder remembers its own) unless "sync" is on
                 let mut v = vec![
-                    Item::sub(t!("Sırala"), icon(L::ArrowUpDown), sort_items(&me, self.sort)),
-                    Item::sub(t!("Gruplandır"), icon(L::ListTree), group_items(&me, self.group)),
+                    Item::sub(t!("Sort"), icon(L::ArrowUpDown), sort_items(&me, self.sort)),
+                    Item::sub(t!("Group by"), icon(L::ListTree), group_items(&me, self.group)),
                     Item::Separator,
                 ];
                 v.extend(order_items(&me, self.sort));
                 if !cx.global::<crate::settings::Settings>().sync_layout && matches!(self.location(), Location::Path(_)) {
                     v.push(Item::Separator);
-                    v.push(Item::action(t!("Tüm klasörler için varsayılan yap"), icon(L::CopyCheck), act(&me, |v, _, cx| v.make_layout_default(cx))));
+                    v.push(Item::action(t!("Make default for all folders"), icon(L::CopyCheck), act(&me, |v, _, cx| v.make_layout_default(cx))));
                 }
                 v
             }
@@ -520,9 +520,9 @@ impl FolderView {
 
 fn own_new_items(me: &Me) -> Vec<Item> {
     vec![
-        Item::action(t!("Klasör"), MenuIcon::Tinted(L::Folder, crate::theme::kind_color(crate::icons::Category::Folder, true)), act(me, |v, _, cx| v.create_new(true, cx)))
+        Item::action(t!("Folder"), MenuIcon::Tinted(L::Folder, crate::theme::kind_color(crate::icons::Category::Folder, true)), act(me, |v, _, cx| v.create_new(true, cx)))
             .hint("Ctrl+Shift+N"),
-        Item::action(t!("Metin belgesi"), icon(L::FileText), act(me, |v, _, cx| v.create_new(false, cx))),
+        Item::action(t!("Text document"), icon(L::FileText), act(me, |v, _, cx| v.create_new(false, cx))),
     ]
 }
 
@@ -554,7 +554,7 @@ fn archive_stem(items: &[PathBuf]) -> Option<(PathBuf, String)> {
         } else {
             first.file_stem().map(|s| s.to_string_lossy().into_owned())
         }
-        .unwrap_or_else(|| "Arşiv".into())
+        .unwrap_or_else(|| "Archive".into())
     } else {
         rf_core::history::display_name(&dir)
     };
@@ -577,7 +577,7 @@ fn create_archive_dialog(items: Vec<PathBuf>, window: &mut Window, cx: &mut App)
     let protect = std::rc::Rc::new(std::cell::Cell::new(0usize));
     let choices = vec![
         Choice {
-            label: t!("Biçim").into(),
+            label: t!("Format").into(),
             options: {
                 let mut o: Vec<SharedString> = vec!["ZIP".into(), "7z".into(), "tar.zst".into()];
                 // RAR is WinRAR's format: offered only when its Rar.exe is installed
@@ -589,18 +589,18 @@ fn create_archive_dialog(items: Vec<PathBuf>, window: &mut Window, cx: &mut App)
             selected: format.clone(),
         },
         Choice {
-            label: t!("Sıkıştırma düzeyi").into(),
-            options: vec![t!("Yok").into(), t!("Hızlı").into(), t!("Normal").into(), t!("En yüksek").into()],
+            label: t!("Compression level").into(),
+            options: vec![t!("None").into(), t!("Fast").into(), t!("Normal").into(), t!("Maximum").into()],
             selected: level.clone(),
         },
         // ZIP: AES-256; 7z: AES-256 with encrypted names
-        Choice { label: t!("Parola").into(), options: vec![t!("Yok").into(), t!("Parola koy…").into()], selected: protect.clone() },
+        Choice { label: t!("Password").into(), options: vec![t!("None").into(), t!("Set password…").into()], selected: protect.clone() },
     ];
-    let create = Button::new(t!("Oluştur"), Kind::Primary, move |name, window, cx| {
+    let create = Button::new(t!("Create"), Kind::Primary, move |name, window, cx| {
         let name = name.unwrap_or_default();
         let name = name.trim();
         if name.is_empty() {
-            return Err(t!("Bir ad girin").into());
+            return Err(t!("Enter a name").into());
         }
         if crate::ops::invalid_file_name(name) {
             return Err("A file name can't contain \"/\".".into());
@@ -626,7 +626,7 @@ fn create_archive_dialog(items: Vec<PathBuf>, window: &mut Window, cx: &mut App)
         let dest = dir.join(format!("{name}.{}", fmt.extension()));
         if protect.get() == 1 {
             if fmt == rf_archive::Format::TarZst {
-                return Err(t!("tar.zst parola desteklemez; ZIP ya da 7z seçin").into());
+                return Err(t!("tar.zst can't have a password; choose ZIP or 7z").into());
             }
             // asked after this dialog closes (one dialog at a time)
             let items = items.clone();
@@ -639,9 +639,9 @@ fn create_archive_dialog(items: Vec<PathBuf>, window: &mut Window, cx: &mut App)
         Ok(())
     });
     crate::prompt::show_with(
-        t!("Arşiv oluştur"),
-        Some(format!("{} — {}", crate::i18n::items(count),t!("uzantı biçime göre eklenir"))),
-        Some((stem, t!("Arşiv adı").to_string())),
+        t!("Create archive"),
+        Some(format!("{} — {}", crate::i18n::items(count),t!("the extension follows the format"))),
+        Some((stem, t!("Archive name").to_string())),
         choices,
         vec![create, Button::cancel()],
         window,
@@ -655,18 +655,18 @@ type Finish = Rc<dyn Fn(&mut App, String)>;
 fn archive_password(dest: PathBuf, finish: Finish, first: Option<String>, window: &mut Window, cx: &mut App) {
     use crate::prompt::{Button, Kind};
     let again = first.is_some();
-    let title = if again { t!("Parolayı tekrar girin") } else { t!("Arşiv parolası") };
-    let msg = format!("{} — {}", rf_core::history::display_name(&dest), t!("Parolayı unutursanız arşiv açılamaz."));
-    let label = if again { t!("Oluştur") } else { t!("Devam") };
+    let title = if again { t!("Enter the password again") } else { t!("Archive password") };
+    let msg = format!("{} — {}", rf_core::history::display_name(&dest), t!("If you forget the password, the archive can't be opened."));
+    let label = if again { t!("Create") } else { t!("Next") };
     crate::prompt::show_secret(
         title,
         Some(msg),
-        t!("Parola").to_string(),
+        t!("Password").to_string(),
         vec![
             Button::new(label, Kind::Primary, move |text, window, cx| {
                 let pw = text.unwrap_or_default();
                 if pw.is_empty() {
-                    return Err(t!("Parola boş olamaz").into());
+                    return Err(t!("The password can't be empty").into());
                 }
                 match &first {
                     None => {
@@ -674,7 +674,7 @@ fn archive_password(dest: PathBuf, finish: Finish, first: Option<String>, window
                         window.defer(cx, move |window, cx| archive_password(d, f, Some(pw), window, cx));
                     }
                     Some(p) if *p == pw => finish(cx, pw),
-                    Some(_) => return Err(t!("Parolalar eşleşmiyor").into()),
+                    Some(_) => return Err(t!("The passwords don't match").into()),
                 }
                 Ok(())
             }),
@@ -711,7 +711,7 @@ fn split_shell_items(me: &Me, session: u64, shell: Vec<ShellItem>, background: b
         }
         if it.verb.eq_ignore_ascii_case("openas") && open_with.is_none() {
             // a single "Open with…" entry: say what it does
-            open_with = Some(vec![ShellItem { label: t!("Başka bir uygulama seç").into(), ..it.clone() }]);
+            open_with = Some(vec![ShellItem { label: t!("Choose another app").into(), ..it.clone() }]);
         }
         if is_hidden(&it) {
             continue;
@@ -722,7 +722,7 @@ fn split_shell_items(me: &Me, session: u64, shell: Vec<ShellItem>, background: b
 
     let open_with = match open_with {
         Some(v) => Pending::Ready(Rc::new(to_items(me, session, &tidy(v), cx))),
-        None => Pending::Ready(Rc::new(vec![Item::action(t!("Başka bir uygulama seç"), icon(L::LayoutGrid), act(me, |v, _, _| v.open_with()))])),
+        None => Pending::Ready(Rc::new(vec![Item::action(t!("Choose another app"), icon(L::LayoutGrid), act(me, |v, _, _| v.open_with()))])),
     };
     let new = match new.filter(|_| background) {
         Some(v) => {

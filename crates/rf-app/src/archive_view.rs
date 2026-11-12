@@ -90,7 +90,7 @@ pub fn needs_password_now(archive: &Path) -> bool {
 
 /// Paste / drop into an archive's folder view: adds `sources` under `inner`.
 pub fn add_into(cx: &mut gpui_kit::App, archive: PathBuf, inner: PathBuf, sources: Vec<PathBuf>) {
-    let title = format!("{} {} → {}", t!("Arşive ekleniyor:"), crate::i18n::items(sources.len()), rf_core::history::display_name(&archive));
+    let title = format!("{} {} → {}", t!("Adding to archive:"), crate::i18n::items(sources.len()), rf_core::history::display_name(&archive));
     let inner_dir = inner.to_string_lossy().replace('\\', "/").trim_matches('/').to_string();
     crate::status_center::start(cx, title, move |t| {
         let cancel = t.cancel.clone();
@@ -106,7 +106,7 @@ pub fn add_into(cx: &mut gpui_kit::App, archive: PathBuf, inner: PathBuf, source
 
 /// F2 inside an archive: renames the entry (a folder renames everything below it).
 pub fn rename_inside(cx: &mut gpui_kit::App, archive: PathBuf, inner: String, new_name: String) {
-    let title = format!("{} {} → {new_name}", t!("Arşivde yeniden adlandırılıyor:"), inner.rsplit('/').next().unwrap_or_default());
+    let title = format!("{} {} → {new_name}", t!("Renaming in archive:"), inner.rsplit('/').next().unwrap_or_default());
     crate::status_center::start(cx, title, move |t| {
         let cancel = t.cancel.clone();
         let opts = options(&archive);
@@ -121,7 +121,7 @@ pub fn rename_inside(cx: &mut gpui_kit::App, archive: PathBuf, inner: String, ne
 
 /// "New folder" inside an archive.
 pub fn mkdir_inside(cx: &mut gpui_kit::App, archive: PathBuf, inner_dir: String, name: String) {
-    let title = format!("{} {name}", t!("Arşivde klasör oluşturuluyor:"));
+    let title = format!("{} {name}", t!("Creating folder in archive:"));
     crate::status_center::start(cx, title, move |t| {
         let cancel = t.cancel.clone();
         let opts = options(&archive);
@@ -149,7 +149,7 @@ pub fn unique_name(base: &str, ext: &str, taken: &[String]) -> String {
 
 /// Delete inside an archive (selection of an archive's folder view).
 pub fn delete_inside(cx: &mut gpui_kit::App, archive: PathBuf, inners: Vec<String>) {
-    let title = format!("{} {} ← {}", t!("Arşivden siliniyor:"), crate::i18n::items(inners.len()), rf_core::history::display_name(&archive));
+    let title = format!("{} {} ← {}", t!("Deleting from archive:"), crate::i18n::items(inners.len()), rf_core::history::display_name(&archive));
     crate::status_center::start(cx, title, move |t| {
         let cancel = t.cancel.clone();
         let opts = options(&archive);
@@ -165,17 +165,17 @@ pub fn delete_inside(cx: &mut gpui_kit::App, archive: PathBuf, inners: Vec<Strin
 /// Asks for an archive's password; `then` runs once one was entered.
 pub fn ask_password(archive: PathBuf, wrong: bool, window: &mut gpui_kit::Window, cx: &mut gpui_kit::App, then: impl Fn(&mut gpui_kit::App) + 'static) {
     use crate::prompt::{Button, Kind};
-    let msg = if wrong { t!("Parola yanlış. Tekrar deneyin.") } else { t!("Bu arşiv parola ile korunuyor.") };
+    let msg = if wrong { t!("Wrong password. Try again.") } else { t!("This archive is password protected.") };
     let name = rf_core::history::display_name(&archive);
     crate::prompt::show_secret(
-        format!("{} — {name}", t!("Parola")),
+        format!("{} — {name}", t!("Password")),
         Some(msg.to_string()),
-        t!("Parola").to_string(),
+        t!("Password").to_string(),
         vec![
-            Button::new(t!("Tamam"), Kind::Primary, move |text, _, cx| {
+            Button::new(t!("OK"), Kind::Primary, move |text, _, cx| {
                 let pw = text.unwrap_or_default();
                 if pw.is_empty() {
-                    return Err(t!("Parola boş olamaz").to_string());
+                    return Err(t!("The password can't be empty").to_string());
                 }
                 set_password(&archive, Some(pw));
                 then(cx);
@@ -323,7 +323,7 @@ pub fn extract_items(paths: &[PathBuf], cancelled: &dyn Fn() -> bool, progress: 
             let p = dir.join(&inner);
             if !p.exists() {
                 let _ = std::fs::remove_dir_all(&dir);
-                anyhow::bail!("{}: {}", t!("Arşivde bulunamadı"), inner.display());
+                anyhow::bail!("{}: {}", t!("Not found in the archive"), inner.display());
             }
             out[i] = p;
         }
@@ -350,7 +350,7 @@ pub fn open_items(cx: &mut gpui_kit::App, paths: Vec<PathBuf>) {
     if paths.is_empty() {
         return;
     }
-    let title = format!("{} {}", t!("Arşivden açılıyor:"), names(&paths));
+    let title = format!("{} {}", t!("Opening from archive:"), names(&paths));
     crate::status_center::start(cx, title, move |t| {
         let cancel = t.cancel.clone();
         let mut prog = crate::status_center::archive_progress_pub(&t);
@@ -380,7 +380,7 @@ pub fn copy_items(cx: &mut gpui_kit::App, paths: Vec<PathBuf>) {
         }
         let _ = tx.send(rf_linux::clipboard::sequence());
     });
-    let title = format!("{} {}", t!("Arşivden kopyalanıyor:"), names(&paths));
+    let title = format!("{} {}", t!("Copying from archive:"), names(&paths));
     crate::status_center::start(cx, title, move |t| {
         let seq = rx.recv_timeout(std::time::Duration::from_secs(5)).unwrap_or(0);
         let cancel = t.cancel.clone();

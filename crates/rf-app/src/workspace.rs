@@ -342,9 +342,9 @@ impl Workspace {
             cx.notify()
         })
         .detach();
-        let address = cx.new(|cx| InputState::new(window, cx).placeholder(t!("Yol girin")));
-        let search = cx.new(|cx| InputState::new(window, cx).placeholder(t!("Ara")));
-        let filter_input = cx.new(|cx| InputState::new(window, cx).placeholder(t!("Dosya adı")));
+        let address = cx.new(|cx| InputState::new(window, cx).placeholder(t!("Enter a path")));
+        let search = cx.new(|cx| InputState::new(window, cx).placeholder(t!("Search")));
+        let filter_input = cx.new(|cx| InputState::new(window, cx).placeholder(t!("File name")));
 
         let mut subs = Vec::new();
         subs.push(cx.subscribe_in(&address, window, |this, input, ev: &InputEvent, window, cx| match ev {
@@ -810,25 +810,25 @@ impl Workspace {
         };
         let n = self.tabs.len();
         let items = vec![
-            Item::action(t!("Yeni sekme"), MenuIcon::Lucide(L::Plus), act(|ws, _, w, cx| ws.open_tab(Location::Home, w, cx))).hint("Ctrl+T"),
-            Item::action(t!("Sekmeyi çoğalt"), MenuIcon::Lucide(L::Copy), act(|ws, ix, w, cx| {
+            Item::action(t!("New tab"), MenuIcon::Lucide(L::Plus), act(|ws, _, w, cx| ws.open_tab(Location::Home, w, cx))).hint("Ctrl+T"),
+            Item::action(t!("Duplicate tab"), MenuIcon::Lucide(L::Copy), act(|ws, ix, w, cx| {
                 if let Some(loc) = ws.tabs.get(ix).map(|t| t.view().read(cx).location().clone()) {
                     ws.open_tab(loc, w, cx);
                 }
             }))
             .hint("Ctrl+Shift+K"),
-            Item::action(t!("Yeni pencereye taşı"), MenuIcon::Lucide(L::AppWindow), act(|ws, ix, w, cx| ws.detach_tab(ix, w, cx))).enabled(n > 1),
+            Item::action(t!("Move to new window"), MenuIcon::Lucide(L::AppWindow), act(|ws, ix, w, cx| ws.detach_tab(ix, w, cx))).enabled(n > 1),
             Item::Separator,
-            Item::action(t!("Diğer sekmeleri kapat"), MenuIcon::None, act(|ws, ix, w, cx| {
+            Item::action(t!("Close other tabs"), MenuIcon::None, act(|ws, ix, w, cx| {
                 ws.active = ix;
                 ws.close_other_tabs(w, cx)
             }))
             .enabled(n > 1),
-            Item::action(t!("Soldaki sekmeleri kapat"), MenuIcon::None, act(|ws, ix, w, cx| ws.close_tabs_to_side(ix, false, w, cx))).enabled(ix > 0),
-            Item::action(t!("Sağdaki sekmeleri kapat"), MenuIcon::None, act(|ws, ix, w, cx| ws.close_tabs_to_side(ix, true, w, cx))).enabled(ix + 1 < n),
-            Item::action(t!("Sekmeyi kapat"), MenuIcon::Lucide(L::X), act(|ws, ix, w, cx| ws.close_tab(ix, w, cx))).hint("Ctrl+W"),
+            Item::action(t!("Close tabs to the left"), MenuIcon::None, act(|ws, ix, w, cx| ws.close_tabs_to_side(ix, false, w, cx))).enabled(ix > 0),
+            Item::action(t!("Close tabs to the right"), MenuIcon::None, act(|ws, ix, w, cx| ws.close_tabs_to_side(ix, true, w, cx))).enabled(ix + 1 < n),
+            Item::action(t!("Close tab"), MenuIcon::Lucide(L::X), act(|ws, ix, w, cx| ws.close_tab(ix, w, cx))).hint("Ctrl+W"),
             Item::Separator,
-            Item::action(t!("Kapatılan sekmeyi yeniden aç"), MenuIcon::Lucide(L::RotateCcw), act(|ws, _, w, cx| {
+            Item::action(t!("Reopen closed tab"), MenuIcon::Lucide(L::RotateCcw), act(|ws, _, w, cx| {
                 if let Some(loc) = ws.closed.pop() {
                     ws.open_tab(loc, w, cx);
                 }
@@ -870,7 +870,7 @@ impl Workspace {
                 let me = cx.entity().downgrade();
                 let folder = MenuIcon::Tinted(L::Folder, crate::theme::kind_color(crate::icons::Category::Folder, true));
                 let items: Vec<Item> = if entries.is_empty() {
-                    vec![Item::action(t!("(alt klasör yok)"), MenuIcon::None, |_, _| {}).enabled(false)]
+                    vec![Item::action(t!("(no subfolders)"), MenuIcon::None, |_, _| {}).enabled(false)]
                 } else {
                     entries
                         .into_iter()
@@ -1044,7 +1044,7 @@ impl Workspace {
                 .border_b_1()
                 .border_color(p.divider)
                 .child(Icon::new(L::Folder).size(px(16.)).text_color(crate::theme::kind_color(crate::icons::Category::Folder, true)))
-                .child(div().text_sm().font_weight(FontWeight::SEMIBOLD).child(t!("Şunlara göre filtrele")))
+                .child(div().text_sm().font_weight(FontWeight::SEMIBOLD).child(t!("Filter by")))
                 .child(
                     div()
                         .w(px(200.))
@@ -1128,36 +1128,36 @@ impl Workspace {
         let split = self.tabs[self.active].right.is_some();
         let vertical = cx.global::<crate::settings::Settings>().dual_pane_vertical;
         let mut items = vec![
-            Item::action(t!("Yeni pencere"), MenuIcon::Lucide(L::AppWindow), |w, cx| w.dispatch_action(Box::new(NewWindow), cx)).hint("Ctrl+N"),
+            Item::action(t!("New window"), MenuIcon::Lucide(L::AppWindow), |w, cx| w.dispatch_action(Box::new(NewWindow), cx)).hint("Ctrl+N"),
             if self.compact.is_some() {
-                Item::action(t!("Kompakt görünümden çık"), MenuIcon::Lucide(L::Maximize2), with(|ws, w, cx| ws.toggle_compact(w, cx)))
+                Item::action(t!("Exit compact overlay"), MenuIcon::Lucide(L::Maximize2), with(|ws, w, cx| ws.toggle_compact(w, cx)))
             } else {
-                Item::action(t!("Kompakt görünüme geç"), MenuIcon::Lucide(L::PictureInPicture2), with(|ws, w, cx| ws.toggle_compact(w, cx)))
+                Item::action(t!("Enter compact overlay"), MenuIcon::Lucide(L::PictureInPicture2), with(|ws, w, cx| ws.toggle_compact(w, cx)))
             },
         ];
         if split {
             items.push(Item::sub(
-                t!("Bölmeleri düzenle"),
+                t!("Arrange panes"),
                 MenuIcon::Lucide(L::LayoutPanelLeft),
                 vec![
-                    Item::action(t!("Yan yana"), MenuIcon::Lucide(L::Columns2), with(|ws, w, cx| ws.arrange_panes(true, w, cx))).checked(vertical),
-                    Item::action(t!("Üst üste"), MenuIcon::Lucide(L::Rows2), with(|ws, w, cx| ws.arrange_panes(false, w, cx))).checked(!vertical),
+                    Item::action(t!("Side by side"), MenuIcon::Lucide(L::Columns2), with(|ws, w, cx| ws.arrange_panes(true, w, cx))).checked(vertical),
+                    Item::action(t!("Stacked"), MenuIcon::Lucide(L::Rows2), with(|ws, w, cx| ws.arrange_panes(false, w, cx))).checked(!vertical),
                 ],
             ));
-            items.push(Item::action(t!("Etkin bölmeyi kapat"), MenuIcon::Lucide(L::X), with(|ws, w, cx| ws.close_active_pane(w, cx))));
+            items.push(Item::action(t!("Close active pane"), MenuIcon::Lucide(L::X), with(|ws, w, cx| ws.close_active_pane(w, cx))));
         } else {
             items.push(Item::sub(
-                t!("Bölmeyi ayır"),
+                t!("Split pane"),
                 MenuIcon::Lucide(L::LayoutPanelLeft),
                 vec![
-                    Item::action(t!("Yan yana"), MenuIcon::Lucide(L::Columns2), with(|ws, w, cx| ws.split_pane(true, w, cx))).hint("Ctrl+Shift+D"),
-                    Item::action(t!("Üst üste"), MenuIcon::Lucide(L::Rows2), with(|ws, w, cx| ws.split_pane(false, w, cx))),
+                    Item::action(t!("Side by side"), MenuIcon::Lucide(L::Columns2), with(|ws, w, cx| ws.split_pane(true, w, cx))).hint("Ctrl+Shift+D"),
+                    Item::action(t!("Stacked"), MenuIcon::Lucide(L::Rows2), with(|ws, w, cx| ws.split_pane(false, w, cx))),
                 ],
             ));
         }
         items.push(Item::Separator);
         items.push(
-            Item::action(t!("Kenar çubuğu"), MenuIcon::Lucide(L::PanelLeft), |w, cx| w.dispatch_action(Box::new(ToggleSidebar), cx))
+            Item::action(t!("Sidebar"), MenuIcon::Lucide(L::PanelLeft), |w, cx| w.dispatch_action(Box::new(ToggleSidebar), cx))
                 .checked(self.sidebar_open)
                 .hint("Ctrl+B"),
         );
@@ -1521,7 +1521,7 @@ impl Workspace {
                 .id("new-tab")
                 .flex_shrink_0()
                 .ml_1()
-                .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Yeni sekme  (Ctrl+T)")).build(w, cx))
+                .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("New tab  (Ctrl+T)")).build(w, cx))
                 .size(px(28.))
                 .mb(px(2.))
                 .flex()
@@ -1580,7 +1580,7 @@ impl Workspace {
                                 .rounded(theme::RADIUS_SM)
                                 .text_color(p.text_secondary)
                                 .hover(|s| s.bg(p.hover))
-                                .when(!popups_open, |d| d.tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Sekme eylemleri")).build(w, cx)))
+                                .when(!popups_open, |d| d.tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Tab actions")).build(w, cx)))
                                 .child(Icon::new(if self.compact.is_some() { L::PictureInPicture2 } else { L::PanelLeft }).size(px(16.)))
                                 .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
                                 .on_click(cx.listener(|this, _, window, cx| this.tab_actions_menu(window, cx))),
@@ -1669,15 +1669,15 @@ impl Workspace {
             }
         };
         let items = vec![
-            Item::action(t!("Aç"), MenuIcon::Lucide(L::SquareArrowOutUpRight), with(|ws, p, w, cx| ws.navigate(Location::Path(p), w, cx))),
-            Item::action(t!("Yeni sekmede aç"), MenuIcon::Lucide(L::SquarePlus), with(|ws, p, w, cx| {
+            Item::action(t!("Open"), MenuIcon::Lucide(L::SquareArrowOutUpRight), with(|ws, p, w, cx| ws.navigate(Location::Path(p), w, cx))),
+            Item::action(t!("Open in new tab"), MenuIcon::Lucide(L::SquarePlus), with(|ws, p, w, cx| {
                 let keep = ws.active;
                 ws.open_tab(Location::Path(p), w, cx);
                 if !cx.global::<crate::settings::Settings>().focus_new_tab {
                     ws.activate(keep, w, cx);
                 }
             })),
-            Item::action(t!("Yeni pencerede aç"), MenuIcon::Lucide(L::AppWindow), with(|_, p, w, cx| {
+            Item::action(t!("Open in new window"), MenuIcon::Lucide(L::AppWindow), with(|_, p, w, cx| {
                 let mut b = w.bounds();
                 b.origin.x += px(36.);
                 b.origin.y += px(36.);
@@ -1685,20 +1685,20 @@ impl Workspace {
             })),
             Item::Separator,
             if is_pinned {
-                Item::action(t!("Kenar çubuğundan kaldır"), MenuIcon::Lucide(L::PinOff), with(|ws, p, _, cx| ws.set_pinned(p, false, cx)))
+                Item::action(t!("Unpin from sidebar"), MenuIcon::Lucide(L::PinOff), with(|ws, p, _, cx| ws.set_pinned(p, false, cx)))
             } else {
-                Item::action(t!("Kenar çubuğuna sabitle"), MenuIcon::Lucide(L::Pin), with(|ws, p, _, cx| ws.set_pinned(p, true, cx)))
+                Item::action(t!("Pin to sidebar"), MenuIcon::Lucide(L::Pin), with(|ws, p, _, cx| ws.set_pinned(p, true, cx)))
             },
-            Item::action(t!("Yolu kopyala"), MenuIcon::Lucide(L::ClipboardCopy), with(|_, p, _, cx| {
+            Item::action(t!("Copy path"), MenuIcon::Lucide(L::ClipboardCopy), with(|_, p, _, cx| {
                 cx.write_to_clipboard(ClipboardItem::new_string(p.display().to_string()))
             })),
-            Item::action(t!("Terminalde aç"), MenuIcon::Lucide(L::SquareTerminal), with(|_, p, _, _| {
+            Item::action(t!("Open in terminal"), MenuIcon::Lucide(L::SquareTerminal), with(|_, p, _, _| {
                 std::thread::spawn(move || {
                     let _ = rf_linux::shell::open_terminal(&p);
                 });
             })),
             // our Properties window (a drive gets its own page there)
-            Item::action(t!("Özellikler"), MenuIcon::Lucide(L::Wrench), with(|ws, p, _, cx| {
+            Item::action(t!("Properties"), MenuIcon::Lucide(L::Wrench), with(|ws, p, _, cx| {
                 crate::properties_view::open(vec![p], ws.images.clone(), cx);
             }))
             .hint("Alt+Enter"),
@@ -1867,7 +1867,7 @@ impl Workspace {
                 .rounded(theme::RADIUS_SM)
                 .bg(p.selection)
                 .text_xs()
-                .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Aramayı düzenle")).build(w, cx))
+                .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Edit search")).build(w, cx))
                 .child(Icon::new(L::Search).size(px(12.)).text_color(p.accent))
                 .child(div().min_w_0().overflow_hidden().text_ellipsis().whitespace_nowrap().child(q))
                 .child(
@@ -1936,10 +1936,10 @@ impl Workspace {
             .children(suggestions.filter(|_| !searching))
             .children(chip)
             .child(div().w(px(1.)).h(px(18.)).mx_1().bg(p.divider))
-            .child(mode_btn("omni-cmd", L::SquareChevronRight, self.palette.is_some(), "Komut paleti  (Ctrl+Shift+P)", cx, |this, window, cx| {
+            .child(mode_btn("omni-cmd", L::SquareChevronRight, self.palette.is_some(), "Command palette  (Ctrl+Shift+P)", cx, |this, window, cx| {
                 this.toggle_palette(window, cx)
             }))
-            .child(mode_btn("omni-search", L::Search, searching, "Ara  (Ctrl+F)", cx, |this, window, cx| this.enter_search(window, cx)))
+            .child(mode_btn("omni-search", L::Search, searching, "Search  (Ctrl+F)", cx, |this, window, cx| this.enter_search(window, cx)))
             .on_click(cx.listener(|this, _, window, cx| {
                 if !this.editing_address && !this.search_mode {
                     this.begin_address_edit(window, cx);
@@ -2059,25 +2059,25 @@ impl Workspace {
             .items_center()
             .border_b_1()
             .border_color(p.divider)
-            .child(drop("cb-new", L::CirclePlus, Some("Yeni"), "Yeni öğe", in_folder, cx, |_, _| crate::ctx_menu::BarMenu::New))
+            .child(drop("cb-new", L::CirclePlus, Some("New"), "New item", in_folder, cx, |_, _| crate::ctx_menu::BarMenu::New))
             .child(sep())
-            .child(cmd("cb-cut", L::Scissors, "Kes  (Ctrl+X)", writable_sel, cx, |this, w, cx| {
+            .child(cmd("cb-cut", L::Scissors, "Cut  (Ctrl+X)", writable_sel, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.copy_to_clipboard(rf_linux::fileops::Transfer::Move, w, cx))
             }))
-            .child(cmd("cb-copy", L::Copy, "Kopyala  (Ctrl+C)", has_sel, cx, |this, w, cx| {
+            .child(cmd("cb-copy", L::Copy, "Copy  (Ctrl+C)", has_sel, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.copy_to_clipboard(rf_linux::fileops::Transfer::Copy, w, cx))
             }))
-            .child(cmd("cb-paste", L::ClipboardPaste, "Yapıştır  (Ctrl+V)", paste_ok, cx, |this, w, cx| {
+            .child(cmd("cb-paste", L::ClipboardPaste, "Paste  (Ctrl+V)", paste_ok, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.paste(w, cx))
             }))
-            .child(cmd("cb-rename", L::TextCursorInput, "Yeniden adlandır  (F2)", writable_sel, cx, |this, w, cx| {
+            .child(cmd("cb-rename", L::TextCursorInput, "Rename  (F2)", writable_sel, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.rename_selection(w, cx))
             }))
             // Share is Windows' share sheet
-            .child(cmd("cb-delete", L::Trash, "Sil  (Del)", writable_sel, cx, |this, w, cx| {
+            .child(cmd("cb-delete", L::Trash, "Delete  (Del)", writable_sel, cx, |this, w, cx| {
                 this.with_tab(cx, |v, cx| v.delete_selected(false, w, cx))
             }))
-            .child(cmd("cb-props", L::Wrench, "Özellikler  (Alt+Enter)", in_folder, cx, |this, _, cx| {
+            .child(cmd("cb-props", L::Wrench, "Properties  (Alt+Enter)", in_folder, cx, |this, _, cx| {
                 this.with_tab(cx, |v, cx| if v.selection_paths().is_empty() { v.folder_properties(cx) } else { v.properties(cx) })
             }))
             .child(div().flex_1())
@@ -2090,15 +2090,15 @@ impl Workspace {
                     .items_center()
                     .justify_center()
                     .rounded(theme::RADIUS_SM)
-                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Filtrele")).build(w, cx))
+                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Filter")).build(w, cx))
                     .when(filter_on, |d| d.bg(p.selection).text_color(p.accent))
                     .when(!filter_on, |d| d.hover(|s| s.bg(p.hover)))
                     .when(in_folder, |d| d.on_click(cx.listener(|this, _, window, cx| this.toggle_filter_bar(window, cx))))
                     .when(!in_folder, |d| d.text_color(p.text_tertiary))
                     .child(Icon::new(L::ListFilter).size(px(16.))),
             )
-            .child(drop("cb-sort", L::ArrowUpDown, None, "Sırala ve gruplandır", in_folder, cx, |_, _| crate::ctx_menu::BarMenu::Sort))
-            .child(drop("cb-view", L::LayoutGrid, None, "Görünüm", true, cx, move |this, _| crate::ctx_menu::BarMenu::View {
+            .child(drop("cb-sort", L::ArrowUpDown, None, "Sort and group", in_folder, cx, |_, _| crate::ctx_menu::BarMenu::Sort))
+            .child(drop("cb-view", L::LayoutGrid, None, "Appearance", true, cx, move |this, _| crate::ctx_menu::BarMenu::View {
                 dual: this.tabs[this.active].right.is_some(),
                 shelf: this.shelf_open,
             }))
@@ -2112,7 +2112,7 @@ impl Workspace {
                     .items_center()
                     .justify_center()
                     .rounded(theme::RADIUS_SM)
-                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Önizleme bölmesi  (Alt+P)")).build(w, cx))
+                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Preview pane  (Alt+P)")).build(w, cx))
                     .when(preview_open, |d| d.bg(p.selection).text_color(p.accent))
                     .when(!preview_open, |d| d.hover(|s| s.bg(p.hover)))
                     .child(Icon::new(L::PanelRight).size(px(16.)))
@@ -2366,7 +2366,7 @@ impl Workspace {
             "sb-home".into(),
             L::House,
             p.accent,
-            t!("Ana Sayfa").into(),
+            t!("Home").into(),
             Location::Home,
             cur == Location::Home,
             None,
@@ -2378,7 +2378,7 @@ impl Workspace {
             div()
                 .id("sb-pin-header")
                 .rounded(theme::RADIUS_SM)
-                .child(header(t!("Sabitlenenler")))
+                .child(header(t!("Pinned")))
                 .drag_over::<ExternalPaths>(move |s, _, _, _| s.bg(drop_bg))
                 .on_drop(cx.listener(|this, paths: &ExternalPaths, _, cx| this.pin_dropped(paths, cx))),
         );
@@ -2418,7 +2418,7 @@ impl Workspace {
                     .text_sm()
                     .text_color(p.text_tertiary)
                     .child(Icon::new(L::Pin).size(px(16.)).flex_shrink_0())
-                    .when(!rail, |d| d.child(t!("Sabitlemek için buraya bırakın")))
+                    .when(!rail, |d| d.child(t!("Drop here to pin")))
                     .drag_over::<ExternalPaths>(move |s, _, _, _| s.bg(drop_bg).border_color(drop_border))
                     .on_drop(cx.listener(|this, paths: &ExternalPaths, _, cx| this.pin_dropped(paths, cx))),
             );
@@ -2430,7 +2430,7 @@ impl Workspace {
         let (shares, drives): (Vec<_>, Vec<_>) = drives.into_iter().partition(|d| d.kind == rf_linux::DriveKind::Network);
         let drives = if shown("drives") { drives } else { Vec::new() };
         if !drives.is_empty() {
-            col = col.child(header(t!("Sürücüler")));
+            col = col.child(header(t!("Drives")));
         }
         for (i, d) in drives.into_iter().enumerate() {
             let loc = Location::Path(d.root.clone());
@@ -2475,7 +2475,7 @@ impl Workspace {
         }
         let cloud = self.places.read(cx).cloud.clone();
         if !cloud.is_empty() && shown("cloud") {
-            col = col.child(header(t!("Bulut ve Linux")));
+            col = col.child(header(t!("Cloud and Linux")));
             for (i, c) in cloud.into_iter().enumerate() {
                 let loc = Location::Path(c.path.clone());
                 let active = cur == loc;
@@ -2484,7 +2484,7 @@ impl Workspace {
         }
         let network = self.places.read(cx).network.clone();
         if (!network.is_empty() || !shares.is_empty()) && shown("network") {
-            col = col.child(header(t!("Ağ")));
+            col = col.child(header(t!("Network")));
             let offline = self.places.read(cx).offline.clone();
             for (i, d) in shares.into_iter().enumerate() {
                 let loc = Location::Path(d.root.clone());
@@ -2503,7 +2503,7 @@ impl Workspace {
         }
         let tag_defs = if shown("tags") { cx.global::<crate::tags::Tags>().0.defs.clone() } else { Vec::new() };
         if !tag_defs.is_empty() {
-            col = col.child(header(t!("Etiketler")));
+            col = col.child(header(t!("Tags")));
         }
         for d in tag_defs {
             let loc = Location::Tag(d.id);
@@ -2525,7 +2525,7 @@ impl Workspace {
             "sb-recycle".into(),
             L::Trash,
             p.text_secondary,
-            t!("Geri Dönüşüm Kutusu").into(),
+            t!("Trash").into(),
             Location::RecycleBin,
             cur == Location::RecycleBin,
             None,
@@ -2536,7 +2536,7 @@ impl Workspace {
             "sb-settings".into(),
             L::Settings,
             p.text_secondary,
-            t!("Ayarlar").into(),
+            t!("Settings").into(),
             Location::Settings,
             cur == Location::Settings,
             None,
@@ -2580,9 +2580,9 @@ impl Workspace {
                     .items_center()
                     .rounded(theme::RADIUS_SM)
                     .hover(|s| s.bg(p.hover).text_color(p.text))
-                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Klasörü düzenleyicide aç")).build(w, cx))
+                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Open folder in editor")).build(w, cx))
                     .child(Icon::new(L::Code).size(px(12.)))
-                    .child(t!("Aç"))
+                    .child(t!("Open"))
                     .on_click(move |_, _, _| open_in_ide(dir.clone(), ide.clone()))
             })
         };
@@ -2598,7 +2598,7 @@ impl Workspace {
                 left = left.child(div().text_color(p.text).child(s));
             }
             if loading {
-                left = left.child(t!("Yükleniyor…"));
+                left = left.child(t!("Loading…"));
             }
         }
         let perf = cx.global::<crate::settings::Settings>().show_perf_info;
@@ -2634,7 +2634,7 @@ impl Workspace {
                         };
                         let (v1, r1) = (view.clone(), root.clone());
                         let changes = (!g.is_clean()).then(|| {
-                            div().text_color(p.text_tertiary).child(format!("{} {}", g.files.len(), t!("değişiklik")))
+                            div().text_color(p.text_tertiary).child(format!("{} {}", g.files.len(), t!("changes")))
                         });
                         h_flex()
                             .gap_1()
@@ -2642,7 +2642,7 @@ impl Workspace {
                             .children(changes)
                             .child(
                                 pill("git-sync")
-                                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Çek / Gönder / Eşitle")).build(w, cx))
+                                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Pull / Push / Sync")).build(w, cx))
                                     .child(Icon::new(L::ArrowDownUp).size(px(12.)))
                                     .child(format!("{behind} / {ahead}"))
                                     .on_click(move |ev: &ClickEvent, window, cx| {
@@ -2651,7 +2651,7 @@ impl Workspace {
                             )
                             .child(
                                 pill("git-branch")
-                                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Dallar")).build(w, cx))
+                                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Branches")).build(w, cx))
                                     .child(Icon::new(L::GitBranch).size(px(12.)))
                                     .child(g.branch.clone())
                                     .on_click(move |ev: &ClickEvent, window, cx| {
@@ -2736,19 +2736,19 @@ fn resize_handle<T: Clone + 'static>(id: &'static str, payload: T, left: bool) -
 /// Toolbar tooltips (with shortcuts).
 fn tooltip_text(id: &str) -> &'static str {
     match id {
-        "back" => t!("Geri  (Alt+←)"),
-        "fwd" => t!("İleri  (Alt+→)"),
-        "up" => t!("Üst klasör  (Alt+↑)"),
-        "refresh" => t!("Yenile  (F5)"),
-        "hidden" => t!("Gizli öğeleri göster/gizle  (Ctrl+H)"),
-        "terminal" => t!("Terminalde aç"),
-        "sort" => t!("Sıralama ve gruplama"),
-        "v-details" => t!("Detaylar  (Ctrl+Shift+1)"),
-        "v-grid" => t!("Izgara  (Ctrl+Shift+2)"),
-        "v-cols" => t!("Sütunlar  (Ctrl+Shift+3)"),
-        "v-dual" => t!("Çift panel  (Ctrl+Shift+D)"),
-        "v-preview" => t!("Önizleme paneli  (Alt+P)"),
-        "v-shelf" => t!("Raf"),
+        "back" => t!("Back  (Alt+←)"),
+        "fwd" => t!("Forward  (Alt+→)"),
+        "up" => t!("Up one level  (Alt+↑)"),
+        "refresh" => t!("Refresh  (F5)"),
+        "hidden" => t!("Show/hide hidden items  (Ctrl+H)"),
+        "terminal" => t!("Open in terminal"),
+        "sort" => t!("Sort and group"),
+        "v-details" => t!("Details  (Ctrl+Shift+1)"),
+        "v-grid" => t!("Grid  (Ctrl+Shift+2)"),
+        "v-cols" => t!("Columns  (Ctrl+Shift+3)"),
+        "v-dual" => t!("Dual pane  (Ctrl+Shift+D)"),
+        "v-preview" => t!("Preview pane  (Alt+P)"),
+        "v-shelf" => t!("Shelf"),
         _ => "",
     }
 }
@@ -2824,7 +2824,7 @@ fn parse_location(text: &str) -> Option<Location> {
         return None;
     }
     let lower = t.to_lowercase();
-    if lower == "home" || lower == "ana sayfa" {
+    if lower == "home" || lower == "ana sayfa" { // i18n-ok: the Turkish name typed in the address bar
         return Some(Location::Home);
     }
     // Environment variables like %USERPROFILE%

@@ -16,7 +16,7 @@ fn linux_drive_name(d: &Drive, style: crate::settings::DriveNames) -> String {
     use crate::settings::DriveNames;
     let mount = d.root.to_string_lossy().into_owned();
     let folder = || d.root.file_name().map(|n| n.to_string_lossy().into_owned());
-    let root_name = || crate::t!("Dosya Sistemi").to_string();
+    let root_name = || crate::t!("File System").to_string();
     match style {
         DriveNames::MountPoint => mount,
         DriveNames::Folder => folder().unwrap_or_else(root_name),
@@ -167,7 +167,7 @@ fn load_cloud_and_wsl() -> Vec<Pinned> {
             out.push(Pinned { title, path, icon });
         }
     };
-    for (var, title) in [("OneDriveConsumer", "OneDrive"), ("OneDriveCommercial", "OneDrive (İş)"), ("OneDrive", "OneDrive")] {
+    for (var, title) in [("OneDriveConsumer", "OneDrive"), ("OneDriveCommercial", "OneDrive (Work)"), ("OneDrive", "OneDrive")] {
         if let Some(v) = std::env::var_os(var) {
             add(title.into(), PathBuf::from(v), L::Cloud);
         }
@@ -381,7 +381,7 @@ mod tests {
         let smb = drive("/mnt/media", "//10.0.0.9/media", "");
         let nfs = drive("/mnt/nas", "nas:/export/photos/", "");
         let ssh = drive("/home/me/remote", "me@box:", "");
-        let root_name = crate::t!("Dosya Sistemi");
+        let root_name = crate::t!("File System");
         let names = |s| [&root, &usb, &smb, &nfs, &ssh].map(|d| linux_drive_name(d, s));
         assert_eq!(names(Auto), [root_name, "KINGSTON", "media (10.0.0.9)", "photos (nas)", "box"]);
         assert_eq!(names(MountPoint), ["/", "/run/media/me/KINGSTON", "/mnt/media", "/mnt/nas", "/home/me/remote"]);

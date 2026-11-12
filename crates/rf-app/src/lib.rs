@@ -18,7 +18,6 @@ mod git_ui;
 mod prompt;
 mod hash_panel;
 mod i18n;
-mod i18n_en;
 mod folder_view;
 mod icons;
 mod keymap_editor;

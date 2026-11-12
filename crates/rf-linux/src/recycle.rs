@@ -305,9 +305,9 @@ pub fn restore(items: &[RecycleItem]) -> anyhow::Result<()> {
     }
     if !taken.is_empty() {
         let names: Vec<String> = taken.iter().filter_map(|p| p.file_name()).map(|n| n.to_string_lossy().into_owned()).collect();
-        anyhow::bail!("Bu adla bir öğe zaten var: {}", names.join(", "));
+        anyhow::bail!("An item with this name already exists: {}", names.join(", "));
     }
-    anyhow::ensure!(restored > 0, "Öğeler Geri Dönüşüm Kutusu'nda bulunamadı");
+    anyhow::ensure!(restored > 0, "Items were not found in the Trash");
     Ok(())
 }
 

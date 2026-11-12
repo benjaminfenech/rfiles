@@ -34,7 +34,7 @@ impl Button {
     }
     /// A button that just closes.
     pub fn cancel() -> Self {
-        Self::new(crate::t!("İptal"), Kind::Normal, |_, _, _| Ok(()))
+        Self::new(crate::t!("Cancel"), Kind::Normal, |_, _, _| Ok(()))
     }
 }
 

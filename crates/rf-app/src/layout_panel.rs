@@ -70,11 +70,11 @@ fn render(v: &Entity<FolderView>, owner: AnyWindowHandle, dual: Rc<Cell<bool>>, 
         .px_4()
         .gap_2()
         .justify_between()
-        .child(tile("lt-details", L::List, t!("Ayrıntılar"), ViewMode::Details, GridStyle::Tiles))
-        .child(tile("lt-list", L::TextAlignJustify, t!("Liste"), ViewMode::Grid, GridStyle::List))
-        .child(tile("lt-cards", L::LayoutList, t!("Kartlar"), ViewMode::Grid, GridStyle::Cards))
-        .child(tile("lt-grid", L::LayoutGrid, t!("Izgara"), ViewMode::Grid, GridStyle::Tiles))
-        .child(tile("lt-cols", L::Columns3, t!("Sütunlar"), ViewMode::Columns, GridStyle::Tiles));
+        .child(tile("lt-details", L::List, t!("Details"), ViewMode::Details, GridStyle::Tiles))
+        .child(tile("lt-list", L::TextAlignJustify, t!("List"), ViewMode::Grid, GridStyle::List))
+        .child(tile("lt-cards", L::LayoutList, t!("Cards"), ViewMode::Grid, GridStyle::Cards))
+        .child(tile("lt-grid", L::LayoutGrid, t!("Grid"), ViewMode::Grid, GridStyle::Tiles))
+        .child(tile("lt-cols", L::Columns3, t!("Columns"), ViewMode::Columns, GridStyle::Tiles));
 
     // ---- size slider (Details row height / grid tile size)
     let enabled = size.is_some();
@@ -143,29 +143,29 @@ fn render(v: &Entity<FolderView>, owner: AnyWindowHandle, dual: Rc<Cell<bool>>, 
     v_flex()
         .w_full()
         .pb_2()
-        .child(section(p, t!("Sayfa düzeni")))
+        .child(section(p, t!("Layout")))
         .child(tiles)
         .child(divider(p))
-        .child(section(p, t!("Boyut")).when(!enabled, |d| d.text_color(p.text_tertiary)))
+        .child(section(p, t!("Size")).when(!enabled, |d| d.text_color(p.text_tertiary)))
         .child(slider)
         .child(size_icons)
         .child(divider(p))
         .child(row(
-            t!("Gizli öğeler"),
+            t!("Hidden items"),
             crate::settings_view::switch("lt-hidden", p, hidden, move |window, cx| {
                 let _ = w_hidden.update(cx, |v, cx| v.toggle_hidden(cx));
                 window.refresh();
             }),
         ))
         .child(row(
-            t!("Dosya uzantıları"),
+            t!("File extensions"),
             crate::settings_view::switch("lt-ext", p, ext, move |window, cx| {
                 crate::settings::update(cx, |s| s.show_extensions = !ext);
                 window.refresh();
             }),
         ))
         .child(row(
-            t!("Uyarlanabilir düzen"),
+            t!("Adaptive layout"),
             crate::settings_view::switch("lt-adaptive", p, adaptive, move |window, cx| {
                 crate::settings::update(cx, |s| {
                     s.default_view = if adaptive { crate::settings::DefaultView::Details } else { crate::settings::DefaultView::Adaptive }
@@ -174,7 +174,7 @@ fn render(v: &Entity<FolderView>, owner: AnyWindowHandle, dual: Rc<Cell<bool>>, 
             }),
         ))
         .child(row(
-            t!("Çift panel"),
+            t!("Dual pane"),
             crate::settings_view::switch("lt-dual", p, d, move |window, cx| {
                 dual2.set(!dual2.get());
                 let _ = owner.update(cx, |_, w, cx| w.dispatch_action(Box::new(crate::actions::ToggleDualPane), cx));
@@ -182,7 +182,7 @@ fn render(v: &Entity<FolderView>, owner: AnyWindowHandle, dual: Rc<Cell<bool>>, 
             }),
         ))
         .child(row(
-            t!("Raf"),
+            t!("Shelf"),
             crate::settings_view::switch("lt-shelf", p, sh, move |window, cx| {
                 shelf2.set(!shelf2.get());
                 let _ = owner.update(cx, |_, w, cx| w.dispatch_action(Box::new(crate::actions::ToggleShelf), cx));

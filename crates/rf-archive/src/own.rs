@@ -26,37 +26,37 @@ pub(crate) fn map_err(e: rarchive::Error) -> anyhow::Error {
 pub(crate) fn describe(e: &rarchive::Error) -> String {
     use rarchive::Error as E;
     match e {
-        E::Io(x) => format!("Arşiv dosyası okunamadı: {x}"),
-        E::NotArchive => "Bu dosya bir arşiv değil ya da başı bozuk.".into(),
-        E::OldFormat => "Bu, RAR 1.3/1.4 biçiminde çok eski bir arşiv (1990'lar); rfiles bu biçimi açmıyor. WinRAR ya da 7-Zip açabilir.".into(),
+        E::Io(x) => format!("Couldn't read the archive file: {x}"),
+        E::NotArchive => "This file isn't an archive, or its start is damaged.".into(),
+        E::OldFormat => "This is a very old archive in the RAR 1.3/1.4 format (1990s), which rfiles doesn't open. WinRAR or 7-Zip can.".into(),
         E::Unsupported(what) => unsupported(what),
-        E::Corrupt(what) => format!("Arşiv bozuk ya da yarım inmiş; yeniden indirmeyi deneyin. (Ayrıntı: {what})"),
-        E::BadChecksum(name) => format!("\"{name}\" bozuk çıktı (sağlama tutmuyor). Arşiv hasarlı olabilir; yeniden indirmeyi deneyin."),
-        E::NeedPassword => "Bu arşiv parola ile korunuyor.".into(),
-        E::BadPassword => "Parola yanlış.".into(),
+        E::Corrupt(what) => format!("The archive is damaged or only partly downloaded; try downloading it again. (Details: {what})"),
+        E::BadChecksum(name) => format!("\"{name}\" came out damaged (checksum mismatch). The archive may be damaged; try downloading it again."),
+        E::NeedPassword => "This archive is password protected.".into(),
+        E::BadPassword => "Wrong password.".into(),
     }
 }
 
 fn unsupported(what: &str) -> String {
     let feature = match what {
         "old RAR encryption" => {
-            return "Bu arşiv RAR 1.5/2.0'ın eski şifrelemesini kullanıyor; rfiles bunu açmıyor. WinRAR ya da 7-Zip açabilir.".into();
+            return "This archive uses the old encryption of RAR 1.5/2.0, which rfiles doesn't open. WinRAR or 7-Zip can.".into();
         }
         "missing volume" => {
-            return "Çok parçalı arşivin bir parçası eksik. Bütün parçaları (.part1.rar, .part2.rar… ya da .rar, .r00, .r01…) aynı klasöre koyup tekrar deneyin.".into();
+            return "A part of the multi-part archive is missing. Put all the parts (.part1.rar, .part2.rar… or .rar, .r00, .r01…) in the same folder and try again.".into();
         }
-        "dictionary larger than 4 GB" => "4 GB'tan büyük sözlük (RAR 7)",
-        "RAR compression method" | "unknown RAR 5 compression version" => "bilinmeyen RAR sıkıştırma yöntemi",
-        "ZIP volume set" => "parçalara bölünmüş ZIP",
-        "ZIP compression or encryption method" | "ZIP compression method" => "ZIP sıkıştırma ya da şifreleme yöntemi (PKWARE güçlü şifreleme olabilir)",
-        "ZIP AES strength" => "ZIP AES şifreleme gücü",
-        "encryption version" | "encryption method" => "şifreleme yöntemi",
-        "members of unknown size" => "boyutu kayıtlı olmayan dosyalar",
-        "unknown header type" => "bilinmeyen başlık türü",
-        w if w.starts_with("7z") => "7z sıkıştırma yöntemi ya da başlık biçimi",
+        "dictionary larger than 4 GB" => "dictionaries larger than 4 GB (RAR 7)",
+        "RAR compression method" | "unknown RAR 5 compression version" => "an unknown RAR compression method",
+        "ZIP volume set" => "a ZIP split into parts",
+        "ZIP compression or encryption method" | "ZIP compression method" => "a ZIP compression or encryption method (possibly PKWARE strong encryption)",
+        "ZIP AES strength" => "a ZIP AES encryption strength",
+        "encryption version" | "encryption method" => "an encryption method",
+        "members of unknown size" => "files of unrecorded size",
+        "unknown header type" => "an unknown header type",
+        w if w.starts_with("7z") => "a 7z compression method or header format",
         other => other,
     };
-    format!("Bu arşiv henüz desteklenmeyen bir özellik kullanıyor: {feature}.")
+    format!("This archive uses a feature that isn't supported yet: {feature}.")
 }
 
 /// The member's name: for ZIP names without the UTF-8 flag, decoded with the user's legacy
@@ -148,13 +148,13 @@ impl rarchive::Sink for DiskSink<'_> {
         let wanted = self.sh.dest.join(&rel);
         if e.is_dir {
             std::fs::create_dir_all(&wanted)
-                .map_err(|x| self.fail(anyhow::Error::new(x).context(format!("Klasör oluşturulamadı: {}", wanted.display()))))?;
+                .map_err(|x| self.fail(anyhow::Error::new(x).context(format!("Couldn't create the folder: {}", wanted.display()))))?;
             self.sh.stats.lock().unwrap().dirs += 1;
             return Ok(false);
         }
         if let Some(parent) = wanted.parent() {
             std::fs::create_dir_all(parent)
-                .map_err(|x| self.fail(anyhow::Error::new(x).context(format!("Klasör oluşturulamadı: {}", parent.display()))))?;
+                .map_err(|x| self.fail(anyhow::Error::new(x).context(format!("Couldn't create the folder: {}", parent.display()))))?;
         }
         // Never overwrite: pick a free name; create_new closes the race window (other
         // threads may be creating files in the same folder).
@@ -164,7 +164,7 @@ impl rarchive::Sink for DiskSink<'_> {
                 Ok(f) => break f,
                 Err(x) if x.kind() == io::ErrorKind::AlreadyExists => target = super::unique_path(&wanted, true),
                 Err(x) => {
-                    return Err(self.fail(anyhow::Error::new(x).context(format!("Dosya oluşturulamadı: {}", target.display()))));
+                    return Err(self.fail(anyhow::Error::new(x).context(format!("Couldn't create the file: {}", target.display()))));
                 }
             }
         };
@@ -181,7 +181,7 @@ impl rarchive::Sink for DiskSink<'_> {
         let Some(o) = self.open.as_mut() else { return Ok(()) };
         if let Err(x) = o.w.write_all(b) {
             let target = o.target.display().to_string();
-            return Err(self.fail(anyhow::Error::new(x).context(format!("Yazılamadı: {target}"))));
+            return Err(self.fail(anyhow::Error::new(x).context(format!("Couldn't write: {target}"))));
         }
         o.written += b.len() as u64;
         self.sh.done.fetch_add(b.len() as u64, Ordering::Relaxed);
@@ -197,7 +197,7 @@ impl rarchive::Sink for DiskSink<'_> {
             Ok(f) => f,
             Err(x) => {
                 let _ = std::fs::remove_file(&target);
-                return Err(self.fail(anyhow::Error::new(x.into_error()).context(format!("Yazılamadı: {}", target.display()))));
+                return Err(self.fail(anyhow::Error::new(x.into_error()).context(format!("Couldn't write: {}", target.display()))));
             }
         };
         if let Some(t) = o.mtime {
@@ -238,7 +238,7 @@ pub(crate) fn extract(
             total += e.size;
         }
     }
-    std::fs::create_dir_all(dest).with_context(|| format!("Klasör oluşturulamadı: {}", dest.display()))?;
+    std::fs::create_dir_all(dest).with_context(|| format!("Couldn't create the folder: {}", dest.display()))?;
     let sh = Shared {
         dest,
         only,

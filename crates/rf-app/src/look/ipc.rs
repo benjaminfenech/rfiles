@@ -123,7 +123,7 @@ pub fn send(msg: Msg, start: bool) {
             return;
         }
         let Some(exe) = exe() else {
-            log::warn!("directlook.exe bulunamadı");
+            log::warn!("directlook.exe not found");
             return;
         };
         let mut cmd = std::process::Command::new(exe);
@@ -133,7 +133,7 @@ pub fn send(msg: Msg, start: bool) {
             cmd.args(["--msg", &text]);
         }
         if let Err(e) = cmd.spawn() {
-            log::warn!("directlook başlatılamadı: {e}");
+            log::warn!("couldn't start directlook: {e}");
         }
     });
 }

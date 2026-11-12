@@ -108,7 +108,7 @@ impl Render for RecycleView {
             .child(
                 v_flex()
                     .flex_1()
-                    .child(div().text_sm().font_weight(FontWeight::SEMIBOLD).child(t!("Geri Dönüşüm Kutusu")))
+                    .child(div().text_sm().font_weight(FontWeight::SEMIBOLD).child(t!("Trash")))
                     .child(div().text_xs().text_color(p.text_secondary).child(format!(
                         "{} · {}",
                         crate::i18n::items(self.items.len()),
@@ -116,16 +116,16 @@ impl Render for RecycleView {
                     ))),
             )
             .child(
-                button("rb-restore", L::Undo2, t!("Geri yükle"), has_sel && !self.busy, &p)
+                button("rb-restore", L::Undo2, t!("Restore"), has_sel && !self.busy, &p)
                     .on_click(cx.listener(|this, _, _, cx| this.restore_selected(cx))),
             )
             .child(
-                button("rb-empty", L::Trash, t!("Kutuyu boşalt"), !self.items.is_empty() && !self.busy, &p)
+                button("rb-empty", L::Trash, t!("Empty Trash"), !self.items.is_empty() && !self.busy, &p)
                     .on_click(cx.listener(|this, _, _, cx| this.empty_bin(cx))),
             );
 
         let body: AnyElement = if self.loading && self.items.is_empty() {
-            div().p_6().text_sm().text_color(p.text_secondary).child(t!("Yükleniyor…")).into_any_element()
+            div().p_6().text_sm().text_color(p.text_secondary).child(t!("Loading…")).into_any_element()
         } else if self.items.is_empty() {
             v_flex()
                 .flex_1()
@@ -133,7 +133,7 @@ impl Render for RecycleView {
                 .justify_center()
                 .gap_2()
                 .child(Icon::new(L::Trash).size(px(40.)).text_color(p.text_tertiary))
-                .child(div().text_color(p.text_secondary).child(t!("Geri dönüşüm kutusu boş")))
+                .child(div().text_color(p.text_secondary).child(t!("The Trash is empty")))
                 .into_any_element()
         } else {
             let n = self.items.len();

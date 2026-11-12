@@ -399,7 +399,7 @@ fn render_extra(p: &Palette, x: &Extra) -> AnyElement {
                 .bg(p.tile_bg)
                 .border_1()
                 .border_color(p.border)
-                .child(div().text_xs().text_color(p.text_secondary).child(format!("{} — {}", t!("Arşiv içeriği"), crate::i18n::items(*total))))
+                .child(div().text_xs().text_color(p.text_secondary).child(format!("{} — {}", t!("Archive contents"), crate::i18n::items(*total))))
                 .children(rows)
                 .into_any_element()
         }
@@ -425,7 +425,7 @@ impl Render for Preview {
                 .items_center()
                 .justify_center()
                 .child(Icon::new(L::PanelRight).size(px(32.)).text_color(p.text_tertiary))
-                .child(div().text_sm().text_color(p.text_secondary).child(t!("Önizleme için bir öğe seçin")))
+                .child(div().text_sm().text_color(p.text_secondary).child(t!("Select an item to preview")))
                 .into_any_element();
         };
         if self.large {
@@ -489,20 +489,20 @@ impl Render for Preview {
         }
 
         let mut props = v_flex().w_full().gap_1p5();
-        props = props.child(prop_row(&p, t!("Tür"), icons::type_label(&e)));
+        props = props.child(prop_row(&p, t!("Type"), icons::type_label(&e)));
         if e.is_dir() && !crate::archive_view::is_browsable_path(&path) {
             let on_disk = cx.global::<crate::settings::Settings>().folder_size_on_disk;
             let txt = match &self.folder_size {
                 Some((fp, Some(fs))) if *fp == path => {
                     let shown = if on_disk { fs.allocated.unwrap_or(fs.bytes) } else { fs.bytes };
-                    format!("{} · {} {}, {} {}", format::size(shown), group(fs.files), t!("dosya"), group(fs.dirs), t!("klasör"))
+                    format!("{} · {} {}, {} {}", format::size(shown), group(fs.files), t!("files"), group(fs.dirs), t!("folders"))
                 }
-                _ => t!("Hesaplanıyor…").to_string(),
+                _ => t!("Calculating…").to_string(),
             };
-            props = props.child(prop_row(&p, t!("Boyut"), txt));
+            props = props.child(prop_row(&p, t!("Size"), txt));
         }
         if !e.is_dir() {
-            props = props.child(prop_row(&p, t!("Boyut"), format!("{} ({} {})", format::size(e.size), group(e.size), t!("bayt"))));
+            props = props.child(prop_row(&p, t!("Size"), format!("{} ({} {})", format::size(e.size), group(e.size), t!("bytes"))));
         }
         if let Some((mp, list)) = &self.media {
             if *mp == path {
@@ -512,28 +512,28 @@ impl Render for Preview {
             }
         }
         props = props
-            .child(prop_row(&p, t!("Değiştirilme"), format::datetime(e.modified_ms)))
-            .child(prop_row(&p, t!("Oluşturulma"), format::datetime(e.created_ms)))
+            .child(prop_row(&p, t!("Modified"), format::datetime(e.modified_ms)))
+            .child(prop_row(&p, t!("Created"), format::datetime(e.created_ms)))
             // zero-width space after each separator: long paths wrap at folder boundaries
-            .child(prop_row(&p, t!("Konum"), crate::sys::wrap_path(&dir.to_string_lossy())));
+            .child(prop_row(&p, t!("Location"), crate::sys::wrap_path(&dir.to_string_lossy())));
         let mut flags = Vec::new();
         if e.is_hidden() {
-            flags.push(t!("Gizli"));
+            flags.push(t!("Hidden"));
         }
         if e.is_system() {
-            flags.push(t!("Sistem"));
+            flags.push(t!("System"));
         }
         if e.attrs & rf_core::attrs::READONLY != 0 {
-            flags.push(t!("Salt okunur"));
+            flags.push(t!("Read-only"));
         }
         if e.is_cloud_placeholder() {
-            flags.push(t!("Yalnızca çevrimiçi"));
+            flags.push(t!("Online-only"));
         }
         if e.is_symlink() {
-            flags.push(t!("Bağlantı"));
+            flags.push(t!("Link"));
         }
         if !flags.is_empty() {
-            props = props.child(prop_row(&p, t!("Öznitelikler"), flags.join(", ")));
+            props = props.child(prop_row(&p, t!("Attributes"), flags.join(", ")));
         }
         let hash_section: Option<AnyElement> = if e.is_dir() {
             None
@@ -551,7 +551,7 @@ impl Render for Preview {
                     .hover(|s| s.bg(p.pressed))
                     .cursor_pointer()
                     .text_sm()
-                    .child(t!("Hash hesapla (MD5, SHA…)"))
+                    .child(t!("Calculate hash (MD5, SHA…)"))
                     .on_click(cx.listener(move |this, _, _, cx| {
                         let pth = path2.clone();
                         this.hash = Some(cx.new(|cx| crate::hash_panel::HashPanel::new(pth, cx)));

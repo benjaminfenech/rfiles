@@ -72,18 +72,18 @@ pub fn edit_dialog(dir: PathBuf, window: &mut gpui_kit::Window, cx: &mut gpui_ki
     let current = name_of(&dir);
     let folder = dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| dir.to_string_lossy().into_owned());
     let initial = current.clone().unwrap_or_else(|| folder.to_lowercase().replace(' ', "-"));
-    let message = format!("{} @{}", t!("Adres çubuğuna yazarak bu klasöre gidin:"), initial);
-    let mut buttons = vec![Button::new(t!("Kaydet"), Kind::Primary, {
+    let message = format!("{} @{}", t!("Type this in the address bar to go to the folder:"), initial);
+    let mut buttons = vec![Button::new(t!("Save"), Kind::Primary, {
         let dir = dir.clone();
         let current = current.clone();
         move |text, _, cx| {
             let name = text.unwrap_or_default().trim().trim_start_matches(PREFIX).trim().to_string();
             if !is_valid_name(&name) {
-                return Err(t!("Ad boş olamaz ve \\ ya da / içeremez").to_string());
+                return Err(t!("The name can't be empty or contain \\ or /").to_string());
             }
             let taken = all().into_iter().any(|(n, p)| n.to_lowercase() == name.to_lowercase() && p != dir);
             if taken {
-                return Err(t!("Bu ad başka bir klasörde kullanılıyor").to_string());
+                return Err(t!("This name is used by another folder").to_string());
             }
             let (dir, current) = (dir.clone(), current.clone());
             crate::settings::update(cx, move |s| {
@@ -96,7 +96,7 @@ pub fn edit_dialog(dir: PathBuf, window: &mut gpui_kit::Window, cx: &mut gpui_ki
         }
     })];
     if let Some(old) = current {
-        buttons.push(Button::new(t!("Kaldır"), Kind::Danger, move |_, _, cx| {
+        buttons.push(Button::new(t!("Remove"), Kind::Danger, move |_, _, cx| {
             let old = old.clone();
             crate::settings::update(cx, move |s| {
                 s.folder_aliases.remove(&old);
@@ -106,9 +106,9 @@ pub fn edit_dialog(dir: PathBuf, window: &mut gpui_kit::Window, cx: &mut gpui_ki
     }
     buttons.push(Button::cancel());
     crate::prompt::show(
-        format!("{} — {folder}", t!("Klasör takma adı")),
+        format!("{} — {folder}", t!("Folder alias")),
         Some(message),
-        Some((initial, t!("ad").to_string())),
+        Some((initial, t!("name").to_string())),
         buttons,
         window,
         cx,

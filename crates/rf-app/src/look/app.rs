@@ -26,10 +26,10 @@ pub fn parse_args(args: &[&str]) -> Msg {
 fn tray_labels() -> rf_linux::tray::Labels {
     rf_linux::tray::Labels {
         tooltip: "DirectLook".into(),
-        open: crate::t!("DirectLook ayarları").into(),
+        open: crate::t!("DirectLook settings").into(),
         new_window: String::new(),
         settings: String::new(),
-        quit: crate::t!("Çıkış").into(),
+        quit: crate::t!("Exit").into(),
     }
 }
 

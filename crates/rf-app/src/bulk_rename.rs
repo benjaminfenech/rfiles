@@ -115,13 +115,13 @@ impl BulkRename {
         let mk = |window: &mut Window, cx: &mut Context<Self>, ph: &'static str, val: &'static str| {
             cx.new(|cx| InputState::new(window, cx).placeholder(ph).default_value(val))
         };
-        let find = mk(window, cx, t!("Aranacak metin"), "");
-        let replace = mk(window, cx, t!("Yerine yazılacak"), "");
-        let pattern = mk(window, cx, t!("Tatil_{n:03}"), "{name}_{n:02}");
+        let find = mk(window, cx, t!("Text to find"), "");
+        let replace = mk(window, cx, t!("Replace with"), "");
+        let pattern = mk(window, cx, t!("Holiday_{n:03}"), "{name}_{n:02}");
         let start = mk(window, cx, "1", "1");
         let step = mk(window, cx, "1", "1");
-        let prefix = mk(window, cx, t!("Önek"), "");
-        let suffix = mk(window, cx, t!("Sonek"), "");
+        let prefix = mk(window, cx, t!("Prefix"), "");
+        let suffix = mk(window, cx, t!("Suffix"), "");
 
         let mut subs = Vec::new();
         for input in [&find, &replace, &pattern, &start, &step, &prefix, &suffix] {
@@ -349,7 +349,7 @@ impl Render for BulkRename {
             .child(
                 v_flex()
                     .flex_1()
-                    .child(div().text_sm().font_weight(FontWeight::SEMIBOLD).child(t!("Toplu yeniden adlandır")))
+                    .child(div().text_sm().font_weight(FontWeight::SEMIBOLD).child(t!("Bulk rename")))
                     .child(div().text_xs().text_color(p.text_secondary).child(crate::i18n::items(self.names.len()))),
             )
             .child(
@@ -367,7 +367,7 @@ impl Render for BulkRename {
             );
 
         // Mode segmented control
-        let tabs = [(Tab::Find, t!("Bul ve değiştir")), (Tab::Pattern, t!("Desen")), (Tab::Case, t!("Büyük/küçük harf")), (Tab::Affix, t!("Önek/sonek"))];
+        let tabs = [(Tab::Find, t!("Find and replace")), (Tab::Pattern, t!("Pattern")), (Tab::Case, t!("Letter case")), (Tab::Affix, t!("Prefix/suffix"))];
         let mut seg = h_flex().p_0p5().gap_0p5().rounded(theme::RADIUS).bg(p.hover);
         for (i, (t, label)) in tabs.into_iter().enumerate() {
             seg = seg.child(chip(("br-tab", i), label, self.tab == t, &p).on_click(cx.listener(move |this, _, _, cx| {
@@ -379,17 +379,17 @@ impl Render for BulkRename {
         let controls: AnyElement = match self.tab {
             Tab::Find => v_flex()
                 .gap_2()
-                .child(h_flex().gap_3().child(field(t!("Bul"), &self.find, &p)).child(field(t!("Değiştir"), &self.replace, &p)))
+                .child(h_flex().gap_3().child(field(t!("Find"), &self.find, &p)).child(field(t!("Replace"), &self.replace, &p)))
                 .child(
                     h_flex()
                         .gap_4()
-                        .child(checkbox("br-ci", t!("Büyük/küçük harfe duyarsız"), self.case_insensitive, &p).on_click(
+                        .child(checkbox("br-ci", t!("Ignore case"), self.case_insensitive, &p).on_click(
                             cx.listener(|this, _, _, cx| {
                                 this.case_insensitive = !this.case_insensitive;
                                 this.recompute(cx);
                             }),
                         ))
-                        .child(checkbox("br-re", t!("Düzenli ifade (regex, $1 grupları)"), self.regex, &p).on_click(cx.listener(
+                        .child(checkbox("br-re", t!("Regular expression (regex, $1 groups)"), self.regex, &p).on_click(cx.listener(
                             |this, _, _, cx| {
                                 this.regex = !this.regex;
                                 this.recompute(cx);
@@ -402,20 +402,20 @@ impl Render for BulkRename {
                 .child(
                     h_flex()
                         .gap_3()
-                        .child(field(t!("Desen"), &self.pattern, &p))
-                        .child(div().w(px(80.)).child(field(t!("Başlangıç"), &self.start, &p)))
-                        .child(div().w(px(80.)).child(field(t!("Adım"), &self.step, &p))),
+                        .child(field(t!("Pattern"), &self.pattern, &p))
+                        .child(div().w(px(80.)).child(field(t!("Start"), &self.start, &p)))
+                        .child(div().w(px(80.)).child(field(t!("Step"), &self.step, &p))),
                 )
                 .child(
                     div()
                         .text_xs()
                         .text_color(p.text_secondary)
-                        .child(t!("{n} sayaç ({n:03} sıfırla doldurur) · {name} özgün ad · {ext} uzantı · {date} değiştirme tarihi (YYYY-AA-GG)")),
+                        .child(t!("{n} counter ({n:03} zero-pads) · {name} original name · {ext} extension · {date} modified date (YYYY-MM-DD)")),
                 )
                 .into_any_element(),
             Tab::Case => {
                 let mut row = h_flex().p_0p5().gap_0p5().rounded(theme::RADIUS).bg(p.hover).w_auto();
-                for (i, (k, label)) in [(CaseKind::Lower, t!("küçük harf")), (CaseKind::Upper, t!("BÜYÜK HARF")), (CaseKind::Title, t!("Başlık Düzeni"))]
+                for (i, (k, label)) in [(CaseKind::Lower, t!("lowercase")), (CaseKind::Upper, t!("UPPERCASE")), (CaseKind::Title, t!("Title Case"))]
                     .into_iter()
                     .enumerate()
                 {
@@ -428,13 +428,13 @@ impl Render for BulkRename {
             }
             Tab::Affix => h_flex()
                 .gap_3()
-                .child(field(t!("Önek"), &self.prefix, &p))
-                .child(field(t!("Sonek (uzantıdan önce)"), &self.suffix, &p))
+                .child(field(t!("Prefix"), &self.prefix, &p))
+                .child(field(t!("Suffix (before the extension)"), &self.suffix, &p))
                 .into_any_element(),
         };
 
         let options = h_flex().items_center().child(
-            checkbox("br-ext", t!("Uzantıyı da değiştir"), self.include_ext, &p).on_click(cx.listener(|this, _, _, cx| {
+            checkbox("br-ext", t!("Rename the extension too"), self.include_ext, &p).on_click(cx.listener(|this, _, _, cx| {
                 this.include_ext = !this.include_ext;
                 this.recompute(cx);
             })),
@@ -451,9 +451,9 @@ impl Render for BulkRename {
             .border_t_1()
             .border_b_1()
             .border_color(p.divider)
-            .child(div().flex_1().child(t!("Eski ad")))
+            .child(div().flex_1().child(t!("Old name")))
             .child(div().w(px(16.)))
-            .child(div().flex_1().child(t!("Yeni ad")));
+            .child(div().flex_1().child(t!("New name")));
 
         let n = self.names.len();
         let list = uniform_list(
@@ -520,13 +520,13 @@ impl Render for BulkRename {
         .p_1p5();
 
         let status = if has_errors {
-            format!("{} {}", crate::i18n::items(self.errors.len()), t!("yeniden adlandırılamadı"))
+            format!("{} {}", crate::i18n::items(self.errors.len()), t!("could not be renamed"))
         } else if self.applying {
-            t!("Uygulanıyor…").to_string()
+            t!("Applying…").to_string()
         } else if conflicts > 0 {
-            format!("{conflicts} {}", t!("çakışma var, düzeltmeden uygulanamaz"))
+            format!("{conflicts} {}", t!("conflicts, fix them before applying"))
         } else {
-            format!("{} {}", crate::i18n::items(changed), t!("değişecek"))
+            format!("{} {}", crate::i18n::items(changed), t!("will change"))
         };
 
         let footer = h_flex()
@@ -544,10 +544,10 @@ impl Render for BulkRename {
                     .child(status),
             )
             .child(
-                button("br-cancel", if has_errors { t!("Kapat") } else { t!("İptal") }, false, true, &p)
+                button("br-cancel", if has_errors { t!("Close") } else { t!("Cancel") }, false, true, &p)
                     .on_click(cx.listener(|_, _, _, cx| cx.emit(BulkRenameEvent::Close))),
             )
-            .child(button("br-apply", t!("Uygula"), true, can_apply, &p).on_click(cx.listener(|this, _, _, cx| this.apply(cx))));
+            .child(button("br-apply", t!("Apply"), true, can_apply, &p).on_click(cx.listener(|this, _, _, cx| this.apply(cx))));
 
         let errors_box = has_errors.then(|| {
             v_flex()

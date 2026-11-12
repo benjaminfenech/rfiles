@@ -32,13 +32,13 @@ pub struct TagStore {
 impl Default for TagStore {
     fn default() -> Self {
         let defaults = [
-            ("Kırmızı", 0xFF453A),
-            ("Turuncu", 0xFF9F0A),
-            ("Sarı", 0xFFD60A),
-            ("Yeşil", 0x30D158),
-            ("Mavi", 0x0A84FF),
-            ("Mor", 0xBF5AF2),
-            ("Gri", 0x8E8E93),
+            ("Red", 0xFF453A),
+            ("Orange", 0xFF9F0A),
+            ("Yellow", 0xFFD60A),
+            ("Green", 0x30D158),
+            ("Blue", 0x0A84FF),
+            ("Purple", 0xBF5AF2),
+            ("Gray", 0x8E8E93),
         ];
         Self {
             defs: defaults

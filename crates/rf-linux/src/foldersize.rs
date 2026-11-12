@@ -285,7 +285,7 @@ pub fn folder_size(
     cancelled: &dyn Fn() -> bool,
     progress: &mut dyn FnMut(&FolderSize),
 ) -> anyhow::Result<FolderSize> {
-    anyhow::ensure!(dir.is_dir(), "Klasör bulunamadı: {}", dir.display());
+    anyhow::ensure!(dir.is_dir(), "Folder not found: {}", dir.display());
     shared_cache().invalidate(dir);
     let b = SizeBatch::start(vec![dir.to_path_buf()]);
     let mut since = std::time::Instant::now();
