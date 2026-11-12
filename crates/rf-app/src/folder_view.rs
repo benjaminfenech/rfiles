@@ -937,6 +937,11 @@ impl FolderView {
         let patchable = crate::archive_view::split(&path).is_none();
         // Opening the directory handle can block (offline network share): do it off the UI thread.
         let setup = cx.background_spawn(async move {
+            // an fstab share away from its network: watching would only start another mount
+            // attempt that times out (the listing already said why it's empty)
+            if rf_linux::drives::unreachable_share(&path, std::time::Duration::from_millis(1500)).is_some() {
+                return None;
+            }
             let dir = path.clone();
             rf_linux::watch::watch_dir_changes(&path, std::time::Duration::from_millis(150), move |ch| {
                 // the changed names read from the disk here, on the watcher's own thread (in

@@ -16,8 +16,15 @@ pub enum ListError {
     NotReady,
     #[error("Ağ yolu bulunamadı")]
     NetworkPath,
-    #[error("Listeleme hatası (kod {0})")]
-    Os(u32),
+    /// An fstab share whose server doesn't answer (see `drives::unreachable_share`).
+    #[error("Can't reach {0}. Its shares open again once you're back on its network.")]
+    ServerUnreachable(String),
+    /// ENODEV from opening a folder: an automount (fstab share) that failed to mount.
+    #[error("The share couldn't be mounted. Check that its server is on and its fstab entry is right.")]
+    MountFailed,
+    /// Anything else, as the system words it ("Input/output error").
+    #[error("{0}")]
+    Os(String),
     #[error("İptal edildi")]
     Cancelled,
 }
@@ -33,9 +40,18 @@ impl From<std::io::Error> for ListError {
             StaleNetworkFileHandle | HostUnreachable | NetworkUnreachable | NotConnected | TimedOut => {
                 ListError::NetworkPath
             }
-            _ => ListError::Os(e.raw_os_error().unwrap_or(0) as u32),
+            _ if e.raw_os_error() == Some(libc::ENODEV) => ListError::MountFailed,
+            _ => ListError::Os(os_text(&e)),
         }
     }
+}
+
+/// The system's wording of an error without std's " (os error 5)" tail, capitalised.
+fn os_text(e: &std::io::Error) -> String {
+    let s = e.to_string();
+    let s = s.split(" (os error").next().unwrap_or(&s);
+    let mut c = s.chars();
+    c.next().map(|f| f.to_uppercase().chain(c).collect()).unwrap_or_default()
 }
 
 /// Enumerates `dir` and streams entries to `on_batch` in chunks so the UI can show the first
@@ -48,6 +64,10 @@ pub fn list_dir(
     cancelled: &dyn Fn() -> bool,
     on_batch: &mut dyn FnMut(Vec<Entry>),
 ) -> Result<usize, ListError> {
+    // an fstab share away from its network: say so now, not after the mount times out
+    if let Some(server) = crate::drives::unreachable_share(dir, std::time::Duration::from_millis(1500)) {
+        return Err(ListError::ServerUnreachable(server));
+    }
     let rd = std::fs::read_dir(dir)?;
     let mut total = 0usize;
     let mut batch = Vec::with_capacity(batch_size.min(4096));

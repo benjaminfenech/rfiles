@@ -116,8 +116,11 @@ fn all_trash_dirs() -> Vec<TrashDir> {
     }
     let uid = uid();
     let mut seen = std::collections::HashSet::new();
+    let mounts = crate::drives::mounts();
     for d in crate::drives::list_drives() {
-        if !seen.insert(d.root.clone()) {
+        // an fstab share not mounted yet has no trash to show: looking would mount it (and
+        // wait out the timeout when its server is away)
+        if !seen.insert(d.root.clone()) || !crate::drives::really_mounted(&d.root, &mounts) {
             continue;
         }
         for root in [d.root.join(".Trash").join(uid.to_string()), d.root.join(format!(".Trash-{uid}"))] {

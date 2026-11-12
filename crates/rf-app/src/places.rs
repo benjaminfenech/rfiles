@@ -84,7 +84,15 @@ fn load_recent(limit: usize) -> Vec<Recent> {
     let Some(xml) = dirs::data_dir().and_then(|d| std::fs::read_to_string(d.join("recently-used.xbel")).ok()) else {
         return Vec::new();
     };
-    recent_from_xbel(&xml, limit, |p| std::fs::metadata(p).ok().map(|m| m.is_dir()))
+    // a file on an fstab share that isn't mounted (away from home) is kept unchecked: checking
+    // would mount the share, or wait out the mount timeout when its server is away
+    let asleep = rf_linux::drives::sleeping_automounts();
+    recent_from_xbel(&xml, limit, |p| {
+        if asleep.iter().any(|a| p.starts_with(a)) {
+            return Some(false);
+        }
+        std::fs::metadata(p).ok().map(|m| m.is_dir())
+    })
 }
 
 /// The local files in a `recently-used.xbel`, newest first, without duplicates, at most
