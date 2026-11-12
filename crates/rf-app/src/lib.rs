@@ -36,6 +36,7 @@ mod tags;
 mod undo;
 mod preview;
 mod properties_view;
+mod global_keys;
 mod quick_search;
 mod recycle_view;
 mod theme;
@@ -389,6 +390,7 @@ pub fn main() {
         // With "run in the background" on, the app stays in the notification area instead.
         background::init(cx);
         quick_search::init(cx);
+        global_keys::init(cx);
         // updates from GitHub Releases (Settings → About)
         about::spawn_checks(cx);
         // GPUI would quit by itself when the last window closes (QuitMode::Default on Windows):

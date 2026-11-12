@@ -64,6 +64,7 @@ pub mod search;
 pub mod shell;
 pub mod single_instance;
 pub mod sta;
+pub mod global_shortcuts;
 pub mod taskbar_progress;
 pub mod rotate;
 pub mod thumbs;

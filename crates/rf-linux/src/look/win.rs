@@ -5,10 +5,6 @@
 fn work_of(mon: crate::Opaque) -> [f32; 4] {
     Default::default()
 }
-/// İmlecin bulunduğu monitörün çalışma alanı, GPUI'nin mantıksal koordinatlarında (x, y, g, y).
-pub fn work_area_at_cursor() -> [f32; 4] {
-    Default::default()
-}
 /// Pencerenin bulunduğu monitörün çalışma alanı (mantıksal).
 pub fn work_area_of(hwnd: isize) -> [f32; 4] {
     Default::default()
