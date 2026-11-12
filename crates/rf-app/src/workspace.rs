@@ -2454,17 +2454,32 @@ impl Workspace {
                     .child(div().h_full().rounded_full().bg(if frac > 0.9 { p.danger } else { p.accent }).w(relative(frac)))
                     .into_any_element()
             });
-            col = col.child(self.sidebar_item(
-                ("sb-drive", i).into(),
-                places::drive_icon(&d),
-                p.text_secondary,
-                crate::places::drive_name(&d),
-                loc,
-                active,
-                bar,
-                p,
-                cx,
-            ));
+            let item = self.sidebar_item(("sb-drive", i).into(), places::drive_icon(&d), p.text_secondary, crate::places::drive_name(&d), loc, active, bar, p, cx);
+            // a mounted stick, card or disc: an eject button at the row's end ("safely remove")
+            let ejectable = !rail && !places::unmounted(&d) && matches!(d.kind, rf_linux::DriveKind::Removable | rf_linux::DriveKind::Optical);
+            let root = d.root.clone();
+            col = col.child(div().relative().child(item).when(ejectable, |row| {
+                row.child(
+                    div().absolute().right(px(4.)).top_0().bottom_0().flex().items_center().child(
+                        div()
+                            .id(("sb-eject", i))
+                            .size(px(22.))
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .rounded(theme::RADIUS_SM)
+                            .text_color(p.text_secondary)
+                            .hover(|s| s.bg(p.pressed).text_color(p.text))
+                            .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Eject")).build(w, cx))
+                            .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
+                            .on_click(cx.listener(move |this, _, window, cx| {
+                                cx.stop_propagation();
+                                this.unmount_drive(root.clone(), true, window, cx);
+                            }))
+                            .child(Icon::new(L::Eject).size(px(14.))),
+                    ),
+                )
+            }));
         }
         let cloud = self.places.read(cx).cloud.clone();
         if !cloud.is_empty() && shown("cloud") {

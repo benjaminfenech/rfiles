@@ -30,7 +30,8 @@ fn linux_drive_name(d: &Drive, style: crate::settings::DriveNames) -> String {
                 d.label.clone()
             } else if unmounted(d) {
                 // what other file managers call a partition without a label: "500 GB Volume"
-                format!("{} {}", rf_core::format::size(d.total), crate::t!("Volume"))
+                let what = if locked(d) { crate::t!("Encrypted volume") } else { crate::t!("Volume") };
+                format!("{} {}", rf_core::format::size(d.total), what)
             } else if let Some(share) = share_name(&d.source) {
                 share
             } else {
@@ -232,7 +233,7 @@ impl Places {
                 cx.background_executor().timer(std::time::Duration::from_secs(3)).await;
                 // back on the share's network (or off it): its offline mark follows
                 tick += 1;
-                if tick % 10 == 0 && this.update(cx, |p, cx| p.probe_offline(cx)).is_err() {
+                if tick.is_multiple_of(10) && this.update(cx, |p, cx| p.probe_offline(cx)).is_err() {
                     break;
                 }
                 let now = rf_linux::drives::drive_mask();
@@ -334,10 +335,18 @@ pub fn known_icon(k: KnownFolder) -> L {
 /// Linux: a connected drive that isn't mounted yet (its `root` is the device; opening it
 /// mounts it). Never on Windows.
 pub fn unmounted(d: &Drive) -> bool {
-    return rf_linux::drives::is_unmounted(d);
+    rf_linux::drives::is_unmounted(d)
+}
+
+/// A LUKS drive nobody has unlocked yet (opening it asks for the passphrase).
+pub fn locked(d: &Drive) -> bool {
+    unmounted(d) && d.fs == "crypto_LUKS"
 }
 
 pub fn drive_icon(d: &Drive) -> L {
+    if locked(d) {
+        return L::Lock;
+    }
     match d.kind {
         DriveKind::Removable => L::Usb,
         DriveKind::Network => L::Network,
@@ -386,6 +395,12 @@ mod tests {
         assert_eq!(linux_drive_name(&part, Device), "sda2");
         part.label = "Windows".into();
         assert_eq!(linux_drive_name(&part, Auto), "Windows");
+        // a locked LUKS partition says so
+        let mut luks = drive("/dev/sdc1", "/dev/sdc1", "");
+        luks.fs = "crypto_LUKS".into();
+        assert!(super::locked(&luks));
+        assert!(linux_drive_name(&luks, Auto).ends_with(crate::t!("Encrypted volume")));
+        assert!(!super::locked(&usb));
     }
 
     const XBEL: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
