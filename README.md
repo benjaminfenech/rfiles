@@ -136,20 +136,28 @@ For Hyprland's classic `hyprland.conf`, add a rule that floats (and centers) cla
 `directlook`. The syntax depends on your Hyprland version
 ([window rules](https://wiki.hypr.land/Configuring/Basics/Window-Rules/)).
 
-**Quick search shortcut.** Wayland has no global hotkeys for apps, so bind a key in your
-desktop's keyboard settings to `rfiles --quick-search` (Flatpak:
-`flatpak run io.github.benjaminfenech.rfiles --quick-search`). Hyprland:
+**Quick search shortcut.** Turn on Settings → Quick search → "Global shortcut": rfiles
+asks your desktop for a shortcut through the desktop portal. KDE Plasma and GNOME 48+ ask you
+to confirm the key (Alt+Space is suggested); Hyprland binds it in its config, under the name
+`hyprctl globalshortcuts` lists for it:
 
 ```bash
-bind = ALT, SPACE, exec, rfiles --quick-search
+bind = ALT, SPACE, global, rfiles:quick-search
 ```
+
+It works while rfiles runs (Settings → Advanced → run in the background keeps it running with
+no window open). Without the portal, bind a key to `rfiles --quick-search` instead (Flatpak:
+`flatpak run io.github.benjaminfenech.rfiles --quick-search`). On Wayland the quick search
+opens as an overlay, so tiling compositors don't tile it.
 
 **Default file manager.** Settings → Advanced → "Set as default file manager" makes folders,
 and "Show in folder" in browsers, open in rfiles, for your user only. Turning it off
 brings your previous file manager back.
 
-**Drives.** Right-click a drive in the sidebar to unmount it, or to eject a USB stick, SD
-card or disc. Mounting an internal disk may ask for an administrator password, which needs a
+**Drives.** The eject button on a USB stick, SD card or disc in the sidebar removes it safely;
+right-click a drive to unmount it. Encrypted (LUKS) drives show with a lock and ask for
+their passphrase when opened. fstab network shares whose server can't be reached are marked
+offline. Mounting an internal disk may ask for an administrator password, which needs a
 polkit agent. KDE and GNOME start one; on Hyprland or Sway, start e.g. `hyprpolkitagent` or
 `polkit-kde-agent`. Settings → Files and folders → "Show drives as" picks how drives are
 named.
@@ -180,9 +188,8 @@ have them:
 
 Not done yet, roughly in order of how much they'd help:
 
-- **DirectLook outside rfiles.** Space over other apps needs a global hotkey, which Wayland doesn't give apps. A desktop-portal GlobalShortcuts binding could bring it back.
+- **DirectLook outside rfiles.** Space over other apps needs a global hotkey, which Wayland doesn't give apps. rfiles now has portal global shortcuts (quick search uses one), but other apps don't say which file is selected, so DirectLook has nothing to show over them.
 - **rfiles as other apps' Open/Save dialog.** On Linux that's an xdg-desktop-portal FileChooser backend, a project of its own.
-- **Drives:** unlocking LUKS volumes (needs a passphrase prompt), and an eject button on the sidebar row.
 - **A content search index** to stand in for Windows Search (Baloo, Tracker or plocate).
 - **DirectLook details:** RAW photos beyond the embedded JPEG, version strings of Windows programs, and certificate details.
 - **Distribution:** an AUR package (waiting for AUR account registration to reopen), an apt/dnf repository (COPR, OBS), and Flathub. Until then, install from [Releases](https://github.com/benjaminfenech/rfiles/releases); the built-in updater handles later versions.
