@@ -576,14 +576,12 @@ pub fn delete_ex(cx: &mut App, paths: Vec<std::path::PathBuf>, permanent: bool, 
     });
 }
 
-/// Title-bar button (top right, like Files): idle icon, a progress bar under it while work
-/// runs, red when a failure has not been looked at. Click toggles the flyout.
-/// Puts the operations' progress on every main window's taskbar button (when it changed by a
-/// tenth of a percent or more).
+/// Puts the operations' progress on rfiles' taskbar / dock icon (when it changed by a tenth of
+/// a percent or more).
 pub fn sync_taskbar(ops: &Entity<Ops>, cx: &mut App) {
     use rf_linux::taskbar_progress::State;
     thread_local! {
-        static LAST: std::cell::Cell<(State, usize)> = const { std::cell::Cell::new((State::None, 0)) };
+        static LAST: std::cell::Cell<State> = const { std::cell::Cell::new(State::None) };
     }
     let state = match ops.read(cx).taskbar() {
         State::Normal(v) => State::Normal((v * 1000.0).round() / 1000.0),
@@ -591,22 +589,13 @@ pub fn sync_taskbar(ops: &Entity<Ops>, cx: &mut App) {
         State::Error(v) => State::Error((v * 1000.0).round() / 1000.0),
         s => s,
     };
-    let windows = crate::workspace::main_windows(cx);
-    // (a window opened meanwhile gets the state too)
-    if LAST.with(|l| l.get()) == (state, windows.len()) {
-        return;
-    }
-    LAST.with(|l| l.set((state, windows.len())));
-    for w in windows {
-        let _ = w.update(cx, |_, window, _| {
-            use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-            if let Ok(RawWindowHandle::Win32(h)) = HasWindowHandle::window_handle(window).map(|h| h.as_raw()) {
-                rf_linux::taskbar_progress::set(h.hwnd.get(), state);
-            }
-        });
+    if LAST.with(|l| l.replace(state)) != state {
+        rf_linux::taskbar_progress::set(state);
     }
 }
 
+/// Title-bar button (top right, like Files): idle icon, a progress bar under it while work
+/// runs, red when a failure has not been looked at. Click toggles the flyout.
 pub fn render_button(ops: &Entity<Ops>, p: &Palette, cx: &App) -> AnyElement {
     let o = ops.read(cx);
     let running = o.running();

@@ -88,6 +88,7 @@ and `pacman -Qi rfiles-git` lists them as optional dependencies.
   - Network locations from Dolphin and GTK bookmarks.
 - **Files:**
   - Copy, move, rename and delete, with conflict answers, pause, a speed limit and undo/redo.
+  - Progress on rfiles' taskbar or dock icon while files copy, on desktops that show it (KDE Plasma, Ubuntu Dock / Dash to Dock, Plank).
   - Bulk rename.
   - The trash, shared with other file managers.
   - Copy and paste with other apps, and dragging files out to them on Wayland.
@@ -184,7 +185,6 @@ Not done yet, roughly in order of how much they'd help:
 - **Drives:** unlocking LUKS volumes (needs a passphrase prompt), and an eject button on the sidebar row.
 - **A content search index** to stand in for Windows Search (Baloo, Tracker or plocate).
 - **DirectLook details:** RAW photos beyond the embedded JPEG, version strings of Windows programs, and certificate details.
-- **Taskbar progress** through the Unity LauncherEntry API (KDE, Dock-style panels).
 - **Distribution:** an AUR package (waiting for AUR account registration to reopen), an apt/dnf repository (COPR, OBS), and Flathub. Until then, install from [Releases](https://github.com/benjaminfenech/rfiles/releases); the built-in updater handles later versions.
 - **Hand checks:** a few features are built and unit-tested but haven't been tried by hand on every desktop. [docs/LINUX_PORT.md](docs/LINUX_PORT.md) says which.
 
