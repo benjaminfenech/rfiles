@@ -603,7 +603,7 @@ pub fn toggle(cx: &mut App) {
         }
     };
     // centered on the screen under the pointer, in its upper part (where the eyes are)
-    let work = rf_linux::look::win::work_area_at_cursor();
+    let work = crate::sys::work_area_at_cursor(cx);
     let origin = point(px(work[0] + (work[2] - WIDTH) / 2.), px(work[1] + work[3] * 0.22));
     let max_h = (work[3] * 0.78 - 24.).max(200.);
     let display_id = cx
@@ -616,28 +616,52 @@ pub fn toggle(cx: &mut App) {
         .map(|d| d.id());
     // automated UI tests: shown without taking the foreground from the user
     let test = std::env::var_os("RFILES_QUICK_SEARCH_NOACTIVATE").is_some();
-    let opts = WindowOptions {
+    let opts = |kind: WindowKind| WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(Bounds::new(origin, size(px(WIDTH), px(64.))))),
         display_id,
         titlebar: None,
         focus: !test,
         show: true,
-        kind: WindowKind::PopUp,
+        kind,
         is_movable: false,
         is_resizable: false,
         is_minimizable: false,
         window_background: WindowBackgroundAppearance::Blurred,
         ..Default::default()
     };
-    match cx.open_window(opts, move |window, cx| {
-        let hwnd = crate::look::window::hwnd_of(window);
-        rf_linux::window::set_dark_mode(hwnd, Palette::for_window(window).dark);
-        // summoned from another app: take the keyboard (the hotkey press allows it)
-        if !test {
-            rf_linux::window::bring_to_front(hwnd);
+    let build = move |images: Entity<ImageCache>| {
+        move |window: &mut Window, cx: &mut App| {
+            let hwnd = crate::look::window::hwnd_of(window);
+            rf_linux::window::set_dark_mode(hwnd, Palette::for_window(window).dark);
+            // summoned from another app: take the keyboard (the hotkey press allows it)
+            if !test {
+                rf_linux::window::bring_to_front(hwnd);
+            }
+            cx.new(|cx| QuickSearch::new(images, max_h, window, cx))
         }
-        cx.new(|cx| QuickSearch::new(images, max_h, window, cx))
-    }) {
+    };
+    // Wayland: an overlay over everything, like a launcher (a plain window gets tiled by
+    // Hyprland, Sway…). It keeps the keyboard until it closes (Escape, Enter, the shortcut).
+    // Compositors without layer shell (GNOME) refuse it: then a plain window.
+    let overlay = std::env::var_os("WAYLAND_DISPLAY").is_some().then(|| {
+        use gpui_kit::layer_shell::{Anchor, KeyboardInteractivity, Layer, LayerShellOptions};
+        WindowKind::LayerShell(LayerShellOptions {
+            namespace: "rfiles-quick-search".into(),
+            layer: Layer::Overlay,
+            anchor: Anchor::TOP,
+            margin: Some((px(work[3] * 0.22), px(0.), px(0.), px(0.))),
+            keyboard_interactivity: if test { KeyboardInteractivity::None } else { KeyboardInteractivity::Exclusive },
+            ..Default::default()
+        })
+    });
+    let opened = match overlay {
+        Some(kind) => cx.open_window(opts(kind), build(images.clone())).or_else(|e| {
+            log::info!("quick search: no overlay ({e:#}), a window instead");
+            cx.open_window(opts(WindowKind::PopUp), build(images))
+        }),
+        None => cx.open_window(opts(WindowKind::PopUp), build(images)),
+    };
+    match opened {
         Ok(w) => host(cx).window = Some(w),
         Err(e) => log::warn!("quick search window: {e:#}"),
     }

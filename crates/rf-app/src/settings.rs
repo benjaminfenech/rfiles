@@ -400,6 +400,8 @@ pub struct Settings {
     // ---- Quick search (quick_search.rs)
     /// The quick search: apps, files, bookmarks, the web (a desktop shortcut opens it).
     pub quick_search: bool,
+    /// A global shortcut for it through the desktop portal (`global_keys`).
+    pub global_shortcut: bool,
     pub web_search: WebSearch,
     /// Chrome's and Edge's bookmarks are searched too (read on this PC only).
     pub quick_search_bookmarks: bool,
@@ -487,6 +489,7 @@ impl Default for Settings {
             show_flatten: false,
             directlook_enabled: true,
             quick_search: true,
+            global_shortcut: false,
             web_search: WebSearch::Google,
             quick_search_bookmarks: true,
         }

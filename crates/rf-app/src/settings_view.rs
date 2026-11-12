@@ -326,7 +326,24 @@ fn quick_search_cards(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             }),
             sw("quick-search", p, s.quick_search, |s, v| s.quick_search = v),
         ),
-        // Wayland gives apps no global shortcuts; the desktop's own shortcut starts it
+        // through the desktop portal (KDE, GNOME 48+, Hyprland): asks once to confirm the key
+        card(
+            p,
+            L::Keyboard,
+            t!("Global shortcut"),
+            Some(&crate::global_keys::status().filter(|_| s.global_shortcut).unwrap_or_else(|| {
+                t!("Open the quick search from any app with a shortcut your desktop assigns (KDE and GNOME ask you to confirm it)").to_string()
+            })),
+            h_flex()
+                .gap_2()
+                .items_center()
+                .when(s.global_shortcut && crate::global_keys::can_configure(), |d| {
+                    d.child(button("qs-configure", p, t!("Change"), |_, _| crate::global_keys::configure()))
+                })
+                .child(sw("global-shortcut", p, s.global_shortcut, |s, v| s.global_shortcut = v))
+                .into_any_element(),
+        ),
+        // without the portal: a shortcut of the desktop's own runs the command
         card(
             p,
             L::Keyboard,
