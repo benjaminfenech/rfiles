@@ -32,6 +32,16 @@
   </provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.8.1" date="2026-11-12">
+      <description>
+        <p>
+          Offline network shares no longer freeze the window and are marked offline, encrypted
+          (LUKS) drives can be unlocked, removable drives get an eject button, copy progress
+          shows on the taskbar icon, and quick search can have a global shortcut through the
+          desktop portal.
+        </p>
+      </description>
+    </release>
     <release version="0.8.0" date="2026-11-12">
       <description>
         <p>
