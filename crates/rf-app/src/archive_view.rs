@@ -195,8 +195,12 @@ pub fn is_browsable_path(p: &Path) -> bool {
 
 /// Splits a path into (archive file, path inside it) when some ancestor is an archive file.
 /// A plain folder (or a non-existent path outside any archive) gives `None`.
+///
+/// Only touches the disk when some component is named like an archive: callers run this on
+/// the UI thread, and even a `stat` of an offline share's automount point waits for its mount
+/// to time out.
 pub fn split(path: &Path) -> Option<(PathBuf, PathBuf)> {
-    if path.is_dir() {
+    if !is_browsable_path(path) || path.is_dir() {
         return None;
     }
     for a in path.ancestors() {

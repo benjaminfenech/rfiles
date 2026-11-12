@@ -321,8 +321,85 @@ pub fn seek_penalty(path: &Path) -> Option<bool> {
     }
 }
 
+/// Whether something is mounted at `point` beyond a systemd automount waiting for its first
+/// use (`mounts` from [`mounts`]). Looking inside an unmounted automount mounts it, which for
+/// an offline share waits out the mount timeout.
+pub(crate) fn really_mounted(point: &Path, mounts: &[(PathBuf, String, String)]) -> bool {
+    mounts.iter().any(|(m, fs, _)| m == point && fs != "autofs")
+}
+
+/// Mount points holding only a systemd automount that nothing has opened yet (fstab shares
+/// away from their network stay like this). Anything under one is unknown until it mounts:
+/// a `stat` there waits for the mount.
+pub fn sleeping_automounts() -> Vec<PathBuf> {
+    let ms = mounts();
+    let mut v: Vec<PathBuf> = ms.iter().filter(|(m, fs, _)| fs == "autofs" && !really_mounted(m, &ms)).map(|(m, _, _)| m.clone()).collect();
+    v.dedup();
+    v
+}
+
+/// The server of an fstab share that `path` is on, when that share isn't mounted yet and the
+/// server doesn't answer: `Some("10.0.0.9")`. Opening such a folder makes systemd try to mount
+/// it, and the call waits for the whole mount timeout (10 s or more) before failing. A short
+/// TCP connect to the share's port finds out first. Only SMB (445, or the entry's `port=`) and
+/// NFS (2049) shares are checked; anything else, or a mounted share, gives `None`. Blocks for
+/// up to `wait`: call off the UI thread.
+pub fn unreachable_share(path: &Path, wait: std::time::Duration) -> Option<String> {
+    let ms = mounts();
+    // the innermost mount point holding the path, and whether only the automount sits there
+    let point = ms.iter().filter(|(m, _, _)| path.starts_with(m)).map(|(m, _, _)| m).max_by_key(|m| m.components().count())?;
+    if really_mounted(point, &ms) {
+        return None;
+    }
+    let (host, port) = share_server(&std::fs::read_to_string("/etc/fstab").unwrap_or_default(), point)?;
+    let addrs: Vec<std::net::SocketAddr> = std::net::ToSocketAddrs::to_socket_addrs(&(host.as_str(), port)).ok()?.collect();
+    let answers = addrs.iter().any(|a| match std::net::TcpStream::connect_timeout(a, wait) {
+        Ok(_) => true,
+        // refused: the host is there (the mount fails fast on its own)
+        Err(e) => e.kind() == std::io::ErrorKind::ConnectionRefused,
+    });
+    (!answers && !addrs.is_empty()).then_some(host)
+}
+
+/// (host, port) of the fstab share mounted at `point`, for the share kinds whose port is known.
+fn share_server(fstab: &str, point: &Path) -> Option<(String, u16)> {
+    fstab.lines().map(str::trim).filter(|l| !l.starts_with('#')).find_map(|l| {
+        let f: Vec<&str> = l.split_whitespace().collect();
+        let (src, at, fs, opts) = (f.first()?, f.get(1)?, f.get(2)?, f.get(3).copied().unwrap_or(""));
+        if Path::new(&unescape(at)) != point {
+            return None;
+        }
+        let src = unescape(src);
+        let opt_port = opts.split(',').find_map(|o| o.strip_prefix("port=")?.parse().ok());
+        let (host, port) = match *fs {
+            // //host/share
+            "cifs" | "smb3" | "smbfs" => (src.trim_start_matches('/').split('/').next()?.to_string(), opt_port.unwrap_or(445)),
+            // host:/export, [v6addr]:/export
+            "nfs" | "nfs4" => (src.rsplit_once(":/")?.0.trim_matches(['[', ']']).to_string(), opt_port.unwrap_or(2049)),
+            _ => return None,
+        };
+        (!host.is_empty()).then_some((host, port))
+    })
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn share_servers_from_fstab() {
+        let fstab = "//10.0.0.9/media /mnt/media cifs x-systemd.automount,_netdev 0 0\n\
+                     //nas/odd /mnt/odd cifs port=4445,noauto 0 0\n\
+                     nas.lan:/export/My\\040Files /mnt/my\\040files nfs4 noauto 0 0\n\
+                     [fd00::9]:/srv /mnt/v6 nfs defaults 0 0\n\
+                     me@box:/home /mnt/box fuse.sshfs noauto 0 0\n";
+        let at = |p: &str| super::share_server(fstab, std::path::Path::new(p));
+        assert_eq!(at("/mnt/media"), Some(("10.0.0.9".into(), 445)));
+        assert_eq!(at("/mnt/odd"), Some(("nas".into(), 4445)));
+        assert_eq!(at("/mnt/my files"), Some(("nas.lan".into(), 2049)));
+        assert_eq!(at("/mnt/v6"), Some(("fd00::9".into(), 2049)));
+        assert_eq!(at("/mnt/box"), None);
+        assert_eq!(at("/mnt/other"), None);
+    }
+
     #[test]
     fn fstab_shares_and_their_automounts() {
         let fstab = super::fstab_network(
