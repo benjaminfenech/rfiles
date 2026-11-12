@@ -1273,5 +1273,10 @@
  "c47c37c8": "Çevrim dışı",
  "3909a3a2": "{server} sunucusuna ulaşılamıyor",
  "406a5eb3": "Kilitli",
- "f0865643": "Şifreli birim"
+ "f0865643": "Şifreli birim",
+ "27841d23": "rfiles hızlı aramayı aç",
+ "5b71d057": "Henüz bir tuş atanmadı. Hyprland'de `hyprctl globalshortcuts` komutunun listelediği \"quick-search\" kısayolunu bağlayın, ör. bind = ALT, SPACE, global, <name>",
+ "9d2e4714": "Genel kısayol",
+ "93464a3e": "Masaüstünüzün atadığı bir kısayolla hızlı aramayı her uygulamadan açın (KDE ve GNOME onaylamanızı ister)",
+ "a1de2fdd": "Değiştir"
 }

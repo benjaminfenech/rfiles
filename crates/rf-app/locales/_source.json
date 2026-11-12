@@ -5404,6 +5404,31 @@
   "new": true
  },
  {
+  "id": "27841d23",
+  "en": "Open rfiles quick search",
+  "new": true
+ },
+ {
+  "id": "5b71d057",
+  "en": "No key assigned yet. On Hyprland, bind the \"quick-search\" shortcut that `hyprctl globalshortcuts` lists, e.g. bind = ALT, SPACE, global, <name>",
+  "new": true
+ },
+ {
+  "id": "9d2e4714",
+  "en": "Global shortcut",
+  "new": true
+ },
+ {
+  "id": "93464a3e",
+  "en": "Open the quick search from any app with a shortcut your desktop assigns (KDE and GNOME ask you to confirm it)",
+  "new": true
+ },
+ {
+  "id": "a1de2fdd",
+  "en": "Change",
+  "new": true
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"
