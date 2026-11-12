@@ -31,16 +31,16 @@ impl FileState {
             FileState::Ignored => 1,
         }
     }
-    /// Short Turkish label for tooltips / a state column.
+    /// Short label for tooltips / a state column (English; the app translates it).
     pub fn label(self) -> &'static str {
         match self {
-            FileState::Modified => "Değiştirildi",
-            FileState::Added => "Eklendi",
-            FileState::Deleted => "Silindi",
-            FileState::Renamed => "Yeniden adlandırıldı",
-            FileState::Untracked => "İzlenmiyor",
-            FileState::Ignored => "Yoksayıldı",
-            FileState::Conflicted => "Çakışma",
+            FileState::Modified => "Modified",
+            FileState::Added => "Added",
+            FileState::Deleted => "Deleted",
+            FileState::Renamed => "Renamed",
+            FileState::Untracked => "Untracked",
+            FileState::Ignored => "Ignored",
+            FileState::Conflicted => "Conflict",
         }
     }
 }
@@ -120,14 +120,14 @@ pub fn status(repo_root: &Path) -> Result<GitStatus> {
         .output()
         .map_err(|e| {
             if e.kind() == std::io::ErrorKind::NotFound {
-                anyhow::anyhow!("Git bulunamadı (kurulu değil ya da PATH'te yok)")
+                anyhow::anyhow!("Git not found (not installed or not on PATH)")
             } else {
-                anyhow::Error::new(e).context("git çalıştırılamadı")
+                anyhow::Error::new(e).context("couldn't run git")
             }
         })?;
     if !out.status.success() {
         bail!(
-            "git status başarısız: {}", String::from_utf8_lossy(& out.stderr).trim()
+            "git status failed: {}", String::from_utf8_lossy(& out.stderr).trim()
         );
     }
     Ok(parse_porcelain_v2(repo_root, &out.stdout))
@@ -272,9 +272,9 @@ pub fn state_for_child(status: &GitStatus, dir: &Path, name: &str) -> Option<Fil
 }
 fn spawn_err(e: std::io::Error) -> anyhow::Error {
     if e.kind() == std::io::ErrorKind::NotFound {
-        anyhow::anyhow!("Git bulunamadı (kurulu değil ya da PATH'te yok)")
+        anyhow::anyhow!("Git not found (not installed or not on PATH)")
     } else {
-        anyhow::Error::new(e).context("git çalıştırılamadı")
+        anyhow::Error::new(e).context("couldn't run git")
     }
 }
 /// Runs git and returns the raw output (even on a non-zero exit).
@@ -319,7 +319,7 @@ pub fn branches(root: &Path) -> Result<Vec<Branch>> {
             "refs/heads",
             "refs/remotes",
         ],
-        "Dallar listelenemedi",
+        "Couldn't list the branches",
     )?;
     let mut local = Vec::new();
     let mut remote = Vec::new();
@@ -390,7 +390,7 @@ fn ref_exists(root: &Path, full_ref: &str) -> bool {
 }
 fn resolve_target(root: &Path, branch: &str) -> Result<Target> {
     if branch.starts_with('-') || branch.is_empty() {
-        bail!("Geçersiz dal adı: {branch}");
+        bail!("Invalid branch name: {branch}");
     }
     if ref_exists(root, &format!("refs/heads/{branch}")) {
         return Ok(Target::Local(branch.to_string()));
@@ -402,7 +402,7 @@ fn resolve_target(root: &Path, branch: &str) -> Result<Target> {
         }
         return Ok(Target::Track(branch.to_string()));
     }
-    bail!("Dal bulunamadı: {branch}")
+    bail!("Branch not found: {branch}")
 }
 fn switch_to(root: &Path, target: &Target, force: bool) -> Result<()> {
     let mut args: Vec<&str> = vec!["switch"];
@@ -424,10 +424,10 @@ fn switch_to(root: &Path, target: &Target, force: bool) -> Result<()> {
     let err = err.trim();
     if err.contains("overwritten") || err.contains("would be lost") {
         bail!(
-            "Dal değiştirilemedi: yerel değişiklikler çakışıyor. Değişiklikleri saklayın ya da atın.\n{err}"
+            "Couldn't switch branch: local changes conflict. Stash or discard them.\n{err}"
         );
     }
-    bail!("Dal değiştirilemedi: {err}")
+    bail!("Couldn't switch branch: {err}")
 }
 /// Switches to `branch`. A remote-tracking name (`origin/foo`) creates and tracks local `foo`
 /// (or just switches to it when it already exists).
@@ -440,7 +440,7 @@ pub fn checkout(root: &Path, branch: &str, mode: CheckoutMode) -> Result<()> {
             let dirty = !git_text(
                     root,
                     &["status", "--porcelain"],
-                    "git status başarısız",
+                    "git status failed",
                 )?
                 .trim()
                 .is_empty();
@@ -454,7 +454,7 @@ pub fn checkout(root: &Path, branch: &str, mode: CheckoutMode) -> Result<()> {
                         "-m",
                         "rfiles checkout",
                     ],
-                    "Değişiklikler stash'e alınamadı",
+                    "Couldn't stash the changes",
                 )?;
             }
             if let Err(e) = switch_to(root, &target, false) {
@@ -467,7 +467,7 @@ pub fn checkout(root: &Path, branch: &str, mode: CheckoutMode) -> Result<()> {
                 git_text(
                     root,
                     &["stash", "pop"],
-                    "Dal değiştirildi ama saklanan değişiklikler geri uygulanamadı (git stash listesinde duruyor)",
+                    "Switched branch, but the stashed changes couldn't be reapplied (they're still in git stash list)",
                 )?;
             }
             Ok(())
@@ -501,10 +501,10 @@ pub fn create_branch(
     checkout: bool,
 ) -> Result<()> {
     if !is_valid_branch_name(name) {
-        bail!("Geçersiz dal adı: {name}");
+        bail!("Invalid branch name: {name}");
     }
     if let Some(f) = from && (f.is_empty() || f.starts_with('-')) {
-        bail!("Geçersiz başlangıç noktası: {f}");
+        bail!("Invalid starting point: {f}");
     }
     let mut args: Vec<&str> = if checkout {
         vec!["switch", "-c", name]
@@ -514,15 +514,15 @@ pub fn create_branch(
     if let Some(f) = from {
         args.push(f);
     }
-    git_text(root, &args, "Dal oluşturulamadı").map(|_| ())
+    git_text(root, &args, "Couldn't create branch").map(|_| ())
 }
 /// Deletes a local branch (`force` = `-D`, allows unmerged branches).
 pub fn delete_branch(root: &Path, name: &str, force: bool) -> Result<()> {
     if name.is_empty() || name.starts_with('-') {
-        bail!("Geçersiz dal adı: {name}");
+        bail!("Invalid branch name: {name}");
     }
     let flag = if force { "-D" } else { "-d" };
-    git_text(root, &["branch", flag, name], "Dal silinemedi").map(|_| ())
+    git_text(root, &["branch", flag, name], "Couldn't delete the branch").map(|_| ())
 }
 fn flush_line(cur: &mut Vec<u8>, kept: &mut Vec<String>, cb: &mut dyn FnMut(&str)) {
     if cur.is_empty() {
@@ -610,18 +610,18 @@ fn run_streaming(
         msg = tail(stdout_lines);
     }
     if msg.is_empty() {
-        msg = format!("çıkış kodu {}", status.code().unwrap_or(- 1));
+        msg = format!("exit code {}", status.code().unwrap_or(- 1));
     }
-    bail!("{what} başarısız: {msg}")
+    bail!("{what} failed: {msg}")
 }
 fn remotes(root: &Path) -> Result<Vec<String>> {
-    let t = git_text(root, &["remote"], "Uzak depolar okunamadı")?;
+    let t = git_text(root, &["remote"], "Couldn't read the remotes")?;
     Ok(t.lines().map(str::trim).filter(|l| !l.is_empty()).map(String::from).collect())
 }
 fn require_remote(root: &Path) -> Result<Vec<String>> {
     let r = remotes(root)?;
     if r.is_empty() {
-        bail!("Uzak depo tanımlı değil");
+        bail!("No remote is set up");
     }
     Ok(r)
 }
@@ -654,10 +654,10 @@ pub fn fetch(root: &Path, on_progress: &mut dyn FnMut(&str)) -> Result<()> {
 pub fn pull(root: &Path, on_progress: &mut dyn FnMut(&str)) -> Result<()> {
     require_remote(root)?;
     let Some(branch) = current_branch(root) else {
-        bail!("Ayrık HEAD durumunda çekme yapılamaz");
+        bail!("Can't pull with a detached HEAD");
     };
     if upstream_of(root, &branch).is_none() {
-        bail!("'{branch}' dalının izlediği bir uzak dal yok");
+        bail!("Branch '{branch}' doesn't track a remote branch");
     }
     let mut c = git_cmd(root);
     let has_rebase_cfg = run_git(root, &["config", "--get", "pull.rebase"])
@@ -674,7 +674,7 @@ pub fn pull(root: &Path, on_progress: &mut dyn FnMut(&str)) -> Result<()> {
 pub fn push(root: &Path, on_progress: &mut dyn FnMut(&str)) -> Result<()> {
     let remotes = require_remote(root)?;
     let Some(branch) = current_branch(root) else {
-        bail!("Ayrık HEAD durumunda gönderilemez");
+        bail!("Can't push with a detached HEAD");
     };
     let mut c = git_cmd(root);
     c.args(["push", "--progress"]);
@@ -703,8 +703,8 @@ pub fn remote_url(root: &Path) -> Option<String> {
 /// `git init` in `dir` (created when missing).
 pub fn init(dir: &Path) -> Result<()> {
     std::fs::create_dir_all(dir)
-        .map_err(|e| anyhow::Error::new(e).context("Klasör oluşturulamadı"))?;
-    git_text(dir, &["init", "-q"], "Depo başlatılamadı").map(|_| ())
+        .map_err(|e| anyhow::Error::new(e).context("Couldn't create the folder"))?;
+    git_text(dir, &["init", "-q"], "Couldn't initialise the repository").map(|_| ())
 }
 /// Clones `url` into a new folder under `dest_parent` (named after the repository) and returns
 /// that folder.
@@ -715,7 +715,7 @@ pub fn clone(
 ) -> Result<PathBuf> {
     let url = url.trim();
     if url.is_empty() {
-        bail!("Depo adresi boş");
+        bail!("The repository address is empty");
     }
     let last = url
         .trim_end_matches(['/', '\\'])
@@ -725,7 +725,7 @@ pub fn clone(
     let name = last.strip_suffix(".git").unwrap_or(last);
     let name = if name.is_empty() { "repo" } else { name };
     std::fs::create_dir_all(dest_parent)
-        .map_err(|e| anyhow::Error::new(e).context("Hedef klasör oluşturulamadı"))?;
+        .map_err(|e| anyhow::Error::new(e).context("Couldn't create the destination folder"))?;
     let mut c = git_cmd(dest_parent);
     c.args(["clone", "--progress", "--", url, name]);
     run_streaming(c, "git clone", on_progress)?;
@@ -862,10 +862,10 @@ fn rel_inside(root: &Path, dir: &Path) -> Option<String> {
 pub fn connect_remote(root: &Path, url: &str) -> Result<()> {
     let url = url.trim();
     if url.is_empty() {
-        bail!("Depo adresi boş");
+        bail!("The repository address is empty");
     }
     let verb = if remotes(root)?.iter().any(|r| r == "origin") { "set-url" } else { "add" };
-    git_text(root, &["remote", verb, "origin", url], "Uzak depo bağlanamadı").map(|_| ())
+    git_text(root, &["remote", verb, "origin", url], "Couldn't connect the remote").map(|_| ())
 }
 
 /// Whether there is anything to commit (changed, added, deleted or untracked files).
@@ -877,11 +877,11 @@ pub fn has_changes(root: &Path) -> bool {
 pub fn commit_all(root: &Path, message: &str) -> Result<()> {
     let message = message.trim();
     if message.is_empty() {
-        bail!("Kayıt açıklaması boş");
+        bail!("The commit message is empty");
     }
     if !has_changes(root) {
-        bail!("Kaydedilecek değişiklik yok");
+        bail!("Nothing to commit");
     }
-    git_text(root, &["add", "-A"], "Değişiklikler eklenemedi")?;
-    git_text(root, &["commit", "-q", "-m", message], "Kaydedilemedi").map(|_| ())
+    git_text(root, &["add", "-A"], "Couldn't stage the changes")?;
+    git_text(root, &["commit", "-q", "-m", message], "Couldn't commit").map(|_| ())
 }

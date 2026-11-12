@@ -69,7 +69,7 @@ impl Viewer for FontViewer {
                         self.info = Some(info);
                     }
                 }
-                None => self.error = Some(crate::t!("Yazı tipi okunamadı").to_string()),
+                None => self.error = Some(crate::t!("Couldn't read the font").to_string()),
             },
             Err(e) => self.error = Some(e.to_string()),
         }
@@ -86,13 +86,13 @@ impl Viewer for FontViewer {
                 v_flex()
                     .gap_1()
                     .child(div().text_xl().font_weight(FontWeight::SEMIBOLD).child(info.family.clone()))
-                    .child(div().text_sm().text_color(p.text_secondary).child(format!("{} · {} {}", info.style, info.glyphs, crate::t!("glif")))),
+                    .child(div().text_sm().text_color(p.text_secondary).child(format!("{} · {} {}", info.style, info.glyphs, crate::t!("glyphs")))),
             )
             .child(
                 div()
                     .font_family(info.family.clone())
                     .text_size(px(28.))
-                    .child("AaBbCcÇçDdEeFfGgĞğHhIıİiJjKkLlMmNnOoÖöPpRrSsŞşTtUuÜüVvYyZz 0123456789"),
+                    .child("AaBbCcÇçDdEeFfGgĞğHhIıİiJjKkLlMmNnOoÖöPpRrSsŞşTtUuÜüVvYyZz 0123456789"), // i18n-ok: font sample
             );
         for size in SIZES {
             col = col.child(
@@ -107,7 +107,7 @@ impl Viewer for FontViewer {
                             .text_size(px(*size))
                             .whitespace_nowrap()
                             .overflow_hidden()
-                            .child("Pijamalı hasta yağız şoföre çabucak güvendi. The quick brown fox jumps over the lazy dog."),
+                            .child("Pijamalı hasta yağız şoföre çabucak güvendi. The quick brown fox jumps over the lazy dog."), // i18n-ok: font sample (a Turkish pangram)
                     ),
             );
         }

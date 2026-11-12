@@ -94,7 +94,7 @@ impl Render for ShelfView {
                     .gap_1p5()
                     .items_center()
                     .child(Icon::new(L::Inbox).size(px(14.)).text_color(p.accent))
-                    .child(div().text_sm().font_weight(FontWeight::SEMIBOLD).child(crate::t!("Raf")))
+                    .child(div().text_sm().font_weight(FontWeight::SEMIBOLD).child(crate::t!("Shelf")))
                     .when(!empty, |d| d.child(div().text_xs().text_color(p.text_tertiary).child(format!("{}", items.len())))),
             )
             .child(
@@ -121,7 +121,7 @@ impl Render for ShelfView {
                 .text_xs()
                 .text_center()
                 .text_color(p.text_tertiary)
-                .child(crate::t!("Öğeleri sağ tık → \"Rafa ekle\" (Ctrl+Shift+S) ile buraya toplayın, sonra hepsini istediğiniz klasöre kopyalayın veya taşıyın."))
+                .child(crate::t!("Collect items here with right-click → \"Add to shelf\" (Ctrl+Shift+S), then copy or move them all into any folder."))
                 .into_any_element()
         } else {
             let mut list = v_flex().id("shelf-list").flex_1().overflow_y_scroll().gap_0p5();
@@ -193,20 +193,20 @@ impl Render for ShelfView {
         let actions = h_flex()
             .gap_1()
             .flex_wrap()
-            .child(Self::button("shelf-copy", crate::t!("Buraya kopyala"), L::Copy, &p, true).on_click(cx.listener(|this, _, _, cx| {
+            .child(Self::button("shelf-copy", crate::t!("Copy here"), L::Copy, &p, true).on_click(cx.listener(|this, _, _, cx| {
                 let items = this.shelf.items().to_vec();
                 if !items.is_empty() {
                     cx.emit(ShelfEvent::Transfer(Transfer::Copy, items));
                 }
             })))
-            .child(Self::button("shelf-move", crate::t!("Buraya taşı"), L::FolderInput, &p, false).on_click(cx.listener(|this, _, _, cx| {
+            .child(Self::button("shelf-move", crate::t!("Move here"), L::FolderInput, &p, false).on_click(cx.listener(|this, _, _, cx| {
                 let items = this.shelf.items().to_vec();
                 if !items.is_empty() {
                     // the workspace clears the shelf once the move has actually started
                     cx.emit(ShelfEvent::Transfer(Transfer::Move, items));
                 }
             })))
-            .child(Self::button("shelf-clear", crate::t!("Temizle"), L::Trash, &p, false).on_click(cx.listener(|this, _, _, cx| {
+            .child(Self::button("shelf-clear", crate::t!("Clear"), L::Trash, &p, false).on_click(cx.listener(|this, _, _, cx| {
                 this.shelf.clear();
                 cx.notify();
             })));

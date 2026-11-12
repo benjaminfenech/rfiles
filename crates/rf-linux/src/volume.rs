@@ -22,13 +22,13 @@ impl VolumeInfo {
 /// Turkish name for a `GetDriveTypeW` result.
 pub fn drive_type_name(t: u32) -> &'static str {
     match t {
-        2 => "Çıkarılabilir Disk",
-        3 => "Yerel Disk",
-        4 => "Ağ Sürücüsü",
-        5 => "Optik Sürücü (CD/DVD)",
+        2 => "Removable Disk",
+        3 => "Local Disk",
+        4 => "Network Drive",
+        5 => "Optical Drive (CD/DVD)",
         6 => "RAM Disk",
-        1 => "Bağlı Değil",
-        _ => "Bilinmiyor",
+        1 => "Not Connected",
+        _ => "Unknown",
     }
 }
 /// Details of the volume at `root` (e.g. `C:\`). Size fields stay 0 when the media is missing.

@@ -1,5842 +1,5382 @@
 [
  {
-  "id": "29b4f21c",
-  "key": "Aranacak metin",
-  "tr": "Aranacak metin",
+  "id": "8b5eb162",
   "en": "Text to find"
  },
  {
-  "id": "5355b0c4",
-  "key": "Yerine yazılacak",
-  "tr": "Yerine yazılacak",
+  "id": "3974be2d",
   "en": "Replace with"
  },
  {
-  "id": "b0f51aaf",
-  "key": "Tatil_{n:03}",
-  "tr": "Tatil_{n:03}",
+  "id": "5acb8057",
   "en": "Holiday_{n:03}"
  },
  {
-  "id": "eab759d6",
-  "key": "Önek",
-  "tr": "Önek",
+  "id": "d054d9e9",
   "en": "Prefix"
  },
  {
-  "id": "75622123",
-  "key": "Sonek",
-  "tr": "Sonek",
+  "id": "311dba6c",
   "en": "Suffix"
  },
  {
-  "id": "022b321e",
-  "key": "Toplu yeniden adlandır",
-  "tr": "Toplu yeniden adlandır",
+  "id": "21a0fe4d",
   "en": "Bulk rename"
  },
  {
-  "id": "78d04057",
-  "key": "Bul ve değiştir",
-  "tr": "Bul ve değiştir",
+  "id": "edd78fb3",
   "en": "Find and replace"
  },
  {
-  "id": "7dc33a54",
-  "key": "Desen",
-  "tr": "Desen",
+  "id": "f49120c9",
   "en": "Pattern"
  },
  {
-  "id": "90d4e17b",
-  "key": "Büyük/küçük harf",
-  "tr": "Büyük/küçük harf",
+  "id": "112505eb",
   "en": "Letter case"
  },
  {
-  "id": "dbc404e5",
-  "key": "Önek/sonek",
-  "tr": "Önek/sonek",
+  "id": "d3a04c27",
   "en": "Prefix/suffix"
  },
  {
-  "id": "ddda95f4",
-  "key": "Bul",
-  "tr": "Bul",
+  "id": "3e1cd17a",
   "en": "Find"
  },
  {
-  "id": "39cee49d",
-  "key": "Değiştir",
-  "tr": "Değiştir",
+  "id": "e4d54f63",
   "en": "Replace"
  },
  {
-  "id": "9eb9108f",
-  "key": "Büyük/küçük harfe duyarsız",
-  "tr": "Büyük/küçük harfe duyarsız",
+  "id": "96e3fc5d",
   "en": "Ignore case"
  },
  {
-  "id": "549ba0f0",
-  "key": "Düzenli ifade (regex, $1 grupları)",
-  "tr": "Düzenli ifade (regex, $1 grupları)",
+  "id": "75d36c42",
   "en": "Regular expression (regex, $1 groups)"
  },
  {
-  "id": "ba3a1661",
-  "key": "Başlangıç",
-  "tr": "Başlangıç",
+  "id": "0ae8097f",
   "en": "Start"
  },
  {
-  "id": "e7f52df6",
-  "key": "Adım",
-  "tr": "Adım",
+  "id": "4771f92f",
   "en": "Step"
  },
  {
-  "id": "ad688f16",
-  "key": "{n} sayaç ({n:03} sıfırla doldurur) · {name} özgün ad · {ext} uzantı · {date} değiştirme tarihi (YYYY-AA-GG)",
-  "tr": "{n} sayaç ({n:03} sıfırla doldurur) · {name} özgün ad · {ext} uzantı · {date} değiştirme tarihi (YYYY-AA-GG)",
+  "id": "316c7e60",
   "en": "{n} counter ({n:03} zero-pads) · {name} original name · {ext} extension · {date} modified date (YYYY-MM-DD)"
  },
  {
-  "id": "3cfe55f8",
-  "key": "küçük harf",
-  "tr": "küçük harf",
+  "id": "7e1a1b86",
   "en": "lowercase"
  },
  {
-  "id": "602364d2",
-  "key": "BÜYÜK HARF",
-  "tr": "BÜYÜK HARF",
+  "id": "095b146b",
   "en": "UPPERCASE"
  },
  {
-  "id": "921c4a53",
-  "key": "Başlık Düzeni",
-  "tr": "Başlık Düzeni",
+  "id": "49b5a9e7",
   "en": "Title Case"
  },
  {
-  "id": "47059ae7",
-  "key": "Sonek (uzantıdan önce)",
-  "tr": "Sonek (uzantıdan önce)",
+  "id": "cdd22608",
   "en": "Suffix (before the extension)"
  },
  {
-  "id": "eded9599",
-  "key": "Uzantıyı da değiştir",
-  "tr": "Uzantıyı da değiştir",
+  "id": "1bd9c12f",
   "en": "Rename the extension too"
  },
  {
-  "id": "422dbda2",
-  "key": "Eski ad",
-  "tr": "Eski ad",
+  "id": "2f2ede29",
   "en": "Old name"
  },
  {
-  "id": "58645f7b",
-  "key": "Yeni ad",
-  "tr": "Yeni ad",
+  "id": "af4cad88",
   "en": "New name"
  },
  {
-  "id": "e3011823",
-  "key": "yeniden adlandırılamadı",
-  "tr": "yeniden adlandırılamadı",
+  "id": "d8a22c32",
   "en": "could not be renamed"
  },
  {
-  "id": "51b39f37",
-  "key": "Uygulanıyor…",
-  "tr": "Uygulanıyor…",
+  "id": "cbe6da83",
   "en": "Applying…"
  },
  {
-  "id": "790daba0",
-  "key": "çakışma var, düzeltmeden uygulanamaz",
-  "tr": "çakışma var, düzeltmeden uygulanamaz",
+  "id": "3a38e9c6",
   "en": "conflicts, fix them before applying"
  },
  {
-  "id": "492f939e",
-  "key": "değişecek",
-  "tr": "değişecek",
+  "id": "4dba8cf3",
   "en": "will change"
  },
  {
-  "id": "66e09026",
-  "key": "Kapat",
-  "tr": "Kapat",
+  "id": "cd86acc3",
   "en": "Close"
  },
  {
-  "id": "3dc6a0d8",
-  "key": "İptal",
-  "tr": "İptal",
+  "id": "35afca3b",
   "en": "Cancel"
  },
  {
-  "id": "a9978194",
-  "key": "Uygula",
-  "tr": "Uygula",
+  "id": "ca77bbdb",
   "en": "Apply"
  },
  {
-  "id": "96efee34",
-  "key": "Komut ara veya yol yaz…",
-  "tr": "Komut ara veya yol yaz…",
+  "id": "82f21338",
   "en": "Search commands or type a path…"
  },
  {
-  "id": "d0738923",
-  "key": "Git:",
-  "tr": "Git:",
+  "id": "1aee143e",
   "en": "Go to:"
  },
  {
-  "id": "33681af1",
-  "key": "Eşleşen komut yok",
-  "tr": "Eşleşen komut yok",
+  "id": "c9bd56f9",
   "en": "No matching commands"
  },
  {
-  "id": "187b7a51",
-  "key": "Yeni sekme",
-  "tr": "Yeni sekme",
+  "id": "d3a5555a",
   "en": "New tab"
  },
  {
-  "id": "ad2d0214",
-  "key": "Yeni pencere",
-  "tr": "Yeni pencere",
+  "id": "7d5038bb",
   "en": "New window"
  },
  {
-  "id": "d331b15f",
-  "key": "Sekmeyi kapat",
-  "tr": "Sekmeyi kapat",
+  "id": "198953a0",
   "en": "Close tab"
  },
  {
-  "id": "0ba6fe8a",
-  "key": "Kapatılan sekmeyi yeniden aç",
-  "tr": "Kapatılan sekmeyi yeniden aç",
+  "id": "87e6a087",
   "en": "Reopen closed tab"
  },
  {
-  "id": "7ffae596",
-  "key": "Yeni klasör",
-  "tr": "Yeni klasör",
+  "id": "1926d127",
   "en": "New folder"
  },
  {
-  "id": "5f82ea1c",
-  "key": "Yeni metin belgesi",
-  "tr": "Yeni metin belgesi",
+  "id": "7eb62f5d",
   "en": "New text document"
  },
  {
-  "id": "c0ab3205",
-  "key": "Yenile",
-  "tr": "Yenile",
+  "id": "0815aad4",
   "en": "Refresh"
  },
  {
-  "id": "021302a8",
-  "key": "Geri",
-  "tr": "Geri",
+  "id": "c2954bc2",
   "en": "Back"
  },
  {
-  "id": "9296cef7",
-  "key": "İleri",
-  "tr": "İleri",
+  "id": "e50883ba",
   "en": "Forward"
  },
  {
-  "id": "c02ab6a5",
-  "key": "Üst klasör",
-  "tr": "Üst klasör",
+  "id": "dc87d6d2",
   "en": "Up one level"
  },
  {
-  "id": "6a0092e7",
-  "key": "Ana sayfa",
-  "tr": "Ana sayfa",
+  "id": "52f50eae",
   "en": "Home"
  },
  {
-  "id": "9ffa56bf",
-  "key": "Ayarlar",
-  "tr": "Ayarlar",
+  "id": "4b058728",
   "en": "Settings"
  },
  {
-  "id": "8ae3ab5f",
-  "key": "Geri dönüşüm kutusu",
-  "tr": "Geri dönüşüm kutusu",
-  "en": "Recycle Bin"
+  "id": "042152a5",
+  "en": "Trash"
  },
  {
-  "id": "120ba667",
-  "key": "Adres çubuğuna git",
-  "tr": "Adres çubuğuna git",
+  "id": "88537a0a",
   "en": "Focus address bar"
  },
  {
-  "id": "9efb58a1",
-  "key": "Ara",
-  "tr": "Ara",
+  "id": "c646a2c9",
   "en": "Search"
  },
  {
-  "id": "8c3ee7bd",
-  "key": "Gizli öğeleri göster/gizle",
-  "tr": "Gizli öğeleri göster/gizle",
+  "id": "14f0c6a3",
   "en": "Show/hide hidden items"
  },
  {
-  "id": "7d75d806",
-  "key": "Detay görünümü",
-  "tr": "Detay görünümü",
+  "id": "20a56a4a",
   "en": "Details view"
  },
  {
-  "id": "8ff40f9f",
-  "key": "Izgara görünümü",
-  "tr": "Izgara görünümü",
+  "id": "00c3ebe6",
   "en": "Grid view"
  },
  {
-  "id": "31fa4d02",
-  "key": "Sütun görünümü",
-  "tr": "Sütun görünümü",
+  "id": "71acc5cd",
   "en": "Columns view"
  },
  {
-  "id": "536e705f",
-  "key": "Simgeleri büyüt",
-  "tr": "Simgeleri büyüt",
+  "id": "a3583899",
   "en": "Zoom in"
  },
  {
-  "id": "40b2bbfd",
-  "key": "Simgeleri küçült",
-  "tr": "Simgeleri küçült",
+  "id": "8570fe3a",
   "en": "Zoom out"
  },
  {
-  "id": "22810671",
-  "key": "Çift panel aç/kapat",
-  "tr": "Çift panel aç/kapat",
+  "id": "a5c4c025",
   "en": "Toggle dual pane"
  },
  {
-  "id": "bcdb8e4b",
-  "key": "Panel değiştir",
-  "tr": "Panel değiştir",
+  "id": "0d7dcf25",
   "en": "Switch pane"
  },
  {
-  "id": "966d3385",
-  "key": "Önizleme paneli",
-  "tr": "Önizleme paneli",
+  "id": "5da00ffb",
   "en": "Preview pane"
  },
  {
-  "id": "94df6e26",
-  "key": "Kenar çubuğu",
-  "tr": "Kenar çubuğu",
+  "id": "a2e5d767",
   "en": "Sidebar"
  },
  {
-  "id": "5728a093",
-  "key": "Terminalde aç",
-  "tr": "Terminalde aç",
+  "id": "ef9143b0",
   "en": "Open in terminal"
  },
  {
-  "id": "9c4b8901",
-  "key": "Tümünü seç",
-  "tr": "Tümünü seç",
+  "id": "6af21072",
   "en": "Select all"
  },
  {
-  "id": "6bf8cf20",
-  "key": "Kopyala",
-  "tr": "Kopyala",
+  "id": "658f3664",
   "en": "Copy"
  },
  {
-  "id": "d71ad8ca",
-  "key": "Kes",
-  "tr": "Kes",
+  "id": "58e25863",
   "en": "Cut"
  },
  {
-  "id": "91b236f9",
-  "key": "Yapıştır",
-  "tr": "Yapıştır",
+  "id": "b34a0288",
   "en": "Paste"
  },
  {
-  "id": "8f2de26a",
-  "key": "Geri dönüşüm kutusuna taşı",
-  "tr": "Geri dönüşüm kutusuna taşı",
-  "en": "Move to Recycle Bin"
+  "id": "a036661b",
+  "en": "Move to Trash"
  },
  {
-  "id": "7f183f26",
-  "key": "Kalıcı olarak sil",
-  "tr": "Kalıcı olarak sil",
+  "id": "d8100383",
   "en": "Delete permanently"
  },
  {
-  "id": "cfc8f206",
-  "key": "Yeniden adlandır",
-  "tr": "Yeniden adlandır",
+  "id": "c80631f3",
   "en": "Rename"
  },
  {
-  "id": "1f769a35",
-  "key": "Geri al",
-  "tr": "Geri al",
+  "id": "71fd4acf",
   "en": "Undo"
  },
  {
-  "id": "c45f5421",
-  "key": "Yolu kopyala",
-  "tr": "Yolu kopyala",
+  "id": "f165cb2b",
   "en": "Copy path"
  },
  {
-  "id": "3e425cec",
-  "key": "Birlikte aç…",
-  "tr": "Birlikte aç…",
+  "id": "d485938d",
   "en": "Open with…"
  },
  {
-  "id": "e44dca40",
-  "key": "Özellikler",
-  "tr": "Özellikler",
+  "id": "81c809fc",
   "en": "Properties"
  },
  {
-  "id": "81f1277b",
-  "key": "Sağ tık menüsü",
-  "tr": "Sağ tık menüsü",
+  "id": "4924564b",
   "en": "Context menu"
  },
  {
-  "id": "a1972b35",
-  "key": "Etiket:",
-  "tr": "Etiket:",
+  "id": "3fbd4a2b",
   "en": "Tag:"
  },
  {
-  "id": "46d54a78",
-  "key": "Ad",
-  "tr": "Ad",
+  "id": "0fe07306",
   "en": "Name"
  },
  {
-  "id": "28aa280c",
-  "key": "Değiştirme tarihi",
-  "tr": "Değiştirme tarihi",
+  "id": "e888af18",
   "en": "Date modified"
  },
  {
-  "id": "db9a3a3d",
-  "key": "Konum",
-  "tr": "Konum",
+  "id": "5bc08dc6",
   "en": "Location"
  },
  {
-  "id": "78e8ad72",
-  "key": "Tür",
-  "tr": "Tür",
+  "id": "d155d06d",
   "en": "Type"
  },
  {
-  "id": "889f460c",
-  "key": "Boyut",
-  "tr": "Boyut",
+  "id": "a6478e7c",
   "en": "Size"
  },
  {
-  "id": "e17c252f",
-  "key": "Klasör açılamadı",
-  "tr": "Klasör açılamadı",
+  "id": "f9b828db",
   "en": "Couldn't open folder"
  },
  {
-  "id": "5ba0193f",
-  "key": "Bu klasör boş",
-  "tr": "Bu klasör boş",
+  "id": "e7a4751c",
   "en": "This folder is empty"
  },
  {
-  "id": "b2f2d2b2",
-  "key": "Eşleşen öğe yok",
-  "tr": "Eşleşen öğe yok",
+  "id": "3707c375",
   "en": "No matching items"
  },
  {
-  "id": "373a2c1a",
-  "key": "boş",
-  "tr": "boş",
+  "id": "99b3eedb",
   "en": "free"
  },
  {
-  "id": "0eb145f9",
-  "key": "Hızlı Erişim",
-  "tr": "Hızlı Erişim",
+  "id": "721bf58e",
   "en": "Quick access"
  },
  {
-  "id": "9a50e29f",
-  "key": "Sürücüler",
-  "tr": "Sürücüler",
+  "id": "d42b516c",
   "en": "Drives"
  },
  {
-  "id": "839d355b",
-  "key": "Son kullanılanlar",
-  "tr": "Son kullanılanlar",
+  "id": "27acf320",
+  "en": "Devices"
+ },
+ {
+  "id": "05a8144c",
+  "en": "This folder is read-only"
+ },
+ {
+  "id": "2286ef22",
+  "en": "Items on devices such as phones cannot be changed here; copy them and paste into another folder."
+ },
+ {
+  "id": "1cb23674",
+  "en": "Copying from device:"
+ },
+ {
+  "id": "50e888fe",
   "en": "Recent"
  },
  {
-  "id": "8d12f9dc",
-  "key": "Yükleniyor…",
-  "tr": "Yükleniyor…",
+  "id": "c4e2f181",
   "en": "Loading…"
  },
  {
-  "id": "5d7b8dba",
-  "key": "Boş",
-  "tr": "Boş",
+  "id": "d1571f8e",
   "en": "Empty"
  },
  {
-  "id": "8814c87e",
-  "key": "Klasörler",
-  "tr": "Klasörler",
+  "id": "542fed8a",
   "en": "Folders"
  },
  {
-  "id": "f70dcee9",
-  "key": "Bilinmiyor",
-  "tr": "Bilinmiyor",
+  "id": "cc200e59",
   "en": "Unknown"
  },
  {
-  "id": "82e3bbfc",
-  "key": "Bugün",
-  "tr": "Bugün",
+  "id": "e7c0775e",
   "en": "Today"
  },
  {
-  "id": "3f0bcc7e",
-  "key": "Dün",
-  "tr": "Dün",
+  "id": "93ae68c7",
   "en": "Yesterday"
  },
  {
-  "id": "ebe98e08",
-  "key": "Bu hafta",
-  "tr": "Bu hafta",
+  "id": "d7d31673",
   "en": "This week"
  },
  {
-  "id": "f195b82e",
-  "key": "Bu ay",
-  "tr": "Bu ay",
+  "id": "e28b5db7",
   "en": "This month"
  },
  {
-  "id": "7521d3b8",
-  "key": "Bu yıl",
-  "tr": "Bu yıl",
+  "id": "74433976",
   "en": "This year"
  },
  {
-  "id": "9d24e143",
-  "key": "Daha eski",
-  "tr": "Daha eski",
+  "id": "a6ead101",
   "en": "Older"
  },
  {
-  "id": "32d8d3a8",
-  "key": "Çok küçük (< 16 KB)",
-  "tr": "Çok küçük (< 16 KB)",
+  "id": "33b8ee34",
   "en": "Tiny (< 16 KB)"
  },
  {
-  "id": "3ea18c6e",
-  "key": "Küçük (< 1 MB)",
-  "tr": "Küçük (< 1 MB)",
+  "id": "6509d311",
   "en": "Small (< 1 MB)"
  },
  {
-  "id": "37b7a9da",
-  "key": "Orta (< 128 MB)",
-  "tr": "Orta (< 128 MB)",
+  "id": "5bf132d1",
   "en": "Medium (< 128 MB)"
  },
  {
-  "id": "ba1ae4da",
-  "key": "Büyük (< 1 GB)",
-  "tr": "Büyük (< 1 GB)",
+  "id": "947e80b3",
   "en": "Large (< 1 GB)"
  },
  {
-  "id": "de9aa420",
-  "key": "Çok büyük (≥ 1 GB)",
-  "tr": "Çok büyük (≥ 1 GB)",
+  "id": "830ded95",
   "en": "Huge (≥ 1 GB)"
  },
  {
-  "id": "af48d892",
-  "key": "Karşılaştır: hash yapıştır",
-  "tr": "Karşılaştır: hash yapıştır",
+  "id": "7e06ff2e",
   "en": "Compare: paste a hash"
  },
  {
-  "id": "2388d359",
-  "key": "İptal edildi. Yeniden hesaplamak için tıklayın.",
-  "tr": "İptal edildi. Yeniden hesaplamak için tıklayın.",
+  "id": "2133e1b7",
   "en": "Cancelled. Click to calculate again."
  },
  {
-  "id": "e7a536dc",
-  "key": "Hesaplanıyor…",
-  "tr": "Hesaplanıyor…",
+  "id": "d4e99e04",
   "en": "Calculating…"
  },
  {
-  "id": "67a3765c",
-  "key": "Dosya klasörü",
-  "tr": "Dosya klasörü",
+  "id": "58aad879",
   "en": "File folder"
  },
  {
-  "id": "25d0098f",
-  "key": "Dosya",
-  "tr": "Dosya",
+  "id": "2b183663",
   "en": "File"
  },
  {
-  "id": "5c06606e",
-  "key": "Uygulama",
-  "tr": "Uygulama",
+  "id": "22af01e5",
   "en": "Application"
  },
  {
-  "id": "b304ec67",
-  "key": "Kısayol",
-  "tr": "Kısayol",
+  "id": "97dcc893",
   "en": "Shortcut"
  },
  {
-  "id": "f11a4e9d",
-  "key": "Metin Belgesi",
-  "tr": "Metin Belgesi",
+  "id": "c8cb7ea7",
   "en": "Text Document"
  },
  {
-  "id": "d87ea176",
-  "key": "PDF Belgesi",
-  "tr": "PDF Belgesi",
+  "id": "fe1b03ba",
   "en": "PDF Document"
  },
  {
-  "id": "fff9060b",
-  "key": "Sıkıştırılmış (zip) klasör",
-  "tr": "Sıkıştırılmış (zip) klasör",
+  "id": "9cc6e491",
   "en": "Compressed (zipped) folder"
  },
  {
-  "id": "03ae8133",
-  "key": "Dosyası",
-  "tr": "Dosyası",
-  "en": "File"
- },
- {
-  "id": "1118faae",
-  "key": "Yeni klasör\tCtrl+Shift+N",
-  "tr": "Yeni klasör\tCtrl+Shift+N",
+  "id": "c59f3a61",
   "en": "New folder\tCtrl+Shift+N"
  },
  {
-  "id": "418f73a0",
-  "key": "Yapıştır\tCtrl+V",
-  "tr": "Yapıştır\tCtrl+V",
+  "id": "9212fa27",
   "en": "Paste\tCtrl+V"
  },
  {
-  "id": "036af04c",
-  "key": "Dosya konumunu aç",
-  "tr": "Dosya konumunu aç",
+  "id": "d1ea6ef8",
   "en": "Open file location"
  },
  {
-  "id": "e7f92613",
-  "key": "Yeni sekmede aç",
-  "tr": "Yeni sekmede aç",
+  "id": "691bd191",
   "en": "Open in new tab"
  },
  {
-  "id": "fdef4553",
-  "key": "Kenar çubuğuna sabitle",
-  "tr": "Kenar çubuğuna sabitle",
+  "id": "3847e251",
   "en": "Pin to sidebar"
  },
  {
-  "id": "4b735b94",
-  "key": "Yolu kopyala\tCtrl+Shift+C",
-  "tr": "Yolu kopyala\tCtrl+Shift+C",
+  "id": "8f7e0aae",
   "en": "Copy path\tCtrl+Shift+C"
  },
  {
-  "id": "11982b11",
-  "key": "Toplu yeniden adlandır…\tF2",
-  "tr": "Toplu yeniden adlandır…\tF2",
+  "id": "d350ed9e",
   "en": "Bulk rename…\tF2"
  },
  {
-  "id": "c9a39f9e",
-  "key": "Buraya çıkar",
-  "tr": "Buraya çıkar",
+  "id": "354232ec",
   "en": "Extract here"
  },
  {
-  "id": "23132a3f",
-  "key": "Klasöre çıkar:",
-  "tr": "Klasöre çıkar:",
+  "id": "b255de0d",
   "en": "Extract to folder:"
  },
  {
-  "id": "2c1c163f",
-  "key": "ZIP olarak sıkıştır",
-  "tr": "ZIP olarak sıkıştır",
+  "id": "344b1175",
   "en": "Compress to ZIP"
  },
  {
-  "id": "b8537b4f",
-  "key": "7z olarak sıkıştır",
-  "tr": "7z olarak sıkıştır",
+  "id": "4197c07b",
   "en": "Compress to 7z"
  },
  {
-  "id": "5f0971b2",
-  "key": "Etiketle…",
-  "tr": "Etiketle…",
+  "id": "dbcbd14d",
   "en": "Tag…"
  },
  {
-  "id": "782c58b6",
-  "key": "USB Sürücü",
-  "tr": "USB Sürücü",
+  "id": "e8fe93f8",
+  "en": "File System",
+  "new": true
+ },
+ {
+  "id": "42dd4109",
   "en": "USB Drive"
  },
  {
-  "id": "2ff502c4",
-  "key": "Ağ Sürücüsü",
-  "tr": "Ağ Sürücüsü",
+  "id": "dbb29ac5",
   "en": "Network Drive"
  },
  {
-  "id": "f62ea0f6",
-  "key": "DVD Sürücü",
-  "tr": "DVD Sürücü",
+  "id": "2bd398c9",
   "en": "DVD Drive"
  },
  {
-  "id": "7604f2db",
-  "key": "Yerel Disk",
-  "tr": "Yerel Disk",
+  "id": "f4591b55",
   "en": "Local Disk"
  },
  {
-  "id": "e5a8601d",
-  "key": "Önizleme için bir öğe seçin",
-  "tr": "Önizleme için bir öğe seçin",
+  "id": "5446161c",
   "en": "Select an item to preview"
  },
  {
-  "id": "53d586ef",
-  "key": "dosya",
-  "tr": "dosya",
+  "id": "3ee74090",
   "en": "files"
  },
  {
-  "id": "281daad3",
-  "key": "klasör",
-  "tr": "klasör",
+  "id": "f74800ea",
   "en": "folders"
  },
  {
-  "id": "52c31e01",
-  "key": "bayt",
-  "tr": "bayt",
+  "id": "65b1d004",
   "en": "bytes"
  },
  {
-  "id": "87898e46",
-  "key": "Değiştirilme",
-  "tr": "Değiştirilme",
+  "id": "dd13a6b2",
   "en": "Modified"
  },
  {
-  "id": "092dd583",
-  "key": "Oluşturulma",
-  "tr": "Oluşturulma",
+  "id": "09de135b",
   "en": "Created"
  },
  {
-  "id": "94d17666",
-  "key": "Gizli",
-  "tr": "Gizli",
+  "id": "3c2dfe59",
   "en": "Hidden"
  },
  {
-  "id": "59bb7a0c",
-  "key": "Sistem",
-  "tr": "Sistem",
+  "id": "8f3184bc",
   "en": "System"
  },
  {
-  "id": "e7953255",
-  "key": "Salt okunur",
-  "tr": "Salt okunur",
+  "id": "fab49a4a",
   "en": "Read-only"
  },
  {
-  "id": "b8e34feb",
-  "key": "Yalnızca çevrimiçi",
-  "tr": "Yalnızca çevrimiçi",
+  "id": "5453e5b7",
   "en": "Online-only"
  },
  {
-  "id": "4e1bac8b",
-  "key": "Bağlantı",
-  "tr": "Bağlantı",
+  "id": "8e08e589",
   "en": "Link"
  },
  {
-  "id": "1e888afb",
-  "key": "Öznitelikler",
-  "tr": "Öznitelikler",
+  "id": "cc7ed4b4",
   "en": "Attributes"
  },
  {
-  "id": "03632012",
-  "key": "Hash hesapla (MD5, SHA…)",
-  "tr": "Hash hesapla (MD5, SHA…)",
+  "id": "cd69e594",
   "en": "Calculate hash (MD5, SHA…)"
  },
  {
-  "id": "cd118008",
-  "key": "Süre",
-  "tr": "Süre",
+  "id": "d4c7492d",
   "en": "Duration"
  },
  {
-  "id": "e7f38e56",
-  "key": "Çözünürlük",
-  "tr": "Çözünürlük",
+  "id": "aee818af",
   "en": "Resolution"
  },
  {
-  "id": "bb4558cc",
-  "key": "Kare hızı",
-  "tr": "Kare hızı",
+  "id": "ac794580",
   "en": "Frame rate"
  },
  {
-  "id": "243041fd",
-  "key": "Video bit hızı",
-  "tr": "Video bit hızı",
+  "id": "6a09ddbf",
   "en": "Video bit rate"
  },
  {
-  "id": "552cfe6f",
-  "key": "Toplam bit hızı",
-  "tr": "Toplam bit hızı",
+  "id": "2e7fa0a4",
   "en": "Total bit rate"
  },
  {
-  "id": "c1939147",
-  "key": "Ses bit hızı",
-  "tr": "Ses bit hızı",
+  "id": "7d78cd00",
   "en": "Audio bit rate"
  },
  {
-  "id": "ddd1eb9d",
-  "key": "Örnekleme",
-  "tr": "Örnekleme",
+  "id": "4a0b3747",
   "en": "Sample rate"
  },
  {
-  "id": "1cace8f8",
-  "key": "Kanal",
-  "tr": "Kanal",
+  "id": "c9409495",
   "en": "Channels"
  },
  {
-  "id": "937036f3",
-  "key": "Boyutlar",
-  "tr": "Boyutlar",
+  "id": "5b97cdd0",
   "en": "Dimensions"
  },
  {
-  "id": "cab640b9",
-  "key": "Bit derinliği",
-  "tr": "Bit derinliği",
+  "id": "39188935",
   "en": "Bit depth"
  },
  {
-  "id": "fbb43a06",
-  "key": "Kamera",
-  "tr": "Kamera",
+  "id": "e74c7b6e",
   "en": "Camera"
  },
  {
-  "id": "3c45653a",
-  "key": "Çekim tarihi",
-  "tr": "Çekim tarihi",
+  "id": "c49f3e02",
   "en": "Date taken"
  },
  {
-  "id": "9b996b69",
-  "key": "Sanatçı",
-  "tr": "Sanatçı",
+  "id": "9476d7fe",
   "en": "Artist"
  },
  {
-  "id": "913e097c",
-  "key": "Albüm",
-  "tr": "Albüm",
+  "id": "0ab69a0c",
   "en": "Album"
  },
  {
-  "id": "1f197f74",
-  "key": "Başlık",
-  "tr": "Başlık",
+  "id": "24d471a9",
   "en": "Title"
  },
  {
-  "id": "3a016489",
-  "key": "Sayfa",
-  "tr": "Sayfa",
+  "id": "7decab7f",
   "en": "Pages"
  },
  {
-  "id": "3ff68bc8",
-  "key": "Yazar",
-  "tr": "Yazar",
+  "id": "958fc776",
   "en": "Author"
  },
  {
-  "id": "6e9fc29f",
-  "key": "Geri Dönüşüm Kutusu",
-  "tr": "Geri Dönüşüm Kutusu",
-  "en": "Recycle Bin"
- },
- {
-  "id": "4c05d412",
-  "key": "Geri yükle",
-  "tr": "Geri yükle",
+  "id": "0ff87f71",
   "en": "Restore"
  },
  {
-  "id": "3fc5c1ae",
-  "key": "Kutuyu boşalt",
-  "tr": "Kutuyu boşalt",
-  "en": "Empty Recycle Bin"
+  "id": "654ba7f0",
+  "en": "Empty Trash"
  },
  {
-  "id": "97c5b062",
-  "key": "Geri dönüşüm kutusu boş",
-  "tr": "Geri dönüşüm kutusu boş",
-  "en": "The Recycle Bin is empty"
+  "id": "c1ee608f",
+  "en": "The Trash is empty"
  },
  {
-  "id": "08d5e24a",
-  "key": "Şu an:",
-  "tr": "Şu an:",
+  "id": "df3e2f57",
   "en": "Now:"
  },
  {
-  "id": "9bb3431d",
-  "key": "GPU yükü",
-  "tr": "GPU yükü",
+  "id": "4ea35f07",
   "en": "GPU load"
  },
  {
-  "id": "094f9b59",
-  "key": "CPU yükü",
-  "tr": "CPU yükü",
+  "id": "7ca258ab",
   "en": "CPU load"
  },
  {
-  "id": "ae896ef8",
-  "key": "son kare",
-  "tr": "son kare",
+  "id": "2a26cf60",
   "en": "last frame"
  },
  {
-  "id": "14203032",
-  "key": "geçiş",
-  "tr": "geçiş",
+  "id": "dd7ddb9d",
   "en": "switches"
  },
  {
-  "id": "8d42f00c",
-  "key": "Görünüm",
-  "tr": "Görünüm",
+  "id": "31018b9f",
   "en": "Appearance"
  },
  {
-  "id": "2f47f124",
-  "key": "Tema",
-  "tr": "Tema",
+  "id": "4eaf7c92",
   "en": "Theme"
  },
  {
-  "id": "e2e179f0",
-  "key": "Sistem, Windows'un açık/koyu ayarını izler",
-  "tr": "Sistem, Windows'un açık/koyu ayarını izler",
+  "id": "0a4744d9",
   "en": "System follows the Windows light/dark setting"
  },
  {
-  "id": "60e27fc2",
-  "key": "Açık",
-  "tr": "Açık",
+  "id": "60e47df0",
   "en": "On"
  },
  {
-  "id": "0be9a005",
-  "key": "Koyu",
-  "tr": "Koyu",
+  "id": "45570065",
   "en": "Dark"
  },
  {
-  "id": "99d9007b",
-  "key": "Dil / Language",
-  "tr": "Dil / Language",
+  "id": "9a73db9b",
   "en": "Language"
  },
  {
-  "id": "5de0f561",
-  "key": "Sistem, Windows'un görüntüleme dilini izler",
-  "tr": "Sistem, Windows'un görüntüleme dilini izler",
+  "id": "4d9926d0",
   "en": "System follows the Windows display language"
  },
  {
-  "id": "57feefaa",
-  "key": "Varsayılan görünüm",
-  "tr": "Varsayılan görünüm",
+  "id": "fe1042f3",
   "en": "Default view"
  },
  {
-  "id": "aa06d954",
-  "key": "Yeni açılan klasörler için",
-  "tr": "Yeni açılan klasörler için",
+  "id": "187dfc17",
   "en": "For newly opened folders"
  },
  {
-  "id": "31e917d7",
-  "key": "Detaylar",
-  "tr": "Detaylar",
+  "id": "0ec24245",
   "en": "Details"
  },
  {
-  "id": "931e77b3",
-  "key": "Izgara",
-  "tr": "Izgara",
+  "id": "2fb366b1",
   "en": "Grid"
  },
  {
-  "id": "cac1c61c",
-  "key": "Sütun",
-  "tr": "Sütun",
+  "id": "ea156fdc",
   "en": "Columns"
  },
  {
-  "id": "b64e19d4",
-  "key": "Alt+P ile her zaman açıp kapatabilirsiniz",
-  "tr": "Alt+P ile her zaman açıp kapatabilirsiniz",
+  "id": "349a2abe",
   "en": "You can always toggle it with Alt+P"
  },
  {
-  "id": "57d5367d",
-  "key": "Kapalı",
-  "tr": "Kapalı",
+  "id": "0dc6b4aa",
   "en": "Off"
  },
  {
-  "id": "b3003e52",
-  "key": "Dosyalar ve klasörler",
-  "tr": "Dosyalar ve klasörler",
+  "id": "279e4174",
   "en": "Files and folders"
  },
  {
-  "id": "4285aa87",
-  "key": "Gizli öğeleri göster",
-  "tr": "Gizli öğeleri göster",
+  "id": "2d47144c",
   "en": "Show hidden items"
  },
  {
-  "id": "90f3dea3",
-  "key": "Göster",
-  "tr": "Göster",
+  "id": "29742e5c",
   "en": "Show"
  },
  {
-  "id": "a0d1894a",
-  "key": "Gizle",
-  "tr": "Gizle",
+  "id": "e10c7bcd",
   "en": "Hide"
  },
  {
-  "id": "fbb14389",
-  "key": "Dosya uzantılarını göster",
-  "tr": "Dosya uzantılarını göster",
+  "id": "25c89cf4",
   "en": "Show file extensions"
  },
  {
-  "id": "57755598",
-  "key": "Örn. rapor.pdf yerine rapor",
-  "tr": "Örn. rapor.pdf yerine rapor",
+  "id": "0a690198",
   "en": "E.g. \"report\" instead of \"report.pdf\""
  },
  {
-  "id": "9f823a1f",
-  "key": "Açılışta sekmeleri geri yükle",
-  "tr": "Açılışta sekmeleri geri yükle",
+  "id": "c9a27b05",
   "en": "Restore tabs on startup"
  },
  {
-  "id": "d2b97614",
-  "key": "Kapattığınızda açık olan klasörlerle başlar",
-  "tr": "Kapattığınızda açık olan klasörlerle başlar",
+  "id": "f9d3b6da",
   "en": "Starts with the folders that were open when you closed it"
  },
  {
-  "id": "9e33dad0",
-  "key": "Windows ile tümleştirme",
-  "tr": "Windows ile tümleştirme",
+  "id": "c6b8a340",
   "en": "Windows integration"
  },
  {
-  "id": "a9f859a1",
-  "key": "Varsayılan dosya yöneticisi (deneysel)",
-  "tr": "Varsayılan dosya yöneticisi (deneysel)",
+  "id": "9fdf5c94",
   "en": "Default file manager (experimental)"
  },
  {
-  "id": "e67eea17",
-  "key": "Klasörler ve Win+E rfiles ile açılır. Önce scripts\\install.ps1 ile kurun (şu an derleme klasöründen çalışıyor).",
-  "tr": "Klasörler ve Win+E rfiles ile açılır. Önce scripts\\install.ps1 ile kurun (şu an derleme klasöründen çalışıyor).",
+  "id": "a4f1a5f3",
   "en": "Folders and Win+E open in rfiles. Install it first with scripts\\install.ps1 (currently running from the build folder)."
  },
  {
-  "id": "86ffdbca",
-  "key": "Klasörler ve Win+E rfiles ile açılır. Yalnızca bu kullanıcı için, istediğiniz an geri alınır.",
-  "tr": "Klasörler ve Win+E rfiles ile açılır. Yalnızca bu kullanıcı için, istediğiniz an geri alınır.",
+  "id": "f69283f6",
   "en": "Folders and Win+E open in rfiles. Applies to this user only and can be reverted at any time."
  },
  {
-  "id": "e733698e",
-  "key": "Etkin · kaldır",
-  "tr": "Etkin · kaldır",
+  "id": "18fe739b",
   "en": "Enabled · remove"
  },
  {
-  "id": "348cba50",
-  "key": "Etkinleştir",
-  "tr": "Etkinleştir",
+  "id": "8614a9ee",
   "en": "Enable"
  },
  {
-  "id": "0b2d3472",
-  "key": "Performans",
-  "tr": "Performans",
+  "id": "8f517045",
   "en": "Performance"
  },
  {
-  "id": "a07795df",
-  "key": "Çizim yöntemi",
-  "tr": "Çizim yöntemi",
+  "id": "3638e6c6",
   "en": "Rendering mode"
  },
  {
-  "id": "bd58a7bc",
-  "key": "Otomatik: açılışta ekran kartı denetlenir, sorun yoksa arayüz GPU ile çizilir. GPU doluyken (oyun, render) CPU'ya geçer, boşalınca geri döner. Geçiş fark edilmez.",
-  "tr": "Otomatik: açılışta ekran kartı denetlenir, sorun yoksa arayüz GPU ile çizilir. GPU doluyken (oyun, render) CPU'ya geçer, boşalınca geri döner. Geçiş fark edilmez.",
+  "id": "41586401",
   "en": "Automatic: the graphics card is checked at start and, if it works, the interface is drawn on the GPU. While the GPU is busy (games, rendering) it moves to the CPU and back when the GPU is free. You won't notice the switch."
  },
  {
-  "id": "cf43a3ab",
-  "key": "Otomatik",
-  "tr": "Otomatik",
+  "id": "616a6784",
   "en": "Automatic"
  },
  {
-  "id": "5bde3bd1",
-  "key": "Klavye kısayolları",
-  "tr": "Klavye kısayolları",
+  "id": "31eaddb7",
   "en": "Keyboard shortcuts"
  },
  {
-  "id": "b0f4ab30",
-  "key": "Değiştirmek için settings.toml içine ekleyin:  [keybindings]  \"ctrl-k\" = \"NewFolder\"",
-  "tr": "Değiştirmek için settings.toml içine ekleyin:  [keybindings]  \"ctrl-k\" = \"NewFolder\"",
+  "id": "2ad10804",
   "en": "To change them, add this to settings.toml:  [keybindings]  \"ctrl-k\" = \"NewFolder\""
  },
  {
-  "id": "0a963614",
-  "key": "Hakkında",
-  "tr": "Hakkında",
+  "id": "58e096de",
   "en": "About"
  },
  {
-  "id": "1945f670",
-  "key": "Rust + GPUI ile yazılmış, hiç donmayan hafif dosya yöneticisi.",
-  "tr": "Rust + GPUI ile yazılmış, hiç donmayan hafif dosya yöneticisi.",
+  "id": "5ab804e6",
   "en": "A lightweight file manager written in Rust + GPUI that never freezes."
  },
  {
-  "id": "dc156804",
-  "key": "İşlem beklenmedik şekilde sonlandı",
-  "tr": "İşlem beklenmedik şekilde sonlandı",
+  "id": "3de8b187",
   "en": "The operation ended unexpectedly"
  },
  {
-  "id": "198f69b5",
-  "key": "Kopyalanıyor",
-  "tr": "Kopyalanıyor",
+  "id": "8584c974",
   "en": "Copying"
  },
  {
-  "id": "603898bc",
-  "key": "Taşınıyor",
-  "tr": "Taşınıyor",
+  "id": "05a5b047",
   "en": "Moving"
  },
  {
-  "id": "72ca81fc",
-  "key": "Çıkarılıyor:",
-  "tr": "Çıkarılıyor:",
+  "id": "e39dc3d8",
   "en": "Extracting:"
  },
  {
-  "id": "bc0d03fe",
-  "key": "Arşivde bulunamadı",
-  "tr": "Arşivde bulunamadı",
+  "id": "563b1408",
   "en": "Not found in the archive"
  },
  {
-  "id": "70acfcf1",
-  "key": "Arşivden açılıyor:",
-  "tr": "Arşivden açılıyor:",
+  "id": "10896eef",
   "en": "Opening from archive:"
  },
  {
-  "id": "67308178",
-  "key": "Arşivden kopyalanıyor:",
-  "tr": "Arşivden kopyalanıyor:",
+  "id": "6ec0ddb8",
   "en": "Copying from archive:"
  },
  {
-  "id": "ca7298dc",
-  "key": "Arşivleri rfiles ile aç",
-  "tr": "Arşivleri rfiles ile aç",
+  "id": "8cbca181",
   "en": "Open archives with rfiles"
  },
  {
-  "id": "ea38eca8",
-  "key": "Zip, 7z, rar, tar için varsayılan uygulama Windows'ta seçilir. Açılan sayfada rfiles'ı varsayılan yapın.",
-  "tr": "Zip, 7z, rar, tar için varsayılan uygulama Windows'ta seçilir. Açılan sayfada rfiles'ı varsayılan yapın.",
+  "id": "d3a6d346",
   "en": "The default app for zip, 7z, rar and tar is chosen in Windows. Make rfiles the default on the page that opens."
  },
  {
-  "id": "819bdc03",
-  "key": "Varsayılan uygulamalar",
-  "tr": "Varsayılan uygulamalar",
+  "id": "9a3135ee",
   "en": "Default apps"
  },
  {
-  "id": "b20b6200",
-  "key": "Sıkıştırılıyor:",
-  "tr": "Sıkıştırılıyor:",
+  "id": "0626e6eb",
   "en": "Compressing:"
  },
  {
-  "id": "edff5370",
-  "key": "Kalıcı olarak siliniyor:",
-  "tr": "Kalıcı olarak siliniyor:",
+  "id": "dd931ea4",
   "en": "Permanently deleting:"
  },
  {
-  "id": "04f25ea3",
-  "key": "Geri dönüşüm kutusuna taşınıyor:",
-  "tr": "Geri dönüşüm kutusuna taşınıyor:",
-  "en": "Moving to Recycle Bin:"
+  "id": "0c6224d4",
+  "en": "Moving to Trash:"
  },
  {
-  "id": "0963139e",
-  "key": "işlem",
-  "tr": "işlem",
+  "id": "8065cb2f",
   "en": "operations"
  },
  {
-  "id": "7c69cd7a",
-  "key": "İşlem başarısız",
-  "tr": "İşlem başarısız",
+  "id": "d607ff63",
   "en": "Operation failed"
  },
  {
-  "id": "d2b37afa",
-  "key": "İşlemler tamamlandı",
-  "tr": "İşlemler tamamlandı",
+  "id": "9642bf4a",
   "en": "Operations completed"
  },
  {
-  "id": "41521284",
-  "key": "sn",
-  "tr": "sn",
+  "id": "f60c4582",
   "en": "s"
  },
  {
-  "id": "812ff911",
-  "key": "Tamamlandı",
-  "tr": "Tamamlandı",
+  "id": "ec88aab2",
   "en": "Completed"
  },
  {
-  "id": "f31bc96b",
-  "key": "İptal edildi",
-  "tr": "İptal edildi",
+  "id": "a62b09bc",
   "en": "Cancelled"
  },
  {
-  "id": "b2a5e139",
-  "key": "Hata:",
-  "tr": "Hata:",
+  "id": "32edd391",
   "en": "Error:"
  },
  {
-  "id": "497ebafc",
-  "key": "İşlemler",
-  "tr": "İşlemler",
+  "id": "a78e754f",
   "en": "Operations"
  },
  {
-  "id": "c6afdc2e",
-  "key": "Geri alınıyor: yeniden adlandırma →",
-  "tr": "Geri alınıyor: yeniden adlandırma →",
+  "id": "f71af197",
   "en": "Undoing rename →"
  },
  {
-  "id": "1862adbe",
-  "key": "Geri dönüşüm kutusundan geri yükleniyor:",
-  "tr": "Geri dönüşüm kutusundan geri yükleniyor:",
-  "en": "Restoring from Recycle Bin:"
+  "id": "4bbff042",
+  "en": "Restoring from Trash:"
  },
  {
-  "id": "336f7990",
-  "key": "öğeler geri dönüşüm kutusunda bulunamadı",
-  "tr": "öğeler geri dönüşüm kutusunda bulunamadı",
-  "en": "items were not found in the Recycle Bin"
+  "id": "da7f4179",
+  "en": "items were not found in the Trash"
  },
  {
-  "id": "32c1c366",
-  "key": "Yol girin",
-  "tr": "Yol girin",
+  "id": "dd86730d",
   "en": "Enter a path"
  },
  {
-  "id": "0d6d61fe",
-  "key": "Yeni sekme\tCtrl+T",
-  "tr": "Yeni sekme\tCtrl+T",
+  "id": "2b6a2907",
   "en": "New tab\tCtrl+T"
  },
  {
-  "id": "04290fd3",
-  "key": "Sekmeyi çoğalt",
-  "tr": "Sekmeyi çoğalt",
+  "id": "82ded241",
   "en": "Duplicate tab"
  },
  {
-  "id": "a61e352c",
-  "key": "Diğer sekmeleri kapat",
-  "tr": "Diğer sekmeleri kapat",
+  "id": "0c7f9333",
   "en": "Close other tabs"
  },
  {
-  "id": "daca8d7f",
-  "key": "Sağdaki sekmeleri kapat",
-  "tr": "Sağdaki sekmeleri kapat",
+  "id": "520537c7",
   "en": "Close tabs to the right"
  },
  {
-  "id": "0da9cb25",
-  "key": "Sekmeyi kapat\tCtrl+W",
-  "tr": "Sekmeyi kapat\tCtrl+W",
+  "id": "bc11668c",
   "en": "Close tab\tCtrl+W"
  },
  {
-  "id": "f3007ad4",
-  "key": "Kapatılan sekmeyi yeniden aç\tCtrl+Shift+T",
-  "tr": "Kapatılan sekmeyi yeniden aç\tCtrl+Shift+T",
+  "id": "0c187653",
   "en": "Reopen closed tab\tCtrl+Shift+T"
  },
  {
-  "id": "e24828f3",
-  "key": "Oluşturma tarihi",
-  "tr": "Oluşturma tarihi",
+  "id": "d551f3dd",
   "en": "Date created"
  },
  {
-  "id": "b7316ded",
-  "key": "Artan",
-  "tr": "Artan",
+  "id": "c54c6e41",
   "en": "Ascending"
  },
  {
-  "id": "d6a6416c",
-  "key": "Azalan",
-  "tr": "Azalan",
+  "id": "d611415b",
   "en": "Descending"
  },
  {
-  "id": "90834637",
-  "key": "Klasörler önce",
-  "tr": "Klasörler önce",
+  "id": "03cbd05c",
   "en": "Folders first"
  },
  {
-  "id": "148dd681",
-  "key": "Gruplama yok",
-  "tr": "Gruplama yok",
+  "id": "2ab2ef1f",
   "en": "No grouping"
  },
  {
-  "id": "2f0ee0cf",
-  "key": "Türe göre grupla",
-  "tr": "Türe göre grupla",
+  "id": "140f989b",
   "en": "Group by type"
  },
  {
-  "id": "76d3207c",
-  "key": "Tarihe göre grupla",
-  "tr": "Tarihe göre grupla",
+  "id": "f0e69e57",
   "en": "Group by date"
  },
  {
-  "id": "0e49f7b5",
-  "key": "Boyuta göre grupla",
-  "tr": "Boyuta göre grupla",
+  "id": "994908e2",
   "en": "Group by size"
  },
  {
-  "id": "10405ca1",
-  "key": "Ada göre grupla",
-  "tr": "Ada göre grupla",
+  "id": "c2293fa8",
   "en": "Group by name"
  },
  {
-  "id": "fc27762e",
-  "key": "(alt klasör yok)",
-  "tr": "(alt klasör yok)",
+  "id": "240329f2",
   "en": "(no subfolders)"
  },
  {
-  "id": "b42de89c",
-  "key": "Yeni sekme  (Ctrl+T)",
-  "tr": "Yeni sekme  (Ctrl+T)",
+  "id": "44d60e73",
   "en": "New tab  (Ctrl+T)"
  },
  {
-  "id": "0fbc0487",
-  "key": "Ana Sayfa",
-  "tr": "Ana Sayfa",
-  "en": "Home"
- },
- {
-  "id": "443199d7",
-  "key": "Sabitlenenler",
-  "tr": "Sabitlenenler",
+  "id": "6d0ba1af",
   "en": "Pinned"
  },
  {
-  "id": "1d82c134",
-  "key": "Bulut ve Linux",
-  "tr": "Bulut ve Linux",
+  "id": "f6397529",
   "en": "Cloud and Linux"
  },
  {
-  "id": "f7943450",
-  "key": "Etiketler",
-  "tr": "Etiketler",
+  "id": "76bda0c0",
   "en": "Tags"
  },
  {
-  "id": "9d585346",
-  "key": "değişiklik",
-  "tr": "değişiklik",
+  "id": "3b29d74a",
   "en": "changes"
  },
  {
-  "id": "39193ccb",
-  "key": "Geri  (Alt+←)",
-  "tr": "Geri  (Alt+←)",
+  "id": "90596c45",
   "en": "Back  (Alt+←)"
  },
  {
-  "id": "25717758",
-  "key": "İleri  (Alt+→)",
-  "tr": "İleri  (Alt+→)",
+  "id": "e4c4075b",
   "en": "Forward  (Alt+→)"
  },
  {
-  "id": "dc4d8d01",
-  "key": "Üst klasör  (Alt+↑)",
-  "tr": "Üst klasör  (Alt+↑)",
+  "id": "df322528",
   "en": "Up one level  (Alt+↑)"
  },
  {
-  "id": "8ce70699",
-  "key": "Yenile  (F5)",
-  "tr": "Yenile  (F5)",
+  "id": "d671e450",
   "en": "Refresh  (F5)"
  },
  {
-  "id": "7b53557c",
-  "key": "Gizli öğeleri göster/gizle  (Ctrl+H)",
-  "tr": "Gizli öğeleri göster/gizle  (Ctrl+H)",
+  "id": "67443a0e",
   "en": "Show/hide hidden items  (Ctrl+H)"
  },
  {
-  "id": "aa7a252b",
-  "key": "Sıralama ve gruplama",
-  "tr": "Sıralama ve gruplama",
+  "id": "8b1baf2f",
   "en": "Sort and group"
  },
  {
-  "id": "a0e1944a",
-  "key": "Detaylar  (Ctrl+Shift+1)",
-  "tr": "Detaylar  (Ctrl+Shift+1)",
+  "id": "17a13dc8",
   "en": "Details  (Ctrl+Shift+1)"
  },
  {
-  "id": "c87c42e5",
-  "key": "Izgara  (Ctrl+Shift+2)",
-  "tr": "Izgara  (Ctrl+Shift+2)",
+  "id": "f753482f",
   "en": "Grid  (Ctrl+Shift+2)"
  },
  {
-  "id": "181a8848",
-  "key": "Sütunlar  (Ctrl+Shift+3)",
-  "tr": "Sütunlar  (Ctrl+Shift+3)",
+  "id": "62b66ac3",
   "en": "Columns  (Ctrl+Shift+3)"
  },
  {
-  "id": "aef0f44e",
-  "key": "Çift panel  (Ctrl+Shift+D)",
-  "tr": "Çift panel  (Ctrl+Shift+D)",
+  "id": "891e7407",
   "en": "Dual pane  (Ctrl+Shift+D)"
  },
  {
-  "id": "e4c346b8",
-  "key": "Önizleme paneli  (Alt+P)",
-  "tr": "Önizleme paneli  (Alt+P)",
+  "id": "0780f9be",
   "en": "Preview pane  (Alt+P)"
  },
  {
-  "id": "26a2b6c3",
-  "key": "Oto",
-  "tr": "Oto",
+  "id": "126befb6",
   "en": "Auto"
  },
  {
-  "id": "b5584ea4",
-  "key": "Sabit",
-  "tr": "Sabit",
+  "id": "5c2b3699",
   "en": "Fixed"
  },
  {
-  "id": "4b4d3d2d",
-  "key": "Etiket",
-  "tr": "Etiket",
+  "id": "f8835433",
   "en": "Tag"
  },
  {
-  "id": "1800d79f",
-  "key": "Arama",
-  "tr": "Arama",
-  "en": "Search"
- },
- {
-  "id": "6373a42c",
-  "key": "Masaüstü",
-  "tr": "Masaüstü",
+  "id": "64215c53",
   "en": "Desktop"
  },
  {
-  "id": "1f647889",
-  "key": "İndirilenler",
-  "tr": "İndirilenler",
+  "id": "539307de",
   "en": "Downloads"
  },
  {
-  "id": "02d5ad5f",
-  "key": "Belgeler",
-  "tr": "Belgeler",
+  "id": "5a036285",
   "en": "Documents"
  },
  {
-  "id": "20dea12a",
-  "key": "Resimler",
-  "tr": "Resimler",
+  "id": "0d70feae",
   "en": "Pictures"
  },
  {
-  "id": "d1a2bdd3",
-  "key": "Müzik",
-  "tr": "Müzik",
+  "id": "584a1d74",
   "en": "Music"
  },
  {
-  "id": "53144cf3",
-  "key": "Videolar",
-  "tr": "Videolar",
+  "id": "63609fed",
   "en": "Videos"
  },
  {
-  "id": "6208de61",
-  "key": "Kullanıcı",
-  "tr": "Kullanıcı",
+  "id": "a589bd9b",
   "en": "User profile"
  },
  {
-  "id": "d329d868",
-  "key": "OneDrive (İş)",
-  "tr": "OneDrive (İş)",
+  "id": "27bd63cb",
   "en": "OneDrive (Work)"
  },
  {
-  "id": "b7e56a7c",
-  "key": "Kırmızı",
-  "tr": "Kırmızı",
+  "id": "a37f187c",
   "en": "Red"
  },
  {
-  "id": "2907a64f",
-  "key": "Turuncu",
-  "tr": "Turuncu",
+  "id": "727b390b",
   "en": "Orange"
  },
  {
-  "id": "2f95be9a",
-  "key": "Sarı",
-  "tr": "Sarı",
+  "id": "d9cdec69",
   "en": "Yellow"
  },
  {
-  "id": "5b4491a2",
-  "key": "Yeşil",
-  "tr": "Yeşil",
+  "id": "a953c75c",
   "en": "Green"
  },
  {
-  "id": "5863b83a",
-  "key": "Mavi",
-  "tr": "Mavi",
+  "id": "e9dd1fed",
   "en": "Blue"
  },
  {
-  "id": "3aa36365",
-  "key": "Mor",
-  "tr": "Mor",
+  "id": "b682ba1f",
   "en": "Purple"
  },
  {
-  "id": "c1c2314f",
-  "key": "Gri",
-  "tr": "Gri",
+  "id": "3ac6ffba",
   "en": "Gray"
  },
  {
-  "id": "c80882cb",
-  "key": "Klasör bulunamadı",
-  "tr": "Klasör bulunamadı",
+  "id": "a913202c",
   "en": "Folder not found"
  },
  {
-  "id": "a268cc1f",
-  "key": "Erişim reddedildi",
-  "tr": "Erişim reddedildi",
+  "id": "96b6fb3a",
   "en": "Access denied"
  },
  {
-  "id": "dc666c73",
-  "key": "Ad boş olamaz",
-  "tr": "Ad boş olamaz",
+  "id": "d5ba17aa",
   "en": "The name cannot be empty"
  },
  {
-  "id": "0b4552fa",
-  "key": "Geçersiz karakter: < > : \" / \\ | ? * veya denetim karakteri",
-  "tr": "Geçersiz karakter: < > : \" / \\ | ? * veya denetim karakteri",
+  "id": "8cf6f695",
   "en": "Invalid character: < > : \" / \\ | ? * or a control character"
  },
  {
-  "id": "bc1fa9b2",
-  "key": "Ad nokta veya boşlukla bitemez",
-  "tr": "Ad nokta veya boşlukla bitemez",
+  "id": "6b4f38df",
   "en": "The name cannot end with a dot or a space"
  },
  {
-  "id": "bc8c67f5",
-  "key": "Ayrılmış Windows adı",
-  "tr": "Ayrılmış Windows adı",
+  "id": "611ce35f",
   "en": "Reserved Windows name"
  },
  {
-  "id": "d3514c44",
-  "key": "Ad çok uzun",
-  "tr": "Ad çok uzun",
+  "id": "b51e7833",
   "en": "The name is too long"
  },
  {
-  "id": "a9f3457d",
-  "key": "Aynı ada çıkan başka bir öğe var",
-  "tr": "Aynı ada çıkan başka bir öğe var",
+  "id": "e36f60fc",
   "en": "Another item would get the same name"
  },
  {
-  "id": "50e770d2",
-  "key": "Klasörde bu ada sahip başka bir öğe var",
-  "tr": "Klasörde bu ada sahip başka bir öğe var",
+  "id": "cd5948e0",
   "en": "An item with this name already exists in the folder"
  },
  {
-  "id": "ddd6a858",
-  "key": "Geçersiz düzenli ifade",
-  "tr": "Geçersiz düzenli ifade",
+  "id": "37992106",
   "en": "Invalid regular expression"
  },
  {
-  "id": "6ea87529",
-  "key": "pano açılamadı",
-  "tr": "pano açılamadı",
+  "id": "28cead88",
   "en": "couldn't open the clipboard"
  },
  {
-  "id": "f4bacd82",
-  "key": "Git bulunamadı (kurulu değil ya da PATH'te yok)",
-  "tr": "Git bulunamadı (kurulu değil ya da PATH'te yok)",
+  "id": "69e9679a",
   "en": "Git not found (not installed or not on PATH)"
  },
  {
-  "id": "b74cb5f7",
-  "key": "git çalıştırılamadı",
-  "tr": "git çalıştırılamadı",
+  "id": "ab9c3022",
   "en": "couldn't run git"
  },
  {
-  "id": "23a4d2a5",
-  "key": "Öğeler Geri Dönüşüm Kutusu'nda bulunamadı",
-  "tr": "Öğeler Geri Dönüşüm Kutusu'nda bulunamadı",
-  "en": "Items were not found in the Recycle Bin"
+  "id": "170cfb59",
+  "en": "Items were not found in the Trash"
  },
  {
-  "id": "b589c22e",
-  "key": "Raf",
-  "tr": "Raf",
+  "id": "b01959e3",
   "en": "Shelf"
  },
  {
-  "id": "c569998c",
-  "key": "Öğeleri sağ tık → \"Rafa ekle\" (Ctrl+Shift+S) ile buraya toplayın, sonra hepsini istediğiniz klasöre kopyalayın veya taşıyın.",
-  "tr": "Öğeleri sağ tık → \"Rafa ekle\" (Ctrl+Shift+S) ile buraya toplayın, sonra hepsini istediğiniz klasöre kopyalayın veya taşıyın.",
+  "id": "c8701158",
   "en": "Collect items here with right-click → \"Add to shelf\" (Ctrl+Shift+S), then copy or move them all into any folder."
  },
  {
-  "id": "ca9e0388",
-  "key": "Buraya kopyala",
-  "tr": "Buraya kopyala",
+  "id": "85f0245a",
   "en": "Copy here"
  },
  {
-  "id": "902a3a71",
-  "key": "Buraya taşı",
-  "tr": "Buraya taşı",
+  "id": "1aaf57aa",
   "en": "Move here"
  },
  {
-  "id": "bcf9f69d",
-  "key": "Temizle",
-  "tr": "Temizle",
+  "id": "04a57fc2",
   "en": "Clear"
  },
  {
-  "id": "4f013e0c",
-  "key": "Rafa ekle",
-  "tr": "Rafa ekle",
+  "id": "2528bc61",
   "en": "Add to shelf"
  },
  {
-  "id": "416fcfcb",
-  "key": "Rafa ekle\tCtrl+Shift+S",
-  "tr": "Rafa ekle\tCtrl+Shift+S",
+  "id": "02b42124",
   "en": "Add to shelf\tCtrl+Shift+S"
  },
  {
-  "id": "0a670d2f",
-  "key": "Rafı göster/gizle",
-  "tr": "Rafı göster/gizle",
+  "id": "7fcec515",
   "en": "Show/hide shelf"
  },
  {
-  "id": "d58e2bb0",
-  "key": "Tam ekran",
-  "tr": "Tam ekran",
+  "id": "4edbbee0",
   "en": "Full screen"
  },
  {
-  "id": "599512ee",
-  "key": "Her zaman üstte",
-  "tr": "Her zaman üstte",
+  "id": "001a5dce",
   "en": "Always on top"
  },
  {
-  "id": "a27671a5",
-  "key": "Kütüphaneler",
-  "tr": "Kütüphaneler",
+  "id": "a9b476a4",
   "en": "Libraries"
  },
  {
-  "id": "a736d505",
-  "key": "Ağ",
-  "tr": "Ağ",
+  "id": "6974ad65",
   "en": "Network"
  },
  {
-  "id": "4cbcc734",
-  "key": "Kütüphane açılamadı",
-  "tr": "Kütüphane açılamadı",
+  "id": "4257b211",
   "en": "Couldn't open the library"
  },
  {
-  "id": "f91de064",
-  "key": "Değiştirmek için bir komuta tıklayıp yeni tuşlara basın (Esc: vazgeç). Özel kısayolun yanındaki ↺ varsayılana döndürür.",
-  "tr": "Değiştirmek için bir komuta tıklayıp yeni tuşlara basın (Esc: vazgeç). Özel kısayolun yanındaki ↺ varsayılana döndürür.",
+  "id": "9737c116",
   "en": "To change one, click a command and press the new keys (Esc: cancel). ↺ next to a custom shortcut restores the default."
  },
  {
-  "id": "e58f6b2f",
-  "key": "Tuşlara basın…",
-  "tr": "Tuşlara basın…",
+  "id": "2b545ab4",
   "en": "Press keys…"
  },
  {
-  "id": "aad28b45",
-  "key": "FTP bağlantısı",
-  "tr": "FTP bağlantısı",
+  "id": "64732b77",
   "en": "FTP connection"
  },
  {
-  "id": "f2d40113",
-  "key": "FTP listeleme",
-  "tr": "FTP listeleme",
+  "id": "233fb431",
   "en": "FTP listing"
  },
  {
-  "id": "58248d22",
-  "key": "sunucuya bağlanılamadı",
-  "tr": "sunucuya bağlanılamadı",
+  "id": "b7408c5c",
   "en": "couldn't connect to the server"
  },
  {
-  "id": "05a4e134",
-  "key": "sunucu adı çözülemedi",
-  "tr": "sunucu adı çözülemedi",
+  "id": "3aa6c478",
   "en": "server name not resolved"
  },
  {
-  "id": "c19f13b9",
-  "key": "parola yanlış",
-  "tr": "parola yanlış",
+  "id": "8c2f724f",
   "en": "wrong password"
  },
  {
-  "id": "23aa4924",
-  "key": "kullanıcı adı yanlış",
-  "tr": "kullanıcı adı yanlış",
+  "id": "d18f8bbc",
   "en": "wrong user name"
  },
  {
-  "id": "612dcbb0",
-  "key": "zaman aşımı",
-  "tr": "zaman aşımı",
+  "id": "9a0e1624",
   "en": "timed out"
  },
  {
-  "id": "1fa03c14",
-  "key": "Seçimi tersine çevir",
-  "tr": "Seçimi tersine çevir",
+  "id": "b433e857",
   "en": "Invert selection"
  },
  {
-  "id": "56fff0c0",
-  "key": "Öğeyi seç/bırak",
-  "tr": "Öğeyi seç/bırak",
+  "id": "4e94bc46",
   "en": "Toggle item selection"
  },
  {
-  "id": "244766da",
-  "key": "Dosya adı uzantısı",
-  "tr": "Dosya adı uzantısı",
+  "id": "352ecdff",
   "en": "File name extension"
  },
  {
-  "id": "e1205f8f",
-  "key": "Dosya adı uzantısını değiştirirseniz dosya kullanılamaz hale gelebilir. Değiştirmek istediğinizden emin misiniz?",
-  "tr": "Dosya adı uzantısını değiştirirseniz dosya kullanılamaz hale gelebilir. Değiştirmek istediğinizden emin misiniz?",
+  "id": "27e1eeae",
   "en": "If you change a file name extension, the file might become unusable. Are you sure you want to change it?"
  },
  {
-  "id": "7ac75322",
-  "key": "kaldı",
-  "tr": "kaldı",
+  "id": "124aec70",
   "en": "left"
  },
  {
-  "id": "5e1cd1c8",
-  "key": "dk",
-  "tr": "dk",
+  "id": "c98f4557",
   "en": "min"
  },
  {
-  "id": "38520459",
-  "key": "sa",
-  "tr": "sa",
+  "id": "ed0c3757",
   "en": "h"
  },
  {
-  "id": "e80edf36",
-  "key": "Yeni pencerede aç",
-  "tr": "Yeni pencerede aç",
+  "id": "7400af5e",
   "en": "Open in new window"
  },
  {
-  "id": "71002c64",
-  "key": "Kenar çubuğundan kaldır",
-  "tr": "Kenar çubuğundan kaldır",
+  "id": "5ae1cd1f",
   "en": "Unpin from sidebar"
  },
  {
-  "id": "093deca5",
-  "key": "Kenar çubuğu: Bulut ve Linux",
-  "tr": "Kenar çubuğu: Bulut ve Linux",
+  "id": "9c28e229",
   "en": "Sidebar: Cloud and Linux"
  },
  {
-  "id": "4a2e3294",
-  "key": "Kenar çubuğu: Kütüphaneler",
-  "tr": "Kenar çubuğu: Kütüphaneler",
+  "id": "9d0c8ba4",
   "en": "Sidebar: Libraries"
  },
  {
-  "id": "bb92f6b2",
-  "key": "Kenar çubuğu: Ağ",
-  "tr": "Kenar çubuğu: Ağ",
+  "id": "07f77a65",
   "en": "Sidebar: Network"
  },
  {
-  "id": "08db3bd7",
-  "key": "Kenar çubuğu: Etiketler",
-  "tr": "Kenar çubuğu: Etiketler",
+  "id": "9878e7c0",
   "en": "Sidebar: Tags"
  },
  {
-  "id": "228ff042",
-  "key": "Seçili klasöre yapıştır",
-  "tr": "Seçili klasöre yapıştır",
+  "id": "0d707a65",
   "en": "Paste into selected folder"
  },
  {
-  "id": "a6a7c06f",
-  "key": "Kısayol olarak yapıştır",
-  "tr": "Kısayol olarak yapıştır",
+  "id": "847486ca",
   "en": "Paste as shortcut"
  },
  {
-  "id": "b18fd0c8",
-  "key": "Diğer panelde aç",
-  "tr": "Diğer panelde aç",
+  "id": "6e5f73f8",
   "en": "Open in other pane"
  },
  {
-  "id": "5d31970a",
-  "key": "Diğer panele kopyala",
-  "tr": "Diğer panele kopyala",
+  "id": "ead32d27",
   "en": "Copy to other pane"
  },
  {
-  "id": "7f67551b",
-  "key": "Diğer panele taşı",
-  "tr": "Diğer panele taşı",
+  "id": "33dc6f77",
   "en": "Move to other pane"
  },
  {
-  "id": "b574f3d0",
-  "key": "Bu adda bir öğe zaten var. Başka bir ad deneyin.",
-  "tr": "Bu adda bir öğe zaten var. Başka bir ad deneyin.",
+  "id": "9012e523",
   "en": "An item with this name already exists. Try another name."
  },
  {
-  "id": "1be6d89c",
-  "key": "Dosya adı şu karakterleri içeremez: \\ / : * ? \" < > | ve nokta ile bitemez.",
-  "tr": "Dosya adı şu karakterleri içeremez: \\ / : * ? \" < > | ve nokta ile bitemez.",
+  "id": "0f8459b7",
   "en": "A file name can't contain any of these characters: \\ / : * ? \" < > | and can't end with a period."
  },
  {
-  "id": "e432e5ac",
-  "key": "Geçersiz klasör adı",
-  "tr": "Geçersiz klasör adı",
+  "id": "a5bb8e77",
   "en": "Invalid folder name"
  },
  {
-  "id": "f873c399",
-  "key": "Sürücü hazır değil",
-  "tr": "Sürücü hazır değil",
+  "id": "450fb1ee",
   "en": "The drive is not ready"
  },
  {
-  "id": "c8ff4a64",
-  "key": "Ağ yolu bulunamadı",
-  "tr": "Ağ yolu bulunamadı",
+  "id": "7d9c307d",
   "en": "Network path not found"
  },
  {
-  "id": "188377df",
-  "key": "Durum Merkezi",
-  "tr": "Durum Merkezi",
+  "id": "4089ea6c",
   "en": "Status Center"
  },
  {
-  "id": "dea6b9e4",
-  "key": "Devam eden dosya işlemleri yok",
-  "tr": "Devam eden dosya işlemleri yok",
+  "id": "a17174b7",
   "en": "No ongoing file operations"
  },
  {
-  "id": "bc81ecf9",
-  "key": "Tamamlananları temizle",
-  "tr": "Tamamlananları temizle",
+  "id": "381e553b",
   "en": "Clear completed"
  },
  {
-  "id": "df48764e",
-  "key": "Aç",
-  "tr": "Aç",
+  "id": "538b10e9",
   "en": "Open"
  },
  {
-  "id": "ba5140a8",
-  "key": "Ayrıntılar",
-  "tr": "Ayrıntılar",
-  "en": "Details"
- },
- {
-  "id": "fd5a0486",
-  "key": "Başka bir uygulama seç",
-  "tr": "Başka bir uygulama seç",
+  "id": "2d97ff38",
   "en": "Choose another app"
  },
  {
-  "id": "62db791c",
-  "key": "Başka seçenek yok",
-  "tr": "Başka seçenek yok",
+  "id": "be0684ed",
   "en": "No more options"
  },
  {
-  "id": "570fd826",
-  "key": "Çıkar",
-  "tr": "Çıkar",
+  "id": "30518e1e",
   "en": "Extract"
  },
  {
-  "id": "1f3b5f26",
-  "key": "Çift panel",
-  "tr": "Çift panel",
+  "id": "36dfd343",
   "en": "Dual pane"
  },
  {
-  "id": "6ee0fb2b",
-  "key": "Diğer seçenekleri göster",
-  "tr": "Diğer seçenekleri göster",
+  "id": "fb9c7d93",
   "en": "Show more options"
  },
  {
-  "id": "cef0594f",
-  "key": "Gruplandır",
-  "tr": "Gruplandır",
+  "id": "10bd02d1",
   "en": "Group by"
  },
  {
-  "id": "3120359f",
-  "key": "Kes  (Ctrl+X)",
-  "tr": "Kes  (Ctrl+X)",
+  "id": "df6c40de",
   "en": "Cut  (Ctrl+X)"
  },
  {
-  "id": "f67615c4",
-  "key": "Kısayol oluştur",
-  "tr": "Kısayol oluştur",
+  "id": "f1c27255",
   "en": "Create shortcut"
  },
  {
-  "id": "89e95bd9",
-  "key": "Kısayol yapıştır",
-  "tr": "Kısayol yapıştır",
+  "id": "e4acbbda",
   "en": "Paste shortcut"
  },
  {
-  "id": "181419ba",
-  "key": "Kopyala  (Ctrl+C)",
-  "tr": "Kopyala  (Ctrl+C)",
+  "id": "8ee59c6e",
   "en": "Copy  (Ctrl+C)"
  },
  {
-  "id": "c4890a4d",
-  "key": "Öğe yolunu kopyala",
-  "tr": "Öğe yolunu kopyala",
+  "id": "4c646f22",
   "en": "Copy item path"
  },
  {
-  "id": "9af51a05",
-  "key": "Önce klasörler",
-  "tr": "Önce klasörler",
-  "en": "Folders first"
- },
- {
-  "id": "00e6022a",
-  "key": "Önizleme bölmesi  (Alt+P)",
-  "tr": "Önizleme bölmesi  (Alt+P)",
-  "en": "Preview pane  (Alt+P)"
- },
- {
-  "id": "ece6b9c5",
-  "key": "Özellikler  (Alt+Enter)",
-  "tr": "Özellikler  (Alt+Enter)",
+  "id": "b24f1189",
   "en": "Properties  (Alt+Enter)"
  },
  {
-  "id": "487dd316",
-  "key": "Paylaş",
-  "tr": "Paylaş",
+  "id": "4f856dd8",
   "en": "Share"
  },
  {
-  "id": "ab898666",
-  "key": "Sayfa düzeni",
-  "tr": "Sayfa düzeni",
+  "id": "f788421f",
   "en": "Layout"
  },
  {
-  "id": "8e213343",
-  "key": "Seçenekler yüklenemedi",
-  "tr": "Seçenekler yüklenemedi",
+  "id": "da4a5cdb",
   "en": "Couldn't load options"
  },
  {
-  "id": "a4708792",
-  "key": "Sıkıştır",
-  "tr": "Sıkıştır",
+  "id": "ce08f6ad",
   "en": "Compress"
  },
  {
-  "id": "233f076f",
-  "key": "Sırala",
-  "tr": "Sırala",
+  "id": "8459a7f1",
   "en": "Sort"
  },
  {
-  "id": "0da193c9",
-  "key": "Sil  (Del)",
-  "tr": "Sil  (Del)",
+  "id": "dbe6c062",
   "en": "Delete  (Del)"
  },
  {
-  "id": "e0d8e883",
-  "key": "Sütunlar",
-  "tr": "Sütunlar",
-  "en": "Columns"
- },
- {
-  "id": "b5df98d4",
-  "key": "Şununla aç",
-  "tr": "Şununla aç",
+  "id": "0c7acc73",
   "en": "Open with"
  },
  {
-  "id": "4a78550e",
-  "key": "Toplu yeniden adlandır…",
-  "tr": "Toplu yeniden adlandır…",
+  "id": "3ab72133",
   "en": "Bulk rename…"
  },
  {
-  "id": "2db765e2",
-  "key": "Yapıştır  (Ctrl+V)",
-  "tr": "Yapıştır  (Ctrl+V)",
+  "id": "36b57ebb",
   "en": "Paste  (Ctrl+V)"
  },
  {
-  "id": "3079523a",
-  "key": "Yeni",
-  "tr": "Yeni",
+  "id": "8b242db1",
   "en": "New"
  },
  {
-  "id": "14671601",
-  "key": "Yeni öğe",
-  "tr": "Yeni öğe",
+  "id": "b59cbbe4",
   "en": "New item"
  },
  {
-  "id": "f425b081",
-  "key": "Yeniden adlandır  (F2)",
-  "tr": "Yeniden adlandır  (F2)",
+  "id": "a147b12c",
   "en": "Rename  (F2)"
  },
  {
-  "id": "abbdc17e",
-  "key": "Yok",
-  "tr": "Yok",
+  "id": "304ff7fb",
   "en": "None"
  },
  {
-  "id": "fa709f5a",
-  "key": "Komut paleti  (Ctrl+Shift+P)",
-  "tr": "Komut paleti  (Ctrl+Shift+P)",
+  "id": "3831c191",
   "en": "Command palette  (Ctrl+Shift+P)"
  },
  {
-  "id": "f282591a",
-  "key": "Ara  (Ctrl+F)",
-  "tr": "Ara  (Ctrl+F)",
+  "id": "50e6b382",
   "en": "Search  (Ctrl+F)"
  },
  {
-  "id": "61865cc0",
-  "key": "Aramayı düzenle",
-  "tr": "Aramayı düzenle",
+  "id": "2dc8de7b",
   "en": "Edit search"
  },
  {
-  "id": "dfce4458",
-  "key": "Sırala ve gruplandır",
-  "tr": "Sırala ve gruplandır",
-  "en": "Sort and group"
- },
- {
-  "id": "f976bce7",
-  "key": "Tamam",
-  "tr": "Tamam",
+  "id": "85e4b82f",
   "en": "OK"
  },
  {
-  "id": "8e7c7264",
-  "key": "Oluştur",
-  "tr": "Oluştur",
+  "id": "990de47d",
   "en": "Create"
  },
  {
-  "id": "ee56658b",
-  "key": "Çek (pull)",
-  "tr": "Çek (pull)",
+  "id": "ea87109e",
   "en": "Pull"
  },
  {
-  "id": "796c4fa1",
-  "key": "Gönder (push)",
-  "tr": "Gönder (push)",
+  "id": "f0c9fffd",
   "en": "Push"
  },
  {
-  "id": "ebf98d02",
-  "key": "Eşitle",
-  "tr": "Eşitle",
+  "id": "89a71bba",
   "en": "Sync"
  },
  {
-  "id": "7b2a57ab",
-  "key": "Uzak depodan getir (fetch)",
-  "tr": "Uzak depodan getir (fetch)",
+  "id": "533a3183",
   "en": "Fetch"
  },
  {
-  "id": "96f93317",
-  "key": "Çek / Gönder / Eşitle",
-  "tr": "Çek / Gönder / Eşitle",
+  "id": "67e754eb",
   "en": "Pull / Push / Sync"
  },
  {
-  "id": "ff1824cd",
-  "key": "Çekiliyor",
-  "tr": "Çekiliyor",
+  "id": "ff17af72",
   "en": "Pulling"
  },
  {
-  "id": "12e3bbc8",
-  "key": "Gönderiliyor",
-  "tr": "Gönderiliyor",
+  "id": "5dd372a3",
   "en": "Pushing"
  },
  {
-  "id": "5193dd97",
-  "key": "Eşitleniyor",
-  "tr": "Eşitleniyor",
+  "id": "9745d106",
   "en": "Syncing"
  },
  {
-  "id": "176f2da6",
-  "key": "Getiriliyor",
-  "tr": "Getiriliyor",
+  "id": "29bde0d5",
   "en": "Fetching"
  },
  {
-  "id": "2fccae95",
-  "key": "Dallar",
-  "tr": "Dallar",
+  "id": "831f1b09",
   "en": "Branches"
  },
  {
-  "id": "21b2aaca",
-  "key": "Uzak dallar",
-  "tr": "Uzak dallar",
+  "id": "ba966a1d",
   "en": "Remote branches"
  },
  {
-  "id": "f7ef1c33",
-  "key": "Yeni dal",
-  "tr": "Yeni dal",
+  "id": "8982d81b",
   "en": "New branch"
  },
  {
-  "id": "1da3cadc",
-  "key": "Yeni dal oluştur…",
-  "tr": "Yeni dal oluştur…",
+  "id": "a9ea58a1",
   "en": "Create branch…"
  },
  {
-  "id": "3fc1a067",
-  "key": "Yeni dal geçerli daldan oluşturulur ve ona geçilir.",
-  "tr": "Yeni dal geçerli daldan oluşturulur ve ona geçilir.",
+  "id": "8bf95043",
   "en": "The new branch starts from the current one and is checked out."
  },
  {
-  "id": "508d2a20",
-  "key": "Dal adı",
-  "tr": "Dal adı",
+  "id": "636eca9c",
   "en": "Branch name"
  },
  {
-  "id": "93dcf304",
-  "key": "Geçersiz dal adı (boşluk, .., ~ ^ : ? * [ \\ kullanılamaz)",
-  "tr": "Geçersiz dal adı (boşluk, .., ~ ^ : ? * [ \\ kullanılamaz)",
+  "id": "68f25d44",
   "en": "Invalid branch name (no spaces, .., ~ ^ : ? * [ \\)"
  },
  {
-  "id": "30b25723",
-  "key": "Dal değiştirilemedi",
-  "tr": "Dal değiştirilemedi",
+  "id": "5341fddf",
   "en": "Couldn't switch branch"
  },
  {
-  "id": "c251ebc6",
-  "key": "Dal oluşturulamadı",
-  "tr": "Dal oluşturulamadı",
+  "id": "f2530113",
   "en": "Couldn't create branch"
  },
  {
-  "id": "2d886423",
-  "key": "Kaydedilmemiş değişiklikler var",
-  "tr": "Kaydedilmemiş değişiklikler var",
+  "id": "6392e46c",
   "en": "You have uncommitted changes"
  },
  {
-  "id": "dc918af3",
-  "key": "Değişikliklerinizle ne yapılsın? Geçilecek dal:",
-  "tr": "Değişikliklerinizle ne yapılsın? Geçilecek dal:",
+  "id": "5a8191e9",
   "en": "What should happen to your changes? Switching to"
  },
  {
-  "id": "1257636b",
-  "key": "Yanımda götür",
-  "tr": "Yanımda götür",
+  "id": "1b0f2f0a",
   "en": "Bring them along"
  },
  {
-  "id": "ffb42d85",
-  "key": "Değişiklikleri at",
-  "tr": "Değişiklikleri at",
+  "id": "690c678c",
   "en": "Discard changes"
  },
  {
-  "id": "48c675f7",
-  "key": "Seçimle klasör oluştur",
-  "tr": "Seçimle klasör oluştur",
+  "id": "2d94e45f",
   "en": "New folder with selection"
  },
  {
-  "id": "6c546d93",
-  "key": "Klasörü düzleştir",
-  "tr": "Klasörü düzleştir",
+  "id": "0626cfaf",
   "en": "Flatten folder"
  },
  {
-  "id": "8ca04592",
-  "key": "Kalıcı olarak silinsin mi?",
-  "tr": "Kalıcı olarak silinsin mi?",
+  "id": "dd35e0f4",
   "en": "Delete permanently?"
  },
  {
-  "id": "aa9adcb5",
-  "key": "geri alınamayacak şekilde silinecek.",
-  "tr": "geri alınamayacak şekilde silinecek.",
+  "id": "898b3bb9",
   "en": "will be deleted and can't be recovered."
  },
  {
-  "id": "a4ff34d5",
-  "key": "Geri dönüşüm kutusuna taşınsın mı?",
-  "tr": "Geri dönüşüm kutusuna taşınsın mı?",
-  "en": "Move to the Recycle Bin?"
+  "id": "6bfc0f81",
+  "en": "Move to the Trash?"
  },
  {
-  "id": "5470e87e",
-  "key": "geri dönüşüm kutusuna taşınacak.",
-  "tr": "geri dönüşüm kutusuna taşınacak.",
-  "en": "will be moved to the Recycle Bin."
+  "id": "4d96ee23",
+  "en": "will be moved to the Trash."
  },
  {
-  "id": "40bc51c7",
-  "key": "Sil",
-  "tr": "Sil",
+  "id": "5797ea6a",
   "en": "Delete"
  },
  {
-  "id": "dfbaf37e",
-  "key": "Klasör düzleştirilsin mi?",
-  "tr": "Klasör düzleştirilsin mi?",
+  "id": "3f18bfb0",
   "en": "Flatten folder?"
  },
  {
-  "id": "996ef101",
-  "key": "Alt klasörlerdeki tüm dosyalar",
-  "tr": "Alt klasörlerdeki tüm dosyalar",
+  "id": "4e3f82c9",
   "en": "All files in subfolders"
  },
  {
-  "id": "3709d6c6",
-  "key": "içine taşınır ve boş kalan alt klasörler silinir.",
-  "tr": "içine taşınır ve boş kalan alt klasörler silinir.",
+  "id": "4261992a",
   "en": "will be moved into it, and the empty subfolders will be deleted."
  },
  {
-  "id": "198925ec",
-  "key": "Düzleştir",
-  "tr": "Düzleştir",
+  "id": "f69f1b69",
   "en": "Flatten"
  },
  {
-  "id": "5cae8270",
-  "key": "Düzleştiriliyor:",
-  "tr": "Düzleştiriliyor:",
+  "id": "3bad4f77",
   "en": "Flattening:"
  },
  {
-  "id": "ea90d596",
-  "key": "Dosya Gezgini'nden hızlı",
-  "tr": "Dosya Gezgini'nden hızlı",
+  "id": "041262de",
   "en": "faster than File Explorer"
  },
  {
-  "id": "2f2eee11",
-  "key": "Dosya Gezgini kadar hızlı",
-  "tr": "Dosya Gezgini kadar hızlı",
+  "id": "31c2a1a6",
   "en": "as fast as File Explorer"
  },
  {
-  "id": "3c9ad0a5",
-  "key": "işlemci süresi",
-  "tr": "işlemci süresi",
+  "id": "808bc742",
   "en": "CPU time"
  },
  {
-  "id": "4bb4c9c9",
-  "key": "Kendi bildirdiği sonuç · ücretsiz ve açık kaynak · Windows",
-  "tr": "Kendi bildirdiği sonuç · ücretsiz ve açık kaynak · Windows",
+  "id": "340107ad",
   "en": "Self-reported result · free and open source · Windows"
  },
  {
-  "id": "2220b7a5",
-  "key": "rfiles {v} indiriliyor",
-  "tr": "rfiles {v} indiriliyor",
+  "id": "b2053238",
   "en": "Downloading rfiles {v}"
  },
  {
-  "id": "7daa795d",
-  "key": "rfiles {v} hazır",
-  "tr": "rfiles {v} hazır",
+  "id": "8e4f76b7",
   "en": "rfiles {v} is ready"
  },
  {
-  "id": "099cc52a",
-  "key": "Yeniden başlatınca kurulur",
-  "tr": "Yeniden başlatınca kurulur",
+  "id": "af2c94df",
   "en": "Installs when you restart"
  },
  {
-  "id": "4dc479c7",
-  "key": "Yeniden başlat",
-  "tr": "Yeniden başlat",
+  "id": "2f44ed8c",
   "en": "Restart"
  },
  {
-  "id": "f2a18b26",
-  "key": "Aramada dizine alma",
-  "tr": "Aramada dizine alma",
+  "id": "b10eb996",
   "en": "Leave out of the search index"
  },
  {
-  "id": "24d2b2fb",
-  "key": "Dizine alınmayan klasörler",
-  "tr": "Dizine alınmayan klasörler",
+  "id": "04a89243",
   "en": "Folders left out of the index"
  },
  {
-  "id": "c5e022bb",
-  "key": "Her zaman:",
-  "tr": "Her zaman:",
+  "id": "0c3ae89a",
   "en": "Always:"
  },
  {
-  "id": "8b968fdf",
-  "key": "Bu klasörlerin içinde arama diskte yapılır. Bir klasörü sağ tıklayıp \"Aramada dizine alma\" ile de ekleyebilirsiniz.",
-  "tr": "Bu klasörlerin içinde arama diskte yapılır. Bir klasörü sağ tıklayıp \"Aramada dizine alma\" ile de ekleyebilirsiniz.",
+  "id": "94fd2346",
   "en": "Searching inside these folders walks the disk. You can also right-click a folder and choose \"Leave out of the search index\"."
  },
  {
-  "id": "df63b602",
-  "key": "Klasör ekle…",
-  "tr": "Klasör ekle…",
+  "id": "85f0d8d4",
   "en": "Add folder…"
  },
  {
-  "id": "991da57f",
-  "key": "Dizine alınmayacak klasör",
-  "tr": "Dizine alınmayacak klasör",
+  "id": "9fa11cc9",
   "en": "Folder to leave out of the index"
  },
  {
-  "id": "290b8263",
-  "key": "Sonuçlar:",
-  "tr": "Sonuçlar:",
+  "id": "c9a4e57d",
   "en": "Results:"
  },
  {
-  "id": "fab7cbfe",
-  "key": "Bağlantıyı kopyala",
-  "tr": "Bağlantıyı kopyala",
+  "id": "23f990dc",
   "en": "Copy link"
  },
  {
-  "id": "fc3bb67d",
-  "key": "Bağlantı kopyalandı",
-  "tr": "Bağlantı kopyalandı",
+  "id": "3887d7d3",
   "en": "Link copied"
  },
  {
-  "id": "4bf92434",
-  "key": "Hızlı arama dizini",
-  "tr": "Hızlı arama dizini",
+  "id": "88a8ff99",
   "en": "Fast search index"
  },
  {
-  "id": "f87ce35b",
-  "key": "Yerel sürücülerdeki dosya adları bir dizinde tutulur: alt klasörlerde arama milisaniyeler sürer. Dizin arka planda hazırlanır ve güncel tutulur.",
-  "tr": "Yerel sürücülerdeki dosya adları bir dizinde tutulur: alt klasörlerde arama milisaniyeler sürer. Dizin arka planda hazırlanır ve güncel tutulur.",
+  "id": "e2bbd4c4",
   "en": "File names on the local drives are kept in an index, so searching subfolders takes milliseconds. The index is built in the background and kept up to date."
  },
  {
-  "id": "f13da91b",
-  "key": "hazırlanıyor…",
-  "tr": "hazırlanıyor…",
+  "id": "70d5e413",
   "en": "indexing…"
  },
  {
-  "id": "f1ff0bf0",
-  "key": "dizinlenemedi",
-  "tr": "dizinlenemedi",
+  "id": "9608b251",
   "en": "couldn't be indexed"
  },
  {
-  "id": "6abadce2",
-  "key": "{root} {n} öğe, {mb} MB",
-  "tr": "{root} {n} öğe, {mb} MB",
+  "id": "4c79ce87",
   "en": "{root} {n} items, {mb} MB"
  },
  {
-  "id": "5a82f544",
-  "key": "aynı hızda",
-  "tr": "aynı hızda",
+  "id": "b7f57af9",
   "en": "the same speed"
  },
  {
-  "id": "6e91c611",
-  "key": "Hız testi",
-  "tr": "Hız testi",
+  "id": "af21bd04",
   "en": "Speed test"
  },
  {
-  "id": "0a94c6ac",
-  "key": "{n} özel bellek",
-  "tr": "{n} özel bellek",
+  "id": "dbc77e53",
   "en": "{n} private memory"
  },
  {
-  "id": "679a756e",
-  "key": "{test}: klasörün açılması",
-  "tr": "{test}: klasörün açılması",
+  "id": "4eece0d6",
   "en": "{test}: opening the folder"
  },
  {
-  "id": "bbd838dd",
-  "key": "{x} daha hızlı",
-  "tr": "{x} daha hızlı",
+  "id": "ba787a6e",
   "en": "{x} faster"
  },
  {
-  "id": "5dd42bca",
-  "key": "{x} daha yavaş",
-  "tr": "{x} daha yavaş",
+  "id": "0ec89825",
   "en": "{x} slower"
  },
  {
-  "id": "b6ef6a66",
-  "key": "1.000 dosya",
-  "tr": "1.000 dosya",
+  "id": "dce7eb1f",
   "en": "1,000 files"
  },
  {
-  "id": "b8cdb81e",
-  "key": "10.000 dosya",
-  "tr": "10.000 dosya",
+  "id": "2a817e37",
   "en": "10,000 files"
  },
  {
-  "id": "292bc3e6",
-  "key": "100.000 dosya",
-  "tr": "100.000 dosya",
+  "id": "4f24449f",
   "en": "100,000 files"
  },
  {
-  "id": "31bfe9db",
-  "key": "2.000 resim",
-  "tr": "2.000 resim",
+  "id": "b37a6080",
   "en": "2,000 pictures"
  },
  {
-  "id": "1667210f",
-  "key": "10.000 küçük dosya kopyalama",
-  "tr": "10.000 küçük dosya kopyalama",
+  "id": "a71dbb51",
   "en": "Copying 10,000 small files"
  },
  {
-  "id": "ad2f3a08",
-  "key": "10.000 küçük dosyayı Windows'tan {x} hızlı kopyalıyor",
-  "tr": "10.000 küçük dosyayı Windows'tan {x} hızlı kopyalıyor",
+  "id": "ad0e05be",
   "en": "Copies 10,000 small files {x} faster than Windows"
  },
  {
-  "id": "f60a90ca",
-  "key": "Açılış (boş klasör)",
-  "tr": "Açılış (boş klasör)",
+  "id": "ad0ad6eb",
   "en": "Start (empty folder)"
  },
  {
-  "id": "9cc9278c",
-  "key": "Alt klasörlerde arama",
-  "tr": "Alt klasörlerde arama",
+  "id": "2a673483",
   "en": "Search in subfolders"
  },
  {
-  "id": "de35b75c",
-  "key": "Arkadaşlarına öner",
-  "tr": "Arkadaşlarına öner",
+  "id": "568c1deb",
   "en": "Recommend to friends"
  },
  {
-  "id": "f9f785b8",
-  "key": "Ayrıntılar: süre, işlemci ve bellek",
-  "tr": "Ayrıntılar: süre, işlemci ve bellek",
+  "id": "c7a79738",
   "en": "Details: time, CPU and memory"
  },
  {
-  "id": "bf91b281",
-  "key": "Başlıyor…",
-  "tr": "Başlıyor…",
+  "id": "73727cef",
   "en": "Starting…"
  },
  {
-  "id": "9588eee4",
-  "key": "bellek",
-  "tr": "bellek",
+  "id": "84e9f1ae",
   "en": "memory"
  },
  {
-  "id": "8eb0c7e6",
-  "key": "Bilgisayar okunuyor…",
-  "tr": "Bilgisayar okunuyor…",
+  "id": "dc8b240a",
   "en": "Reading this PC…"
  },
  {
-  "id": "dd69b8f7",
-  "key": "Bilgisayarımdaki hız testi",
-  "tr": "Bilgisayarımdaki hız testi",
+  "id": "ebbdfb52",
   "en": "Speed test on my PC"
  },
  {
-  "id": "7d0f3772",
-  "key": "Bu bilgisayarda hız testi",
-  "tr": "Bu bilgisayarda hız testi",
+  "id": "22c7733c",
   "en": "Speed test on this PC"
  },
  {
-  "id": "72ca8b6c",
-  "key": "Dosya Gezgini",
-  "tr": "Dosya Gezgini",
+  "id": "d8162dde",
   "en": "File Explorer"
  },
  {
-  "id": "63d7c6ab",
-  "key": "Durdur",
-  "tr": "Durdur",
+  "id": "4b7f7705",
   "en": "Stop"
  },
  {
-  "id": "ae239d6a",
-  "key": "işlemci",
-  "tr": "işlemci",
+  "id": "3c2510a9",
   "en": "CPU"
  },
  {
-  "id": "58c73c25",
-  "key": "Kart çizilemedi",
-  "tr": "Kart çizilemedi",
+  "id": "651bb4fa",
   "en": "Couldn't draw the card"
  },
  {
-  "id": "ba7469af",
-  "key": "Kart İndirilenler klasörüne kaydedildi",
-  "tr": "Kart İndirilenler klasörüne kaydedildi",
+  "id": "5edd6060",
   "en": "Card saved to Downloads"
  },
  {
-  "id": "8434c82c",
-  "key": "Kartı kaydet",
-  "tr": "Kartı kaydet",
+  "id": "8711d6d6",
   "en": "Save card"
  },
  {
-  "id": "82254b3b",
-  "key": "Kartı kopyala",
-  "tr": "Kartı kopyala",
+  "id": "c1192082",
   "en": "Copy card"
  },
  {
-  "id": "a344537c",
-  "key": "Klasörün açılması, gerçek hızda",
-  "tr": "Klasörün açılması, gerçek hızda",
+  "id": "d7829d60",
   "en": "Opening a folder, at real speed"
  },
  {
-  "id": "c649535d",
-  "key": "Kopyalama: 1 GB'lık tek dosya",
-  "tr": "Kopyalama: 1 GB'lık tek dosya",
+  "id": "3ed7ab90",
   "en": "Copying: one 1 GB file"
  },
  {
-  "id": "f9537561",
-  "key": "Kopyalama: 10.000 küçük dosya",
-  "tr": "Kopyalama: 10.000 küçük dosya",
+  "id": "1a676e57",
   "en": "Copying: 10,000 small files"
  },
  {
-  "id": "e7d40b66",
-  "key": "kurulu değil",
-  "tr": "kurulu değil",
+  "id": "fef1200c",
   "en": "not installed"
  },
  {
-  "id": "2cf069d0",
-  "key": "Listeleniyor…",
-  "tr": "Listeleniyor…",
+  "id": "d47b4d79",
   "en": "Listing…"
  },
  {
-  "id": "d6da89e7",
-  "key": "Metni kopyala",
-  "tr": "Metni kopyala",
+  "id": "6426ce4b",
   "en": "Copy text"
  },
  {
-  "id": "aa39b260",
-  "key": "öğe",
-  "tr": "öğe",
+  "id": "3a79338f",
   "en": "items"
  },
  {
-  "id": "12410f1f",
-  "key": "ölçülemedi",
-  "tr": "ölçülemedi",
+  "id": "0a60d928",
   "en": "couldn't be measured"
  },
  {
-  "id": "eb00c16e",
-  "key": "Panoya kopyalanamadı",
-  "tr": "Panoya kopyalanamadı",
+  "id": "a8bc3c34",
   "en": "Couldn't copy to the clipboard"
  },
  {
-  "id": "cf1e0c2e",
-  "key": "rfiles bilgisayarımda 100.000 dosyalık klasörü {ours} sürede açtı, Dosya Gezgini {theirs}.",
-  "tr": "rfiles bilgisayarımda 100.000 dosyalık klasörü {ours} sürede açtı, Dosya Gezgini {theirs}.",
+  "id": "ee2d27a9",
   "en": "rfiles opened a 100,000-file folder on my PC in {ours}. File Explorer took {theirs}."
  },
  {
-  "id": "f8fbf8fa",
-  "key": "rfiles bu bilgisayarda büyük klasörü Dosya Gezgini'nden {x} hızlı açtı.",
-  "tr": "rfiles bu bilgisayarda büyük klasörü Dosya Gezgini'nden {x} hızlı açtı.",
+  "id": "00400feb",
   "en": "On this PC, rfiles opened the big folder {x} faster than File Explorer."
  },
  {
-  "id": "cee01668",
-  "key": "rfiles motorları ve Windows",
-  "tr": "rfiles motorları ve Windows",
+  "id": "58f745eb",
   "en": "rfiles' engines and Windows'"
  },
  {
-  "id": "8fcddc58",
-  "key": "rfiles: Windows için hızlı, ücretsiz ve açık kaynak dosya yöneticisi.",
-  "tr": "rfiles: Windows için hızlı, ücretsiz ve açık kaynak dosya yöneticisi.",
+  "id": "dcf9f18b",
   "en": "rfiles: a fast, free and open-source file manager for Windows."
  },
  {
-  "id": "74633f5a",
-  "key": "saniyede {n} öğe",
-  "tr": "saniyede {n} öğe",
+  "id": "020d5f14",
   "en": "{n} items a second"
  },
  {
-  "id": "3dc302ff",
-  "key": "Sonuç kartı panoya kopyalandı",
-  "tr": "Sonuç kartı panoya kopyalandı",
+  "id": "25066eaa",
   "en": "Result card copied"
  },
  {
-  "id": "00ab5b55",
-  "key": "Sonuç kartını paylaş: bilgisayarının özellikleri ve süreler tek bir görselde.",
-  "tr": "Sonuç kartını paylaş: bilgisayarının özellikleri ve süreler tek bir görselde.",
+  "id": "f5cd6d67",
   "en": "Share the result card: your PC's specs and the times in one picture."
  },
  {
-  "id": "df593bb9",
-  "key": "Sonuçlar panoya kopyalandı",
-  "tr": "Sonuçlar panoya kopyalandı",
+  "id": "d8737c6f",
   "en": "Results copied"
  },
  {
-  "id": "970cb91f",
-  "key": "Tekrar oynat",
-  "tr": "Tekrar oynat",
+  "id": "ff9139f2",
   "en": "Replay"
  },
  {
-  "id": "a0be23b5",
-  "key": "Test bitti.",
-  "tr": "Test bitti.",
+  "id": "41f37842",
   "en": "The test is done."
  },
  {
-  "id": "3f68bb41",
-  "key": "Test dosyaları hazırlanıyor:",
-  "tr": "Test dosyaları hazırlanıyor:",
+  "id": "66fc132c",
   "en": "Preparing test files:"
  },
  {
-  "id": "dc862c8c",
-  "key": "Test dosyalarını sil",
-  "tr": "Test dosyalarını sil",
+  "id": "5a09ccc5",
   "en": "Delete test files"
  },
  {
-  "id": "c02bb8f6",
-  "key": "Test tamamlanamadı:",
-  "tr": "Test tamamlanamadı:",
+  "id": "18236d79",
   "en": "The test couldn't finish:"
  },
  {
   "id": "2ffcbe05",
-  "key": "Test",
-  "tr": "Test",
   "en": "Test"
  },
  {
-  "id": "95ce893a",
-  "key": "Testi başlat",
-  "tr": "Testi başlat",
+  "id": "34ce3628",
   "en": "Start the test"
  },
  {
-  "id": "e80363df",
-  "key": "Ücretsiz ve açık kaynak · Windows",
-  "tr": "Ücretsiz ve açık kaynak · Windows",
+  "id": "53e7d1a7",
   "en": "Free and open source · Windows"
  },
  {
-  "id": "4bd1437f",
-  "key": "Ücretsiz ve açık kaynak:",
-  "tr": "Ücretsiz ve açık kaynak:",
+  "id": "ef22cae7",
   "en": "Free and open source:"
  },
  {
-  "id": "f8438044",
-  "key": "Verdim",
-  "tr": "Verdim",
+  "id": "0670f425",
   "en": "I did"
  },
  {
-  "id": "1230b35c",
-  "key": "Yeniden çalıştır",
-  "tr": "Yeniden çalıştır",
+  "id": "7e879b86",
   "en": "Run again"
  },
  {
-  "id": "0a4fc336",
-  "key": "ZIP çıkarma: 10.000 dosya",
-  "tr": "ZIP çıkarma: 10.000 dosya",
+  "id": "d6d73b42",
   "en": "Extracting a ZIP: 10,000 files"
  },
  {
-  "id": "162b2359",
-  "key": "Her uygulama aynı klasörleri sırayla açar; süre, işlemci ve bellek ölçülür. Test sırasında diğer uygulamaların pencereleri açılıp kapanır: fareye ve klavyeye dokunmayın. Yaklaşık 5–10 dakika sürer; test dosyaları ilk seferde hazırlanır (~1,3 GB, yerel uygulama verisinde).",
-  "tr": "Her uygulama aynı klasörleri sırayla açar; süre, işlemci ve bellek ölçülür. Test sırasında diğer uygulamaların pencereleri açılıp kapanır: fareye ve klavyeye dokunmayın. Yaklaşık 5–10 dakika sürer; test dosyaları ilk seferde hazırlanır (~1,3 GB, yerel uygulama verisinde).",
+  "id": "879a3d59",
   "en": "Each app opens the same folders in turn; time, CPU and memory are measured. Other apps' windows open and close during the test: don't touch the mouse or keyboard. It takes about 5–10 minutes; the test files are made the first time (~1.3 GB, in local app data)."
  },
  {
-  "id": "f52afac8",
-  "key": "Ortanca değerler (3 çalıştırma, ısınma turu sayılmaz). Süre: uygulama başlatıldığından pencere içeriği 500 ms boyunca değişmeyene dek. * işaretli değerlerde uygulama zaten çalışıyordu: işlemci pencere açıldıktan sonrasını, bellek tüm süreci gösterir.",
-  "tr": "Ortanca değerler (3 çalıştırma, ısınma turu sayılmaz). Süre: uygulama başlatıldığından pencere içeriği 500 ms boyunca değişmeyene dek. * işaretli değerlerde uygulama zaten çalışıyordu: işlemci pencere açıldıktan sonrasını, bellek tüm süreci gösterir.",
+  "id": "237611b5",
   "en": "Medians of 3 runs (a warm-up run isn't counted). Time: from starting the app until its window stops changing for 500 ms. * The app was already running: CPU counts from when the window appeared, memory is the whole process."
  },
  {
-  "id": "252ff602",
-  "key": "rfiles ücretsiz ve tek kişinin emeği. Beğendiysen GitHub'da bir yıldız ver: başkalarının da bulmasına yardım eder.",
-  "tr": "rfiles ücretsiz ve tek kişinin emeği. Beğendiysen GitHub'da bir yıldız ver: başkalarının da bulmasına yardım eder.",
+  "id": "8f388ffd",
   "en": "rfiles is free and made by one person. If you like it, star it on GitHub: it helps others find it."
  },
  {
-  "id": "c0ac6ae1",
-  "key": "E-posta okunamadı",
-  "tr": "E-posta okunamadı",
+  "id": "2eb91597",
   "en": "Couldn't read the e-mail"
  },
  {
-  "id": "a267ae7c",
-  "key": "(konu yok)",
-  "tr": "(konu yok)",
+  "id": "d8237c0f",
   "en": "(no subject)"
  },
  {
-  "id": "0aacc69b",
-  "key": "Kimden",
-  "tr": "Kimden",
+  "id": "18743595",
   "en": "From"
  },
  {
-  "id": "4eecd53b",
-  "key": "Kime",
-  "tr": "Kime",
+  "id": "41f59644",
   "en": "To"
  },
  {
-  "id": "b85fd9c5",
-  "key": "Tarih",
-  "tr": "Tarih",
+  "id": "3b527379",
   "en": "Date"
  },
  {
-  "id": "2d3f3708",
-  "key": "İlk 256 KB gösteriliyor",
-  "tr": "İlk 256 KB gösteriliyor",
+  "id": "935077ed",
   "en": "Showing the first 256 KB"
  },
  {
-  "id": "cdfb9ee8",
-  "key": "Ofset",
-  "tr": "Ofset",
+  "id": "8995c7ea",
   "en": "Offset"
  },
  {
-  "id": "707e075d",
-  "key": "Yarıda kalan bir kopyalama var",
-  "tr": "Yarıda kalan bir kopyalama var",
+  "id": "2a4bd401",
   "en": "A copy was cut off"
  },
  {
-  "id": "f0d45428",
-  "key": "Yarıda kalan bir taşıma var",
-  "tr": "Yarıda kalan bir taşıma var",
+  "id": "e5e76f99",
   "en": "A move was cut off"
  },
  {
-  "id": "83267ed9",
-  "key": "dosya tamamlandı",
-  "tr": "dosya tamamlandı",
+  "id": "217fc440",
   "en": "files done"
  },
  {
-  "id": "6be00554",
-  "key": "Kaldığı yerden devam edilsin mi? Tamamlanan dosyalar kaynaklarıyla yeniden karşılaştırılır, yarım kalanlar baştan kopyalanır.",
-  "tr": "Kaldığı yerden devam edilsin mi? Tamamlanan dosyalar kaynaklarıyla yeniden karşılaştırılır, yarım kalanlar baştan kopyalanır.",
+  "id": "3eba7706",
   "en": "Carry on where it stopped? Files already done are checked against their sources again; partly copied ones are copied again."
  },
  {
-  "id": "276fcd7c",
-  "key": "Vazgeç",
-  "tr": "Vazgeç",
+  "id": "1e706c21",
   "en": "Discard"
  },
  {
-  "id": "5f2e231e",
-  "key": "Sonra",
-  "tr": "Sonra",
+  "id": "f7f62b49",
   "en": "Later"
  },
  {
-  "id": "194f61c8",
-  "key": "İndirildi:",
-  "tr": "İndirildi:",
+  "id": "cb47c8fe",
   "en": "Downloaded:"
  },
  {
-  "id": "1f5a06b8",
-  "key": "Verilen",
-  "tr": "Verilen",
+  "id": "44ef5cad",
   "en": "Issued to"
  },
  {
-  "id": "5f62ca31",
-  "key": "Veren",
-  "tr": "Veren",
+  "id": "32d73b71",
   "en": "Issued by"
  },
  {
-  "id": "dcf39e11",
-  "key": "Geçerlilik",
-  "tr": "Geçerlilik",
+  "id": "d2661011",
   "en": "Valid"
  },
  {
-  "id": "21167459",
-  "key": "süresi dolmuş",
-  "tr": "süresi dolmuş",
+  "id": "47645da8",
+  "en": "This file came from another computer and might be blocked to help protect this computer.",
+  "new": true
+ },
+ {
+  "id": "987c7d5f",
+  "en": "Unblock",
+  "new": true
+ },
+ {
+  "id": "df94bca5",
+  "en": "Windows app package",
+  "new": true
+ },
+ {
+  "id": "7e7c55b7",
+  "en": "Windows app bundle",
+  "new": true
+ },
+ {
+  "id": "4a7c3c17",
+  "en": "Android app",
+  "new": true
+ },
+ {
+  "id": "bf2614b1",
+  "en": "iOS app",
+  "new": true
+ },
+ {
+  "id": "95f92c98",
+  "en": "NuGet package",
+  "new": true
+ },
+ {
+  "id": "56e8eb60",
+  "en": "ID",
+  "new": true
+ },
+ {
+  "id": "0bc8ed1f",
+  "en": "Publisher",
+  "new": true
+ },
+ {
+  "id": "e045ef67",
+  "en": "Processor",
+  "new": true
+ },
+ {
+  "id": "3f2fadec",
+  "en": "Minimum system",
+  "new": true
+ },
+ {
+  "id": "8700fd83",
+  "en": "Permissions",
+  "new": true
+ },
+ {
+  "id": "3d8466cb",
+  "en": "program",
+  "new": true
+ },
+ {
+  "id": "516f3847",
+  "en": "shared library",
+  "new": true
+ },
+ {
+  "id": "cf93e868",
+  "en": "object file",
+  "new": true
+ },
+ {
+  "id": "57867e20",
+  "en": "core dump",
+  "new": true
+ },
+ {
+  "id": "6249c9c2",
+  "en": "Loader",
+  "new": true
+ },
+ {
+  "id": "b463fa73",
+  "en": "Library name",
+  "new": true
+ },
+ {
+  "id": "2af6ce5a",
+  "en": "Needs",
+  "new": true
+ },
+ {
+  "id": "338eb632",
   "en": "expired"
  },
  {
-  "id": "2c8ae42a",
-  "key": "henüz geçerli değil",
-  "tr": "henüz geçerli değil",
+  "id": "922f38c6",
   "en": "not yet valid"
  },
  {
-  "id": "a98d238f",
-  "key": "Açıklama",
-  "tr": "Açıklama",
+  "id": "66de7a09",
   "en": "Description"
  },
  {
-  "id": "a8affc4f",
-  "key": "Şirket",
-  "tr": "Şirket",
+  "id": "c1bf0f5c",
   "en": "Company"
  },
  {
-  "id": "bc81e7ed",
-  "key": "Sürüm",
-  "tr": "Sürüm",
+  "id": "5dcdd537",
   "en": "Version"
  },
  {
-  "id": "c272ef4d",
-  "key": "Yazı tipi okunamadı",
-  "tr": "Yazı tipi okunamadı",
+  "id": "5080c83b",
   "en": "Couldn't read the font"
  },
  {
-  "id": "7b474d09",
-  "key": "glif",
-  "tr": "glif",
+  "id": "f94f75e2",
   "en": "glyphs"
  },
  {
-  "id": "d69799ce",
-  "key": "satır daha",
-  "tr": "satır daha",
+  "id": "b355d5d5",
   "en": "more rows"
  },
  {
-  "id": "f5a6fb37",
-  "key": "Metin yazı tipi",
-  "tr": "Metin yazı tipi",
+  "id": "20db8beb",
   "en": "Text font"
  },
  {
-  "id": "b93f9c14",
-  "key": "Metin boyutu",
-  "tr": "Metin boyutu",
+  "id": "2c041143",
   "en": "Text size"
  },
  {
-  "id": "675e9367",
-  "key": "Önizlenecek dosyalar",
-  "tr": "Önizlenecek dosyalar",
+  "id": "fa3695cd",
   "en": "Files to preview"
  },
  {
-  "id": "41c4c6a3",
-  "key": "Hepsi, listedekiler hariç",
-  "tr": "Hepsi, listedekiler hariç",
+  "id": "e4e8c211",
   "en": "All except those listed"
  },
  {
-  "id": "5935f483",
-  "key": "Yalnızca listedekiler",
-  "tr": "Yalnızca listedekiler",
+  "id": "c5971d2b",
   "en": "Only those listed"
  },
  {
-  "id": "486cd422",
-  "key": "Önizlenecek uzantılar",
-  "tr": "Önizlenecek uzantılar",
+  "id": "656625d4",
   "en": "Extensions to preview"
  },
  {
-  "id": "6ba24d2e",
-  "key": "Düzenle…",
-  "tr": "Düzenle…",
+  "id": "8e7efcd7",
   "en": "Edit…"
  },
  {
-  "id": "c531359b",
-  "key": "Noktalı virgülle ayırın, örneğin: .iso; .insv; .psd",
-  "tr": "Noktalı virgülle ayırın, örneğin: .iso; .insv; .psd",
+  "id": "15c360a9",
   "en": "Separate with semicolons, for example: .iso; .insv; .psd"
  },
  {
-  "id": "d8b485fc",
-  "key": "Değişiklikleri kaydet (commit)…",
-  "tr": "Değişiklikleri kaydet (commit)…",
+  "id": "b3abe58b",
   "en": "Commit changes…"
  },
  {
-  "id": "f5075245",
-  "key": "Uzak depo adresini değiştir…",
-  "tr": "Uzak depo adresini değiştir…",
+  "id": "e324d4b3",
   "en": "Change remote address…"
  },
  {
-  "id": "687cc38f",
-  "key": "Uzak depoya bağla…",
-  "tr": "Uzak depoya bağla…",
+  "id": "a0de2be7",
   "en": "Connect to a remote…"
  },
  {
-  "id": "55b01ff8",
-  "key": "Ne değiştiğini kısaca yazın",
-  "tr": "Ne değiştiğini kısaca yazın",
+  "id": "7bb74580",
   "en": "Describe the change in a few words"
  },
  {
-  "id": "625340eb",
-  "key": "Kaydediliyor:",
-  "tr": "Kaydediliyor:",
+  "id": "09055e5e",
   "en": "Committing:"
  },
  {
-  "id": "397eded4",
-  "key": "Değişiklikleri kaydet",
-  "tr": "Değişiklikleri kaydet",
+  "id": "cc701555",
   "en": "Commit changes"
  },
  {
-  "id": "f06f3df8",
-  "key": "Bu depodaki bütün değişiklikler (yeni dosyalar dahil) tek bir kayıt olarak saklanır.",
-  "tr": "Bu depodaki bütün değişiklikler (yeni dosyalar dahil) tek bir kayıt olarak saklanır.",
+  "id": "b673bd8b",
   "en": "Every change in this repository (new files included) is saved as one commit."
  },
  {
-  "id": "36051133",
-  "key": "Örneğin: Kapak resmi güncellendi",
-  "tr": "Örneğin: Kapak resmi güncellendi",
+  "id": "16be708e",
   "en": "For example: Updated the cover image"
  },
  {
-  "id": "dde53302",
-  "key": "Uzak depoya bağlanıyor:",
-  "tr": "Uzak depoya bağlanıyor:",
+  "id": "b18697f0",
   "en": "Connecting to remote:"
  },
  {
-  "id": "513d4d8e",
-  "key": "Bağla ve gönder",
-  "tr": "Bağla ve gönder",
+  "id": "34b2ada0",
   "en": "Connect and push"
  },
  {
-  "id": "d25dd367",
-  "key": "Yalnızca bağla",
-  "tr": "Yalnızca bağla",
+  "id": "8c73db55",
   "en": "Connect only"
  },
  {
-  "id": "f8b2d759",
-  "key": "Uzak depoya bağla",
-  "tr": "Uzak depoya bağla",
+  "id": "d1cc1c21",
   "en": "Connect to a remote"
  },
  {
-  "id": "7d7f0d84",
-  "key": "Uzak depo adresi",
-  "tr": "Uzak depo adresi",
+  "id": "5e23cdf7",
   "en": "Remote address"
  },
  {
-  "id": "e672d0b0",
-  "key": "GitHub, GitLab ya da başka bir sunucudaki boş bir deponun adresi. Önce orada bir depo oluşturun.",
-  "tr": "GitHub, GitLab ya da başka bir sunucudaki boş bir deponun adresi. Önce orada bir depo oluşturun.",
+  "id": "e8c0b84e",
   "en": "The address of an empty repository on GitHub, GitLab or another server. Create the repository there first."
  },
  {
-  "id": "c3d90f7c",
-  "key": "Depo adresi boş",
-  "tr": "Depo adresi boş",
+  "id": "1a1ee231",
   "en": "The repository address is empty"
  },
  {
-  "id": "d79e4468",
-  "key": "Kayıt açıklaması boş",
-  "tr": "Kayıt açıklaması boş",
+  "id": "ade1590b",
   "en": "The commit message is empty"
  },
  {
-  "id": "247fb2c6",
-  "key": "Kaydedilecek değişiklik yok",
-  "tr": "Kaydedilecek değişiklik yok",
+  "id": "d4404fa0",
   "en": "Nothing to commit"
  },
  {
-  "id": "87629b23",
-  "key": "Uzak depo bağlanamadı",
-  "tr": "Uzak depo bağlanamadı",
+  "id": "c66eb914",
   "en": "Couldn't connect the remote"
  },
  {
-  "id": "d23202d0",
-  "key": "Değişiklikler eklenemedi",
-  "tr": "Değişiklikler eklenemedi",
+  "id": "b6e4ee6f",
   "en": "Couldn't stage the changes"
  },
  {
-  "id": "f9b38f82",
-  "key": "Kaydedilemedi",
-  "tr": "Kaydedilemedi",
+  "id": "ec16c490",
   "en": "Couldn't commit"
  },
  {
-  "id": "1bb8533f",
-  "key": "Dosyayı değiştir",
-  "tr": "Dosyayı değiştir",
+  "id": "0833f65e",
   "en": "Replace the file"
  },
  {
-  "id": "15a4e193",
-  "key": "Dosyaları değiştir",
-  "tr": "Dosyaları değiştir",
+  "id": "16cc88d7",
   "en": "Replace the files"
  },
  {
-  "id": "7fb143b9",
-  "key": "Gelen dosya, hedeftekinin yerine geçer",
-  "tr": "Gelen dosya, hedeftekinin yerine geçer",
+  "id": "7afd6a19",
   "en": "The incoming file takes the place of the existing one"
  },
  {
-  "id": "5bb4f263",
-  "key": "Gelenler, hedeftekilerin yerine geçer",
-  "tr": "Gelenler, hedeftekilerin yerine geçer",
+  "id": "127d173e",
   "en": "The incoming files take the place of the existing ones"
  },
  {
-  "id": "099259ee",
-  "key": "Bu dosyayı atla",
-  "tr": "Bu dosyayı atla",
+  "id": "ecc8efec",
   "en": "Skip this file"
  },
  {
-  "id": "cdb25262",
-  "key": "Bu dosyaları atla",
-  "tr": "Bu dosyaları atla",
+  "id": "f5bca44e",
   "en": "Skip these files"
  },
  {
-  "id": "a52581b6",
-  "key": "Hedefteki olduğu gibi kalır",
-  "tr": "Hedefteki olduğu gibi kalır",
+  "id": "c2025bfe",
   "en": "The existing one stays as it is"
  },
  {
-  "id": "97833301",
-  "key": "Hedeftekiler olduğu gibi kalır",
-  "tr": "Hedeftekiler olduğu gibi kalır",
+  "id": "56fd01eb",
   "en": "The existing ones stay as they are"
  },
  {
-  "id": "9c6c7954",
-  "key": "Gelen dosya \"(2)\" gibi yeni bir adla eklenir",
-  "tr": "Gelen dosya \"(2)\" gibi yeni bir adla eklenir",
+  "id": "af5deb7a",
   "en": "The incoming file is added under a new name like \"(2)\""
  },
  {
-  "id": "9ba844d7",
-  "key": "Gelenler \"(2)\" gibi yeni adlarla eklenir",
-  "tr": "Gelenler \"(2)\" gibi yeni adlarla eklenir",
+  "id": "86d9a829",
   "en": "The incoming files are added under new names like \"(2)\""
  },
  {
-  "id": "eff439c0",
-  "key": "Her dosya için seç…",
-  "tr": "Her dosya için seç…",
+  "id": "925a8ee6",
   "en": "Choose for each file…"
  },
  {
-  "id": "210ea0af",
-  "key": "Boyutları ve tarihleri karşılaştırarak",
-  "tr": "Boyutları ve tarihleri karşılaştırarak",
+  "id": "808e0f55",
   "en": "Comparing sizes and dates"
  },
  {
-  "id": "17ee12ed",
-  "key": "Topluluk",
-  "tr": "Topluluk",
+  "id": "d559270e",
   "en": "Community"
  },
  {
-  "id": "560d8138",
-  "key": "Web sitesi",
-  "tr": "Web sitesi",
+  "id": "3013116a",
   "en": "Website"
  },
  {
-  "id": "b439e524",
-  "key": "Discord sunucusu",
-  "tr": "Discord sunucusu",
+  "id": "a7b092aa",
   "en": "Discord server"
  },
  {
-  "id": "3b26c5cf",
-  "key": "Soru sor, fikir paylaş, yeni sürümlerden haberdar ol.",
-  "tr": "Soru sor, fikir paylaş, yeni sürümlerden haberdar ol.",
+  "id": "9d38d3d8",
   "en": "Ask questions, share ideas, hear about new versions."
  },
  {
-  "id": "1e30f2e2",
-  "key": "İkisini de tut",
-  "tr": "İkisini de tut",
+  "id": "7a9b0017",
   "en": "Keep both"
  },
  {
-  "id": "8f99ec17",
-  "key": "Atla",
-  "tr": "Atla",
+  "id": "c197c7e2",
   "en": "Skip"
  },
  {
-  "id": "6c0f5e90",
-  "key": "Gelen",
-  "tr": "Gelen",
+  "id": "a3badec9",
   "en": "Incoming"
  },
  {
-  "id": "6bceb92a",
-  "key": "Hedefte",
-  "tr": "Hedefte",
+  "id": "ec71f0fc",
   "en": "Existing"
  },
  {
-  "id": "6822d89c",
-  "key": "daha yeni",
-  "tr": "daha yeni",
+  "id": "8f9a7eaa",
   "en": "newer"
  },
  {
-  "id": "2d14f299",
-  "key": "Bu ad hedefte zaten var",
-  "tr": "Bu ad hedefte zaten var",
+  "id": "e74f83e2",
   "en": "This name already exists here"
  },
  {
-  "id": "42cc5534",
-  "key": "öğe hedefte zaten var",
-  "tr": "öğe hedefte zaten var",
+  "id": "7fec230a",
   "en": "items already exist here"
  },
  {
-  "id": "f4f1a5a5",
-  "key": "Hedef:",
-  "tr": "Hedef:",
+  "id": "b11ac9ff",
   "en": "Destination:"
  },
  {
-  "id": "3e25f251",
-  "key": "Hepsini değiştir",
-  "tr": "Hepsini değiştir",
+  "id": "266cb9c0",
   "en": "Replace all"
  },
  {
-  "id": "2309f953",
-  "key": "Hepsini atla",
-  "tr": "Hepsini atla",
+  "id": "87f01165",
   "en": "Skip all"
  },
  {
-  "id": "678bbc75",
-  "key": "Hepsinde ikisini de tut",
-  "tr": "Hepsinde ikisini de tut",
+  "id": "78c122b3",
   "en": "Keep both for all"
  },
  {
-  "id": "41329db7",
-  "key": "Yalnızca daha yenileri değiştir",
-  "tr": "Yalnızca daha yenileri değiştir",
+  "id": "bdd4287b",
   "en": "Replace only newer ones"
  },
  {
-  "id": "c3971de8",
-  "key": "Ya da her biri için seçin:",
-  "tr": "Ya da her biri için seçin:",
+  "id": "86fe9483",
   "en": "Or choose for each:"
  },
  {
-  "id": "91e5c8ec",
-  "key": "diğerlerinde ikisi de tutulur",
-  "tr": "diğerlerinde ikisi de tutulur",
+  "id": "1d615c6e",
   "en": "the rest keep both"
  },
  {
-  "id": "9a57b728",
-  "key": "Hedefte aynı adlı öğeler var",
-  "tr": "Hedefte aynı adlı öğeler var",
+  "id": "4d1f015e",
   "en": "Items with the same name exist at the destination"
  },
  {
-  "id": "18e1cd41",
-  "key": "Duraklatıldı",
-  "tr": "Duraklatıldı",
+  "id": "de281feb",
   "en": "Paused"
  },
  {
-  "id": "e2f4eed9",
-  "key": "Duraklat",
-  "tr": "Duraklat",
+  "id": "44f9bf2d",
   "en": "Pause"
  },
  {
-  "id": "b7c20a9b",
-  "key": "Devam et",
-  "tr": "Devam et",
+  "id": "454d1d8a",
   "en": "Resume"
  },
  {
-  "id": "ed4a7f5d",
-  "key": "Kopyaları doğrula",
-  "tr": "Kopyaları doğrula",
+  "id": "b76a2bcd",
   "en": "Verify copies"
  },
  {
-  "id": "c9fb2fd7",
-  "key": "Kopyalama bitince her dosya kaynağıyla karşılaştırılır. Tam doğrulama kopyayı diskten okur; daha uzun sürer.",
-  "tr": "Kopyalama bitince her dosya kaynağıyla karşılaştırılır. Tam doğrulama kopyayı diskten okur; daha uzun sürer.",
+  "id": "1ddfd197",
   "en": "Each file is compared with its source after copying. Full verification reads the copy back from the disk and takes longer."
  },
  {
-  "id": "7ca2d3bd",
-  "key": "Hızlı: boyut ve tarih",
-  "tr": "Hızlı: boyut ve tarih",
+  "id": "8a6f7ce6",
   "en": "Quick: size and date"
  },
  {
-  "id": "a3f81de3",
-  "key": "Tam: içerik",
-  "tr": "Tam: içerik",
+  "id": "3be016f7",
   "en": "Full: content"
  },
  {
-  "id": "aa4c0d79",
-  "key": "Kopyalama hız sınırı",
-  "tr": "Kopyalama hız sınırı",
+  "id": "2078d534",
   "en": "Copy speed limit"
  },
  {
-  "id": "a7f4d116",
-  "key": "Ağa veya USB belleğe kopyalarken bağlantıyı tıkamamak için.",
-  "tr": "Ağa veya USB belleğe kopyalarken bağlantıyı tıkamamak için.",
+  "id": "6c4cc762",
   "en": "So copies to a network share or a USB stick don't choke the connection."
  },
  {
-  "id": "54d3539c",
-  "key": "Sınırsız",
-  "tr": "Sınırsız",
+  "id": "2d283a80",
   "en": "Unlimited"
  },
  {
-  "id": "2d3c851b",
-  "key": "Doğrulanamayan dosyalar",
-  "tr": "Doğrulanamayan dosyalar",
+  "id": "a2418365",
   "en": "Files that failed verification"
  },
  {
-  "id": "c5f676ee",
-  "key": "Doğrulanıyor…",
-  "tr": "Doğrulanıyor…",
+  "id": "dc2b8200",
   "en": "Verifying…"
  },
  {
-  "id": "c75be923",
-  "key": "Bu kopya kurulum programıyla kurulmadı: güncellemeleri GitHub'dan indirin.",
-  "tr": "Bu kopya kurulum programıyla kurulmadı: güncellemeleri GitHub'dan indirin.",
+  "id": "2008d9f3",
   "en": "This copy wasn't installed with the setup: get updates from GitHub."
  },
  {
-  "id": "3d870f7b",
-  "key": "Güncellemeler GitHub'dan gelir.",
-  "tr": "Güncellemeler GitHub'dan gelir.",
+  "id": "cdc16a72",
   "en": "Updates come from GitHub."
  },
  {
-  "id": "612308e9",
-  "key": "Denetleniyor…",
-  "tr": "Denetleniyor…",
+  "id": "87f62cb7",
   "en": "Checking…"
  },
  {
-  "id": "a28aaea5",
-  "key": "rfiles güncel.",
-  "tr": "rfiles güncel.",
+  "id": "64d5cdfc",
   "en": "rfiles is up to date."
  },
  {
-  "id": "809a61d8",
-  "key": "İndiriliyor:",
-  "tr": "İndiriliyor:",
+  "id": "7dce12c7",
   "en": "Downloading:"
  },
  {
-  "id": "e5d92e64",
-  "key": "Yeni sürüm hazır:",
-  "tr": "Yeni sürüm hazır:",
+  "id": "9eb8bce4",
   "en": "New version ready:"
  },
  {
-  "id": "89e56688",
-  "key": "Yeniden başlatınca uygulanır.",
-  "tr": "Yeniden başlatınca uygulanır.",
+  "id": "7424537f",
   "en": "It is applied when you restart."
  },
  {
-  "id": "7b7f910c",
-  "key": "Denetlenemedi:",
-  "tr": "Denetlenemedi:",
+  "id": "e5f77567",
   "en": "Could not check:"
  },
  {
-  "id": "aef898a4",
-  "key": "Sürümler sayfası",
-  "tr": "Sürümler sayfası",
+  "id": "6c9533a6",
   "en": "Releases page"
  },
  {
-  "id": "45e0c23b",
-  "key": "Yeniden başlat ve güncelle",
-  "tr": "Yeniden başlat ve güncelle",
+  "id": "c50a140e",
   "en": "Restart and update"
  },
  {
-  "id": "71e6d529",
-  "key": "Güncellemeleri denetle",
-  "tr": "Güncellemeleri denetle",
+  "id": "70ad7706",
   "en": "Check for updates"
  },
  {
-  "id": "25c27519",
-  "key": "Güncellemeler",
-  "tr": "Güncellemeler",
+  "id": "483075a5",
   "en": "Updates"
  },
  {
-  "id": "e3f50a0d",
-  "key": "Güncellemeleri kendiliğinden indir",
-  "tr": "Güncellemeleri kendiliğinden indir",
+  "id": "202326fe",
   "en": "Download updates automatically"
  },
  {
-  "id": "b6507806",
-  "key": "Arka planda denetlenir ve indirilir; bir sonraki açılışta uygulanır.",
-  "tr": "Arka planda denetlenir ve indirilir; bir sonraki açılışta uygulanır.",
+  "id": "d3efe21f",
   "en": "Checked and downloaded in the background; applied at the next start."
  },
  {
-  "id": "3750ec36",
-  "key": "GitHub'da yıldız ver",
-  "tr": "GitHub'da yıldız ver",
+  "id": "33620bde",
   "en": "Star it on GitHub"
  },
  {
-  "id": "30b905e5",
-  "key": "rfiles işinize yarıyorsa başkalarının da bulmasına yardım eder.",
-  "tr": "rfiles işinize yarıyorsa başkalarının da bulmasına yardım eder.",
+  "id": "c814d9c7",
   "en": "If rfiles is useful to you, it helps others find it."
  },
  {
-  "id": "fb2db8ea",
-  "key": "Hata bildir ya da öneride bulun",
-  "tr": "Hata bildir ya da öneride bulun",
+  "id": "5007d995",
   "en": "Report a bug or suggest something"
  },
  {
-  "id": "de6544e0",
-  "key": "Sürüm notları",
-  "tr": "Sürüm notları",
+  "id": "c52ab62f",
   "en": "Release notes"
  },
  {
-  "id": "c740ee4c",
-  "key": "Güncelleme hazır",
-  "tr": "Güncelleme hazır",
+  "id": "ec24f32b",
   "en": "Update ready"
  },
  {
-  "id": "bc982215",
-  "key": "rfiles işinize yarıyor mu? GitHub'da bir yıldız, başkalarının da bulmasına yardım eder.",
-  "tr": "rfiles işinize yarıyor mu? GitHub'da bir yıldız, başkalarının da bulmasına yardım eder.",
+  "id": "36b9a8e4",
   "en": "Enjoying rfiles? A star on GitHub helps others find it."
  },
  {
-  "id": "86fc237f",
-  "key": "Yıldız ver",
-  "tr": "Yıldız ver",
+  "id": "51677b91",
   "en": "Star"
  },
  {
-  "id": "6dcaaeec",
-  "key": "Bir daha gösterme",
-  "tr": "Bir daha gösterme",
+  "id": "4a657f06",
   "en": "Don't show again"
  },
  {
-  "id": "6685455e",
-  "key": "Aç / Kaydet pencerelerinde rfiles",
-  "tr": "Aç / Kaydet pencerelerinde rfiles",
+  "id": "68e3451c",
   "en": "rfiles in Open / Save dialogs"
  },
  {
-  "id": "17d99477",
-  "key": "Uygulamaların dosya açma, kaydetme ve klasör seçme pencereleri rfiles ile açılır. Pencereye kendi seçeneklerini ekleyen uygulamalarda Windows'un penceresi açılır. Açık uygulamalarda, yeniden başlatınca geçerli olur.",
-  "tr": "Uygulamaların dosya açma, kaydetme ve klasör seçme pencereleri rfiles ile açılır. Pencereye kendi seçeneklerini ekleyen uygulamalarda Windows'un penceresi açılır. Açık uygulamalarda, yeniden başlatınca geçerli olur.",
+  "id": "8d9f14f4",
   "en": "Apps' open, save and select-folder dialogs open in rfiles. Apps that add their own options to the dialog keep Windows' one. Apps already running pick it up once restarted."
  },
  {
-  "id": "dc29599a",
-  "key": "rustyfiles_dialog.dll bulunamadı: rfiles'ı kurulum betiğiyle kurun.",
-  "tr": "rustyfiles_dialog.dll bulunamadı: rfiles'ı kurulum betiğiyle kurun.",
+  "id": "a3180601",
   "en": "rustyfiles_dialog.dll is missing: install rfiles with the install script."
  },
  {
-  "id": "95e66d77",
-  "key": "Dosya adı:",
-  "tr": "Dosya adı:",
+  "id": "da5ac4f8",
   "en": "File name:"
  },
  {
-  "id": "aacdae2b",
-  "key": "Klasör:",
-  "tr": "Klasör:",
+  "id": "8d304745",
   "en": "Folder:"
  },
  {
-  "id": "cb5788fe",
-  "key": "Farklı kaydet",
-  "tr": "Farklı kaydet",
+  "id": "05e6edd8",
   "en": "Save as"
  },
  {
-  "id": "48339ce3",
-  "key": "Klasör seç",
-  "tr": "Klasör seç",
+  "id": "5d297463",
   "en": "Select folder"
  },
  {
-  "id": "e4f61372",
-  "key": "Klasörü seç",
-  "tr": "Klasörü seç",
-  "en": "Select folder"
- },
- {
-  "id": "f99b14cd",
-  "key": "Bir klasöre girin ya da bir klasör seçin.",
-  "tr": "Bir klasöre girin ya da bir klasör seçin.",
+  "id": "4250fd05",
   "en": "Open a folder or select one."
  },
  {
-  "id": "d46478fc",
-  "key": "Dosya bulunamadı. Adı ve klasörü denetleyin.",
-  "tr": "Dosya bulunamadı. Adı ve klasörü denetleyin.",
+  "id": "23e8602a",
   "en": "File not found. Check the name and the folder."
  },
  {
-  "id": "18d26c46",
-  "key": "Önce kaydedilecek klasörü açın.",
-  "tr": "Önce kaydedilecek klasörü açın.",
+  "id": "a0e626b9",
   "en": "Open the folder to save in first."
  },
  {
-  "id": "73478544",
-  "key": "zaten var.",
-  "tr": "zaten var.",
+  "id": "1d392639",
   "en": "already exists."
  },
  {
-  "id": "a4451c8d",
-  "key": "Değiştirmek istiyor musunuz?",
-  "tr": "Değiştirmek istiyor musunuz?",
+  "id": "70fc828a",
   "en": "Do you want to replace it?"
  },
  {
-  "id": "f8df7dd9",
-  "key": "PDF açılamadı.",
-  "tr": "PDF açılamadı.",
+  "id": "8dcb2e2e",
   "en": "The PDF could not be opened."
  },
  {
-  "id": "f592405b",
-  "key": "Bu PDF'te sayfa yok.",
-  "tr": "Bu PDF'te sayfa yok.",
+  "id": "c40f2321",
+  "en": "Opening…",
+  "new": true
+ },
+ {
+  "id": "17c0192a",
+  "en": "File search is off: turn on the name index in Settings",
+  "new": true
+ },
+ {
+  "id": "a6c0558e",
+  "en": "Search apps, files or the web",
+  "new": true
+ },
+ {
+  "id": "53d91aad",
+  "en": "Apps",
+  "new": true
+ },
+ {
+  "id": "e5a0f27e",
+  "en": "Bookmarks",
+  "new": true
+ },
+ {
+  "id": "72645431",
+  "en": "Web",
+  "new": true
+ },
+ {
+  "id": "4c13322c",
+  "en": "search the web",
+  "new": true
+ },
+ {
+  "id": "7fe6d897",
+  "en": "Ctrl+Enter: show in folder",
+  "new": true
+ },
+ {
+  "id": "13ef3f1f",
+  "en": "The file index is being built: some files may not show yet",
+  "new": true
+ },
+ {
+  "id": "a94a26b3",
+  "en": "Enter: open",
+  "new": true
+ },
+ {
+  "id": "8b152cfc",
+  "en": "Shift+Enter: preview",
+  "new": true
+ },
+ {
+  "id": "970763f8",
+  "en": "Esc: close",
+  "new": true
+ },
+ {
+  "id": "4c2f1288",
+  "en": "Another app uses this shortcut (ChatGPT, Gemini, PowerToys…): choose another one",
+  "new": true
+ },
+ {
+  "id": "34a70824",
+  "en": "This shortcut can't be used: choose a key with Ctrl, Alt, Shift or Win",
+  "new": true
+ },
+ {
+  "id": "63a38eb0",
+  "en": "Click and press the new keys to change it",
+  "new": true
+ },
+ {
+  "id": "da2a95c8",
+  "en": "Quick search",
+  "new": true
+ },
+ {
+  "id": "da565f32",
+  "en": "A shortcut from anywhere: apps, files, folders, bookmarks and the web",
+  "new": true
+ },
+ {
+  "id": "ed130bf9",
+  "en": "A shortcut from anywhere: apps, files, folders, bookmarks and the web. To use it with no window open, turn on running in the background under Advanced",
+  "new": true
+ },
+ {
+  "id": "9d51d8fb",
+  "en": "Web search",
+  "new": true
+ },
+ {
+  "id": "772a921a",
+  "en": "Search Chrome and Edge bookmarks too",
+  "new": true
+ },
+ {
+  "id": "699886df",
+  "en": "Bookmarks are read on this PC and sent nowhere",
+  "new": true
+ },
+ {
+  "id": "2ae21620",
+  "en": "DirectLook icon in the notification area",
+  "new": true
+ },
+ {
+  "id": "0cb5cdfe",
+  "en": "Not shown while rfiles runs in the background: then rfiles' icon is the only one",
+  "new": true
+ },
+ {
+  "id": "b13c71bc",
   "en": "This PDF has no pages."
  },
  {
-  "id": "f33f4d1e",
-  "key": "1 sayfa",
-  "tr": "1 sayfa",
+  "id": "917db22f",
   "en": "1 page"
  },
  {
-  "id": "91c9f6e9",
-  "key": "sayfa",
-  "tr": "sayfa",
+  "id": "abf095df",
   "en": "pages"
  },
  {
-  "id": "3c2c53b2",
-  "key": "Bu PDF parola ile korunuyor; DirectLook parolalı PDF'leri henüz açmıyor.",
-  "tr": "Bu PDF parola ile korunuyor; DirectLook parolalı PDF'leri henüz açmıyor.",
+  "id": "d4c994ff",
   "en": "This PDF is protected with a password; DirectLook doesn't open those yet."
  },
  {
-  "id": "3d70725f",
-  "key": "Bu dosya PDF olarak okunamadı; bozuk olabilir.",
-  "tr": "Bu dosya PDF olarak okunamadı; bozuk olabilir.",
+  "id": "39bb5ae7",
   "en": "This file can't be read as a PDF; it may be damaged."
  },
  {
-  "id": "8af42046",
-  "key": "Sabitlemek için buraya bırakın",
-  "tr": "Sabitlemek için buraya bırakın",
+  "id": "2be846f0",
   "en": "Drop here to pin"
  },
  {
-  "id": "1eddb53c",
-  "key": "Geri alınıyor: düzleştirme →",
-  "tr": "Geri alınıyor: düzleştirme →",
+  "id": "fd71633d",
   "en": "Undoing: flatten →"
  },
  {
-  "id": "c9c6366f",
-  "key": "Yineleniyor: düzleştirme →",
-  "tr": "Yineleniyor: düzleştirme →",
+  "id": "77089f6f",
   "en": "Redoing: flatten →"
  },
  {
-  "id": "9af6646f",
-  "key": "dosya eski yerine taşınamadı",
-  "tr": "dosya eski yerine taşınamadı",
+  "id": "e4e6afdd",
   "en": "files could not be moved back"
  },
  {
-  "id": "897bad9d",
-  "key": "dosya taşınamadı",
-  "tr": "dosya taşınamadı",
+  "id": "d152976a",
   "en": "files could not be moved"
  },
  {
-  "id": "34691c46",
-  "key": "Dil",
-  "tr": "Dil",
-  "en": "Language"
- },
- {
-  "id": "0d16ceea",
-  "key": "Sistem ayarını kullan",
-  "tr": "Sistem ayarını kullan",
+  "id": "7b63ea85",
   "en": "Use system setting"
  },
  {
-  "id": "80c8b505",
-  "key": "Tarih biçimi",
-  "tr": "Tarih biçimi",
+  "id": "5ab57a44",
   "en": "Date format"
  },
  {
-  "id": "7db983fe",
-  "key": "Uygulama: \"5 dakika önce\"; Sistem: 05.11.2026 13:45; Evrensel: 2026-11-05 13:45",
-  "tr": "Uygulama: \"5 dakika önce\"; Sistem: 05.11.2026 13:45; Evrensel: 2026-11-05 13:45",
-  "en": "App: \"5 minutes ago\"; System: 05.11.2026 13:45; Universal: 2026-11-05 13:45"
+  "id": "c6a48c75",
+  "en": "App: \"5 minutes ago\"; System: 05.11.2026 13:45; Universal: 2026-11-05 13:45; Day/month/year: 05/11/2026 13:45",
+  "new": true
  },
  {
-  "id": "1e347849",
-  "key": "Evrensel",
-  "tr": "Evrensel",
+  "id": "f9c2e80a",
   "en": "Universal"
  },
  {
-  "id": "9e6a1779",
-  "key": "Kaldığınız yerden devam edin",
-  "tr": "Kaldığınız yerden devam edin",
+  "id": "1176c704",
+  "en": "Day/month/year",
+  "new": true
+ },
+ {
+  "id": "e17fbd0c",
   "en": "Continue where you left off"
  },
  {
-  "id": "3bb4e588",
-  "key": "Yeni sekme aç",
-  "tr": "Yeni sekme aç",
+  "id": "f098460b",
   "en": "Open a new tab"
  },
  {
-  "id": "ee21c1f7",
-  "key": "Belirli sayfaları aç",
-  "tr": "Belirli sayfaları aç",
+  "id": "68c0ebf7",
   "en": "Open specific pages"
  },
  {
-  "id": "9d7266b2",
-  "key": "Başlangıç ayarları",
-  "tr": "Başlangıç ayarları",
+  "id": "93173aeb",
   "en": "Startup settings"
  },
  {
-  "id": "56d96350",
-  "key": "Kaldır",
-  "tr": "Kaldır",
+  "id": "21a5901d",
   "en": "Remove"
  },
  {
-  "id": "44eefb21",
-  "key": "Belirli sayfalar",
-  "tr": "Belirli sayfalar",
+  "id": "80b2c9f9",
   "en": "Specific pages"
  },
  {
-  "id": "8abfda23",
-  "key": "\"Belirli sayfaları aç\" seçiliyken açılır.",
-  "tr": "\"Belirli sayfaları aç\" seçiliyken açılır.",
+  "id": "60f2aa8b",
   "en": "Opens when \"Open specific pages\" is selected."
  },
  {
-  "id": "105a7f91",
-  "key": "Şu an açık sekmeleri kullan",
-  "tr": "Şu an açık sekmeleri kullan",
+  "id": "a871bc86",
   "en": "Use currently open tabs"
  },
  {
-  "id": "76ce6444",
-  "key": "Her zaman yeni açılan sekmeye geç",
-  "tr": "Her zaman yeni açılan sekmeye geç",
+  "id": "2af584bb",
   "en": "Always switch to the newly opened tab"
  },
  {
-  "id": "714b676f",
-  "key": "Çift bölme",
-  "tr": "Çift bölme",
-  "en": "Dual pane"
- },
- {
-  "id": "abb07624",
-  "key": "Yeni sekmeleri çift bölmeyle aç",
-  "tr": "Yeni sekmeleri çift bölmeyle aç",
+  "id": "1bceebec",
   "en": "Open new tabs in dual pane"
  },
  {
-  "id": "6b2a49a2",
-  "key": "Çift bölme yönü",
-  "tr": "Çift bölme yönü",
+  "id": "525f8f25",
   "en": "Dual pane orientation"
  },
  {
-  "id": "0ddbc7e2",
-  "key": "Yan yana",
-  "tr": "Yan yana",
+  "id": "6f659592",
   "en": "Side by side"
  },
  {
-  "id": "019032e2",
-  "key": "Alt alta",
-  "tr": "Alt alta",
+  "id": "8f31785e",
   "en": "Stacked"
  },
  {
-  "id": "2520ef4f",
-  "key": "Bağlam menüsü seçenekleri",
-  "tr": "Bağlam menüsü seçenekleri",
+  "id": "e7723789",
   "en": "Context menu options"
  },
  {
-  "id": "a79bdf6e",
-  "key": "Menüde hangi komutların görüneceği",
-  "tr": "Menüde hangi komutların görüneceği",
+  "id": "39dfb3f2",
   "en": "Which commands appear in the menu"
  },
  {
-  "id": "d58d671a",
-  "key": "Sıkıştır / Çıkar",
-  "tr": "Sıkıştır / Çıkar",
+  "id": "48e37b09",
   "en": "Compress / Extract"
  },
  {
-  "id": "580b64ab",
-  "key": "Kabuk uzantılarını alt menüye taşı",
-  "tr": "Kabuk uzantılarını alt menüye taşı",
+  "id": "eb0976e7",
   "en": "Move shell extensions to a submenu"
  },
  {
-  "id": "f10a5596",
-  "key": "Kapalıyken diğer uygulamaların öğeleri menünün sonunda listelenir.",
-  "tr": "Kapalıyken diğer uygulamaların öğeleri menünün sonunda listelenir.",
+  "id": "f9b40629",
   "en": "When off, items from other apps are listed at the end of the menu."
  },
  {
-  "id": "f1ce8aa1",
-  "key": "Kaydırma",
-  "tr": "Kaydırma",
+  "id": "c18874ec",
   "en": "Scrolling"
  },
  {
-  "id": "7844d12e",
-  "key": "Akıcı kaydırma",
-  "tr": "Akıcı kaydırma",
+  "id": "b0eedec4",
   "en": "Smooth scrolling"
  },
  {
-  "id": "073ff794",
-  "key": "Arka plan malzemesi",
-  "tr": "Arka plan malzemesi",
+  "id": "f0b5d9fe",
   "en": "Background material"
  },
  {
-  "id": "28c642ed",
-  "key": "Animasyonlar",
-  "tr": "Animasyonlar",
+  "id": "47318a8a",
   "en": "Animations"
  },
  {
-  "id": "dc05729c",
-  "key": "Sekme açılırken ve kapanırken kısa geçişler. Hiçbir işi geciktirmez.",
-  "tr": "Sekme açılırken ve kapanırken kısa geçişler. Hiçbir işi geciktirmez.",
+  "id": "e206421e",
   "en": "Short transitions when tabs open and close. Never delays anything."
  },
  {
-  "id": "62896a21",
-  "key": "Windows ayarına uy",
-  "tr": "Windows ayarına uy",
+  "id": "6c839ded",
   "en": "Follow Windows"
  },
  {
-  "id": "72dd3929",
-  "key": "Mica masaüstü renginden ton alır; Mica Alt daha renklidir.",
-  "tr": "Mica masaüstü renginden ton alır; Mica Alt daha renklidir.",
+  "id": "9d93e098",
   "en": "Mica takes a tint from the desktop color; Mica Alt is more colorful."
  },
  {
-  "id": "edd8f528",
-  "key": "Akrilik",
-  "tr": "Akrilik",
+  "id": "31d5cb78",
   "en": "Acrylic"
  },
  {
-  "id": "530bebfa",
-  "key": "Düz",
-  "tr": "Düz",
+  "id": "56fbec94",
   "en": "Solid"
  },
  {
-  "id": "9a5d6be5",
-  "key": "Varsayılan",
-  "tr": "Varsayılan",
+  "id": "19dc307e",
   "en": "Default"
  },
  {
-  "id": "057c4528",
-  "key": "Arka plan rengi",
-  "tr": "Arka plan rengi",
+  "id": "7dfdc6f6",
   "en": "Background color"
  },
  {
-  "id": "d85f7891",
-  "key": "Arka plan resmi",
-  "tr": "Arka plan resmi",
+  "id": "54389d3c",
   "en": "Background image"
  },
  {
-  "id": "ed9d6cf6",
-  "key": "Gözat",
-  "tr": "Gözat",
+  "id": "0eac1f07",
   "en": "Browse"
  },
  {
-  "id": "0c153ab1",
-  "key": "Görünürlük",
-  "tr": "Görünürlük",
+  "id": "4cb08905",
   "en": "Visibility"
  },
  {
-  "id": "e927fa58",
-  "key": "Resmi kaldır",
-  "tr": "Resmi kaldır",
+  "id": "cc567c9c",
   "en": "Remove image"
  },
  {
-  "id": "42721e6c",
-  "key": "Yazı tipi",
-  "tr": "Yazı tipi",
+  "id": "a77a5eb0",
   "en": "Font"
  },
  {
-  "id": "bbacef14",
-  "key": "Araç çubuğunu göster",
-  "tr": "Araç çubuğunu göster",
+  "id": "9cce7537",
   "en": "Show toolbar"
  },
  {
-  "id": "54089fab",
-  "key": "Durum çubuğunu göster",
-  "tr": "Durum çubuğunu göster",
+  "id": "ddcc835b",
   "en": "Show status bar"
  },
  {
-  "id": "ddf74c2d",
-  "key": "Kenar çubuğu bölümleri",
-  "tr": "Kenar çubuğu bölümleri",
+  "id": "e7b237ad",
   "en": "Sidebar sections"
  },
  {
-  "id": "c49041fe",
-  "key": "Sabitlenenlerle aynı klasörleri gösterir",
-  "tr": "Sabitlenenlerle aynı klasörleri gösterir",
+  "id": "cfa31c7b",
   "en": "Shows the same folders as pinned items"
  },
  {
-  "id": "979862c3",
-  "key": "Düzen ve sıralamayı tüm klasörlerde eşitle",
-  "tr": "Düzen ve sıralamayı tüm klasörlerde eşitle",
+  "id": "df50e32b",
   "en": "Use the same layout and sorting in all folders"
  },
  {
-  "id": "26a20120",
-  "key": "Kapalıyken her klasör kendi görünümünü ve sıralamasını hatırlar.",
-  "tr": "Kapalıyken her klasör kendi görünümünü ve sıralamasını hatırlar.",
+  "id": "f75544e3",
   "en": "When off, each folder remembers its own view and sorting."
  },
  {
-  "id": "dc648a0f",
-  "key": "Varsayılan düzen",
-  "tr": "Varsayılan düzen",
+  "id": "04af82c4",
   "en": "Default layout"
  },
  {
-  "id": "3c93ae13",
-  "key": "Uyarlanabilir: çoğunlukla resim/video olan klasörler ızgarada açılır.",
-  "tr": "Uyarlanabilir: çoğunlukla resim/video olan klasörler ızgarada açılır.",
+  "id": "d2ef0dfe",
   "en": "Adaptive: folders that mostly contain images or videos open in grid view."
  },
  {
-  "id": "1f677b2a",
-  "key": "Uyarlanabilir",
-  "tr": "Uyarlanabilir",
+  "id": "139bafbb",
   "en": "Adaptive"
  },
  {
-  "id": "fe3bfd58",
-  "key": "Azalan sırada",
-  "tr": "Azalan sırada",
+  "id": "6bd15173",
   "en": "Descending order"
  },
  {
-  "id": "dc33e16e",
-  "key": "Ayrıntılar görünümü",
-  "tr": "Ayrıntılar görünümü",
-  "en": "Details view"
- },
- {
-  "id": "7e772904",
-  "key": "Ad sütunu her zaman görünür",
-  "tr": "Ad sütunu her zaman görünür",
+  "id": "d2384c03",
   "en": "Name column is always visible"
  },
  {
-  "id": "1d271460",
-  "key": "Gizli öğeler",
-  "tr": "Gizli öğeler",
+  "id": "6e4a2e7d",
   "en": "Hidden items"
  },
  {
-  "id": "7092bc86",
-  "key": "Korunan işletim sistemi dosyalarını göster",
-  "tr": "Korunan işletim sistemi dosyalarını göster",
+  "id": "aa1df501",
   "en": "Show protected operating system files"
  },
  {
-  "id": "af6d7e70",
-  "key": "desktop.ini, thumbs.db gibi sistem dosyaları",
-  "tr": "desktop.ini, thumbs.db gibi sistem dosyaları",
+  "id": "3240bda8",
   "en": "System files such as desktop.ini and thumbs.db"
  },
  {
-  "id": "be36da8a",
-  "key": "Nokta ile başlayan dosyaları göster",
-  "tr": "Nokta ile başlayan dosyaları göster",
+  "id": "1b1f9cb8",
   "en": "Show files that start with a dot"
  },
  {
-  "id": "f0d351a7",
-  "key": "Kapalıyken .git, .config gibi öğeler gizli sayılır",
-  "tr": "Kapalıyken .git, .config gibi öğeler gizli sayılır",
+  "id": "94e789cf",
   "en": "When off, items such as .git and .config are treated as hidden"
  },
  {
-  "id": "d30b08cb",
-  "key": "Küçük resimleri göster",
-  "tr": "Küçük resimleri göster",
+  "id": "1acb0f09",
   "en": "Show thumbnails"
  },
  {
-  "id": "42a0fcb5",
-  "key": "Seçerken onay kutularını göster",
-  "tr": "Seçerken onay kutularını göster",
+  "id": "9418ddf3",
   "en": "Show checkboxes when selecting"
  },
  {
-  "id": "8437438d",
-  "key": "Davranışlar",
-  "tr": "Davranışlar",
+  "id": "295d7ddc",
   "en": "Behaviors"
  },
  {
-  "id": "7763f150",
-  "key": "Öğeleri tek tıklamayla aç",
-  "tr": "Öğeleri tek tıklamayla aç",
+  "id": "b28eedc0",
   "en": "Open items with a single click"
  },
  {
-  "id": "95d43336",
-  "key": "Asla",
-  "tr": "Asla",
+  "id": "b2ff2b29",
   "en": "Never"
  },
  {
-  "id": "e8d8e017",
-  "key": "Yalnızca klasörler",
-  "tr": "Yalnızca klasörler",
+  "id": "9c472368",
   "en": "Folders only"
  },
  {
-  "id": "38e2b303",
-  "key": "Her zaman",
-  "tr": "Her zaman",
+  "id": "ad4bbd04",
   "en": "Always"
  },
  {
-  "id": "a2f514e1",
-  "key": "Klasörleri yeni sekmede aç",
-  "tr": "Klasörleri yeni sekmede aç",
+  "id": "285ca771",
   "en": "Open folders in a new tab"
  },
  {
-  "id": "05e02537",
-  "key": "Silmeden önce onay iste",
-  "tr": "Silmeden önce onay iste",
+  "id": "e21ab1c6",
   "en": "Confirm before deleting"
  },
  {
-  "id": "8b88fde2",
-  "key": "Yalnızca kalıcı silmede",
-  "tr": "Yalnızca kalıcı silmede",
+  "id": "f73eb64c",
   "en": "Only for permanent deletion"
  },
  {
-  "id": "1f94180f",
-  "key": "Uzantı değişince uyar",
-  "tr": "Uzantı değişince uyar",
+  "id": "877c944c",
   "en": "Warn when the extension changes"
  },
  {
-  "id": "3106ef2a",
-  "key": "Üzerine gelince seç",
-  "tr": "Üzerine gelince seç",
+  "id": "4aaed838",
   "en": "Select on hover"
  },
  {
-  "id": "2a7e09bc",
-  "key": "Boş alana çift tıklayınca üst klasöre çık",
-  "tr": "Boş alana çift tıklayınca üst klasöre çık",
+  "id": "16fd0dcd",
   "en": "Double-click empty space to go up a folder"
  },
  {
-  "id": "6b4ba407",
-  "key": "Yukarı çıkınca önceki klasörü seç",
-  "tr": "Yukarı çıkınca önceki klasörü seç",
+  "id": "2b08546a",
   "en": "Select the previous folder when going up"
  },
  {
-  "id": "4d8a3ff0",
-  "key": "Boyut biçimi",
-  "tr": "Boyut biçimi",
+  "id": "8927ec87",
   "en": "Size format"
  },
  {
-  "id": "09309107",
-  "key": "İkili (1 KB = 1024 bayt)",
-  "tr": "İkili (1 KB = 1024 bayt)",
+  "id": "4ca4ce5c",
   "en": "Binary (1 KB = 1024 bytes)"
  },
  {
-  "id": "d820a85a",
-  "key": "Ondalık (1 KB = 1000 bayt)",
-  "tr": "Ondalık (1 KB = 1000 bayt)",
+  "id": "f42306f2",
   "en": "Decimal (1 KB = 1000 bytes)"
  },
  {
-  "id": "61f3fc9b",
-  "key": "Klasör boyutlarını hesapla",
-  "tr": "Klasör boyutlarını hesapla",
+  "id": "6304896f",
   "en": "Calculate folder sizes"
  },
  {
-  "id": "d6dc5559",
-  "key": "Boyutu hesapla",
-  "tr": "Boyutu hesapla",
+  "id": "f5c88d74",
   "en": "Calculate size"
  },
  {
-  "id": "c76ab496",
-  "key": "Boyut sütununda klasörlerin toplam boyutu gösterilir",
-  "tr": "Boyut sütununda klasörlerin toplam boyutu gösterilir",
+  "id": "15851b89",
+  "en": "Show size on disk for folders"
+ },
+ {
+  "id": "052e3f47",
+  "en": "The Size column shows folders by the space they take on disk (rounded up to whole clusters) instead of the sum of their file sizes; sorting follows it"
+ },
+ {
+  "id": "0efd295d",
   "en": "The Size column shows the total size of folders"
  },
  {
-  "id": "a70d96de",
-  "key": "Büyük klasörlerde disk ve işlemci yükü artabilir; hesap arka planda yapılır, arayüz donmaz.",
-  "tr": "Büyük klasörlerde disk ve işlemci yükü artabilir; hesap arka planda yapılır, arayüz donmaz.",
+  "id": "03d34c3b",
   "en": "Large folders can increase disk and CPU usage; calculation runs in the background and the interface stays responsive."
  },
  {
-  "id": "8f1f6d93",
-  "key": "Değiştirmek için bir komuta tıklayıp yeni tuşlara basın (Esc: vazgeç). ↺ varsayılana döndürür.",
-  "tr": "Değiştirmek için bir komuta tıklayıp yeni tuşlara basın (Esc: vazgeç). ↺ varsayılana döndürür.",
+  "id": "04e29ba9",
   "en": "To change a shortcut, click a command and press the new keys (Esc: cancel). ↺ restores the default."
  },
  {
-  "id": "85dd58d7",
-  "key": "Etiket silinsin mi?",
-  "tr": "Etiket silinsin mi?",
+  "id": "868f0233",
   "en": "Delete tag?"
  },
  {
-  "id": "d076b437",
-  "key": "Etiket tüm öğelerden kaldırılır. Dosyalar silinmez.",
-  "tr": "Etiket tüm öğelerden kaldırılır. Dosyalar silinmez.",
+  "id": "898cca80",
   "en": "The tag is removed from all items. Files are not deleted."
  },
  {
-  "id": "9949a996",
-  "key": "Renkli etiketlerle dosyaları klasörlerden bağımsız gruplayın. Renge tıklayarak değiştirin.",
-  "tr": "Renkli etiketlerle dosyaları klasörlerden bağımsız gruplayın. Renge tıklayarak değiştirin.",
+  "id": "203dcfff",
   "en": "Group files independently of folders using colored tags. Click a color to change it."
  },
  {
-  "id": "6d339b9a",
-  "key": "Yeni etiket",
-  "tr": "Yeni etiket",
+  "id": "d0a550a1",
   "en": "New tag"
  },
  {
-  "id": "a8e17645",
-  "key": "Etiketi yeniden adlandır",
-  "tr": "Etiketi yeniden adlandır",
+  "id": "51dbb30f",
   "en": "Rename tag"
  },
  {
-  "id": "69574009",
-  "key": "Etiket adı",
-  "tr": "Etiket adı",
+  "id": "e96325c2",
   "en": "Tag name"
  },
  {
-  "id": "80a231d5",
-  "key": "Kaydet",
-  "tr": "Kaydet",
+  "id": "4d2d5d68",
   "en": "Save"
  },
  {
-  "id": "572794ae",
-  "key": "Bir ad yazın",
-  "tr": "Bir ad yazın",
+  "id": "bbd85d85",
   "en": "Enter a name"
  },
  {
-  "id": "d439d830",
-  "key": "VS Code (otomatik)",
-  "tr": "VS Code (otomatik)",
+  "id": "8a518bc1",
   "en": "VS Code (automatic)"
  },
  {
-  "id": "48a24d60",
-  "key": "Durum çubuğunda \"Düzenleyicide aç\" düğmesi",
-  "tr": "Durum çubuğunda \"Düzenleyicide aç\" düğmesi",
+  "id": "e3305594",
   "en": "\"Open in editor\" button in the status bar"
  },
  {
-  "id": "433c5806",
-  "key": "Git depolarında göster",
-  "tr": "Git depolarında göster",
+  "id": "1da6a411",
   "en": "Show in Git repositories"
  },
  {
-  "id": "b543dfbf",
-  "key": "Her zaman göster",
-  "tr": "Her zaman göster",
+  "id": "70ad5145",
   "en": "Always show"
  },
  {
-  "id": "e2d063fd",
-  "key": "Gösterme",
-  "tr": "Gösterme",
+  "id": "7238c5ea",
   "en": "Don't show"
  },
  {
-  "id": "9bf734a4",
-  "key": "Düzenleyici",
-  "tr": "Düzenleyici",
+  "id": "4968bf98",
   "en": "Editor"
  },
  {
-  "id": "dc3a62d2",
-  "key": "Düzenleyici seç",
-  "tr": "Düzenleyici seç",
+  "id": "736c6899",
   "en": "Choose editor"
  },
  {
-  "id": "06966e31",
-  "key": "Ayarları dışa aktar",
-  "tr": "Ayarları dışa aktar",
+  "id": "c9351454",
   "en": "Export settings"
  },
  {
-  "id": "5b2c141f",
-  "key": "Ayarları içe aktar",
-  "tr": "Ayarları içe aktar",
+  "id": "0b438d81",
   "en": "Import settings"
  },
  {
-  "id": "e7fa9786",
-  "key": "Ayar dosyasını düzenle",
-  "tr": "Ayar dosyasını düzenle",
+  "id": "c2d969ec",
   "en": "Edit settings file"
  },
  {
-  "id": "1aba871e",
-  "key": "settings.toml metin düzenleyicide açılır",
-  "tr": "settings.toml metin düzenleyicide açılır",
+  "id": "f16954b1",
   "en": "settings.toml opens in a text editor"
  },
  {
-  "id": "346e8945",
-  "key": "Windows başladığında rfiles'ı aç",
-  "tr": "Windows başladığında rfiles'ı aç",
+  "id": "701a1194",
   "en": "Open rfiles when Windows starts"
  },
  {
-  "id": "e6672c8e",
-  "key": "Deneysel",
-  "tr": "Deneysel",
+  "id": "de49995f",
   "en": "Experimental"
  },
  {
-  "id": "df115b77",
-  "key": "Varsayılan dosya yöneticisi olarak ayarla",
-  "tr": "Varsayılan dosya yöneticisi olarak ayarla",
+  "id": "7502323d",
   "en": "Set as default file manager"
  },
  {
-  "id": "b069751d",
-  "key": "Klasörler ve Win+E rfiles ile açılır. Yalnızca bu kullanıcı için; istediğiniz an geri alınır.",
-  "tr": "Klasörler ve Win+E rfiles ile açılır. Yalnızca bu kullanıcı için; istediğiniz an geri alınır.",
+  "id": "cae6467b",
   "en": "Folders and Win+E open with rfiles. Applies to this user only and can be reverted at any time."
  },
  {
-  "id": "c8f73ffb",
-  "key": "Düzleştirme seçeneğini göster",
-  "tr": "Düzleştirme seçeneğini göster",
+  "id": "2c662706",
   "en": "Show the flatten option"
  },
  {
-  "id": "2e8dc7af",
-  "key": "Klasördeki tüm alt klasörlerin dosyalarını tek seviyeye taşır. Ctrl+Z ile geri alınır.",
-  "tr": "Klasördeki tüm alt klasörlerin dosyalarını tek seviyeye taşır. Ctrl+Z ile geri alınır.",
+  "id": "f5ba27fb",
   "en": "Moves the files from all subfolders into a single level. Ctrl+Z undoes it."
  },
  {
-  "id": "977ff775",
-  "key": "Sürüm:",
-  "tr": "Sürüm:",
+  "id": "b8066377",
   "en": "Version:"
  },
  {
-  "id": "98846aae",
-  "key": "Yardım ve destek",
-  "tr": "Yardım ve destek",
+  "id": "2e0ed478",
   "en": "Help and support"
  },
  {
-  "id": "5a689474",
-  "key": "Kayıt ve ayar klasörünü aç",
-  "tr": "Kayıt ve ayar klasörünü aç",
+  "id": "08f04f11",
   "en": "Open log and settings folder"
  },
  {
-  "id": "f928dc4d",
-  "key": "Açık kaynak",
-  "tr": "Açık kaynak",
+  "id": "a04619ce",
   "en": "Open source"
  },
  {
-  "id": "e3e02555",
-  "key": "Üçüncü taraf kütüphaneler",
-  "tr": "Üçüncü taraf kütüphaneler",
+  "id": "85e894d8",
   "en": "Third-party libraries"
  },
  {
-  "id": "0663223a",
-  "key": "Programlar",
-  "tr": "Programlar",
+  "id": "de9c06c8",
   "en": "Programs"
  },
  {
-  "id": "c15abd86",
-  "key": "Ayar dosyası",
-  "tr": "Ayar dosyası",
+  "id": "1303d72e",
   "en": "Settings file"
  },
  {
-  "id": "433def14",
-  "key": "Genel",
-  "tr": "Genel",
+  "id": "5561fd0b",
   "en": "General"
  },
  {
-  "id": "ee1a102a",
-  "key": "Eylemler",
-  "tr": "Eylemler",
+  "id": "e65fb504",
   "en": "Actions"
  },
  {
-  "id": "02d6a8d4",
-  "key": "Geliştirici araçları",
-  "tr": "Geliştirici araçları",
+  "id": "9068d9b6",
   "en": "Developer tools"
  },
  {
-  "id": "b6e06660",
-  "key": "Gelişmiş",
-  "tr": "Gelişmiş",
+  "id": "60f3de7b",
   "en": "Advanced"
  },
  {
-  "id": "b574d8dc",
-  "key": "Altın sarısı",
-  "tr": "Altın sarısı",
+  "id": "22d98a29",
   "en": "Goldenrod"
  },
  {
-  "id": "55b85761",
-  "key": "Tuğla kırmızısı",
-  "tr": "Tuğla kırmızısı",
+  "id": "117249c5",
   "en": "Brick red"
  },
  {
-  "id": "099b6b0f",
-  "key": "Gül",
-  "tr": "Gül",
+  "id": "906e6426",
   "en": "Rose"
  },
  {
-  "id": "c8ab1261",
-  "key": "İris",
-  "tr": "İris",
+  "id": "aed763c6",
   "en": "Iris"
  },
  {
-  "id": "52b179d7",
-  "key": "Deniz",
-  "tr": "Deniz",
+  "id": "1bb18a2c",
   "en": "Sea"
  },
  {
-  "id": "3fe2fd2d",
-  "key": "Nane",
-  "tr": "Nane",
+  "id": "d6696d39",
   "en": "Mint"
  },
  {
-  "id": "6337d826",
-  "key": "Kamuflaj",
-  "tr": "Kamuflaj",
+  "id": "1fb75a41",
   "en": "Camouflage"
  },
  {
-  "id": "4251719a",
-  "key": "Fırtına",
-  "tr": "Fırtına",
+  "id": "65a32136",
   "en": "Storm"
  },
  {
-  "id": "87d36af6",
-  "key": "Mavi gri",
-  "tr": "Mavi gri",
+  "id": "ee7eebf4",
   "en": "Blue gray"
  },
  {
-  "id": "cc66a567",
-  "key": "Turkuaz",
-  "tr": "Turkuaz",
+  "id": "ef22d0fa",
   "en": "Turquoise"
  },
  {
-  "id": "a6a0df39",
-  "key": "Yineleniyor: yeniden adlandırma →",
-  "tr": "Yineleniyor: yeniden adlandırma →",
+  "id": "a29255f5",
   "en": "Redoing: rename →"
  },
  {
-  "id": "91f50efa",
-  "key": "Yeni pencereye taşı",
-  "tr": "Yeni pencereye taşı",
+  "id": "723e3765",
   "en": "Move to new window"
  },
  {
-  "id": "04ada9f2",
-  "key": "Soldaki sekmeleri kapat",
-  "tr": "Soldaki sekmeleri kapat",
+  "id": "1b2804fa",
   "en": "Close tabs to the left"
  },
  {
-  "id": "6cae736b",
-  "key": "Klasörü düzenleyicide aç",
-  "tr": "Klasörü düzenleyicide aç",
+  "id": "4e228e73",
   "en": "Open folder in editor"
  },
  {
-  "id": "e98750a7",
-  "key": "Masaüstü arka planı yap",
-  "tr": "Masaüstü arka planı yap",
+  "id": "83b5556f",
   "en": "Set as desktop background"
  },
  {
-  "id": "ef1d4db8",
-  "key": "Yönetici olarak çalıştır",
-  "tr": "Yönetici olarak çalıştır",
+  "id": "853c44e3",
   "en": "Run as administrator"
  },
  {
-  "id": "0be1c4d5",
-  "key": "Yazı tipini yükle",
-  "tr": "Yazı tipini yükle",
+  "id": "f142b98d",
   "en": "Install font"
  },
  {
-  "id": "b74f9edb",
-  "key": "Yazı tipi yükleniyor:",
-  "tr": "Yazı tipi yükleniyor:",
+  "id": "6997746d",
   "en": "Installing font:"
  },
  {
-  "id": "8c41cace",
-  "key": "Arşiv oluştur…",
-  "tr": "Arşiv oluştur…",
+  "id": "82609051",
   "en": "Create archive…"
  },
  {
-  "id": "fbe2c98c",
-  "key": "Liste",
-  "tr": "Liste",
+  "id": "8d2937a1",
   "en": "List"
  },
  {
-  "id": "30198356",
-  "key": "Kartlar",
-  "tr": "Kartlar",
+  "id": "2a273ae4",
   "en": "Cards"
  },
  {
-  "id": "02975d23",
-  "key": "Kart görünümü",
-  "tr": "Kart görünümü",
+  "id": "35846895",
   "en": "Cards view"
  },
  {
-  "id": "d4fbab32",
-  "key": "Liste görünümü",
-  "tr": "Liste görünümü",
+  "id": "bcd94b36",
   "en": "List view"
  },
  {
-  "id": "8af750b0",
-  "key": "Biçim",
-  "tr": "Biçim",
+  "id": "ffb0ff72",
   "en": "Format"
  },
  {
-  "id": "bef273ec",
-  "key": "Sıkıştırma düzeyi",
-  "tr": "Sıkıştırma düzeyi",
+  "id": "d386c9ef",
   "en": "Compression level"
  },
  {
-  "id": "5782bd1d",
-  "key": "Hızlı",
-  "tr": "Hızlı",
+  "id": "853ab7cf",
   "en": "Fast"
  },
  {
   "id": "58de2772",
-  "key": "Normal",
-  "tr": "Normal",
   "en": "Normal"
  },
  {
-  "id": "7707587c",
-  "key": "En yüksek",
-  "tr": "En yüksek",
+  "id": "e2955e21",
   "en": "Maximum"
  },
  {
-  "id": "7756e1f2",
-  "key": "Bir ad girin",
-  "tr": "Bir ad girin",
-  "en": "Enter a name"
- },
- {
-  "id": "c6ac0bcd",
-  "key": "Ad şu karakterleri içeremez: \\ / : * ? \" < > |",
-  "tr": "Ad şu karakterleri içeremez: \\ / : * ? \" < > |",
+  "id": "40871824",
   "en": "A name can't contain: \\ / : * ? \" < > |"
  },
  {
-  "id": "6e3dc8de",
-  "key": "Arşiv oluştur",
-  "tr": "Arşiv oluştur",
+  "id": "40edb3c7",
   "en": "Create archive"
  },
  {
-  "id": "b744be45",
-  "key": "uzantı biçime göre eklenir",
-  "tr": "uzantı biçime göre eklenir",
+  "id": "2721bd47",
   "en": "the extension follows the format"
  },
  {
-  "id": "5cd66585",
-  "key": "Arşiv adı",
-  "tr": "Arşiv adı",
+  "id": "fd45499c",
   "en": "Archive name"
  },
  {
-  "id": "aa31a770",
-  "key": "Her zaman bu cihazda",
-  "tr": "Her zaman bu cihazda",
+  "id": "2e27613c",
   "en": "Always keep on this device"
  },
  {
-  "id": "7b9ed352",
-  "key": "Arşiv içeriği",
-  "tr": "Arşiv içeriği",
+  "id": "2455f921",
   "en": "Archive contents"
  },
  {
-  "id": "97db1edd",
-  "key": "Hedef",
-  "tr": "Hedef",
+  "id": "8b67f168",
   "en": "Target"
  },
  {
-  "id": "42a9e2c5",
-  "key": "Bağımsız değişkenler",
-  "tr": "Bağımsız değişkenler",
+  "id": "a33c193f",
   "en": "Arguments"
  },
  {
-  "id": "c7070fc0",
-  "key": "Başlangıç yeri",
-  "tr": "Başlangıç yeri",
+  "id": "5eb91ea6",
   "en": "Start in"
  },
  {
-  "id": "6368ea51",
-  "key": "Bu adla bir öğe zaten var",
-  "tr": "Bu adla bir öğe zaten var",
+  "id": "3ef212f8",
   "en": "An item with this name already exists"
  },
  {
-  "id": "27c7e486",
-  "key": "Durum",
-  "tr": "Durum",
+  "id": "005ef20f",
   "en": "Status"
  },
  {
-  "id": "45fe81b9",
-  "key": "Hata",
-  "tr": "Hata",
+  "id": "f38d9cf1",
   "en": "Error"
  },
  {
-  "id": "43c59348",
-  "key": "Birlikte açılır",
-  "tr": "Birlikte açılır",
+  "id": "4293ec56",
   "en": "Opens with"
  },
  {
-  "id": "b7543128",
-  "key": "İçerik",
-  "tr": "İçerik",
+  "id": "669c4958",
   "en": "Contains"
  },
  {
-  "id": "9465b7ab",
-  "key": "Disk üzerindeki boyut",
-  "tr": "Disk üzerindeki boyut",
+  "id": "27b459b6",
   "en": "Size on disk"
  },
  {
-  "id": "baaaefad",
-  "key": "Seçim",
-  "tr": "Seçim",
+  "id": "bdea34b5",
   "en": "Selection"
  },
  {
-  "id": "f6d19bcb",
-  "key": "Erişim",
-  "tr": "Erişim",
+  "id": "bb182fca",
   "en": "Accessed"
  },
  {
-  "id": "7942f5f7",
-  "key": "Windows özellikleri (güvenlik, paylaşım, önceki sürümler)…",
-  "tr": "Windows özellikleri (güvenlik, paylaşım, önceki sürümler)…",
+  "id": "b0ad95e2",
   "en": "Windows properties (security, sharing, previous versions)…"
  },
  {
-  "id": "fa835ad5",
-  "key": "Bu dosya için ek ayrıntı yok",
-  "tr": "Bu dosya için ek ayrıntı yok",
+  "id": "1bf37b4f",
   "en": "No further details for this file"
  },
  {
-  "id": "8d7cacc6",
-  "key": "Karmalar",
-  "tr": "Karmalar",
+  "id": "91385f1d",
   "en": "Hashes"
  },
  {
-  "id": "b7eaf7b5",
-  "key": "Arşivleri klasör gibi aç",
-  "tr": "Arşivleri klasör gibi aç",
+  "id": "0d5b5c7e",
   "en": "Open archives like folders"
  },
  {
-  "id": "036fd427",
-  "key": "ZIP, 7z ve tar dosyalarının içine çift tıklayarak girilir; içindeki dosyalar açılınca geçici bir klasöre çıkarılır",
-  "tr": "ZIP, 7z ve tar dosyalarının içine çift tıklayarak girilir; içindeki dosyalar açılınca geçici bir klasöre çıkarılır",
+  "id": "ceb8f4fa",
   "en": "Double-click a ZIP, 7z or tar file to browse it; files you open inside are extracted to a temporary folder"
  },
  {
-  "id": "0acc11a4",
-  "key": "Aramada Windows dizinini kullan",
-  "tr": "Aramada Windows dizinini kullan",
+  "id": "897ec2e6",
   "en": "Use the Windows Search index"
  },
  {
-  "id": "ed28986b",
-  "key": "Dizinlenmiş klasörlerde dosya içerikleri de aranır ve kind:picture, size:>10MB gibi filtreler çalışır",
-  "tr": "Dizinlenmiş klasörlerde dosya içerikleri de aranır ve kind:picture, size:>10MB gibi filtreler çalışır",
+  "id": "3404668f",
   "en": "In indexed folders, file contents are searched too and filters like kind:picture or size:>10MB work"
  },
  {
-  "id": "02b06ec5",
-  "key": "Git deposu başlatılıyor:",
-  "tr": "Git deposu başlatılıyor:",
+  "id": "8b4e4cb6",
   "en": "Initializing Git repository:"
  },
  {
-  "id": "9876930c",
-  "key": "Klonla",
-  "tr": "Klonla",
+  "id": "d143cd22",
   "en": "Clone"
  },
  {
-  "id": "5b6f3551",
-  "key": "Depo adresini girin",
-  "tr": "Depo adresini girin",
+  "id": "565216da",
   "en": "Enter the repository address"
  },
  {
-  "id": "9d6301d9",
-  "key": "Klonlanıyor:",
-  "tr": "Klonlanıyor:",
+  "id": "be6707cd",
   "en": "Cloning:"
  },
  {
-  "id": "8946af36",
-  "key": "Depoyu klonla",
-  "tr": "Depoyu klonla",
+  "id": "61307f96",
   "en": "Clone repository"
  },
  {
-  "id": "0bbf8dd1",
-  "key": "Depo bu klasörün içinde yeni bir klasöre klonlanır.",
-  "tr": "Depo bu klasörün içinde yeni bir klasöre klonlanır.",
+  "id": "cd0e52c0",
   "en": "The repository is cloned into a new folder inside this one."
  },
  {
-  "id": "489a5671",
-  "key": "Git deposu başlat",
-  "tr": "Git deposu başlat",
+  "id": "3c784f9d",
   "en": "Initialize Git repository"
  },
  {
-  "id": "51e21e96",
-  "key": "Depoyu klonla…",
-  "tr": "Depoyu klonla…",
+  "id": "994f3736",
   "en": "Clone repository…"
  },
  {
-  "id": "dc33aa03",
-  "key": "Hedefin konumunu aç",
-  "tr": "Hedefin konumunu aç",
+  "id": "bdda1999",
   "en": "Open target location"
  },
  {
-  "id": "6a80fd6e",
-  "key": "Sekme eylemleri",
-  "tr": "Sekme eylemleri",
+  "id": "c175da4f",
   "en": "Tab actions"
  },
  {
-  "id": "e48e04f7",
-  "key": "Kompakt görünüm",
-  "tr": "Kompakt görünüm",
+  "id": "122d2872",
   "en": "Compact overlay"
  },
  {
-  "id": "e59e5590",
-  "key": "Kompakt görünüme geç",
-  "tr": "Kompakt görünüme geç",
+  "id": "c2eec680",
   "en": "Enter compact overlay"
  },
  {
-  "id": "03eecce8",
-  "key": "Kompakt görünümden çık",
-  "tr": "Kompakt görünümden çık",
+  "id": "d6dbd3c8",
   "en": "Exit compact overlay"
  },
  {
-  "id": "dadea6f1",
-  "key": "Bölmeyi ayır",
-  "tr": "Bölmeyi ayır",
+  "id": "204b8def",
   "en": "Split pane"
  },
  {
-  "id": "676f098f",
-  "key": "Bölmeleri düzenle",
-  "tr": "Bölmeleri düzenle",
+  "id": "a2dc66a8",
   "en": "Arrange panes"
  },
  {
-  "id": "36de2a96",
-  "key": "Üst üste",
-  "tr": "Üst üste",
-  "en": "Stacked"
- },
- {
-  "id": "c261faa6",
-  "key": "Etkin bölmeyi kapat",
-  "tr": "Etkin bölmeyi kapat",
+  "id": "0ff21567",
   "en": "Close active pane"
  },
  {
-  "id": "86d940cb",
-  "key": "Sağa döndür",
-  "tr": "Sağa döndür",
+  "id": "2eaecb74",
   "en": "Rotate right"
  },
  {
-  "id": "318246da",
-  "key": "Sola döndür",
-  "tr": "Sola döndür",
+  "id": "2b3553eb",
   "en": "Rotate left"
  },
  {
-  "id": "c67b53d6",
-  "key": "Döndürülemedi",
-  "tr": "Döndürülemedi",
+  "id": "f1b8c77e",
   "en": "Couldn't rotate"
  },
  {
-  "id": "1ac925a6",
-  "key": "Klasör takma adları",
-  "tr": "Klasör takma adları",
+  "id": "ae273bdd",
   "en": "Folder aliases"
  },
  {
-  "id": "bacf766d",
-  "key": "Klasör takma adı",
-  "tr": "Klasör takma adı",
+  "id": "78dde7b1",
   "en": "Folder alias"
  },
  {
-  "id": "ccd59608",
-  "key": "Klasör takma adına git",
-  "tr": "Klasör takma adına git",
+  "id": "6c0f2268",
   "en": "Go to folder alias"
  },
  {
-  "id": "52e147b9",
-  "key": "Takma adlar",
-  "tr": "Takma adlar",
+  "id": "5c69c4bf",
   "en": "Aliases"
  },
  {
-  "id": "4522bb07",
-  "key": "Takma ad ver",
-  "tr": "Takma ad ver",
+  "id": "a7532e68",
   "en": "Add alias"
  },
  {
-  "id": "9e055bd0",
-  "key": "Takma adı düzenle",
-  "tr": "Takma adı düzenle",
+  "id": "b45c81bd",
   "en": "Edit alias"
  },
  {
-  "id": "69cd3367",
-  "key": "Henüz takma ad yok",
-  "tr": "Henüz takma ad yok",
+  "id": "88ec68ec",
   "en": "No aliases yet"
  },
  {
-  "id": "4724fc58",
-  "key": "ad",
-  "tr": "ad",
+  "id": "8d39bde6",
   "en": "name"
  },
  {
-  "id": "3c4849b7",
-  "key": "Adres çubuğuna yazarak bu klasöre gidin:",
-  "tr": "Adres çubuğuna yazarak bu klasöre gidin:",
+  "id": "78c316f3",
   "en": "Type this in the address bar to go to the folder:"
  },
  {
-  "id": "3582acb6",
-  "key": "Adres çubuğuna @ad yazarak klasöre gidin. Eklemek için bir klasöre sağ tıklayıp \"Takma ad ver…\" seçin.",
-  "tr": "Adres çubuğuna @ad yazarak klasöre gidin. Eklemek için bir klasöre sağ tıklayıp \"Takma ad ver…\" seçin.",
+  "id": "77fc53a9",
   "en": "Type @name in the address bar to go to a folder. To add one, right-click a folder and choose \"Add alias…\"."
  },
  {
-  "id": "3803cdbb",
-  "key": "Ad boş olamaz ve \\ ya da / içeremez",
-  "tr": "Ad boş olamaz ve \\ ya da / içeremez",
+  "id": "418229a9",
   "en": "The name can't be empty or contain \\ or /"
  },
  {
-  "id": "4b05310f",
-  "key": "Bu ad başka bir klasörde kullanılıyor",
-  "tr": "Bu ad başka bir klasörde kullanılıyor",
+  "id": "86c68ebf",
   "en": "This name is used by another folder"
  },
  {
-  "id": "5a0598af",
-  "key": "Pencere kapatılınca arka planda çalışmaya devam et",
-  "tr": "Pencere kapatılınca arka planda çalışmaya devam et",
+  "id": "efd6041e",
   "en": "Keep running in the background when the window is closed"
  },
  {
-  "id": "80844c0a",
-  "key": "Bildirim alanında bir simge kalır; yeni pencere anında açılır",
-  "tr": "Bildirim alanında bir simge kalır; yeni pencere anında açılır",
-  "en": "An icon stays in the notification area; new windows open instantly"
+  "id": "6196cdf0",
+  "en": "An icon stays in the system tray; new windows open instantly"
  },
  {
-  "id": "f403b061",
-  "key": "Uzun işlemler bitince bildirim göster",
-  "tr": "Uzun işlemler bitince bildirim göster",
+  "id": "2a3b1c9f",
   "en": "Notify when long operations finish"
  },
  {
-  "id": "05fcfc72",
-  "key": "Kopyalama, taşıma, sıkıştırma 10 saniyeden uzun sürdüyse ve rfiles önde değilse",
-  "tr": "Kopyalama, taşıma, sıkıştırma 10 saniyeden uzun sürdüyse ve rfiles önde değilse",
+  "id": "ebb5eb9b",
   "en": "When copying, moving or compressing took over 10 seconds and rfiles isn't in front"
  },
  {
-  "id": "bcbb332c",
-  "key": "rfiles'ı aç",
-  "tr": "rfiles'ı aç",
+  "id": "615ed8f2",
   "en": "Open rfiles"
  },
  {
-  "id": "26a92876",
-  "key": "Çıkış",
-  "tr": "Çıkış",
+  "id": "34ce44a5",
   "en": "Exit"
  },
  {
-  "id": "5c3c3617",
-  "key": "İşlem tamamlandı",
-  "tr": "İşlem tamamlandı",
+  "id": "d5ffcf64",
   "en": "Operation finished"
  },
  {
-  "id": "92c8f83a",
-  "key": "İşlem başarısız oldu",
-  "tr": "İşlem başarısız oldu",
-  "en": "Operation failed"
- },
- {
-  "id": "1e55263e",
-  "key": "Parola",
-  "tr": "Parola",
+  "id": "2cc30838",
   "en": "Password"
  },
  {
-  "id": "17dde1d1",
-  "key": "Parola koy…",
-  "tr": "Parola koy…",
+  "id": "55ef59b0",
   "en": "Set password…"
  },
  {
-  "id": "0cd2e165",
-  "key": "Parola boş olamaz",
-  "tr": "Parola boş olamaz",
+  "id": "83f4fa90",
   "en": "The password can't be empty"
  },
  {
-  "id": "3266f14a",
-  "key": "Parola yanlış. Tekrar deneyin.",
-  "tr": "Parola yanlış. Tekrar deneyin.",
+  "id": "6045aa10",
   "en": "Wrong password. Try again."
  },
  {
-  "id": "d8d58d7b",
-  "key": "Parolalar eşleşmiyor",
-  "tr": "Parolalar eşleşmiyor",
+  "id": "2b720015",
   "en": "The passwords don't match"
  },
  {
-  "id": "4bc7c81a",
-  "key": "Parolayı tekrar girin",
-  "tr": "Parolayı tekrar girin",
+  "id": "c0ddc313",
   "en": "Enter the password again"
  },
  {
-  "id": "709af136",
-  "key": "Arşiv parolası",
-  "tr": "Arşiv parolası",
+  "id": "754dd436",
   "en": "Archive password"
  },
  {
-  "id": "9487b0dd",
-  "key": "Parolayı unutursanız arşiv açılamaz.",
-  "tr": "Parolayı unutursanız arşiv açılamaz.",
+  "id": "1f867ea2",
   "en": "If you forget the password, the archive can't be opened."
  },
  {
-  "id": "a6d41ede",
-  "key": "Devam",
-  "tr": "Devam",
+  "id": "dce2da08",
   "en": "Next"
  },
  {
-  "id": "4c076d97",
-  "key": "Bu arşiv parola ile korunuyor",
-  "tr": "Bu arşiv parola ile korunuyor",
+  "id": "d5a04d24",
   "en": "This archive is password protected"
  },
  {
-  "id": "68b1ba3b",
-  "key": "Bu arşiv parola ile korunuyor.",
-  "tr": "Bu arşiv parola ile korunuyor.",
+  "id": "555946be",
   "en": "This archive is password protected."
  },
  {
-  "id": "7aa80b44",
-  "key": "tar.zst parola desteklemez; ZIP ya da 7z seçin",
-  "tr": "tar.zst parola desteklemez; ZIP ya da 7z seçin",
+  "id": "2c4395e7",
   "en": "tar.zst can't have a password; choose ZIP or 7z"
  },
  {
-  "id": "9f406df6",
-  "key": "Arşive ekleniyor:",
-  "tr": "Arşive ekleniyor:",
+  "id": "2971c78f",
   "en": "Adding to archive:"
  },
  {
-  "id": "911d2562",
-  "key": "Arşivden siliniyor:",
-  "tr": "Arşivden siliniyor:",
+  "id": "e7468db9",
   "en": "Deleting from archive:"
  },
  {
-  "id": "73277164",
-  "key": "Arşivden silinsin mi?",
-  "tr": "Arşivden silinsin mi?",
+  "id": "0d7b5f80",
   "en": "Delete from the archive?"
  },
  {
-  "id": "d6ed7f6c",
-  "key": "arşivden kalıcı olarak silinecek.",
-  "tr": "arşivden kalıcı olarak silinecek.",
+  "id": "c5b9fe8b",
   "en": "will be permanently deleted from the archive."
  },
  {
-  "id": "15ffe033",
-  "key": "Klasör",
-  "tr": "Klasör",
+  "id": "06357afd",
   "en": "Folder"
  },
  {
-  "id": "2fa8e288",
-  "key": "Önce klasörleri sırala",
-  "tr": "Önce klasörleri sırala",
+  "id": "5a33374a",
   "en": "Sort folders first"
  },
  {
-  "id": "5511c7de",
-  "key": "Önce dosyaları sırala",
-  "tr": "Önce dosyaları sırala",
+  "id": "f2545bdc",
   "en": "Sort files first"
  },
  {
-  "id": "5d3b5c88",
-  "key": "Dosyaları ve klasörleri birlikte sırala",
-  "tr": "Dosyaları ve klasörleri birlikte sırala",
+  "id": "66c49914",
   "en": "Sort files and folders together"
  },
  {
-  "id": "2a67555c",
-  "key": "Tüm klasörler için varsayılan yap",
-  "tr": "Tüm klasörler için varsayılan yap",
+  "id": "b50a5fdb",
   "en": "Make default for all folders"
  },
  {
-  "id": "9237dd38",
-  "key": "Dosya uzantıları",
-  "tr": "Dosya uzantıları",
+  "id": "ca5359af",
   "en": "File extensions"
  },
  {
-  "id": "f32d6df6",
-  "key": "Uyarlanabilir düzen",
-  "tr": "Uyarlanabilir düzen",
+  "id": "18afb25b",
   "en": "Adaptive layout"
  },
  {
-  "id": "303d07ee",
-  "key": "Filtrele",
-  "tr": "Filtrele",
+  "id": "f4a9c097",
   "en": "Filter"
  },
  {
-  "id": "f91d5339",
-  "key": "Şunlara göre filtrele",
-  "tr": "Şunlara göre filtrele",
+  "id": "39d80644",
   "en": "Filter by"
  },
  {
-  "id": "4f1be337",
-  "key": "Dosya adı",
-  "tr": "Dosya adı",
+  "id": "b0672212",
   "en": "File name"
  },
  {
-  "id": "aa435564",
-  "key": "Dosya etiketi",
-  "tr": "Dosya etiketi",
+  "id": "4836491f",
   "en": "File tag"
  },
  {
-  "id": "7ff7e27d",
-  "key": "Git durumu",
-  "tr": "Git durumu",
+  "id": "6772aa53",
   "en": "Git status"
  },
  {
-  "id": "e037bd08",
-  "key": "Eşitleme durumu",
-  "tr": "Eşitleme durumu",
+  "id": "04f84af0",
   "en": "Sync status"
  },
  {
-  "id": "e5930931",
-  "key": "Bu cihazda kullanılabilir",
-  "tr": "Bu cihazda kullanılabilir",
+  "id": "07c94a0f",
   "en": "Available on this device"
  },
  {
-  "id": "af7273ef",
-  "key": "Değiştirildi",
-  "tr": "Değiştirildi",
-  "en": "Modified"
- },
- {
-  "id": "d2206867",
-  "key": "Eklendi",
-  "tr": "Eklendi",
+  "id": "b35c3185",
   "en": "Added"
  },
  {
-  "id": "3f3df5c3",
-  "key": "Silindi",
-  "tr": "Silindi",
+  "id": "f225740a",
   "en": "Deleted"
  },
  {
-  "id": "a69d190e",
-  "key": "Yeniden adlandırıldı",
-  "tr": "Yeniden adlandırıldı",
+  "id": "78c010b5",
   "en": "Renamed"
  },
  {
-  "id": "225bcb60",
-  "key": "İzlenmiyor",
-  "tr": "İzlenmiyor",
+  "id": "58917de0",
   "en": "Untracked"
  },
  {
-  "id": "cfa61cdd",
-  "key": "Yok sayıldı",
-  "tr": "Yok sayıldı",
+  "id": "17764a05",
   "en": "Ignored"
  },
  {
-  "id": "d47b2346",
-  "key": "Çakışma",
-  "tr": "Çakışma",
+  "id": "77d3e0ef",
   "en": "Conflict"
  },
  {
-  "id": "444dd415",
-  "key": "Durum çubuğunda performans bilgisi",
-  "tr": "Durum çubuğunda performans bilgisi",
+  "id": "da58c76c",
   "en": "Performance info in the status bar"
  },
  {
-  "id": "55c15296",
-  "key": "Klasörün listelenme süresi ve çizim yöntemi (GPU / CPU)",
-  "tr": "Klasörün listelenme süresi ve çizim yöntemi (GPU / CPU)",
+  "id": "5a3ca312",
   "en": "Folder listing time and renderer (GPU / CPU)"
  },
  {
-  "id": "f0dc3ca1",
-  "key": "RAR olarak sıkıştır",
-  "tr": "RAR olarak sıkıştır",
+  "id": "0b01a0af",
   "en": "Compress to RAR"
  },
  {
-  "id": "056f1823",
-  "key": "Arşivde yeniden adlandırılıyor:",
-  "tr": "Arşivde yeniden adlandırılıyor:",
+  "id": "85c5dc81",
   "en": "Renaming in archive:"
  },
  {
-  "id": "e39c8d71",
-  "key": "Arşivde klasör oluşturuluyor:",
-  "tr": "Arşivde klasör oluşturuluyor:",
+  "id": "cd7b4a63",
   "en": "Creating folder in archive:"
  },
  {
-  "id": "1ebf53bc",
-  "key": "hesaplanıyor…",
-  "tr": "hesaplanıyor…",
+  "id": "86f5ba24",
   "en": "calculating…"
  },
  {
-  "id": "c07172fd",
-  "key": "Metin belgesi",
-  "tr": "Metin belgesi",
+  "id": "cefa2687",
   "en": "Text document"
  },
  {
-  "id": "9cad85f6",
-  "key": "Ağ sürücüsüne bağlan…",
-  "tr": "Ağ sürücüsüne bağlan…",
+  "id": "9268cf3d",
   "en": "Map network drive…"
  },
  {
-  "id": "df4cb168",
-  "key": "Ağ sürücüsü bağlantısını kes…",
-  "tr": "Ağ sürücüsü bağlantısını kes…",
+  "id": "c8a50b0f",
   "en": "Disconnect network drive…"
  },
  {
-  "id": "1228645f",
-  "key": "Son commit mesajı",
-  "tr": "Son commit mesajı",
+  "id": "7735b435",
   "en": "Last commit message"
  },
  {
-  "id": "500463d4",
-  "key": "Commit yazarı",
-  "tr": "Commit yazarı",
+  "id": "f2c8b86f",
   "en": "Commit author"
  },
  {
-  "id": "70b1f4e1",
-  "key": "Commit tarihi",
-  "tr": "Commit tarihi",
+  "id": "9223a310",
   "en": "Commit date"
  },
  {
   "id": "90338bf4",
-  "key": "Commit hash",
-  "tr": "Commit hash",
   "en": "Commit hash"
  },
  {
-  "id": "81271cf2",
-  "key": "Hızlı dosya işlemleri",
-  "tr": "Hızlı dosya işlemleri",
+  "id": "d122f9e3",
   "en": "Fast file operations"
  },
  {
-  "id": "e1ce9cee",
-  "key": "Kopyalama, başka sürücüye taşıma ve kalıcı silme kendi paralel motorumuzla. Kapalıyken her şey Windows'un motoruyla yapılır.",
-  "tr": "Kopyalama, başka sürücüye taşıma ve kalıcı silme kendi paralel motorumuzla. Kapalıyken her şey Windows'un motoruyla yapılır.",
+  "id": "110c5f2e",
   "en": "Copying, moving to another drive and permanent deletion use our own parallel engine. When off, Windows' engine does everything."
  },
  {
-  "id": "f4cd9476",
-  "key": "Çalıştır",
-  "tr": "Çalıştır",
+  "id": "8d57e66a",
   "en": "Run"
  },
  {
-  "id": "a9537587",
-  "key": "Sabitle",
-  "tr": "Sabitle",
+  "id": "d4479a34",
   "en": "Pin"
  },
  {
-  "id": "ffee521f",
-  "key": "Üstte tut",
-  "tr": "Üstte tut",
+  "id": "2050048a",
   "en": "Keep on top"
  },
  {
-  "id": "aad3b690",
-  "key": "Birlikte aç",
-  "tr": "Birlikte aç",
-  "en": "Open with"
- },
- {
-  "id": "e2fc4bf1",
-  "key": "Yeniden yükle",
-  "tr": "Yeniden yükle",
+  "id": "1a43a2ac",
   "en": "Reload"
  },
  {
-  "id": "13481fb0",
-  "key": "Diğer",
-  "tr": "Diğer",
+  "id": "4f34d900",
   "en": "More"
  },
  {
-  "id": "359f3cbf",
-  "key": "Dosya bulunamadı",
-  "tr": "Dosya bulunamadı",
+  "id": "87ea9fc6",
   "en": "File not found"
  },
  {
-  "id": "9dd61bef",
-  "key": "Değiştirme",
-  "tr": "Değiştirme",
-  "en": "Modified"
- },
- {
-  "id": "0db5888c",
-  "key": "Panoya kopyala",
-  "tr": "Panoya kopyala",
+  "id": "a833a027",
   "en": "Copy to clipboard"
  },
  {
-  "id": "4110a1d8",
-  "key": "PNG olarak kaydet…",
-  "tr": "PNG olarak kaydet…",
+  "id": "6a357429",
   "en": "Save as PNG…"
  },
  {
-  "id": "7d2a6d67",
-  "key": "Renkleri ters çevir",
-  "tr": "Renkleri ters çevir",
+  "id": "56f57db3",
   "en": "Invert colors"
  },
  {
-  "id": "66ab7c54",
-  "key": "EXIF bilgisi",
-  "tr": "EXIF bilgisi",
+  "id": "25d139ed",
   "en": "EXIF info"
  },
  {
-  "id": "b23f1de8",
-  "key": "Zemin: koyu/açık",
-  "tr": "Zemin: koyu/açık",
+  "id": "6ea0e44c",
   "en": "Background: dark/light"
  },
  {
-  "id": "a45c33be",
-  "key": "Bu resim açılamadı",
-  "tr": "Bu resim açılamadı",
+  "id": "571506a6",
   "en": "This image could not be opened"
  },
  {
-  "id": "7c98a34c",
-  "key": "rfiles'ta aç",
-  "tr": "rfiles'ta aç",
+  "id": "915b4481",
   "en": "Open in rfiles"
  },
  {
-  "id": "69c2d458",
-  "key": "arşivi",
-  "tr": "arşivi",
+  "id": "98fe03c5",
   "en": "archive"
  },
  {
-  "id": "4849cec4",
-  "key": "ve",
-  "tr": "ve",
+  "id": "0f29c2a6",
   "en": "and"
  },
  {
-  "id": "356eb895",
-  "key": "Sıkıştırılmış:",
-  "tr": "Sıkıştırılmış:",
+  "id": "57e0ade1",
   "en": "Packed:"
  },
  {
-  "id": "464019c9",
-  "key": "Açılmış:",
-  "tr": "Açılmış:",
+  "id": "16427078",
   "en": "Unpacked:"
  },
  {
-  "id": "0da069f2",
-  "key": "Bu arşiv parolalı; içeriğini görmek için klasör olarak açın",
-  "tr": "Bu arşiv parolalı; içeriğini görmek için klasör olarak açın",
+  "id": "3498e30b",
   "en": "This archive is password protected; open it as a folder to see its contents"
  },
  {
-  "id": "85adf541",
-  "key": "Bu dosya oynatılamıyor",
-  "tr": "Bu dosya oynatılamıyor",
+  "id": "390f47c4",
   "en": "This file cannot be played"
  },
  {
-  "id": "b856657f",
-  "key": "Bu biçim desteklenmiyor (ne FilmCraft ne de Windows çözebildi)",
-  "tr": "Bu biçim desteklenmiyor (ne FilmCraft ne de Windows çözebildi)",
+  "id": "000c4bf1",
   "en": "This format is not supported (neither FilmCraft nor Windows could decode it)"
  },
  {
-  "id": "99beddac",
-  "key": "Hızlı Bakış",
-  "tr": "Hızlı Bakış",
+  "id": "a8d1fd6f",
   "en": "Quick Look"
  },
  {
-  "id": "dc82a0b8",
-  "key": "Explorer ve masaüstünde de Boşluk ile önizle",
-  "tr": "Explorer ve masaüstünde de Boşluk ile önizle",
+  "id": "f649eddc",
   "en": "Preview with Space in Explorer and on the desktop too"
  },
  {
-  "id": "effdf47b",
-  "key": "Açılınca rfiles arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge)",
-  "tr": "Açılınca rfiles arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge)",
+  "id": "ed22b83e",
   "en": "When on, rfiles keeps running in the background and opens when Windows starts (icon in the notification area)"
  },
  {
-  "id": "38e53d30",
-  "key": "QuickLook çalışıyor",
-  "tr": "QuickLook çalışıyor",
+  "id": "1f16c35e",
   "en": "QuickLook is running"
  },
  {
-  "id": "ef3eb48d",
-  "key": "İki uygulama aynı tuşu dinlemesin diye sistem geneli kısayol başlatılmadı",
-  "tr": "İki uygulama aynı tuşu dinlemesin diye sistem geneli kısayol başlatılmadı",
+  "id": "6748948b",
   "en": "The system-wide shortcut was not started so that two apps don't listen for the same key"
  },
  {
-  "id": "9e4cc8c8",
-  "key": "Yine de aç",
-  "tr": "Yine de aç",
+  "id": "e0194c8c",
   "en": "Turn on anyway"
  },
  {
-  "id": "9d175f65",
-  "key": "Pencere",
-  "tr": "Pencere",
+  "id": "e78631fd",
   "en": "Window"
  },
  {
-  "id": "11c9ec19",
-  "key": "Arka plan",
-  "tr": "Arka plan",
+  "id": "bafc0abd",
   "en": "Background"
  },
  {
-  "id": "f9b86540",
-  "key": "Mica (sekmeli)",
-  "tr": "Mica (sekmeli)",
+  "id": "d68de010",
   "en": "Mica (tabbed)"
  },
  {
-  "id": "37853e54",
-  "key": "Düz renk",
-  "tr": "Düz renk",
+  "id": "ac244663",
   "en": "Solid color"
  },
  {
-  "id": "3eddfaa9",
-  "key": "Görev çubuğunda göster",
-  "tr": "Görev çubuğunda göster",
+  "id": "2ad9405a",
   "en": "Show in the taskbar"
  },
  {
-  "id": "4ae2535e",
-  "key": "Açılınca pencereyi odakla",
-  "tr": "Açılınca pencereyi odakla",
+  "id": "9b4f765c",
   "en": "Focus the window when it opens"
  },
  {
-  "id": "8e1885d3",
-  "key": "Kapalıyken klavye Explorer'da kalır: oklarla dosyalar arasında gezinilir",
-  "tr": "Kapalıyken klavye Explorer'da kalır: oklarla dosyalar arasında gezinilir",
+  "id": "5a566fbd",
   "en": "When off, the keyboard stays in Explorer: arrow keys move between files"
  },
  {
-  "id": "d2138cfc",
-  "key": "Başka pencereye geçince kapat",
-  "tr": "Başka pencereye geçince kapat",
+  "id": "706ce505",
   "en": "Close when another window is activated"
  },
  {
-  "id": "f3d216a8",
-  "key": "Sabitlenmiş pencereler açık kalır",
-  "tr": "Sabitlenmiş pencereler açık kalır",
+  "id": "889d362d",
   "en": "Pinned windows stay open"
  },
  {
-  "id": "05ccf7fe",
-  "key": "Geçiş animasyonu",
-  "tr": "Geçiş animasyonu",
+  "id": "8a5dde24",
   "en": "Transition animation"
  },
  {
-  "id": "a44623b5",
-  "key": "Yeniden yükle düğmesi",
-  "tr": "Yeniden yükle düğmesi",
+  "id": "fe43d1c0",
   "en": "Reload button"
  },
  {
-  "id": "baa38b4f",
-  "key": "Dosya değişince yeniden yükle",
-  "tr": "Dosya değişince yeniden yükle",
+  "id": "97de5666",
   "en": "Reload when the file changes"
  },
  {
-  "id": "fb574807",
-  "key": "Resim zemini",
-  "tr": "Resim zemini",
+  "id": "61f036a6",
   "en": "Image background"
  },
  {
-  "id": "b91ae75d",
-  "key": "Videoları döngüde oynat",
-  "tr": "Videoları döngüde oynat",
+  "id": "0f5ee759",
   "en": "Loop videos"
  },
  {
-  "id": "aa79ea3e",
-  "key": "Metinde satır numaraları",
-  "tr": "Metinde satır numaraları",
+  "id": "3faeac4f",
   "en": "Line numbers in text"
  },
  {
-  "id": "8f96afe7",
-  "key": "Önizlemede Alt+L",
-  "tr": "Önizlemede Alt+L",
+  "id": "c73031e1",
   "en": "Alt+L in the preview"
  },
  {
-  "id": "92bb08fc",
-  "key": "Metinde sözcük kaydırma",
-  "tr": "Metinde sözcük kaydırma",
+  "id": "8e08d329",
   "en": "Word wrap in text"
  },
  {
-  "id": "7d969391",
-  "key": "Önizlemede Alt+Z",
-  "tr": "Önizlemede Alt+Z",
+  "id": "a46404c7",
   "en": "Alt+Z in the preview"
  },
  {
-  "id": "ce943359",
-  "key": "Önizlenmeyecek uzantılar",
-  "tr": "Önizlenmeyecek uzantılar",
+  "id": "b9127147",
   "en": "Extensions not to preview"
  },
  {
-  "id": "96dc0ced",
-  "key": "settings.toml: look_ext_blocklist (ör. \".insv;.iso\")",
-  "tr": "settings.toml: look_ext_blocklist (ör. \".insv;.iso\")",
+  "id": "a3c1be9a",
   "en": "settings.toml: look_ext_blocklist (e.g. \".insv;.iso\")"
  },
  {
-  "id": "665a6660",
-  "key": "DirectLook ayarları",
-  "tr": "DirectLook ayarları",
+  "id": "6ed15038",
   "en": "DirectLook settings"
  },
  {
-  "id": "f7b48006",
-  "key": "DirectLook'u kullan",
-  "tr": "DirectLook'u kullan",
+  "id": "735c4876",
   "en": "Use DirectLook"
  },
  {
-  "id": "1a86cf38",
-  "key": "Boşluk ile önizleme. Ayrı bir program olarak çalışır: rfiles'ı yavaşlatmaz, biri kapanınca öteki etkilenmez.",
-  "tr": "Boşluk ile önizleme. Ayrı bir program olarak çalışır: rfiles'ı yavaşlatmaz, biri kapanınca öteki etkilenmez.",
+  "id": "2e98e9a7",
   "en": "Preview with Space. Runs as a separate program: it doesn't slow rfiles down, and if one closes the other is unaffected."
  },
  {
-  "id": "8a926ab5",
-  "key": "DirectLook arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge); rfiles kapalıyken de",
-  "tr": "DirectLook arka planda çalışır ve Windows başladığında açılır (bildirim alanında simge); rfiles kapalıyken de",
+  "id": "7e364d70",
   "en": "DirectLook keeps running in the background and opens when Windows starts (icon in the notification area), even while rfiles is closed"
  },
  {
-  "id": "9605c848",
-  "key": "directlook.toml: look_ext_blocklist (ör. \".insv;.iso\")",
-  "tr": "directlook.toml: look_ext_blocklist (ör. \".insv;.iso\")",
+  "id": "dbf0cddf",
   "en": "directlook.toml: look_ext_blocklist (e.g. \".insv;.iso\")"
  },
  {
   "id": "14192177",
-  "key": "DirectLook",
-  "tr": "DirectLook",
   "en": "DirectLook"
  },
  {
-  "id": "36808bc4",
-  "key": "en:Light",
-  "tr": "Açık",
+  "id": "6d824dc3",
+  "en": "Disk usage"
+ },
+ {
+  "id": "040b1d5a",
+  "en": "Show disk usage"
+ },
+ {
+  "id": "3cbbbc7a",
+  "en": "Working out disk usage…"
+ },
+ {
+  "id": "7e19c36b",
+  "en": "Closing the tab stops the scan"
+ },
+ {
+  "id": "38045754",
+  "en": "more items"
+ },
+ {
+  "id": "5f0d0e51",
+  "en": "folders could not be read"
+ },
+ {
+  "id": "8cd99478",
+  "en": "Go to this folder"
+ },
+ {
+  "id": "63890d31",
+  "en": "Show in folder"
+ },
+ {
+  "id": "e68bb722",
+  "en": "Show scrollbar"
+ },
+ {
+  "id": "01ace0a8",
+  "en": "the app was already running (not a start from scratch)"
+ },
+ {
+  "id": "2bafeda3",
+  "en": "On the right of the Details and Grid lists. Drag it, or click a spot to jump there."
+ },
+ {
+  "id": "8aeaae8b",
+  "en": "Compatibility",
+  "new": true
+ },
+ {
+  "id": "c2fe21db",
+  "en": "Security",
+  "new": true
+ },
+ {
+  "id": "dc2d52ce",
+  "en": "Digital signatures",
+  "new": true
+ },
+ {
+  "id": "c3fd1573",
+  "en": "Sharing",
+  "new": true
+ },
+ {
+  "id": "34bdb0b8",
+  "en": "Customize",
+  "new": true
+ },
+ {
+  "id": "45d3ede0",
+  "en": "Not chosen",
+  "new": true
+ },
+ {
+  "id": "16f90b63",
+  "en": "Change…",
+  "new": true
+ },
+ {
+  "id": "fe40452f",
+  "en": "All of type",
+  "new": true
+ },
+ {
+  "id": "fbfa0f71",
+  "en": "All folders",
+  "new": true
+ },
+ {
+  "id": "e761d108",
+  "en": "Multiple types",
+  "new": true
+ },
+ {
+  "id": "e6640243",
+  "en": "All in",
+  "new": true
+ },
+ {
+  "id": "a5a9004e",
+  "en": "Windows properties (previous versions and more)…",
+  "new": true
+ },
+ {
+  "id": "0227733e",
+  "en": "Read-only (only applies to files in folder)",
+  "new": true
+ },
+ {
+  "id": "8f3dc978",
+  "en": "Advanced attributes",
+  "new": true
+ },
+ {
+  "id": "2bf6e6fe",
+  "en": "Folder is ready for archiving",
+  "new": true
+ },
+ {
+  "id": "ee930ed0",
+  "en": "File is ready for archiving",
+  "new": true
+ },
+ {
+  "id": "f473ae08",
+  "en": "Allow files in this folder to have contents indexed",
+  "new": true
+ },
+ {
+  "id": "9d3c2c94",
+  "en": "Allow this file to have contents indexed",
+  "new": true
+ },
+ {
+  "id": "0f15fcfa",
+  "en": "Compress contents to save disk space",
+  "new": true
+ },
+ {
+  "id": "40287d0a",
+  "en": "Encrypt contents to secure data",
+  "new": true
+ },
+ {
+  "id": "e604e782",
+  "en": "Apply changes to subfolders and files too",
+  "new": true
+ },
+ {
+  "id": "f2277e4f",
+  "en": "Removable disk",
+  "new": true
+ },
+ {
+  "id": "35f72925",
+  "en": "Network drive",
+  "new": true
+ },
+ {
+  "id": "f81224e3",
+  "en": "CD/DVD drive",
+  "new": true
+ },
+ {
+  "id": "15c55918",
+  "en": "File system",
+  "new": true
+ },
+ {
+  "id": "4e3e8c86",
+  "en": "Used space",
+  "new": true
+ },
+ {
+  "id": "d75aad01",
+  "en": "Free space",
+  "new": true
+ },
+ {
+  "id": "666490a9",
+  "en": "Capacity",
+  "new": true
+ },
+ {
+  "id": "58510d92",
+  "en": "Full:",
+  "new": true
+ },
+ {
+  "id": "0d0711bc",
+  "en": "Disk Cleanup…",
+  "new": true
+ },
+ {
+  "id": "c6427bdb",
+  "en": "Windows properties (tools, hardware, quota)…",
+  "new": true
+ },
+ {
+  "id": "2bcc1a14",
+  "en": "Shell item",
+  "new": true
+ },
+ {
+  "id": "eb5cadf0",
+  "en": "The target's icon",
+  "new": true
+ },
+ {
+  "id": "163b5790",
+  "en": "Target type",
+  "new": true
+ },
+ {
+  "id": "4b5bcdaf",
+  "en": "Target location",
+  "new": true
+ },
+ {
+  "id": "da922ee0",
+  "en": "Shortcut key",
+  "new": true
+ },
+ {
+  "id": "1ff0c40a",
+  "en": "Normal window",
+  "new": true
+ },
+ {
+  "id": "9be0ddbb",
+  "en": "Minimized",
+  "new": true
+ },
+ {
+  "id": "6637de91",
+  "en": "Maximized",
+  "new": true
+ },
+ {
+  "id": "68e6cb10",
+  "en": "Icon",
+  "new": true
+ },
+ {
+  "id": "3d8caa46",
+  "en": "Change icon…",
+  "new": true
+ },
+ {
+  "id": "d4358f4e",
+  "en": "8-bit (256) color",
+  "new": true
+ },
+ {
+  "id": "43be06bf",
+  "en": "16-bit (65536) color",
+  "new": true
+ },
+ {
+  "id": "d72819fd",
+  "en": "System (Enhanced)",
+  "new": true
+ },
+ {
+  "id": "4e52c6ba",
+  "en": "These settings apply to the shortcut's target:",
+  "new": true
+ },
+ {
+  "id": "1fc456ce",
+  "en": "Compatibility mode",
+  "new": true
+ },
+ {
+  "id": "70ed19c3",
+  "en": "Run this program in compatibility mode for:",
+  "new": true
+ },
+ {
+  "id": "d30fea55",
+  "en": "Reduced color mode",
+  "new": true
+ },
+ {
+  "id": "e58db091",
+  "en": "Run in 640 × 480 screen resolution",
+  "new": true
+ },
+ {
+  "id": "b5614eee",
+  "en": "Disable fullscreen optimizations",
+  "new": true
+ },
+ {
+  "id": "15e26370",
+  "en": "Run this program as an administrator",
+  "new": true
+ },
+ {
+  "id": "7332611c",
+  "en": "Register this program for restart",
+  "new": true
+ },
+ {
+  "id": "49b65f22",
+  "en": "Use legacy display ICC color management",
+  "new": true
+ },
+ {
+  "id": "4cfb8866",
+  "en": "High DPI",
+  "new": true
+ },
+ {
+  "id": "08dcaafd",
+  "en": "Override high DPI scaling behavior. Scaling performed by:",
+  "new": true
+ },
+ {
+  "id": "ec85b1a2",
+  "en": "Settings are saved for your account only. This program also has settings for all users; you can change those in Windows properties.",
+  "new": true
+ },
+ {
+  "id": "be4e085e",
+  "en": "Settings are saved for your account only.",
+  "new": true
+ },
+ {
+  "id": "a54424ed",
+  "en": "Object name",
+  "new": true
+ },
+ {
+  "id": "9b22be74",
+  "en": "Owner",
+  "new": true
+ },
+ {
+  "id": "80042bc5",
+  "en": "This item has no permission list: everyone can do everything.",
+  "new": true
+ },
+ {
+  "id": "30359ea8",
+  "en": "Group or user names",
+  "new": true
+ },
+ {
+  "id": "7a3f08e3",
+  "en": "permissions",
+  "new": true
+ },
+ {
+  "id": "546d19d2",
+  "en": "Allow",
+  "new": true
+ },
+ {
+  "id": "07d5fa87",
+  "en": "Deny",
+  "new": true
+ },
+ {
+  "id": "d1a21d09",
+  "en": "Full control",
+  "new": true
+ },
+ {
+  "id": "6e1cf464",
+  "en": "Read & execute",
+  "new": true
+ },
+ {
+  "id": "593c0193",
+  "en": "List folder contents",
+  "new": true
+ },
+ {
+  "id": "4f0befe5",
+  "en": "Read",
+  "new": true
+ },
+ {
+  "id": "665c79fc",
+  "en": "Write",
+  "new": true
+ },
+ {
+  "id": "7817af0c",
+  "en": "Special permissions",
+  "new": true
+ },
+ {
+  "id": "3da9330f",
+  "en": "This item does not inherit permissions from its parent folder.",
+  "new": true
+ },
+ {
+  "id": "5592c7ea",
+  "en": "To change permissions, use Windows' Security window (it may ask for administrator permission).",
+  "new": true
+ },
+ {
+  "id": "d09e2875",
+  "en": "Windows properties…",
+  "new": true
+ },
+ {
+  "id": "c4253b6b",
+  "en": "Program",
+  "new": true
+ },
+ {
+  "id": "ae2b39ad",
+  "en": "File description",
+  "new": true
+ },
+ {
+  "id": "bbad6b03",
+  "en": "File version",
+  "new": true
+ },
+ {
+  "id": "18d39dbf",
+  "en": "Product name",
+  "new": true
+ },
+ {
+  "id": "86ba3638",
+  "en": "Product version",
+  "new": true
+ },
+ {
+  "id": "c45020de",
+  "en": "Copyright",
+  "new": true
+ },
+ {
+  "id": "de69ea8d",
+  "en": "Trademarks",
+  "new": true
+ },
+ {
+  "id": "ea991bd3",
+  "en": "Original filename",
+  "new": true
+ },
+ {
+  "id": "c378a983",
+  "en": "Internal name",
+  "new": true
+ },
+ {
+  "id": "590c76e2",
+  "en": "Architecture",
+  "new": true
+ },
+ {
+  "id": "54346010",
+  "en": "Folder path",
+  "new": true
+ },
+ {
+  "id": "d76345b8",
+  "en": "Computer",
+  "new": true
+ },
+ {
+  "id": "29fd6dae",
+  "en": "this PC",
+  "new": true
+ },
+ {
+  "id": "d3e685ed",
+  "en": "This digital signature is OK.",
+  "new": true
+ },
+ {
+  "id": "a765d2e4",
+  "en": "This digital signature is not valid.",
+  "new": true
+ },
+ {
+  "id": "11c38893",
+  "en": "Signer",
+  "new": true
+ },
+ {
+  "id": "12bea3fd",
+  "en": "Digest",
+  "new": true
+ },
+ {
+  "id": "29ade1c3",
+  "en": "Timestamp",
+  "new": true
+ },
+ {
+  "id": "845434ff",
+  "en": "Signature details",
+  "new": true
+ },
+ {
+  "id": "1d26afc4",
+  "en": "Digest algorithm",
+  "new": true
+ },
+ {
+  "id": "df0932dd",
+  "en": "Signing time",
+  "new": true
+ },
+ {
+  "id": "491c49c7",
+  "en": "Not timestamped",
+  "new": true
+ },
+ {
+  "id": "8d002304",
+  "en": "Network file and folder sharing",
+  "new": true
+ },
+ {
+  "id": "eb0bbef4",
+  "en": "Shared",
+  "new": true
+ },
+ {
+  "id": "31332218",
+  "en": "Network path",
+  "new": true
+ },
+ {
+  "id": "027c3513",
+  "en": "Not shared",
+  "new": true
+ },
+ {
+  "id": "f6385f00",
+  "en": "Turning sharing on or changing it needs administrator permission; it is done in Windows' Sharing window.",
+  "new": true
+ },
+ {
+  "id": "e7d4f9e6",
+  "en": "Folder icon",
+  "new": true
+ },
+ {
+  "id": "366dd974",
+  "en": "Restore default",
+  "new": true
+ },
+ {
+  "id": "2dd035c8",
+  "en": "The icon is set by writing a desktop.ini file into the folder; File Explorer shows the same icon.",
+  "new": true
+ },
+ {
+  "id": "0469eab2",
+  "en": "the signature does not match the file",
+  "new": true
+ },
+ {
+  "id": "f74a9d07",
+  "en": "the certificate is not trusted",
+  "new": true
+ },
+ {
+  "id": "a80ab172",
+  "en": "the certificate has expired",
+  "new": true
+ },
+ {
+  "id": "264c42a7",
+  "en": "the certificate chain could not be built",
+  "new": true
+ },
+ {
+  "id": "5e6d4f8b",
+  "en": "the certificate is explicitly distrusted",
+  "new": true
+ },
+ {
+  "id": "34f0ff04",
+  "en": "no signature",
+  "new": true
+ },
+ {
+  "id": "7535c339",
+  "en": "the certificate has been revoked",
+  "new": true
+ },
+ {
+  "id": "f4c68dc5",
+  "en": "the certificate is not valid for code signing",
+  "new": true
+ },
+ {
+  "id": "ca4d3beb",
+  "en": "dictionaries larger than 4 GB (RAR 7)",
+  "new": true
+ },
+ {
+  "id": "293fed25",
+  "en": "Couldn't read the 7z archive",
+  "new": true
+ },
+ {
+  "id": "5fda02b5",
+  "en": "Couldn't create the 7z archive",
+  "new": true
+ },
+ {
+  "id": "a81f1735",
+  "en": "a 7z compression method or header format",
+  "new": true
+ },
+ {
+  "id": "d472e80b",
+  "en": "Couldn't write to the 7z archive: {}",
+  "new": true
+ },
+ {
+  "id": "73690b65",
+  "en": "Archive",
+  "new": true
+ },
+ {
+  "id": "f3b02c5e",
+  "en": "Couldn't open the archive: {}",
+  "new": true
+ },
+ {
+  "id": "f43ec8a5",
+  "en": "The archive is damaged or only partly downloaded; try downloading it again. (Details: {what})",
+  "new": true
+ },
+ {
+  "id": "5ea5c66e",
+  "en": "Couldn't read the archive file: {x}",
+  "new": true
+ },
+ {
+  "id": "15d860d4",
+  "en": "Couldn't read an archive entry: {display}",
+  "new": true
+ },
+ {
+  "id": "2540f46d",
+  "en": "Couldn't read an archive entry: {name}",
+  "new": true
+ },
+ {
+  "id": "daa3a09f",
+  "en": "Couldn't update the archive: {}",
+  "new": true
+ },
+ {
+  "id": "df06c9fb",
+  "en": "Couldn't save the archive: {}",
+  "new": true
+ },
+ {
+  "id": "e6758619",
+  "en": "Couldn't write the archive",
+  "new": true
+ },
+ {
+  "id": "9a6788d4",
+  "en": "Can't pull with a detached HEAD",
+  "new": true
+ },
+ {
+  "id": "225db539",
+  "en": "Can't push with a detached HEAD",
+  "new": true
+ },
+ {
+  "id": "e8226ae7",
+  "en": "an unknown header type",
+  "new": true
+ },
+ {
+  "id": "b63c5c28",
+  "en": "an unknown RAR compression method",
+  "new": true
+ },
+ {
+  "id": "115333a9",
+  "en": "files of unrecorded size",
+  "new": true
+ },
+ {
+  "id": "a36f6a0d",
+  "en": "Branch '{branch}' doesn't track a remote branch",
+  "new": true
+ },
+ {
+  "id": "d26b0d22",
+  "en": "An item with this name already exists: {}",
+  "new": true
+ },
+ {
+  "id": "e3014911",
+  "en": "This archive format can't be edited",
+  "new": true
+ },
+ {
+  "id": "4eb49824",
+  "en": "This archive uses a feature that isn't supported yet: {feature}.",
+  "new": true
+ },
+ {
+  "id": "ce02e0f5",
+  "en": "This archive is password-protected",
+  "new": true
+ },
+ {
+  "id": "ea18ec08",
+  "en": "This archive uses the old encryption of RAR 1.5/2.0, which rfiles doesn't open. WinRAR or 7-Zip can.",
+  "new": true
+ },
+ {
+  "id": "bc9c86ab",
+  "en": "This format doesn't support passwords",
+  "new": true
+ },
+ {
+  "id": "3ff4dba9",
+  "en": "This file isn't an archive, or its start is damaged.",
+  "new": true
+ },
+ {
+  "id": "138394b5",
+  "en": "This is a very old archive in the RAR 1.3/1.4 format (1990s), which rfiles doesn't open. WinRAR or 7-Zip can.",
+  "new": true
+ },
+ {
+  "id": "02f3e4da",
+  "en": "exit code {}",
+  "new": true
+ },
+ {
+  "id": "79a94f04",
+  "en": "output",
+  "new": true
+ },
+ {
+  "id": "60837bcc",
+  "en": "A part of the multi-part archive is missing. Put all the parts (.part1.rar, .part2.rar… or .rar, .r00, .r01…) in the same folder and try again.",
+  "new": true
+ },
+ {
+  "id": "a9920528",
+  "en": "git status failed",
+  "new": true
+ },
+ {
+  "id": "b5b191dc",
+  "en": "Couldn't stash the changes",
+  "new": true
+ },
+ {
+  "id": "7c703379",
+  "en": "Switched branch, but the stashed changes couldn't be reapplied (they're still in git stash list)",
+  "new": true
+ },
+ {
+  "id": "bbfc0249",
+  "en": "Couldn't read the remotes",
+  "new": true
+ },
+ {
+  "id": "6e38cc63",
+  "en": "Couldn't initialise the repository",
+  "new": true
+ },
+ {
+  "id": "8e7fd036",
+  "en": "Branch not found: {branch}",
+  "new": true
+ },
+ {
+  "id": "9a0feaa8",
+  "en": "Couldn't switch branch: {err}",
+  "new": true
+ },
+ {
+  "id": "63fb3406",
+  "en": "Couldn't switch branch: local changes conflict. Stash or discard them.\n{err}",
+  "new": true
+ },
+ {
+  "id": "2ab414da",
+  "en": "Unsupported archive type",
+  "new": true
+ },
+ {
+  "id": "5ef346d4",
+  "en": "Unsupported archive type: {}",
+  "new": true
+ },
+ {
+  "id": "5e82e4c2",
+  "en": "Couldn't open the file: {}",
+  "new": true
+ },
+ {
+  "id": "35a7a7eb",
+  "en": "Couldn't open the file: {}: {e}",
+  "new": true
+ },
+ {
+  "id": "81f0d54e",
+  "en": "Couldn't read the file: {}",
+  "new": true
+ },
+ {
+  "id": "52a8483e",
+  "en": "Couldn't create the file: {}",
+  "new": true
+ },
+ {
+  "id": "58cf8e6a",
+  "en": "No files to add were found",
+  "new": true
+ },
+ {
+  "id": "a1396ec0",
+  "en": "Nothing to add",
+  "new": true
+ },
+ {
+  "id": "55bfed53",
+  "en": "Invalid name",
+  "new": true
+ },
+ {
+  "id": "39c31128",
+  "en": "Invalid starting point: {f}",
+  "new": true
+ },
+ {
+  "id": "68a04659",
+  "en": "Invalid branch name: {branch}",
+  "new": true
+ },
+ {
+  "id": "4c70b770",
+  "en": "Invalid branch name: {name}",
+  "new": true
+ },
+ {
+  "id": "a3446579",
+  "en": "Invalid file name",
+  "new": true
+ },
+ {
+  "id": "7c2b2b48",
+  "en": "Invalid source path",
+  "new": true
+ },
+ {
+  "id": "42c9f132",
+  "en": "git status failed: {}",
+  "new": true
+ },
+ {
+  "id": "88c176ed",
+  "en": "Unsafe archive entry (invalid name): {name}",
+  "new": true
+ },
+ {
+  "id": "f1e28b5d",
+  "en": "Unsafe archive entry (absolute path): {name}",
+  "new": true
+ },
+ {
+  "id": "5d33ac6c",
+  "en": "Unsafe archive entry (path traversal): {name}",
+  "new": true
+ },
+ {
+  "id": "7df7dd02",
+  "en": "Couldn't create the destination folder",
+  "new": true
+ },
+ {
+  "id": "5e24fe7b",
+  "en": "Stopped by the user",
+  "new": true
+ },
+ {
+  "id": "1a2e0f7a",
+  "en": "The ISO has too many entries",
+  "new": true
+ },
+ {
+  "id": "f9cf4764",
+  "en": "Couldn't open the ISO file: {e}",
+  "new": true
+ },
+ {
+  "id": "cb8e6f59",
+  "en": "The ISO folder tree is too deep",
+  "new": true
+ },
+ {
+  "id": "06e1c77c",
+  "en": "Couldn't read an ISO folder: {e}",
+  "new": true
+ },
+ {
+  "id": "11723e93",
+  "en": "Couldn't read the ISO (it may be damaged): {e}",
+  "new": true
+ },
+ {
+  "id": "8a44ddb5",
+  "en": "Couldn't read the ISO: {e:?}",
+  "new": true
+ },
+ {
+  "id": "e15f1103",
+  "en": "Source not found: {}",
+  "new": true
+ },
+ {
+  "id": "7cef724f",
+  "en": "Couldn't open a source file",
+  "new": true
+ },
+ {
+  "id": "7ea41a9c",
+  "en": "Couldn't read the folder: {}",
+  "new": true
+ },
+ {
+  "id": "16df9ec2",
+  "en": "Couldn't create the folder",
+  "new": true
+ },
+ {
+  "id": "ef3f4b6c",
+  "en": "Couldn't create the folder: {}",
+  "new": true
+ },
+ {
+  "id": "9b7be29f",
+  "en": "Couldn't copy: {name}",
+  "new": true
+ },
+ {
+  "id": "b2a616b0",
+  "en": "\"{name}\" came out damaged (checksum mismatch). The archive may be damaged; try downloading it again.",
+  "new": true
+ },
+ {
+  "id": "1e42f327",
+  "en": "Item not found",
+  "new": true
+ },
+ {
+  "id": "893635f7",
+  "en": "Couldn't read: {}",
+  "new": true
+ },
+ {
+  "id": "28ee9327",
+  "en": "Couldn't create: {}",
+  "new": true
+ },
+ {
+  "id": "be914279",
+  "en": "a ZIP split into parts",
+  "new": true
+ },
+ {
+  "id": "08891eef",
+  "en": "Wrong password",
+  "new": true
+ },
+ {
+  "id": "30db69d3",
+  "en": "Wrong password.",
+  "new": true
+ },
+ {
+  "id": "e7753e0d",
+  "en": "The RAR archive is locked",
+  "new": true
+ },
+ {
+  "id": "a414236e",
+  "en": "Couldn't write the RAR file (the disk may be full)",
+  "new": true
+ },
+ {
+  "id": "2ffb9857",
+  "en": "Couldn't create the RAR file",
+  "new": true
+ },
+ {
+  "id": "81188ec0",
+  "en": "Couldn't start Rar.exe",
+  "new": true
+ },
+ {
+  "id": "ee2fe84f",
+  "en": "Not enough memory for RAR",
+  "new": true
+ },
+ {
+  "id": "05866209",
+  "en": "RAR command line error",
+  "new": true
+ },
+ {
+  "id": "cd8e01d9",
+  "en": "Couldn't create the RAR archive",
+  "new": true
+ },
+ {
+  "id": "ef5d4d52",
+  "en": "Couldn't create the RAR archive (CRC error)",
+  "new": true
+ },
+ {
+  "id": "1304358a",
+  "en": "Couldn't create the RAR archive (fatal error)",
+  "new": true
+ },
+ {
+  "id": "40aa53e4",
+  "en": "Wrong RAR password",
+  "new": true
+ },
+ {
+  "id": "d6330a28",
+  "en": "an encryption method",
+  "new": true
+ },
+ {
+  "id": "6403ee9e",
+  "en": "Nothing to delete",
+  "new": true
+ },
+ {
+  "id": "4accaca9",
+  "en": "Nothing to compress",
+  "new": true
+ },
+ {
+  "id": "3dd6e187",
+  "en": "Couldn't read the compressed file",
+  "new": true
+ },
+ {
+  "id": "8520c0df",
+  "en": "Couldn't read a tar link",
+  "new": true
+ },
+ {
+  "id": "ef15a8c5",
+  "en": "Couldn't read a tar entry",
+  "new": true
+ },
+ {
+  "id": "361ed6b3",
+  "en": "Couldn't read the tar archive",
+  "new": true
+ },
+ {
+  "id": "3c7f7a85",
+  "en": "Couldn't read the UDF file system: {e}",
+  "new": true
+ },
+ {
+  "id": "99d194b9",
+  "en": "No remote is set up",
+  "new": true
+ },
+ {
+  "id": "e87d567f",
+  "en": "{what} failed: {msg}",
+  "new": true
+ },
+ {
+  "id": "d78697c7",
+  "en": "WinRAR not found",
+  "new": true
+ },
+ {
+  "id": "cba1d81a",
+  "en": "the writer stopped",
+  "new": true
+ },
+ {
+  "id": "94c3b5ea",
+  "en": "Couldn't write: {}",
+  "new": true
+ },
+ {
+  "id": "e553bf51",
+  "en": "Couldn't write: {target}",
+  "new": true
+ },
+ {
+  "id": "5cef4622",
+  "en": "Write error",
+  "new": true
+ },
+ {
+  "id": "969caa62",
+  "en": "a ZIP AES encryption strength",
+  "new": true
+ },
+ {
+  "id": "3d723a1d",
+  "en": "Couldn't read the zip file",
+  "new": true
+ },
+ {
+  "id": "c9e70c0a",
+  "en": "Couldn't decode a zip entry name",
+  "new": true
+ },
+ {
+  "id": "56f05474",
+  "en": "Couldn't copy a zip entry",
+  "new": true
+ },
+ {
+  "id": "90f448ad",
+  "en": "Couldn't read a zip entry",
+  "new": true
+ },
+ {
+  "id": "3461571c",
+  "en": "a ZIP compression or encryption method (possibly PKWARE strong encryption)",
+  "new": true
+ },
+ {
+  "id": "d9d8f196",
+  "en": "Invalid regular expression: {0}",
+  "new": true
+ },
+ {
+  "id": "53a3f56e",
+  "en": "Folder not found: {}",
+  "new": true
+ },
+ {
+  "id": "70185f6a",
+  "en": "This file type can't be rotated",
+  "new": true
+ },
+ {
+  "id": "74ce336f",
+  "en": "Removable Disk",
+  "new": true
+ },
+ {
+  "id": "13fb8c5c",
+  "en": "Optical Drive (CD/DVD)",
+  "new": true
+ },
+ {
+  "id": "ac3d365d",
+  "en": "Not Connected",
+  "new": true
+ },
+ {
+  "id": "728c59c3",
+  "en": "Disk usage — {}",
+  "new": true
+ },
+ {
+  "id": "6ad9a52b",
+  "en": "Search: {query}",
+  "new": true
+ },
+ {
+  "id": "a715ef0f",
+  "en": "just now",
+  "new": true
+ },
+ {
+  "id": "1dab4d76",
+  "en": "{n} min ago",
+  "new": true
+ },
+ {
+  "id": "185f8986",
+  "en": "{n} h ago",
+  "new": true
+ },
+ {
+  "id": "0b676baa",
+  "en": "{n} d ago",
+  "new": true
+ },
+ {
+  "id": "8ad2f8cf",
   "en": "Light",
   "note": "same Turkish word, this meaning"
  },
  {
+  "id": "80e3e0aa",
+  "en": "Couldn't add: {}",
+  "new": true
+ },
+ {
+  "id": "1bffda95",
+  "en": "Couldn't add to the 7z archive",
+  "new": true
+ },
+ {
+  "id": "6e52d64b",
+  "en": "Couldn't add to the 7z archive: {}",
+  "new": true
+ },
+ {
+  "id": "26cce7fe",
+  "en": "The file already exists",
+  "new": true
+ },
+ {
+  "id": "ebde3e66",
+  "en": "Couldn't list the branches",
+  "new": true
+ },
+ {
+  "id": "3f1ff063",
+  "en": "Couldn't delete the branch",
+  "new": true
+ },
+ {
+  "id": "73f78123",
+  "en": "Couldn't open the network location",
+  "new": true
+ },
+ {
+  "id": "946078d2",
+  "en": "Couldn't open the drive",
+  "new": true
+ },
+ {
+  "id": "51403aed",
+  "en": "Wrong user name or password. Try again:",
+  "new": true
+ },
+ {
+  "id": "25045119",
+  "en": "The server asks for a user name and password:",
+  "new": true
+ },
+ {
+  "id": "66ff7560",
+  "en": "Enter a user name",
+  "new": true
+ },
+ {
+  "id": "db89a899",
+  "en": "Connect",
+  "new": true
+ },
+ {
+  "id": "744be623",
+  "en": "Sign in",
+  "new": true
+ },
+ {
+  "id": "5a6db215",
+  "en": "User name",
+  "new": true
+ },
+ {
+  "id": "5e7da75e",
+  "en": "Not mounted",
+  "new": true
+ },
+ {
+  "id": "74f576af",
+  "en": "Volume",
+  "new": true
+ },
+ {
+  "id": "77cf4173",
+  "en": "Translucent windows let the desktop show through; with blur, compositors that support it (KDE, Hyprland) blur it.",
+  "new": true
+ },
+ {
+  "id": "77e6768c",
+  "en": "Translucent",
+  "new": true
+ },
+ {
+  "id": "542b186d",
+  "en": "Translucent with blur",
+  "new": true
+ },
+ {
+  "id": "da9717e3",
+  "en": "Cloud folders",
+  "new": true
+ },
+ {
+  "id": "8bbc6af3",
+  "en": "Show drives as",
+  "new": true
+ },
+ {
+  "id": "b80db5f4",
+  "en": "Names in the sidebar and on the home page",
+  "new": true
+ },
+ {
+  "id": "e559bae4",
+  "en": "Automatic: label, share or folder",
+  "new": true
+ },
+ {
+  "id": "26e4024f",
+  "en": "Mount point: /mnt/media",
+  "new": true
+ },
+ {
+  "id": "3e60dbdb",
+  "en": "Last folder: media",
+  "new": true
+ },
+ {
+  "id": "52f79cf9",
+  "en": "Device or share: sda1, //server/share",
+  "new": true
+ },
+ {
+  "id": "03158d40",
+  "en": "Show network folders by their address",
+  "new": true
+ },
+ {
+  "id": "cda7d248",
+  "en": "smb://server/share in the address bar, instead of where it is mounted (/run/user/…)",
+  "new": true
+ },
+ {
+  "id": "e17dba5f",
+  "en": "When off, the keyboard stays in rfiles: arrow keys move between files",
+  "new": true
+ },
+ {
+  "id": "e2bc337e",
+  "en": "Open rfiles when you log in",
+  "new": true
+ },
+ {
+  "id": "8515e5f4",
+  "en": "Copying, moving to another drive and permanent deletion use our parallel engine. When off, files are copied one at a time.",
+  "new": true
+ },
+ {
+  "id": "0ad7d225",
+  "en": "Folders opened from other apps, and \"Show in folder\" in browsers, open in rfiles. Applies to this user only; turning it off brings back the previous file manager.",
+  "new": true
+ },
+ {
+  "id": "c5302ee5",
+  "en": "Couldn't eject the drive",
+  "new": true
+ },
+ {
+  "id": "b083d3c4",
+  "en": "Couldn't unmount the drive",
+  "new": true
+ },
+ {
+  "id": "b0d6ea96",
+  "en": "Eject",
+  "new": true
+ },
+ {
+  "id": "fa055a2b",
+  "en": "Unmount",
+  "new": true
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
-  "tr": "{n} öğe",
   "en": "{n} item"
  },
  {
   "id": "d4723af8",
   "key": "@items_other",
-  "tr": "{n} öğe",
   "en": "{n} items"
  },
  {
   "id": "917b3f81",
   "key": "@selected_one",
-  "tr": "{n} öğe seçildi",
   "en": "{n} item selected"
  },
  {
   "id": "6d827cbf",
   "key": "@selected_other",
-  "tr": "{n} öğe seçildi",
   "en": "{n} items selected"
  },
  {
   "id": "1bc065b4",
   "key": "@percent",
-  "tr": "%{v}",
   "en": "{v}%",
   "note": "where the % sign goes in this language"
- },
- {
-  "id": "5d57c6f0",
-  "key": "Klasörlerde disk üzerindeki boyutu göster",
-  "tr": "Klasörlerde disk üzerindeki boyutu göster",
-  "en": "Show size on disk for folders"
- },
- {
-  "id": "241b2a9f",
-  "key": "Boyut sütunu klasörler için dosya boyutlarının toplamı yerine kümelere yuvarlanmış boyutu gösterir; sıralama da buna göre yapılır",
-  "tr": "Boyut sütunu klasörler için dosya boyutlarının toplamı yerine kümelere yuvarlanmış boyutu gösterir; sıralama da buna göre yapılır",
-  "en": "The Size column shows folders by the space they take on disk (rounded up to whole clusters) instead of the sum of their file sizes; sorting follows it"
- },
- {
-  "id": "16fafed3",
-  "key": "Cihazlar",
-  "tr": "Cihazlar",
-  "en": "Devices"
- },
- {
-  "id": "be3cb212",
-  "key": "Bu klasör salt okunur",
-  "tr": "Bu klasör salt okunur",
-  "en": "This folder is read-only"
- },
- {
-  "id": "bba08e14",
-  "key": "Telefon gibi cihazlardaki öğeler burada değiştirilemez; kopyalayıp başka bir klasöre yapıştırabilirsiniz.",
-  "tr": "Telefon gibi cihazlardaki öğeler burada değiştirilemez; kopyalayıp başka bir klasöre yapıştırabilirsiniz.",
-  "en": "Items on devices such as phones can't be changed here; copy them and paste them into another folder."
- },
- {
-  "id": "7450cc15",
-  "key": "Cihazdan kopyalanıyor:",
-  "tr": "Cihazdan kopyalanıyor:",
-  "en": "Copying from device:"
- },
- {
-  "id": "eecbf1b8",
-  "key": "Disk kullanımı",
-  "tr": "Disk kullanımı",
-  "en": "Disk usage"
- },
- {
-  "id": "84283d09",
-  "key": "Disk kullanımını göster",
-  "tr": "Disk kullanımını göster",
-  "en": "Show disk usage"
- },
- {
-  "id": "61ec32a9",
-  "key": "Disk kullanımı hesaplanıyor…",
-  "tr": "Disk kullanımı hesaplanıyor…",
-  "en": "Calculating disk usage…"
- },
- {
-  "id": "9de07d77",
-  "key": "Sekmeyi kapatmak taramayı durdurur",
-  "tr": "Sekmeyi kapatmak taramayı durdurur",
-  "en": "Closing the tab stops the scan"
- },
- {
-  "id": "c0187744",
-  "key": "Diskteki boyut",
-  "tr": "Diskteki boyut",
-  "en": "Size on disk"
- },
- {
-  "id": "69146383",
-  "key": "Bu klasöre git",
-  "tr": "Bu klasöre git",
-  "en": "Go to this folder"
- },
- {
-  "id": "22542ba8",
-  "key": "Klasörde göster",
-  "tr": "Klasörde göster",
-  "en": "Show in folder"
- },
- {
-  "id": "d76b8c14",
-  "key": "klasör okunamadı",
-  "tr": "klasör okunamadı",
-  "en": "folders couldn't be read"
- },
- {
-  "id": "186c7384",
-  "key": "öğe daha",
-  "tr": "öğe daha",
-  "en": "more items"
- },
- {
-  "id": "592b041e",
-  "key": "Kaydırma çubuğunu göster",
-  "tr": "Kaydırma çubuğunu göster",
-  "en": "Show scrollbar"
- },
- {
-  "id": "bbee80be",
-  "key": "Ayrıntılar ve Izgara listelerinin sağında; sürükleyin ya da bir yere tıklayıp oraya atlayın.",
-  "tr": "Ayrıntılar ve Izgara listelerinin sağında; sürükleyin ya da bir yere tıklayıp oraya atlayın.",
-  "en": "On the right of the Details and Grid lists. Drag it, or click a spot to jump there."
- },
- {
-  "id": "2f99c3cb",
-  "key": "uygulama zaten çalışıyordu (sıfırdan açılış değil)",
-  "tr": "uygulama zaten çalışıyordu (sıfırdan açılış değil)",
-  "en": "the app was already running (not a start from scratch)"
  }
 ]

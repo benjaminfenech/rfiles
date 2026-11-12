@@ -180,7 +180,7 @@ impl HashPanel {
             return;
         }
         for _ in 0..ALGOS.len() {
-            let input = cx.new(|cx| InputState::new(window, cx).placeholder(crate::t!("Karşılaştır: hash yapıştır")));
+            let input = cx.new(|cx| InputState::new(window, cx).placeholder(crate::t!("Compare: paste a hash")));
             self._subs.push(cx.subscribe_in(&input, window, |_, _, ev: &InputEvent, _, cx| {
                 if matches!(ev, InputEvent::Change) {
                     cx.notify();
@@ -260,7 +260,7 @@ impl Render for HashPanel {
                                 .bg(p.hover)
                                 .cursor_pointer()
                                 .hover(|s| s.bg(p.pressed))
-                                .child(t!("İptal"))
+                                .child(t!("Cancel"))
                                 .on_click(cx.listener(|this, _, _, cx| this.cancel(cx))),
                         ),
                 )
@@ -275,7 +275,7 @@ impl Render for HashPanel {
                 .id("hp-retry")
                 .text_xs()
                 .text_color(p.text_secondary)
-                .child(t!("İptal edildi. Yeniden hesaplamak için tıklayın."))
+                .child(t!("Cancelled. Click to calculate again."))
                 .cursor_pointer()
                 .on_click(cx.listener(|this, _, _, cx| {
                     let path = this.path.clone();
@@ -348,7 +348,7 @@ impl Render for HashPanel {
                         None => div()
                             .text_xs()
                             .text_color(p.text_tertiary)
-                            .child(if running { t!("Hesaplanıyor…") } else { "—" })
+                            .child(if running { t!("Calculating…") } else { "—" })
                             .into_any_element(),
                     })
                     .child(

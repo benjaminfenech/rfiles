@@ -252,7 +252,7 @@ impl SelectView {
             }
         })];
         let search = search.then(|| {
-            let input = cx.new(|cx| InputState::new(window, cx).placeholder(t!("Ara")));
+            let input = cx.new(|cx| InputState::new(window, cx).placeholder(t!("Search")));
             subs.push(cx.subscribe_in(&input, window, |this: &mut Self, input, ev: &InputEvent, _, cx| {
                 if let InputEvent::Change = ev {
                     let q = input.read(cx).value().to_string();
@@ -329,7 +329,7 @@ impl Render for SelectView {
         let p = Palette::for_window(window);
         let mut list = v_flex().id("select-list").flex_1().min_h_0().overflow_y_scroll().track_scroll(&self.scroll);
         if self.shown.is_empty() {
-            list = list.child(div().h(px(ROW_H)).flex().items_center().justify_center().text_sm().text_color(p.text_secondary).child(t!("Eşleşen öğe yok")));
+            list = list.child(div().h(px(ROW_H)).flex().items_center().justify_center().text_sm().text_color(p.text_secondary).child(t!("No matching items")));
         }
         for (pos, &ix) in self.shown.iter().enumerate() {
             let c = &self.choices[ix];

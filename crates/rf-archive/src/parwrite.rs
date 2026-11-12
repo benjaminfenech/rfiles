@@ -64,7 +64,7 @@ pub(crate) fn write_new(wanted: &Path, data: &[u8], mtime: Option<SystemTime>, m
     // antivirus filter)
     if let Some(parent) = wanted.parent() {
         if !made.lock().unwrap().contains(parent) {
-            fs::create_dir_all(parent).with_context(|| format!("Klasör oluşturulamadı: {}", parent.display()))?;
+            fs::create_dir_all(parent).with_context(|| format!("Couldn't create the folder: {}", parent.display()))?;
             made.lock().unwrap().insert(parent.to_path_buf());
         }
     }
@@ -77,14 +77,14 @@ pub(crate) fn write_new(wanted: &Path, data: &[u8], mtime: Option<SystemTime>, m
                 let next = unique_path(wanted, true);
                 if next == target {
                     // unique_path saw nothing there yet create_new did: someone else's race
-                    return Err(e).with_context(|| format!("Dosya oluşturulamadı: {}", target.display()));
+                    return Err(e).with_context(|| format!("Couldn't create the file: {}", target.display()));
                 }
                 target = next;
             }
-            Err(e) => return Err(e).with_context(|| format!("Dosya oluşturulamadı: {}", target.display())),
+            Err(e) => return Err(e).with_context(|| format!("Couldn't create the file: {}", target.display())),
         }
     };
-    let res = file.write_all(data).with_context(|| format!("Yazılamadı: {}", target.display()));
+    let res = file.write_all(data).with_context(|| format!("Couldn't write: {}", target.display()));
     if res.is_ok() {
         if let Some(t) = mtime {
             let _ = file.set_modified(t);
@@ -125,7 +125,7 @@ impl ParWriter {
         }
         self.check()?;
         if let Some(tx) = &self.tx {
-            tx.send(Job { wanted, data, mtime }).map_err(|_| anyhow::anyhow!("yazıcı durdu"))?;
+            tx.send(Job { wanted, data, mtime }).map_err(|_| anyhow::anyhow!("the writer stopped"))?;
         }
         Ok(())
     }
@@ -136,7 +136,7 @@ impl ParWriter {
             if let Some(e) = self.sh.error.lock().unwrap().take() {
                 return Err(e);
             }
-            anyhow::bail!("Yazma hatası");
+            anyhow::bail!("Write error");
         }
         Ok(())
     }
@@ -240,7 +240,7 @@ mod tests {
         // a folder can't be made where a file is
         pw.submit(d.join("dosya/içinde.txt"), b"y".to_vec(), None).unwrap();
         let err = pw.finish().unwrap_err();
-        assert!(format!("{err:#}").contains("Klasör oluşturulamadı"), "{err:#}");
+        assert!(format!("{err:#}").contains("Couldn't create the folder"), "{err:#}");
         let _ = fs::remove_dir_all(&d);
     }
 

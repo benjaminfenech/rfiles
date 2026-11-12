@@ -163,15 +163,15 @@ impl Drop for ConflictView {
 
 fn label(r: Resolve) -> &'static str {
     match r {
-        Resolve::KeepBoth => t!("İkisini de tut"),
-        Resolve::Replace => t!("Değiştir"),
-        Resolve::Skip => t!("Atla"),
+        Resolve::KeepBoth => t!("Keep both"),
+        Resolve::Replace => t!("Replace"),
+        Resolve::Skip => t!("Skip"),
     }
 }
 
 /// "23 bayt · 08.11.2026 05:57" (or "Klasör · …").
 fn facts(size: u64, is_dir: bool, time: Option<SystemTime>) -> String {
-    let mut parts = vec![if is_dir { t!("Klasör").to_string() } else { rf_core::format::size(size) }];
+    let mut parts = vec![if is_dir { t!("Folder").to_string() } else { rf_core::format::size(size) }];
     if let Some(ms) = ms(time) {
         parts.push(rf_core::format::datetime_full(ms));
     }
@@ -185,7 +185,7 @@ fn side(p: &Palette, title: &str, size: u64, is_dir: bool, time: Option<SystemTi
         .text_color(p.text_secondary)
         .child(div().w(px(56.)).flex_shrink_0().child(title.to_string()))
         .child(div().min_w_0().overflow_hidden().text_ellipsis().whitespace_nowrap().child(facts(size, is_dir, time)))
-        .when(newer, |d| d.child(div().flex_shrink_0().px_1().rounded(px(3.)).bg(p.hover).text_color(p.accent).child(t!("daha yeni"))))
+        .when(newer, |d| d.child(div().flex_shrink_0().px_1().rounded(px(3.)).bg(p.hover).text_color(p.accent).child(t!("newer"))))
 }
 
 fn newer_flags(c: &Conflict) -> (bool, bool) {
@@ -201,13 +201,13 @@ impl ConflictView {
         let one = self.list.len() == 1;
         let text = |r: Option<Resolve>| -> (&'static str, &'static str) {
             match (r, one) {
-                (Some(Resolve::Replace), true) => (t!("Dosyayı değiştir"), t!("Gelen dosya, hedeftekinin yerine geçer")),
-                (Some(Resolve::Replace), false) => (t!("Dosyaları değiştir"), t!("Gelenler, hedeftekilerin yerine geçer")),
-                (Some(Resolve::Skip), true) => (t!("Bu dosyayı atla"), t!("Hedefteki olduğu gibi kalır")),
-                (Some(Resolve::Skip), false) => (t!("Bu dosyaları atla"), t!("Hedeftekiler olduğu gibi kalır")),
-                (Some(Resolve::KeepBoth), true) => (t!("İkisini de tut"), t!("Gelen dosya \"(2)\" gibi yeni bir adla eklenir")),
-                (Some(Resolve::KeepBoth), false) => (t!("İkisini de tut"), t!("Gelenler \"(2)\" gibi yeni adlarla eklenir")),
-                (None, _) => (t!("Her dosya için seç…"), t!("Boyutları ve tarihleri karşılaştırarak")),
+                (Some(Resolve::Replace), true) => (t!("Replace the file"), t!("The incoming file takes the place of the existing one")),
+                (Some(Resolve::Replace), false) => (t!("Replace the files"), t!("The incoming files take the place of the existing ones")),
+                (Some(Resolve::Skip), true) => (t!("Skip this file"), t!("The existing one stays as it is")),
+                (Some(Resolve::Skip), false) => (t!("Skip these files"), t!("The existing ones stay as they are")),
+                (Some(Resolve::KeepBoth), true) => (t!("Keep both"), t!("The incoming file is added under a new name like \"(2)\"")),
+                (Some(Resolve::KeepBoth), false) => (t!("Keep both"), t!("The incoming files are added under new names like \"(2)\"")),
+                (None, _) => (t!("Choose for each file…"), t!("Comparing sizes and dates")),
             }
         };
         let mut col = v_flex().px_4().gap_1();
@@ -279,8 +279,8 @@ impl ConflictView {
                             .min_w_0()
                             .gap(px(2.))
                             .child(div().text_sm().overflow_hidden().text_ellipsis().whitespace_nowrap().child(name))
-                            .child(side(p, t!("Gelen"), c.src_size, c.src_dir, c.src_time, src_newer))
-                            .child(side(p, t!("Hedefte"), c.dst_size, c.dst_dir, c.dst_time, dst_newer)),
+                            .child(side(p, t!("Incoming"), c.src_size, c.src_dir, c.src_time, src_newer))
+                            .child(side(p, t!("Existing"), c.dst_size, c.dst_dir, c.dst_time, dst_newer)),
                     )
                     .child(div().w(px(170.)).flex_shrink_0().child(select_box(SharedString::from(format!("conflict-{i}")), p, label(current), move |_| {
                         options
@@ -299,7 +299,7 @@ impl ConflictView {
             );
         }
         if self.list.len() > SHOWN {
-            rows = rows.child(div().px_3().py_2().text_xs().text_color(p.text_secondary).child(format!("+{} · {}", self.list.len() - SHOWN, t!("diğerlerinde ikisi de tutulur"))));
+            rows = rows.child(div().px_3().py_2().text_xs().text_color(p.text_secondary).child(format!("+{} · {}", self.list.len() - SHOWN, t!("the rest keep both"))));
         }
         rows
     }
@@ -332,7 +332,7 @@ impl Render for ConflictView {
             c.and_then(|c| if dst { c.dst.parent() } else { c.src.parent() }).map(rf_core::history::display_name).unwrap_or_default()
         };
         let route = format!("{} → {}", place(self.list.first(), false), place(self.list.first(), true));
-        let title = if n == 1 { t!("Bu ad hedefte zaten var").to_string() } else { format!("{} {}", n, t!("öğe hedefte zaten var")) };
+        let title = if n == 1 { t!("This name already exists here").to_string() } else { format!("{} {}", n, t!("items already exist here")) };
 
         // a single clash: both versions side by side under the title
         let single = (n == 1).then(|| {
@@ -355,8 +355,8 @@ impl Render for ConflictView {
                         .min_w_0()
                         .gap(px(2.))
                         .child(div().text_sm().overflow_hidden().text_ellipsis().whitespace_nowrap().child(name))
-                        .child(side(&p, t!("Gelen"), c.src_size, c.src_dir, c.src_time, src_newer))
-                        .child(side(&p, t!("Hedefte"), c.dst_size, c.dst_dir, c.dst_time, dst_newer)),
+                        .child(side(&p, t!("Incoming"), c.src_size, c.src_dir, c.src_time, src_newer))
+                        .child(side(&p, t!("Existing"), c.dst_size, c.dst_dir, c.dst_time, dst_newer)),
                 )
         });
 
@@ -366,14 +366,14 @@ impl Render for ConflictView {
             h_flex()
                 .gap_2()
                 .child(
-                    button(&p, "cf-back", t!("Geri"), false).on_click(cx.listener(|v, _, _, cx| {
+                    button(&p, "cf-back", t!("Back"), false).on_click(cx.listener(|v, _, _, cx| {
                         v.each = false;
                         cx.notify();
                     })),
                 )
                 .child(div().flex_1())
-                .child(button(&p, "cf-cancel", t!("İptal"), false).on_click(cx.listener(|v, _, window, cx| v.answer(None, window, cx))))
-                .child(button(&p, "cf-go", t!("Devam"), true).on_click(cx.listener(|v, _, window, cx| {
+                .child(button(&p, "cf-cancel", t!("Cancel"), false).on_click(cx.listener(|v, _, window, cx| v.answer(None, window, cx))))
+                .child(button(&p, "cf-go", t!("Next"), true).on_click(cx.listener(|v, _, window, cx| {
                     let c = v.choice.clone();
                     v.answer(Some(c), window, cx);
                 })))
@@ -388,11 +388,11 @@ impl Render for ConflictView {
                         .text_color(p.accent)
                         .cursor_pointer()
                         .hover(|s| s.underline())
-                        .child(t!("Yalnızca daha yenileri değiştir"))
+                        .child(t!("Replace only newer ones"))
                         .on_click(cx.listener(|v, _, window, cx| v.newer(window, cx))),
                 )
                 .child(div().flex_1())
-                .child(button(&p, "cf-cancel", t!("İptal"), false).on_click(cx.listener(|v, _, window, cx| v.answer(None, window, cx))))
+                .child(button(&p, "cf-cancel", t!("Cancel"), false).on_click(cx.listener(|v, _, window, cx| v.answer(None, window, cx))))
         };
 
         div()

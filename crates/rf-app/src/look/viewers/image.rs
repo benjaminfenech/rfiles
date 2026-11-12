@@ -76,14 +76,14 @@ impl Viewer for ImageViewer {
             MoreItem { label: label.into(), action: Rc::new(move |window: &mut Window, cx: &mut App| v.update(cx, |iv, cx| f(iv, window, cx))) }
         };
         vec![
-            item(t!("Panoya kopyala"), |v, _, cx| v.copy(cx)),
-            item(t!("PNG olarak kaydet…"), |v, _, cx| v.save_png(cx)),
-            item(t!("Renkleri ters çevir"), |v, _, cx| v.toggle_invert(cx)),
-            item(t!("EXIF bilgisi"), |v, _, cx| {
+            item(t!("Copy to clipboard"), |v, _, cx| v.copy(cx)),
+            item(t!("Save as PNG…"), |v, _, cx| v.save_png(cx)),
+            item(t!("Invert colors"), |v, _, cx| v.toggle_invert(cx)),
+            item(t!("EXIF info"), |v, _, cx| {
                 v.show_exif = !v.show_exif;
                 cx.notify();
             }),
-            item(t!("Zemin: koyu/açık"), |_, _, cx| {
+            item(t!("Background: dark/light"), |_, _, cx| {
                 crate::look::config::update(cx, |s| {
                     s.look_image_theme = match s.look_image_theme {
                         LookImageTheme::Dark => LookImageTheme::Light,
@@ -243,7 +243,7 @@ impl ImageView {
     }
 
     fn loaded(&mut self, r: anyhow::Result<Ready>, cx: &mut Context<Self>) {
-        crate::look::trace::mark("tam resim");
+        crate::look::trace::mark("full image");
         match r {
             Ok(d) => {
                 self.dims = Some((d.width as f32, d.height as f32));
@@ -464,7 +464,7 @@ impl Render for ImageView {
                     .justify_center()
                     .gap_2()
                     .text_color(fg)
-                    .child(t!("Bu resim açılamadı"))
+                    .child(t!("This image could not be opened"))
                     .child(div().text_xs().opacity(0.7).child(e.clone())),
             );
         }
@@ -494,7 +494,7 @@ impl Render for ImageView {
             );
         }
         root.when(matches!(self.state, State::Loading) && self.thumb.is_none(), |d| {
-            d.child(div().absolute().inset_0().flex().items_center().justify_center().text_color(fg).opacity(0.6).child(t!("Yükleniyor…")))
+            d.child(div().absolute().inset_0().flex().items_center().justify_center().text_color(fg).opacity(0.6).child(t!("Loading…")))
         })
     }
 }

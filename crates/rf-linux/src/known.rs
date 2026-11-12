@@ -25,13 +25,13 @@ impl KnownFolder {
 
     pub fn title(self) -> &'static str {
         match self {
-            KnownFolder::Desktop => "Masaüstü",
-            KnownFolder::Downloads => "İndirilenler",
-            KnownFolder::Documents => "Belgeler",
-            KnownFolder::Pictures => "Resimler",
-            KnownFolder::Music => "Müzik",
-            KnownFolder::Videos => "Videolar",
-            KnownFolder::Profile => "Kullanıcı",
+            KnownFolder::Desktop => "Desktop",
+            KnownFolder::Downloads => "Downloads",
+            KnownFolder::Documents => "Documents",
+            KnownFolder::Pictures => "Pictures",
+            KnownFolder::Music => "Music",
+            KnownFolder::Videos => "Videos",
+            KnownFolder::Profile => "User profile",
         }
     }
 

@@ -666,7 +666,7 @@ pub struct QuickSearch {
 
 impl QuickSearch {
     fn new(images: Entity<ImageCache>, max_h: f32, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let input = cx.new(|cx| InputState::new(window, cx).placeholder(t!("Uygulama, dosya ya da web'de ara")));
+        let input = cx.new(|cx| InputState::new(window, cx).placeholder(t!("Search apps, files or the web")));
         let mut subs = vec![cx.subscribe_in(&input, window, |this: &mut Self, _, ev: &InputEvent, _, cx| {
             if let InputEvent::Change = ev {
                 this.run_search(cx);
@@ -795,10 +795,10 @@ fn close_later<T>(cx: &mut Context<T>) {
 
 fn section_title(s: Section) -> &'static str {
     match s {
-        Section::Recent => t!("Son kullanılanlar"),
-        Section::Apps => t!("Uygulamalar"),
-        Section::Files => t!("Dosyalar ve klasörler"),
-        Section::Bookmarks => t!("Yer imleri"),
+        Section::Recent => t!("Recent"),
+        Section::Apps => t!("Apps"),
+        Section::Files => t!("Files and folders"),
+        Section::Bookmarks => t!("Bookmarks"),
         Section::Web => t!("Web"),
     }
 }
@@ -864,12 +864,12 @@ impl Render for QuickSearch {
             child += 1;
             let sel = ix == self.selected;
             let title: SharedString = match &item.target {
-                Target::Web { query } => format!("\u{201c}{query}\u{201d} {}", t!("için webde ara")).into(),
+                Target::Web { query } => format!("\u{201c}{query}\u{201d} {}", t!("search the web")).into(),
                 _ => item.title.clone().into(),
             };
             let hint = if sel {
                 match &item.target {
-                    Target::Path { .. } => t!("Ctrl+Enter: klasörde göster"),
+                    Target::Path { .. } => t!("Ctrl+Enter: show in folder"),
                     _ => "Enter",
                 }
             } else {
@@ -956,10 +956,10 @@ impl Render for QuickSearch {
                         )
                         .when(n > 0 || self.index_building, |d| d.child(div().h(px(1.)).w_full().bg(p.divider)))
                         .when(self.index_building, |d| {
-                            d.child(div().px_4().pt_2().text_xs().text_color(p.text_tertiary).child(t!("Dosya dizini hazırlanıyor: bazı dosyalar henüz çıkmayabilir")))
+                            d.child(div().px_4().pt_2().text_xs().text_color(p.text_tertiary).child(t!("The file index is being built: some files may not show yet")))
                         })
                         .when(self.index_off && n > 0, |d| {
-                            d.child(div().px_4().pt_2().text_xs().text_color(p.text_tertiary).child(t!("Dosya araması kapalı: Ayarlar'da ad dizinini açın")))
+                            d.child(div().px_4().pt_2().text_xs().text_color(p.text_tertiary).child(t!("File search is off: turn on the name index in Settings")))
                         })
                         .child(div().id("qs-list").max_h(px(list_max)).overflow_y_scroll().track_scroll(&self.scroll).child(list))
                         .when(n > 0, |d| {
@@ -973,10 +973,10 @@ impl Render for QuickSearch {
                                     .border_color(p.divider)
                                     .text_xs()
                                     .text_color(p.text_tertiary)
-                                    .child(t!("Enter: aç"))
-                                    .child(t!("Ctrl+Enter: klasörde göster"))
-                                    .child(t!("Shift+Enter: önizle"))
-                                    .child(t!("Esc: kapat")),
+                                    .child(t!("Enter: open"))
+                                    .child(t!("Ctrl+Enter: show in folder"))
+                                    .child(t!("Shift+Enter: preview"))
+                                    .child(t!("Esc: close")),
                             )
                         }),
                 )

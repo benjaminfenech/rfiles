@@ -153,10 +153,10 @@ pub fn build(_owner: crate::Opaque, target: &ShellTarget, _extended: bool) -> an
     }
     if !others.is_empty() {
         // the app translates this label; "openas" marks the submenu as "Open with"
-        children.push(ShellItem { id: 0, label: "Başka bir uygulama seç".into(), hint: None, verb: "openas".into(), icon: None, enabled: true, separator: false, children: others });
+        children.push(ShellItem { id: 0, label: "Choose another app".into(), hint: None, verb: "openas".into(), icon: None, enabled: true, separator: false, children: others });
     }
     *LIVE.lock().unwrap() = Some((session, commands));
-    let open_with = ShellItem { id: 0, label: "Birlikte aç".into(), hint: None, verb: String::new(), icon: None, enabled: true, separator: false, children };
+    let open_with = ShellItem { id: 0, label: "Open with".into(), hint: None, verb: String::new(), icon: None, enabled: true, separator: false, children };
     Ok((session, vec![open_with]))
 }
 

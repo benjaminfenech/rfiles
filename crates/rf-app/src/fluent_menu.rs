@@ -291,9 +291,9 @@ impl MenuView {
             Item::Sub { items: Sub::Pending { key, fallback }, .. } => Some(match (self.pending.get(key), fallback) {
                 (Some(Pending::Ready(v)), _) if !v.is_empty() => v.clone(),
                 (Some(Pending::Ready(_) | Pending::Failed), Some(f)) | (None, Some(f)) => f.clone(),
-                (Some(Pending::Ready(_)), None) => Rc::new(vec![placeholder(crate::t!("Başka seçenek yok"))]),
-                (None, None) => Rc::new(vec![placeholder(crate::t!("Yükleniyor…"))]),
-                (Some(Pending::Failed), None) => Rc::new(vec![placeholder(crate::t!("Seçenekler yüklenemedi"))]),
+                (Some(Pending::Ready(_)), None) => Rc::new(vec![placeholder(crate::t!("No more options"))]),
+                (None, None) => Rc::new(vec![placeholder(crate::t!("Loading…"))]),
+                (Some(Pending::Failed), None) => Rc::new(vec![placeholder(crate::t!("Couldn't load options"))]),
             }),
             _ => None,
         }

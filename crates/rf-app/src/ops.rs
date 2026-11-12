@@ -104,7 +104,7 @@ pub(crate) fn unflatten(rec: &Flattened) -> anyhow::Result<bool> {
             failed += 1;
         }
     }
-    anyhow::ensure!(failed == 0, "{failed} {}", t!("dosya eski yerine taşınamadı"));
+    anyhow::ensure!(failed == 0, "{failed} {}", t!("files could not be moved back"));
     Ok(true)
 }
 
@@ -121,7 +121,7 @@ pub(crate) fn reflatten(rec: &Flattened) -> anyhow::Result<bool> {
     for d in dirs {
         let _ = std::fs::remove_dir(&d);
     }
-    anyhow::ensure!(failed == 0, "{failed} {}", t!("dosya taşınamadı"));
+    anyhow::ensure!(failed == 0, "{failed} {}", t!("files could not be moved"));
     Ok(true)
 }
 
@@ -204,11 +204,11 @@ impl FolderView {
                 if !errors.is_empty() {
                     log::warn!("rotate: {}", errors.join("; "));
                     crate::prompt::show(
-                        t!("Döndürülemedi"),
+                        t!("Couldn't rotate"),
                         Some(errors.join("
 ")),
                         None,
-                        vec![crate::prompt::Button::new(t!("Tamam"), crate::prompt::Kind::Primary, |_, _, _| Ok(()))],
+                        vec![crate::prompt::Button::new(t!("OK"), crate::prompt::Kind::Primary, |_, _, _| Ok(()))],
                         window,
                         cx,
                     );
@@ -292,11 +292,11 @@ impl FolderView {
                 .collect();
             let what = if inners.len() == 1 { format!("\"{}\"", inners[0].rsplit('/').next().unwrap_or_default()) } else { crate::i18n::items(inners.len()) };
             crate::prompt::show(
-                t!("Arşivden silinsin mi?"),
-                Some(format!("{what} {}", t!("arşivden kalıcı olarak silinecek."))),
+                t!("Delete from the archive?"),
+                Some(format!("{what} {}", t!("will be permanently deleted from the archive."))),
                 None,
                 vec![
-                    crate::prompt::Button::new(t!("Sil"), crate::prompt::Kind::Danger, move |_, _, cx| {
+                    crate::prompt::Button::new(t!("Delete"), crate::prompt::Kind::Danger, move |_, _, cx| {
                         crate::archive_view::delete_inside(cx, archive.clone(), inners.clone());
                         Ok(())
                     }),
@@ -322,16 +322,16 @@ impl FolderView {
             crate::i18n::items(paths.len())
         };
         let (title, msg) = if permanent {
-            (t!("Kalıcı olarak silinsin mi?"), format!("{what} {}", t!("geri alınamayacak şekilde silinecek.")))
+            (t!("Delete permanently?"), format!("{what} {}", t!("will be deleted and can't be recovered.")))
         } else {
-            (t!("Geri dönüşüm kutusuna taşınsın mı?"), format!("{what} {}", t!("geri dönüşüm kutusuna taşınacak.")))
+            (t!("Move to the Trash?"), format!("{what} {}", t!("will be moved to the Trash.")))
         };
         crate::prompt::show(
             title,
             Some(msg),
             None,
             vec![
-                crate::prompt::Button::new(t!("Sil"), if permanent { crate::prompt::Kind::Danger } else { crate::prompt::Kind::Primary }, move |_, _, cx| {
+                crate::prompt::Button::new(t!("Delete"), if permanent { crate::prompt::Kind::Danger } else { crate::prompt::Kind::Primary }, move |_, _, cx| {
                     crate::status_center::delete(cx, paths.clone(), permanent);
                     Ok(())
                 }),
@@ -349,11 +349,11 @@ impl FolderView {
             let taken: Vec<String> = self.entries.iter().map(|e| e.name.to_string()).collect();
             let inner = inner.to_string_lossy().replace('\\', "/").trim_matches('/').to_string();
             if folder {
-                let name = crate::archive_view::unique_name(t!("Yeni klasör"), "", &taken);
+                let name = crate::archive_view::unique_name(t!("New folder"), "", &taken);
                 crate::archive_view::mkdir_inside(cx, archive, inner, name.clone());
                 self.set_reselect(name);
             } else {
-                let name = crate::archive_view::unique_name(t!("Yeni metin belgesi"), ".txt", &taken);
+                let name = crate::archive_view::unique_name(t!("New text document"), ".txt", &taken);
                 let tmp = std::env::temp_dir().join(format!("rfiles-new-{}", std::process::id()));
                 let file = tmp.join(&name);
                 if std::fs::create_dir_all(&tmp).and_then(|_| std::fs::write(&file, b"")).is_ok() {
@@ -403,13 +403,13 @@ impl FolderView {
     pub fn flatten_folder(&mut self, dir: PathBuf, window: &mut Window, cx: &mut Context<Self>) {
         let name = rf_core::history::display_name(&dir);
         crate::prompt::show(
-            t!("Klasör düzleştirilsin mi?"),
-            Some(format!("{} \"{name}\" {}", t!("Alt klasörlerdeki tüm dosyalar"), t!("içine taşınır ve boş kalan alt klasörler silinir."))),
+            t!("Flatten folder?"),
+            Some(format!("{} \"{name}\" {}", t!("All files in subfolders"), t!("will be moved into it, and the empty subfolders will be deleted."))),
             None,
             vec![
-                crate::prompt::Button::new(t!("Düzleştir"), crate::prompt::Kind::Primary, move |_, _, cx| {
+                crate::prompt::Button::new(t!("Flatten"), crate::prompt::Kind::Primary, move |_, _, cx| {
                     let dir = dir.clone();
-                    crate::status_center::start(cx, format!("{} {name}", t!("Düzleştiriliyor:")), move |t| {
+                    crate::status_center::start(cx, format!("{} {name}", t!("Flattening:")), move |t| {
                         let mut rec = Flattened::default();
                         let r = flatten(&dir, &t, &mut rec);
                         if !rec.moves.is_empty() || !rec.removed.is_empty() {
@@ -473,7 +473,7 @@ impl FolderView {
         // the platform's rule, said up front instead of an error after the fact (Explorer's on
         // Windows; Linux only forbids "/")
         if invalid_file_name(&new_name) {
-            let title = crate::t!("Yeniden adlandır").to_string();
+            let title = crate::t!("Rename").to_string();
             let rule = "A file name can't contain \"/\".".to_string();
             let msg = format!("{}\n\n{}", new_name, rule);
             alert_box(title, msg, window.window_handle(), cx);
@@ -502,8 +502,8 @@ impl FolderView {
                 let ext = |n: &str| std::path::Path::new(n).extension().map(|e| e.to_string_lossy().to_lowercase());
                 let warn = cx.global::<crate::settings::Settings>().warn_extension_change;
                 let confirm_rx = (warn && !self.entry(ei).is_dir() && ext(&old).is_some() && ext(&old) != ext(&new_name)).then(|| {
-                    let title = crate::t!("Dosya adı uzantısı").to_string();
-                    let msg = crate::t!("Dosya adı uzantısını değiştirirseniz dosya kullanılamaz hale gelebilir. Değiştirmek istediğinizden emin misiniz?").to_string();
+                    let title = crate::t!("File name extension").to_string();
+                    let msg = crate::t!("If you change a file name extension, the file might become unusable. Are you sure you want to change it?").to_string();
                     confirm_box(title, msg, window.window_handle(), cx)
                 });
                 let win = window.window_handle();
@@ -525,8 +525,8 @@ impl FolderView {
                         })
                         .await;
                     if clash {
-                        let title = crate::t!("Yeniden adlandır").to_string();
-                        let msg = format!("{}\n\n{}", n2, crate::t!("Bu adda bir öğe zaten var. Başka bir ad deneyin."));
+                        let title = crate::t!("Rename").to_string();
+                        let msg = format!("{}\n\n{}", n2, crate::t!("An item with this name already exists. Try another name."));
                         let _ = cx.update(|cx| alert_box(title, msg, win, cx));
                         let _ = this.update(cx, |v, _| v.clear_reselect());
                         return;
@@ -677,7 +677,7 @@ pub(crate) fn invalid_file_name(name: &str) -> bool {
 /// no shell message box).
 pub(crate) fn alert_box(title: String, msg: String, win: AnyWindowHandle, cx: &mut App) {
     let _ = win.update(cx, |_, window, cx| {
-        let ok = crate::prompt::Button::new(crate::t!("Tamam"), crate::prompt::Kind::Primary, |_, _, _| Ok(()));
+        let ok = crate::prompt::Button::new(crate::t!("OK"), crate::prompt::Kind::Primary, |_, _, _| Ok(()));
         crate::prompt::show(title, Some(msg), None, vec![ok], window, cx);
     });
 }
@@ -699,8 +699,8 @@ fn confirm_box(title: String, msg: String, win: AnyWindowHandle, cx: &mut App) -
         };
         let _ = win.update(cx, |_, window, cx| {
             let buttons = vec![
-                crate::prompt::Button::new(crate::t!("Tamam"), crate::prompt::Kind::Primary, answer(true)),
-                crate::prompt::Button::new(crate::t!("İptal"), crate::prompt::Kind::Normal, answer(false)),
+                crate::prompt::Button::new(crate::t!("OK"), crate::prompt::Kind::Primary, answer(true)),
+                crate::prompt::Button::new(crate::t!("Cancel"), crate::prompt::Kind::Normal, answer(false)),
             ];
             crate::prompt::show(title, Some(msg), None, buttons, window, cx);
         });

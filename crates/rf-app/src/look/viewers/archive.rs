@@ -47,7 +47,7 @@ impl Viewer for ArchiveViewer {
         // DirectLook ayrı süreç: çıkarma rfiles'ın işlem merkezinde yapılır, arşiv oraya gönderilir.
         let path = self.path.clone();
         vec![MoreItem {
-            label: t!("rfiles'ta aç").into(),
+            label: t!("Open in rfiles").into(),
             action: Rc::new(move |_, cx: &mut App| {
                 crate::look::LookManager::close(cx);
                 open_in_rfiles(path.clone());
@@ -81,10 +81,10 @@ fn open_in_rfiles(path: PathBuf) {
         match exe {
             Ok(exe) if exe.exists() => {
                 if let Err(e) = std::process::Command::new(exe).arg(arg).spawn() {
-                    log::warn!("rfiles başlatılamadı: {e}");
+                    log::warn!("couldn't start rfiles: {e}");
                 }
             }
-            _ => log::warn!("rfiles.exe bulunamadı"),
+            _ => log::warn!("rfiles.exe not found"),
         }
     });
 }
@@ -225,7 +225,7 @@ impl ArchiveView {
                     }
                     Err(e) => {
                         v.error = Some(if crate::archive_view::password_problem(&e).is_some() {
-                            t!("Bu arşiv parolalı; içeriğini görmek için klasör olarak açın").to_string()
+                            t!("This archive is password protected; open it as a folder to see its contents").to_string()
                         } else {
                             format!("{e:#}")
                         })
@@ -244,7 +244,7 @@ impl ArchiveView {
         } else {
             self.path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_uppercase()
         };
-        format!("{ext} {}", t!("arşivi"))
+        format!("{ext} {}", t!("archive"))
     }
 }
 
@@ -271,7 +271,7 @@ impl Render for ArchiveView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let p = Palette::for_window(window);
         let Some(tree) = &self.tree else {
-            let msg = self.error.clone().unwrap_or_else(|| t!("Yükleniyor…").to_string());
+            let msg = self.error.clone().unwrap_or_else(|| t!("Loading…").to_string());
             return div()
                 .size_full()
                 .flex()
@@ -286,16 +286,16 @@ impl Render for ArchiveView {
             "{}, {} {} {} {} {}",
             self.kind_label(),
             tree.folders,
-            t!("klasör"),
-            t!("ve"),
+            t!("folders"),
+            t!("and"),
             tree.files,
-            t!("dosya")
+            t!("files")
         );
         let sizes = format!(
             "{} {} · {} {}",
-            t!("Sıkıştırılmış:"),
+            t!("Packed:"),
             if tree.packed > 0 { format::size(tree.packed) } else { "—".into() },
-            t!("Açılmış:"),
+            t!("Unpacked:"),
             format::size(tree.size)
         );
         let list = match &self.rows {

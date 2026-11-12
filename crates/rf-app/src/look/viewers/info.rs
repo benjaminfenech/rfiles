@@ -250,95 +250,95 @@ impl Render for InfoView {
         };
         let mut lines: Vec<AnyElement> = Vec::new();
         if !self.exists && !self.path.to_string_lossy().starts_with("::") {
-            lines.push(div().text_sm().text_color(p.danger).child(t!("Dosya bulunamadı")).into_any_element());
+            lines.push(div().text_sm().text_color(p.danger).child(t!("File not found")).into_any_element());
         }
         if let Some((free, total, label)) = &self.drive {
             if !label.is_empty() {
-                lines.push(line(&p, t!("Etiket"), label.clone()));
+                lines.push(line(&p, t!("Tag"), label.clone()));
             }
-            lines.push(line(&p, t!("Boş"), format!("{} / {}", format::size(*free), format::size(*total))));
+            lines.push(line(&p, t!("Empty"), format!("{} / {}", format::size(*free), format::size(*total))));
         } else if let Some((files, dirs, bytes, done)) = self.folder {
-            let more = if done { String::new() } else { format!(" — {}", t!("hesaplanıyor…")) };
-            lines.push(line(&p, t!("Boyut"), format!("{}{more}", format::size(bytes))));
-            lines.push(line(&p, t!("İçerik"), format!("{files} {}, {dirs} {}", t!("dosya"), t!("klasör"))));
+            let more = if done { String::new() } else { format!(" — {}", t!("calculating…")) };
+            lines.push(line(&p, t!("Size"), format!("{}{more}", format::size(bytes))));
+            lines.push(line(&p, t!("Contains"), format!("{files} {}, {dirs} {}", t!("files"), t!("folders"))));
         } else if let Some(e) = self.entry.as_ref().filter(|e| !e.is_dir()) {
-            lines.push(line(&p, t!("Boyut"), format::size(e.size)));
+            lines.push(line(&p, t!("Size"), format::size(e.size)));
         }
         if let Some(c) = &self.cert {
-            lines.push(line(&p, t!("Verilen"), c.subject.clone()));
-            lines.push(line(&p, t!("Veren"), c.issuer.clone()));
+            lines.push(line(&p, t!("Issued to"), c.subject.clone()));
+            lines.push(line(&p, t!("Issued by"), c.issuer.clone()));
             let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as i64);
             let state = if now > c.not_after {
-                format!(" ({})", t!("süresi dolmuş"))
+                format!(" ({})", t!("expired"))
             } else if now < c.not_before {
-                format!(" ({})", t!("henüz geçerli değil"))
+                format!(" ({})", t!("not yet valid"))
             } else {
                 String::new()
             };
-            lines.push(line(&p, t!("Geçerlilik"), format!("{} – {}{state}", day(c.not_before), day(c.not_after))));
+            lines.push(line(&p, t!("Valid"), format!("{} – {}{state}", day(c.not_before), day(c.not_after))));
         }
         if let Some(pe) = &self.pe {
             if let Some(d) = pe.description.as_ref().or(pe.product.as_ref()) {
-                lines.push(line(&p, t!("Açıklama"), d.clone()));
+                lines.push(line(&p, t!("Description"), d.clone()));
             }
             if let Some(c) = &pe.company {
-                lines.push(line(&p, t!("Şirket"), c.clone()));
+                lines.push(line(&p, t!("Company"), c.clone()));
             }
             let ver = pe.version.clone().map_or_else(|| pe.arch.to_string(), |v| format!("{v} · {}", pe.arch));
-            lines.push(line(&p, t!("Sürüm"), ver));
+            lines.push(line(&p, t!("Version"), ver));
         }
         if let Some((kind, a)) = &self.app {
             let kind = match kind {
-                rf_linux::apppkg::Kind::Msix => t!("Windows uygulama paketi"),
-                rf_linux::apppkg::Kind::MsixBundle => t!("Windows uygulama paketi grubu"),
-                rf_linux::apppkg::Kind::Apk => t!("Android uygulaması"),
-                rf_linux::apppkg::Kind::Ipa => t!("iOS uygulaması"),
-                rf_linux::apppkg::Kind::Nuget => t!("NuGet paketi"),
+                rf_linux::apppkg::Kind::Msix => t!("Windows app package"),
+                rf_linux::apppkg::Kind::MsixBundle => t!("Windows app bundle"),
+                rf_linux::apppkg::Kind::Apk => t!("Android app"),
+                rf_linux::apppkg::Kind::Ipa => t!("iOS app"),
+                rf_linux::apppkg::Kind::Nuget => t!("NuGet package"),
             };
-            lines.push(line(&p, t!("Tür"), kind.to_string()));
+            lines.push(line(&p, t!("Type"), kind.to_string()));
             if let Some(n) = &a.name {
-                lines.push(line(&p, t!("Uygulama"), n.clone()));
+                lines.push(line(&p, t!("Application"), n.clone()));
             }
             if let Some(id) = &a.id {
-                lines.push(line(&p, t!("Kimlik"), id.clone()));
+                lines.push(line(&p, t!("ID"), id.clone()));
             }
             if let Some(v) = &a.version {
-                lines.push(line(&p, t!("Sürüm"), v.clone()));
+                lines.push(line(&p, t!("Version"), v.clone()));
             }
             if let Some(v) = &a.publisher {
-                lines.push(line(&p, t!("Yayıncı"), v.clone()));
+                lines.push(line(&p, t!("Publisher"), v.clone()));
             }
             if !a.arch.is_empty() {
-                lines.push(line(&p, t!("İşlemci"), a.arch.join(", ")));
+                lines.push(line(&p, t!("Processor"), a.arch.join(", ")));
             }
             if let Some(v) = &a.min_os {
-                lines.push(line(&p, t!("En düşük sistem"), v.clone()));
+                lines.push(line(&p, t!("Minimum system"), v.clone()));
             }
             if a.permissions > 0 {
-                lines.push(line(&p, t!("İzinler"), a.permissions.to_string()));
+                lines.push(line(&p, t!("Permissions"), a.permissions.to_string()));
             }
             if let Some(d) = &a.description {
                 let short: String = d.chars().take(140).collect();
-                lines.push(line(&p, t!("Açıklama"), if short.len() < d.len() { format!("{short}…") } else { short }));
+                lines.push(line(&p, t!("Description"), if short.len() < d.len() { format!("{short}…") } else { short }));
             }
         }
         if let Some(e) = &self.elf {
             use rf_linux::elf::Kind as K;
             let kind = match e.kind {
                 K::Executable => t!("program"),
-                K::Shared => t!("paylaşılan kitaplık"),
-                K::Relocatable => t!("nesne dosyası"),
-                K::Core => t!("bellek dökümü"),
+                K::Shared => t!("shared library"),
+                K::Relocatable => t!("object file"),
+                K::Core => t!("core dump"),
                 K::Unknown => "",
             };
-            lines.push(line(&p, t!("Tür"), format!("ELF {} bit {kind}", e.bits).trim_end().to_string()));
+            lines.push(line(&p, t!("Type"), format!("ELF {} bit {kind}", e.bits).trim_end().to_string()));
             let os = e.os.map(|o| format!(" · {o}")).unwrap_or_default();
-            lines.push(line(&p, t!("İşlemci"), format!("{}{os}", e.machine)));
+            lines.push(line(&p, t!("Processor"), format!("{}{os}", e.machine)));
             if let Some(i) = &e.interpreter {
-                lines.push(line(&p, t!("Yükleyici"), i.clone()));
+                lines.push(line(&p, t!("Loader"), i.clone()));
             }
             if let Some(s) = &e.soname {
-                lines.push(line(&p, t!("Kitaplık adı"), s.clone()));
+                lines.push(line(&p, t!("Library name"), s.clone()));
             }
             if !e.needed.is_empty() {
                 let more = e.needed.len().saturating_sub(4);
@@ -346,12 +346,12 @@ impl Render for InfoView {
                 if more > 0 {
                     s.push_str(&format!(" +{more}"));
                 }
-                lines.push(line(&p, t!("Gerekli kitaplıklar"), s));
+                lines.push(line(&p, t!("Needs"), s));
             }
         }
         if let Some(e) = &self.entry {
             if e.modified_ms > 0 {
-                lines.push(line(&p, t!("Değiştirme"), format::datetime(e.modified_ms)));
+                lines.push(line(&p, t!("Modified"), format::datetime(e.modified_ms)));
             }
         }
         h_flex()

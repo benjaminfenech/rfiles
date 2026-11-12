@@ -72,7 +72,7 @@ impl Viewer for EmailViewer {
         match std::fs::File::open(&f.path).and_then(|file| file.take(READ_MAX).read_to_end(&mut buf)) {
             Ok(_) => match parse(&buf) {
                 Some(m) => self.mail = Some(m),
-                None => self.error = Some(t!("E-posta okunamadı").to_string()),
+                None => self.error = Some(t!("Couldn't read the e-mail").to_string()),
             },
             Err(e) => self.error = Some(e.to_string()),
         }
@@ -97,12 +97,12 @@ impl Viewer for EmailViewer {
             .pb_4()
             .border_b_1()
             .border_color(p.divider)
-            .child(div().text_xl().font_weight(FontWeight::SEMIBOLD).text_color(p.text).child(if m.subject.is_empty() { t!("(konu yok)").to_string() } else { m.subject.clone() }))
+            .child(div().text_xl().font_weight(FontWeight::SEMIBOLD).text_color(p.text).child(if m.subject.is_empty() { t!("(no subject)").to_string() } else { m.subject.clone() }))
             .child(div().h(px(4.)))
-            .child(field(t!("Kimden"), &m.from))
-            .child(field(t!("Kime"), &m.to));
+            .child(field(t!("From"), &m.from))
+            .child(field(t!("To"), &m.to));
         if !m.date.is_empty() {
-            head = head.child(field(t!("Tarih"), &m.date));
+            head = head.child(field(t!("Date"), &m.date));
         }
         if !m.attachments.is_empty() {
             let mut chips = h_flex().gap_2().flex_wrap().pt_2();

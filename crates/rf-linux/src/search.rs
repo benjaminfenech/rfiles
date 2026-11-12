@@ -200,7 +200,7 @@ pub fn search(
     cancelled: &dyn Fn() -> bool,
     on_batch: &mut dyn FnMut(Vec<SearchHit>),
 ) -> anyhow::Result<SearchStats> {
-    anyhow::ensure!(q.root.is_dir(), "Klasör bulunamadı: {}", q.root.display());
+    anyhow::ensure!(q.root.is_dir(), "Folder not found: {}", q.root.display());
     let matcher = Matcher::new(&q.pattern);
     let max = q.max_results;
     let stop = AtomicBool::new(false);

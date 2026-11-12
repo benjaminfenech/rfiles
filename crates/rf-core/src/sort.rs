@@ -218,7 +218,7 @@ fn map_words(s: &str, turkish: bool, f: impl Fn(&str, bool) -> String) -> String
 
 fn upper_char(c: char, tr: bool) -> String {
     match c {
-        'i' if tr => "İ".into(),
+        'i' if tr => "İ".into(), // i18n-ok: Turkish casing
         'ı' => "I".into(),
         _ => c.to_uppercase().collect(),
     }
@@ -226,7 +226,7 @@ fn upper_char(c: char, tr: bool) -> String {
 
 fn lower_char(c: char, tr: bool) -> String {
     match c {
-        'I' if tr => "ı".into(),
+        'I' if tr => "ı".into(), // i18n-ok: Turkish casing
         'İ' => "i".into(),
         _ => c.to_lowercase().collect(),
     }

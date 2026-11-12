@@ -66,39 +66,39 @@ fn group_key(g: GroupBy, e: &Entry, now: chrono::DateTime<chrono::Local>) -> (u3
     match g {
         GroupBy::None => (0, String::new()),
         GroupBy::Type => {
-            if e.is_dir() { (0, "Klasörler".into()) } else { (1, icons::type_label(e)) }
+            if e.is_dir() { (0, "Folders".into()) } else { (1, icons::type_label(e)) }
         }
         GroupBy::Modified => {
             let Some(t) = chrono::Local.timestamp_millis_opt(e.modified_ms).single() else {
-                return (6, "Bilinmiyor".into());
+                return (6, "Unknown".into());
             };
             let days = (now.date_naive() - t.date_naive()).num_days();
             match days {
-                d if d <= 0 => (0, "Bugün".into()),
-                1 => (1, "Dün".into()),
-                d if d < 7 && t.iso_week() == now.iso_week() => (2, "Bu hafta".into()),
-                _ if t.year() == now.year() && t.month() == now.month() => (3, "Bu ay".into()),
-                _ if t.year() == now.year() => (4, "Bu yıl".into()),
-                _ => (5, "Daha eski".into()),
+                d if d <= 0 => (0, "Today".into()),
+                1 => (1, "Yesterday".into()),
+                d if d < 7 && t.iso_week() == now.iso_week() => (2, "This week".into()),
+                _ if t.year() == now.year() && t.month() == now.month() => (3, "This month".into()),
+                _ if t.year() == now.year() => (4, "This year".into()),
+                _ => (5, "Older".into()),
             }
         }
         GroupBy::Size => {
             if e.is_dir() {
-                return (0, "Klasörler".into());
+                return (0, "Folders".into());
             }
             match e.size {
-                0 => (1, "Boş".into()),
-                s if s < 16 * 1024 => (2, "Çok küçük (< 16 KB)".into()),
-                s if s < 1024 * 1024 => (3, "Küçük (< 1 MB)".into()),
-                s if s < 128 * 1024 * 1024 => (4, "Orta (< 128 MB)".into()),
-                s if s < 1024 * 1024 * 1024 => (5, "Büyük (< 1 GB)".into()),
-                _ => (6, "Çok büyük (≥ 1 GB)".into()),
+                0 => (1, "Empty".into()),
+                s if s < 16 * 1024 => (2, "Tiny (< 16 KB)".into()),
+                s if s < 1024 * 1024 => (3, "Small (< 1 MB)".into()),
+                s if s < 128 * 1024 * 1024 => (4, "Medium (< 128 MB)".into()),
+                s if s < 1024 * 1024 * 1024 => (5, "Large (< 1 GB)".into()),
+                _ => (6, "Huge (≥ 1 GB)".into()),
             }
         }
         GroupBy::Name => {
             let c = e.name.chars().next().unwrap_or('#');
             if c.is_alphabetic() {
-                let up: String = if c == 'i' { "İ".into() } else { c.to_uppercase().collect() };
+                let up: String = if c == 'i' { "İ".into() } else { c.to_uppercase().collect() }; // i18n-ok: Turkish capital of i
                 (1, up)
             } else {
                 (0, "#".into())
@@ -505,7 +505,7 @@ impl FolderView {
     pub fn title(&self, cx: &App) -> String {
         if let Location::Tag(id) = self.location() {
             if let Some(d) = cx.global::<crate::tags::Tags>().0.def(*id) {
-                return format!("{} {}", crate::t!("Etiket:"), crate::i18n::td(&d.name));
+                return format!("{} {}", crate::t!("Tag:"), crate::i18n::td(&d.name));
             }
         }
         if let Location::Path(p) = self.location() {
@@ -1260,9 +1260,9 @@ impl FolderView {
                             // "<0|1><archive path>": ask the workspace to prompt for it
                             let wrong = rest.starts_with('1');
                             let archive = PathBuf::from(&rest[1..]);
-                            self.error = Some(t!("Bu arşiv parola ile korunuyor").to_string());
+                            self.error = Some(t!("This archive is password protected").to_string());
                             cx.emit(FolderEvent::NeedPassword(archive, wrong));
-                        } else if e != "İptal edildi" {
+                        } else if e != "Cancelled" {
                             self.error = Some(e);
                         }
                     }
@@ -1331,7 +1331,7 @@ impl FolderView {
                     }
                 }
                 Msg::Hits(..) => {}
-                Msg::Done(Err(e)) if e.contains("bulunamadı") => {
+                Msg::Done(Err(e)) if e.contains("not found") => {
                     // The folder we are showing was deleted/renamed away: step up.
                     self.soft_pending = None;
                     if let Some(parent) = self.location().parent() {
@@ -2716,25 +2716,25 @@ impl FolderView {
                 this.schedule_col_save(cx);
                 cx.notify();
             }))
-            .child(col("h-name", t!("Ad"), SortKey::Name, None, false, cx))
-            .children(show_tags.then(|| plain("h-tags", t!("Dosya etiketi"), w[4]).child(handle(4, cx))))
-            .children(show_git.then(|| plain("h-git", t!("Git durumu"), w[5]).child(handle(5, cx))))
-            .children(show_sync.then(|| plain("h-sync", t!("Eşitleme durumu"), w[6]).child(handle(6, cx))))
-            .children(vis.commit[0].then(|| plain("h-gmsg", t!("Son commit mesajı"), w[7]).child(handle(7, cx))))
-            .children(vis.commit[1].then(|| plain("h-gauth", t!("Commit yazarı"), w[8]).child(handle(8, cx))))
-            .children(vis.commit[2].then(|| plain("h-gdate", t!("Commit tarihi"), w[9]).child(handle(9, cx))))
+            .child(col("h-name", t!("Name"), SortKey::Name, None, false, cx))
+            .children(show_tags.then(|| plain("h-tags", t!("File tag"), w[4]).child(handle(4, cx))))
+            .children(show_git.then(|| plain("h-git", t!("Git status"), w[5]).child(handle(5, cx))))
+            .children(show_sync.then(|| plain("h-sync", t!("Sync status"), w[6]).child(handle(6, cx))))
+            .children(vis.commit[0].then(|| plain("h-gmsg", t!("Last commit message"), w[7]).child(handle(7, cx))))
+            .children(vis.commit[1].then(|| plain("h-gauth", t!("Commit author"), w[8]).child(handle(8, cx))))
+            .children(vis.commit[2].then(|| plain("h-gdate", t!("Commit date"), w[9]).child(handle(9, cx))))
             .children(vis.commit[3].then(|| plain("h-ghash", t!("Commit hash"), w[10]).child(handle(10, cx))))
             .children(vis.modified.then(|| {
-                col("h-mod", t!("Değiştirme tarihi"), SortKey::Modified, Some(px(w[0])), false, cx).relative().child(handle(0, cx))
+                col("h-mod", t!("Date modified"), SortKey::Modified, Some(px(w[0])), false, cx).relative().child(handle(0, cx))
             }))
             .children(vis.created.then(|| {
-                col("h-created", t!("Oluşturma tarihi"), SortKey::Created, Some(px(w[1])), false, cx).relative().child(handle(1, cx))
+                col("h-created", t!("Date created"), SortKey::Created, Some(px(w[1])), false, cx).relative().child(handle(1, cx))
             }))
             .children(vis.kind.then(|| {
-                let c = col("h-type", if search { t!("Konum") } else { t!("Tür") }, SortKey::Type, Some(self.type_col_w(cx)), false, cx).relative();
+                let c = col("h-type", if search { t!("Location") } else { t!("Type") }, SortKey::Type, Some(self.type_col_w(cx)), false, cx).relative();
                 if search { c } else { c.child(handle(2, cx)) }
             }))
-            .children(vis.size.then(|| col("h-size", t!("Boyut"), SortKey::Size, Some(px(w[3])), true, cx).relative().child(handle(3, cx))))
+            .children(vis.size.then(|| col("h-size", t!("Size"), SortKey::Size, Some(px(w[3])), true, cx).relative().child(handle(3, cx))))
     }
 
     /// Writes dragged column widths to Settings once the drag pauses (a save per move would
@@ -2921,11 +2921,11 @@ impl FolderView {
             let sync_cell = col_sync.then(|| {
                 const PINNED: u32 = 0x80000;
                 let (icon, color, label) = if e.is_cloud_placeholder() {
-                    (Some(L::Cloud), p.accent, t!("Yalnızca çevrimiçi"))
+                    (Some(L::Cloud), p.accent, t!("Online-only"))
                 } else if e.attrs & PINNED != 0 {
-                    (Some(L::CircleCheck), gpui_kit::rgb(0x2EA043).into(), t!("Her zaman bu cihazda"))
+                    (Some(L::CircleCheck), gpui_kit::rgb(0x2EA043).into(), t!("Always keep on this device"))
                 } else {
-                    (Some(L::CircleCheck), p.text_tertiary, t!("Bu cihazda kullanılabilir"))
+                    (Some(L::CircleCheck), p.text_tertiary, t!("Available on this device"))
                 };
                 h_flex()
                     .w(px(cw[6]))
@@ -2941,9 +2941,9 @@ impl FolderView {
             let cloud_badge = if col_sync { None } else {
                 const PINNED: u32 = 0x80000;
                 let (icon, color, tip) = if e.is_cloud_placeholder() {
-                    (Some(L::Cloud), p.accent, t!("Yalnızca çevrimiçi"))
+                    (Some(L::Cloud), p.accent, t!("Online-only"))
                 } else if e.attrs & PINNED != 0 {
-                    (Some(L::CircleCheck), gpui_kit::rgb(0x2EA043).into(), t!("Her zaman bu cihazda"))
+                    (Some(L::CircleCheck), gpui_kit::rgb(0x2EA043).into(), t!("Always keep on this device"))
                 } else {
                     (None, p.text, "")
                 };
@@ -3132,7 +3132,7 @@ impl FolderView {
                                 .hover(|s| s.text_color(p.accent).underline())
                                 .overflow_hidden()
                                 .text_ellipsis()
-                                .child(t!("Boyutu hesapla"))
+                                .child(t!("Calculate size"))
                                 .on_mouse_down(
                                     MouseButton::Left,
                                     cx.listener(move |this, _: &MouseDownEvent, _, cx| {
@@ -3169,11 +3169,11 @@ impl FolderView {
         // Details and Grid get a scrollbar over the list (Columns has one list per column).
         let mut list_body = false;
         let body: AnyElement = if let Some(err) = &self.error {
-            empty_state(p, L::TriangleAlert, crate::i18n::td(err), t!("Klasör açılamadı")).into_any_element()
+            empty_state(p, L::TriangleAlert, crate::i18n::td(err), t!("Couldn't open folder")).into_any_element()
         } else if count == 0 && self.loading && self.load_started.elapsed() >= SLOW_LOAD {
-            empty_state(p, L::LoaderCircle, t!("Yükleniyor…").to_string(), "").into_any_element()
+            empty_state(p, L::LoaderCircle, t!("Loading…").to_string(), "").into_any_element()
         } else if count == 0 && !self.loading {
-            let msg = if self.filter.query.is_empty() { t!("Bu klasör boş") } else { t!("Eşleşen öğe yok") };
+            let msg = if self.filter.query.is_empty() { t!("This folder is empty") } else { t!("No matching items") };
             empty_state(p, L::FolderOpen, msg.to_string(), "").into_any_element()
         } else if self.view_mode == ViewMode::Columns {
             self.render_columns(p, cx)
@@ -3361,7 +3361,7 @@ impl FolderView {
                                         // Linux: connected, not mounted yet (a click mounts it)
                                         format!("{} · {}", format::size(d.total), t!("Not mounted"))
                                     } else if d.total > 0 {
-                                        format!("{} {} / {}", format::size(d.free), t!("boş"), format::size(d.total))
+                                        format!("{} {} / {}", format::size(d.free), t!("free"), format::size(d.total))
                                     } else {
                                         String::new()
                                     })),
@@ -3376,7 +3376,7 @@ impl FolderView {
                                     .justify_center()
                                     .rounded(theme::RADIUS_SM)
                                     .hover(|s| s.bg(p.hover))
-                                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Disk kullanımını göster")).build(w, cx))
+                                    .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Show disk usage")).build(w, cx))
                                     .on_click(cx.listener(move |_, _, _, cx| {
                                         cx.stop_propagation();
                                         cx.emit(FolderEvent::OpenInNewTab(Location::DiskUsage(usage_root.clone())))
@@ -3463,12 +3463,12 @@ impl FolderView {
                 v_flex()
                     .p_6()
                     .gap_4()
-                    .child(section(t!("Hızlı Erişim")))
+                    .child(section(t!("Quick access")))
                     .child(pinned_grid)
                     .child(div().h_2())
-                    .child(section(t!("Sürücüler")))
+                    .child(section(t!("Drives")))
                     .child(drive_grid)
-                    .when(has_recent, |d| d.child(div().h_2()).child(section(t!("Son kullanılanlar"))))
+                    .when(has_recent, |d| d.child(div().h_2()).child(section(t!("Recent"))))
                     .child(recent_list),
             )
             .into_any_element()
@@ -3530,13 +3530,13 @@ mod tile_tests {
 fn git_label(s: rf_linux::git::FileState) -> &'static str {
     use rf_linux::git::FileState::*;
     match s {
-        Modified => t!("Değiştirildi"),
-        Added => t!("Eklendi"),
-        Deleted => t!("Silindi"),
-        Renamed => t!("Yeniden adlandırıldı"),
-        Untracked => t!("İzlenmiyor"),
-        Ignored => t!("Yok sayıldı"),
-        Conflicted => t!("Çakışma"),
+        Modified => t!("Modified"),
+        Added => t!("Added"),
+        Deleted => t!("Deleted"),
+        Renamed => t!("Renamed"),
+        Untracked => t!("Untracked"),
+        Ignored => t!("Ignored"),
+        Conflicted => t!("Conflict"),
     }
 }
 
@@ -3576,8 +3576,8 @@ fn static_column(
     view: Entity<FolderView>,
 ) -> impl IntoElement {
     let body: AnyElement = match list {
-        None => div().p_3().text_xs().text_color(p.text_tertiary).child(t!("Yükleniyor…")).into_any_element(),
-        Some(list) if list.is_empty() => div().p_3().text_xs().text_color(p.text_tertiary).child(t!("Boş")).into_any_element(),
+        None => div().p_3().text_xs().text_color(p.text_tertiary).child(t!("Loading…")).into_any_element(),
+        Some(list) if list.is_empty() => div().p_3().text_xs().text_color(p.text_tertiary).child(t!("Empty")).into_any_element(),
         Some(list) => {
             let n = list.len();
             let pal = *p;

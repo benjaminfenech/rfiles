@@ -35,11 +35,11 @@ impl Drive {
             return self.label.clone();
         }
         match self.kind {
-            _ if self.root == Path::new("/") => "Dosya Sistemi".to_string(),
-            DriveKind::Removable => "USB Sürücü".to_string(),
-            DriveKind::Network => "Ağ Sürücüsü".to_string(),
-            DriveKind::Optical => "DVD Sürücü".to_string(),
-            _ => self.root.file_name().map_or_else(|| "Yerel Disk".into(), |n| n.to_string_lossy().into_owned()),
+            _ if self.root == Path::new("/") => "File System".to_string(),
+            DriveKind::Removable => "USB Drive".to_string(),
+            DriveKind::Network => "Network Drive".to_string(),
+            DriveKind::Optical => "DVD Drive".to_string(),
+            _ => self.root.file_name().map_or_else(|| "Local Disk".into(), |n| n.to_string_lossy().into_owned()),
         }
     }
 
@@ -445,7 +445,7 @@ mod tests {
         assert!(root.total > 0 && root.free <= root.total, "{root:?}");
         assert!(root.source.starts_with("/dev/"), "{root:?}");
         // a labelled root (CI's is "cloudimg-rootfs") shows its label
-        let want = if root.label.is_empty() { "Dosya Sistemi" } else { root.label.as_str() };
+        let want = if root.label.is_empty() { "File System" } else { root.label.as_str() };
         assert_eq!(root.display_name(), want);
     }
 

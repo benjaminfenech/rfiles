@@ -29,7 +29,7 @@ const NEST_MIN: (f32, f32) = (70., 46.);
 
 /// Tab and breadcrumb title: "Disk kullanımı — Windows".
 pub fn title(root: &std::path::Path) -> String {
-    format!("{} — {}", t!("Disk kullanımı"), rf_core::history::display_name(root))
+    format!("{} — {}", t!("Disk usage"), rf_core::history::display_name(root))
 }
 
 pub enum DiskEvent {
@@ -177,12 +177,12 @@ impl DiskUsageView {
         let mut items = Vec::new();
         {
             let me = me.clone();
-            let label = if is_dir { t!("Bu klasöre git") } else { t!("Aç") };
+            let label = if is_dir { t!("Go to this folder") } else { t!("Open") };
             items.push(Item::action(label, MenuIcon::Lucide(if is_dir { L::FolderOpen } else { L::SquareArrowOutUpRight }), move |_, cx| {
                 let _ = me.update(cx, |v, cx| v.activate(id, 2, cx));
             }));
         }
-        items.push(Item::action(t!("Klasörde göster"), MenuIcon::Lucide(L::FolderSearch), move |_, cx| {
+        items.push(Item::action(t!("Show in folder"), MenuIcon::Lucide(L::FolderSearch), move |_, cx| {
             let _ = me.update(cx, |v, cx| v.show_in_folder(id, cx));
         }));
         fluent_menu::show(Menu { quick: Vec::new(), items }, window.mouse_position(), window, cx);
@@ -238,7 +238,7 @@ fn category_of(t: &DiskTree, id: u32) -> icons::Category {
 
 /// 2330750 → "2.330.750" (Turkish) / "2,330,750" (English).
 pub(crate) fn count(n: u64) -> String {
-    let sep = if crate::i18n::t("1.000 dosya").starts_with("1.000") { '.' } else { ',' };
+    let sep = if crate::i18n::t("1,000 files").starts_with("1.000") { '.' } else { ',' };
     let s = n.to_string();
     let mut out = String::new();
     for (i, c) in s.chars().enumerate() {
@@ -322,7 +322,7 @@ impl Render for DiskUsageView {
         let summary = format!(
             "{} · {}",
             format::size(t.weight(cur, metric)),
-            format!("{} {}", count(t.files(cur) as u64), t!("dosya"))
+            format!("{} {}", count(t.files(cur) as u64), t!("files"))
         );
         let header = h_flex()
             .px_3()
@@ -340,8 +340,8 @@ impl Render for DiskUsageView {
                     .p_0p5()
                     .rounded(theme::RADIUS_SM)
                     .bg(p.pressed)
-                    .child(seg("m-logical", t!("Boyut"), Metric::Logical))
-                    .child(seg("m-disk", t!("Diskteki boyut"), Metric::OnDisk)),
+                    .child(seg("m-logical", t!("Size"), Metric::Logical))
+                    .child(seg("m-disk", t!("Size on disk"), Metric::OnDisk)),
             );
 
         // ---- list
@@ -394,10 +394,10 @@ impl Render for DiskUsageView {
         }
         let hidden = self.kids.len().saturating_sub(LIST_MAX);
         if hidden > 0 {
-            list = list.child(div().px_2().py_1().text_xs().text_color(p.text_tertiary).child(format!("+{} {}", count(hidden as u64), t!("öğe daha"))));
+            list = list.child(div().px_2().py_1().text_xs().text_color(p.text_tertiary).child(format!("+{} {}", count(hidden as u64), t!("more items"))));
         }
         if self.kids.is_empty() {
-            list = list.child(div().p_4().text_sm().text_color(p.text_tertiary).child(t!("Bu klasör boş")));
+            list = list.child(div().p_4().text_sm().text_color(p.text_tertiary).child(t!("This folder is empty")));
         }
 
         // ---- treemap
@@ -485,10 +485,10 @@ impl Render for DiskUsageView {
             let path = t.path(focus);
             let mut s = format!("{}  ·  {}", path.to_string_lossy(), format::size(t.weight(focus, metric)));
             if t.is_dir(focus) {
-                s.push_str(&format!("  ·  {}", format!("{} {}", count(t.files(focus) as u64), t!("dosya"))));
+                s.push_str(&format!("  ·  {}", format!("{} {}", count(t.files(focus) as u64), t!("files"))));
             }
             if t.skipped() > 0 && focus == 0 {
-                s.push_str(&format!("  ·  {} {}", t.skipped(), t!("klasör okunamadı")));
+                s.push_str(&format!("  ·  {} {}", t.skipped(), t!("folders could not be read")));
             }
             s
         };
@@ -530,8 +530,8 @@ impl DiskUsageView {
             .justify_center()
             .gap_2()
             .child(Icon::new(L::ChartPie).size(px(40.)).text_color(p.accent))
-            .child(div().text_color(p.text).child(t!("Disk kullanımı hesaplanıyor…")))
-            .child(div().text_sm().text_color(p.text_secondary).child(format!("{} {} · {} · {} s", count(entries), t!("öğe"), format::size(bytes), secs)))
-            .child(div().text_xs().text_color(p.text_tertiary).child(t!("Sekmeyi kapatmak taramayı durdurur")))
+            .child(div().text_color(p.text).child(t!("Working out disk usage…")))
+            .child(div().text_sm().text_color(p.text_secondary).child(format!("{} {} · {} · {} s", count(entries), t!("items"), format::size(bytes), secs)))
+            .child(div().text_xs().text_color(p.text_tertiary).child(t!("Closing the tab stops the scan")))
     }
 }

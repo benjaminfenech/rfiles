@@ -150,7 +150,7 @@ impl Seek for VolumeReader {
             SeekFrom::Current(d) => self.pos as i128 + d as i128,
         };
         if new < 0 {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "negatif konum"));
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "negative position"));
         }
         self.pos = new as u64;
         Ok(self.pos)

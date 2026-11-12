@@ -453,7 +453,7 @@ impl PropsView {
                 let from = paths[0].clone();
                 let to = from.with_file_name(&n);
                 if to.exists() && !n.eq_ignore_ascii_case(&file_name(&from)) {
-                    return Err(t!("Bu adla bir öğe zaten var").to_string());
+                    return Err(t!("An item with this name already exists").to_string());
                 }
                 std::fs::rename(&from, &to).map_err(|e| e.to_string())?;
                 renamed = Some((from, to.clone()));
@@ -525,16 +525,16 @@ impl PropsView {
     }
 
     fn pages(&self) -> Vec<(Page, &'static str)> {
-        let mut pages = vec![(Page::General, t!("Genel"))];
+        let mut pages = vec![(Page::General, t!("General"))];
         if self.single().is_none() {
             return pages;
         }
         let Some(Ok(info)) = &self.info else { return pages };
         if !info.is_dir {
-            pages.push((Page::Details, t!("Ayrıntılar")));
+            pages.push((Page::Details, t!("Details")));
         }
         if !info.is_dir {
-            pages.push((Page::Hashes, t!("Karmalar")));
+            pages.push((Page::Hashes, t!("Hashes")));
         }
         pages
     }
@@ -549,49 +549,49 @@ impl PropsView {
         let mut card1 = Vec::new();
         if let Some(path) = self.single() {
             match &self.info {
-                None => card1.push(row(p, t!("Durum"), t!("Yükleniyor…").into())),
-                Some(Err(e)) => card1.push(row(p, t!("Hata"), e.clone())),
+                None => card1.push(row(p, t!("Status"), t!("Loading…").into())),
+                Some(Err(e)) => card1.push(row(p, t!("Error"), e.clone())),
                 Some(Ok(i)) => {
                     if let Some(e) = self.entry() {
                         let ext = ext_of(path);
                         let label = crate::icons::type_label(&e).to_string();
                         let label = if i.is_dir || ext.is_empty() { label } else { format!("{label} (.{ext})") };
-                        card1.push(row(p, t!("Tür"), label));
+                        card1.push(row(p, t!("Type"), label));
                     }
                     // a program or shortcut runs itself: Windows shows its description there
                     let runs = matches!(ext_of(path).as_str(), "exe" | "com" | "scr" | "lnk" | "bat" | "cmd" | "msi" | "url");
                     if let Some(d) = self.pe.as_ref().and_then(|pe| pe.description.clone()).filter(|_| runs) {
-                        card1.push(row(p, t!("Açıklama"), d));
+                        card1.push(row(p, t!("Description"), d));
                     }
                     if !i.is_dir && !runs {
-                        let app = i.opens_with.clone().unwrap_or_else(|| t!("Seçilmedi").to_string());
+                        let app = i.opens_with.clone().unwrap_or_else(|| t!("Not chosen").to_string());
                         card1.push(row_with(
                             p,
-                            t!("Birlikte açılır"),
+                            t!("Opens with"),
                             app,
-                            link_button(p, "change-app", L::AppWindow, t!("Değiştir…")).on_click(cx.listener(|v, _, window, cx| v.change_app(window, cx))).into_any_element(),
+                            link_button(p, "change-app", L::AppWindow, t!("Change…")).on_click(cx.listener(|v, _, window, cx| v.change_app(window, cx))).into_any_element(),
                         ));
                     }
                     let loc = path.parent().map(|d| breakable(&d.to_string_lossy())).unwrap_or_default();
-                    card1.push(row(p, t!("Konum"), loc));
+                    card1.push(row(p, t!("Location"), loc));
                     if i.is_dir {
                         let (size, contents) = match &self.folder {
                             Some(Some(fs)) => (
-                                format!("{} ({} {})", format::size(fs.bytes), group(fs.bytes), t!("bayt")),
-                                format!("{} {}, {} {}", group(fs.files), t!("dosya"), group(fs.dirs), t!("klasör")),
+                                format!("{} ({} {})", format::size(fs.bytes), group(fs.bytes), t!("bytes")),
+                                format!("{} {}, {} {}", group(fs.files), t!("files"), group(fs.dirs), t!("folders")),
                             ),
-                            Some(None) if self.folder.is_some() => (t!("Hesaplanıyor…").into(), t!("Hesaplanıyor…").into()),
+                            Some(None) if self.folder.is_some() => (t!("Calculating…").into(), t!("Calculating…").into()),
                             _ => ("—".into(), "—".into()),
                         };
-                        card1.push(row(p, t!("Boyut"), size));
+                        card1.push(row(p, t!("Size"), size));
                         if let Some(d) = self.folder.as_ref().and_then(|f| f.as_ref()).and_then(|fs| fs.allocated) {
-                            card1.push(row(p, t!("Disk üzerindeki boyut"), format!("{} ({} {})", format::size(d), group(d), t!("bayt"))));
+                            card1.push(row(p, t!("Size on disk"), format!("{} ({} {})", format::size(d), group(d), t!("bytes"))));
                         }
-                        card1.push(row(p, t!("İçerik"), contents));
+                        card1.push(row(p, t!("Contains"), contents));
                     } else {
-                        card1.push(row(p, t!("Boyut"), format!("{} ({} {})", format::size(i.size), group(i.size), t!("bayt"))));
+                        card1.push(row(p, t!("Size"), format!("{} ({} {})", format::size(i.size), group(i.size), t!("bytes"))));
                         if let Some(d) = i.size_on_disk {
-                            card1.push(row(p, t!("Disk üzerindeki boyut"), format!("{} ({} {})", format::size(d), group(d), t!("bayt"))));
+                            card1.push(row(p, t!("Size on disk"), format!("{} ({} {})", format::size(d), group(d), t!("bytes"))));
                         }
                     }
                 }
@@ -599,18 +599,18 @@ impl PropsView {
         } else if let Some(t) = &self.totals {
             let dir = self.paths[0].parent().map(|d| breakable(&d.to_string_lossy())).unwrap_or_default();
             let sel_files = (self.paths.len() as u64).saturating_sub(t.sel_dirs);
-            card1.push(row(p, t!("Seçim"), format!("{} {}, {} {}", group(sel_files), t!("dosya"), group(t.sel_dirs), t!("klasör"))));
+            card1.push(row(p, t!("Selection"), format!("{} {}, {} {}", group(sel_files), t!("files"), group(t.sel_dirs), t!("folders"))));
             let kind = match (&t.same_ext, t.sel_dirs) {
-                (Some(Some(e)), 0) if !e.is_empty() => format!("{} .{e}", t!("Tümü şu türde:")),
-                (_, d) if d as usize == self.paths.len() => t!("Tümü klasör").to_string(),
-                _ => t!("Birden çok tür").to_string(),
+                (Some(Some(e)), 0) if !e.is_empty() => format!("{} .{e}", t!("All of type")),
+                (_, d) if d as usize == self.paths.len() => t!("All folders").to_string(),
+                _ => t!("Multiple types").to_string(),
             };
-            card1.push(row(p, t!("Tür"), kind));
-            card1.push(row(p, t!("Konum"), format!("{} {dir}", t!("Tümü şurada:"))));
-            let suffix = if t.done { String::new() } else { format!(" — {}", t!("hesaplanıyor…")) };
-            card1.push(row(p, t!("Boyut"), format!("{} ({} {}){suffix}", format::size(t.bytes), group(t.bytes), t!("bayt"))));
-            card1.push(row(p, t!("Disk üzerindeki boyut"), format!("{} ({} {}){suffix}", format::size(t.on_disk), group(t.on_disk), t!("bayt"))));
-            card1.push(row(p, t!("İçerik"), format!("{} {}, {} {}", group(t.files), t!("dosya"), group(t.dirs), t!("klasör"))));
+            card1.push(row(p, t!("Type"), kind));
+            card1.push(row(p, t!("Location"), format!("{} {dir}", t!("All in"))));
+            let suffix = if t.done { String::new() } else { format!(" — {}", t!("calculating…")) };
+            card1.push(row(p, t!("Size"), format!("{} ({} {}){suffix}", format::size(t.bytes), group(t.bytes), t!("bytes"))));
+            card1.push(row(p, t!("Size on disk"), format!("{} ({} {}){suffix}", format::size(t.on_disk), group(t.on_disk), t!("bytes"))));
+            card1.push(row(p, t!("Contains"), format!("{} {}, {} {}", group(t.files), t!("files"), group(t.dirs), t!("folders"))));
         }
         out.push(card(p, card1));
 
@@ -618,9 +618,9 @@ impl PropsView {
             out.push(card(
                 p,
                 vec![
-                    row(p, t!("Oluşturulma"), format::datetime_full(i.created_ms)),
-                    row(p, t!("Değiştirilme"), format::datetime_full(i.modified_ms)),
-                    row(p, t!("Erişim"), format::datetime_full(i.accessed_ms)),
+                    row(p, t!("Created"), format::datetime_full(i.created_ms)),
+                    row(p, t!("Modified"), format::datetime_full(i.modified_ms)),
+                    row(p, t!("Accessed"), format::datetime_full(i.accessed_ms)),
                 ],
             ));
         }
@@ -639,39 +639,39 @@ impl PropsView {
             }))
         };
         // hidden is a name starting with a dot; the advanced attributes are Windows'
-        let rows = vec![section(p, t!("Öznitelikler")), flag("ro", t!("Salt okunur"), a.readonly, |a| &mut a.readonly, cx)];
+        let rows = vec![section(p, t!("Attributes")), flag("ro", t!("Read-only"), a.readonly, |a| &mut a.readonly, cx)];
         card(p, rows)
     }
 
     fn render_drive(&self, d: &rf_linux::drives::Drive, p: &Palette) -> Vec<AnyElement> {
         use rf_linux::drives::DriveKind;
         let kind = match d.kind {
-            DriveKind::Removable => t!("Çıkarılabilir disk"),
-            DriveKind::Network => t!("Ağ sürücüsü"),
-            DriveKind::Optical => t!("CD/DVD sürücüsü"),
-            _ => t!("Yerel Disk"),
+            DriveKind::Removable => t!("Removable disk"),
+            DriveKind::Network => t!("Network drive"),
+            DriveKind::Optical => t!("CD/DVD drive"),
+            _ => t!("Local Disk"),
         };
         let used = d.total.saturating_sub(d.free);
         let frac = d.used_fraction().clamp(0.0, 1.0);
-        let bytes = |n: u64| format!("{} ({} {})", format::size(n), group(n), t!("bayt"));
+        let bytes = |n: u64| format!("{} ({} {})", format::size(n), group(n), t!("bytes"));
         let swatch = |c: Hsla| div().size(px(12.)).rounded(px(3.)).bg(c).flex_shrink_0();
         let full = frac > 0.9;
         let used_color = if full { p.danger } else { p.accent };
         let mut out = vec![card(
             p,
             vec![
-                row(p, t!("Tür"), kind.to_string()),
-                row(p, t!("Dosya sistemi"), if d.fs.is_empty() { "—".into() } else { d.fs.clone() }),
-                row(p, t!("Etiket"), if d.label.is_empty() { "—".into() } else { d.label.clone() }),
+                row(p, t!("Type"), kind.to_string()),
+                row(p, t!("File system"), if d.fs.is_empty() { "—".into() } else { d.fs.clone() }),
+                row(p, t!("Tag"), if d.label.is_empty() { "—".into() } else { d.label.clone() }),
             ],
         )];
         out.push(card(
             p,
             vec![
-                h_flex().gap_3().py(px(7.)).text_sm().items_center().child(swatch(used_color)).child(div().w(px(120.)).text_color(p.text_secondary).child(t!("Kullanılan alan"))).child(bytes(used)).into_any_element(),
-                h_flex().gap_3().py(px(7.)).text_sm().items_center().child(swatch(p.hover)).child(div().w(px(120.)).text_color(p.text_secondary).child(t!("Boş alan"))).child(bytes(d.free)).into_any_element(),
+                h_flex().gap_3().py(px(7.)).text_sm().items_center().child(swatch(used_color)).child(div().w(px(120.)).text_color(p.text_secondary).child(t!("Used space"))).child(bytes(used)).into_any_element(),
+                h_flex().gap_3().py(px(7.)).text_sm().items_center().child(swatch(p.hover)).child(div().w(px(120.)).text_color(p.text_secondary).child(t!("Free space"))).child(bytes(d.free)).into_any_element(),
                 div().h(px(1.)).my_1().bg(p.divider).into_any_element(),
-                h_flex().gap_3().py(px(7.)).text_sm().items_center().child(div().size(px(12.))).child(div().w(px(120.)).text_color(p.text_secondary).child(t!("Kapasite"))).child(bytes(d.total)).into_any_element(),
+                h_flex().gap_3().py(px(7.)).text_sm().items_center().child(div().size(px(12.))).child(div().w(px(120.)).text_color(p.text_secondary).child(t!("Capacity"))).child(bytes(d.total)).into_any_element(),
                 // how full: a bar like the sidebar's, larger
                 div()
                     .mt_2()
@@ -684,7 +684,7 @@ impl PropsView {
                     .border_color(p.border)
                     .child(div().h_full().rounded(px(7.)).bg(used_color).w(relative(frac)))
                     .into_any_element(),
-                div().text_xs().text_color(p.text_secondary).child(format!("{} %{:.0}", t!("Dolu:"), frac * 100.0)).into_any_element(),
+                div().text_xs().text_color(p.text_secondary).child(format!("{} %{:.0}", t!("Full:"), frac * 100.0)).into_any_element(),
             ],
         ));
         out
@@ -699,21 +699,21 @@ impl PropsView {
                     rows.push(row(p, k, v.clone()));
                 }
             };
-            add(t!("Dosya açıklaması"), &pe.description);
-            add(t!("Dosya sürümü"), &pe.version);
-            add(t!("Ürün adı"), &pe.product);
-            add(t!("Ürün sürümü"), &pe.product_version);
-            add(t!("Şirket"), &pe.company);
-            add(t!("Telif hakkı"), &pe.copyright);
-            add(t!("Ticari markalar"), &pe.trademarks);
-            add(t!("Dil"), &pe.language);
-            add(t!("Özgün dosya adı"), &pe.original_filename);
-            add(t!("İç ad"), &pe.internal_name);
-            rows.push(row(p, t!("Mimari"), pe.arch.to_string()));
+            add(t!("File description"), &pe.description);
+            add(t!("File version"), &pe.version);
+            add(t!("Product name"), &pe.product);
+            add(t!("Product version"), &pe.product_version);
+            add(t!("Company"), &pe.company);
+            add(t!("Copyright"), &pe.copyright);
+            add(t!("Trademarks"), &pe.trademarks);
+            add(t!("Language"), &pe.language);
+            add(t!("Original filename"), &pe.original_filename);
+            add(t!("Internal name"), &pe.internal_name);
+            rows.push(row(p, t!("Architecture"), pe.arch.to_string()));
             out.push(card(p, rows));
         }
         if !self.media.is_empty() {
-            let mut rows = vec![section(p, t!("İçerik"))];
+            let mut rows = vec![section(p, t!("Contains"))];
             rows.extend(self.media.iter().map(|(k, v)| row(p, crate::i18n::t(k), v.clone())));
             out.push(card(p, rows));
         }
@@ -725,21 +725,21 @@ impl PropsView {
                 }
             }
             let mut rows = vec![
-                section(p, t!("Dosya")),
-                row(p, t!("Ad"), file_name(path)),
-                row(p, t!("Klasör yolu"), path.parent().map(|d| breakable(&d.to_string_lossy())).unwrap_or_default()),
-                row(p, t!("Oluşturulma"), format::datetime_full(i.created_ms)),
-                row(p, t!("Değiştirilme"), format::datetime_full(i.modified_ms)),
-                row(p, t!("Boyut"), format::size(i.size)),
-                row(p, t!("Öznitelikler"), if letters.is_empty() { "—".into() } else { letters }),
+                section(p, t!("File")),
+                row(p, t!("Name"), file_name(path)),
+                row(p, t!("Folder path"), path.parent().map(|d| breakable(&d.to_string_lossy())).unwrap_or_default()),
+                row(p, t!("Created"), format::datetime_full(i.created_ms)),
+                row(p, t!("Modified"), format::datetime_full(i.modified_ms)),
+                row(p, t!("Size"), format::size(i.size)),
+                row(p, t!("Attributes"), if letters.is_empty() { "—".into() } else { letters }),
             ];
             if let Some(Ok(s)) = &self.security {
                 if let Some(o) = &s.owner {
-                    rows.push(row(p, t!("Sahip"), o.clone()));
+                    rows.push(row(p, t!("Owner"), o.clone()));
                 }
             }
             if let Ok(pc) = std::env::var("COMPUTERNAME") {
-                rows.push(row(p, t!("Bilgisayar"), format!("{pc} ({})", t!("bu bilgisayar"))));
+                rows.push(row(p, t!("Computer"), format!("{pc} ({})", t!("this PC"))));
             }
             out.push(card(p, rows));
         }
@@ -901,9 +901,9 @@ impl Render for PropsView {
             }
         }
         let title = match (self.single(), &self.drive) {
-            (_, Some(d)) => format!("{} — {}", d.display_name(), t!("Özellikler")),
-            (Some(path), None) => format!("{} — {}", file_name(path), t!("Özellikler")),
-            (None, None) => format!("{} — {}", crate::i18n::items(self.paths.len()), t!("Özellikler")),
+            (_, Some(d)) => format!("{} — {}", d.display_name(), t!("Properties")),
+            (Some(path), None) => format!("{} — {}", file_name(path), t!("Properties")),
+            (None, None) => format!("{} — {}", crate::i18n::items(self.paths.len()), t!("Properties")),
         };
         window.set_window_title(&title);
 
@@ -1031,10 +1031,10 @@ impl Render for PropsView {
                     .border_t_1()
                     .border_color(p.divider)
                     .child(div().flex_1().min_w_0().text_xs().text_color(p.danger).children(self.error.clone()))
-                    .child(button("ok", t!("Tamam"), true).on_click(cx.listener(|v, _, window, cx| v.apply(true, window, cx))))
-                    .child(button("cancel", t!("İptal"), false).on_click(|_, window, _| window.remove_window()))
+                    .child(button("ok", t!("OK"), true).on_click(cx.listener(|v, _, window, cx| v.apply(true, window, cx))))
+                    .child(button("cancel", t!("Cancel"), false).on_click(|_, window, _| window.remove_window()))
                     .child(
-                        button("apply", t!("Uygula"), false)
+                        button("apply", t!("Apply"), false)
                             .when(!dirty, |d| d.opacity(0.5))
                             .on_click(cx.listener(|v, _, window, cx| v.apply(false, window, cx))),
                     ),

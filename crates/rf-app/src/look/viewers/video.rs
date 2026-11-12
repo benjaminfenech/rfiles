@@ -282,7 +282,7 @@ impl MediaView {
         self._tasks.push(cx.spawn(async move |this, cx| {
             let (meta, lyrics) = work.await;
             if std::env::var_os("RFILES_LOOK_TRACE").is_some() {
-                eprintln!("look: ses bilgisi {meta:?}, {} söz satırı", lyrics.len());
+                eprintln!("look: audio info {meta:?}, {} lyric lines", lyrics.len());
             }
             let _ = this.update(cx, |v, cx| {
                 v.meta = meta;
@@ -337,7 +337,7 @@ impl MediaView {
                         v.previous = std::mem::replace(&mut v.image, img);
                         if !v.first_frame_logged {
                             v.first_frame_logged = true;
-                            crate::look::trace::mark("ilk video karesi");
+                            crate::look::trace::mark("first video frame");
                         }
                         cx.notify();
                     })
@@ -569,7 +569,7 @@ impl Render for MediaView {
                 .justify_center()
                 .gap_2()
                 .p_4()
-                .child(div().text_color(p.text).child(t!("Bu dosya oynatılamıyor")))
+                .child(div().text_color(p.text).child(t!("This file cannot be played")))
                 .child(div().text_xs().text_color(p.text_secondary).child(e.clone()))
                 .into_any_element();
         }
@@ -671,9 +671,9 @@ impl MediaView {
     fn render_audio_inner(&mut self, cover: Option<Arc<RenderImage>>, window: &mut Window, cx: &mut Context<Self>, lyric: Option<String>) -> AnyElement {
         let p = crate::theme::Palette::for_window(window);
         let field = |k: &str| self.meta.iter().find(|(l, _)| *l == k).map(|(_, v)| v.clone());
-        let title = field("Başlık").unwrap_or_else(|| super::file_name(&self.path));
-        let artist = field("Sanatçı");
-        let album = field("Albüm");
+        let title = field("Title").unwrap_or_else(|| super::file_name(&self.path));
+        let artist = field("Artist");
+        let album = field("Album");
         h_flex()
             .size_full()
             .p_4()

@@ -77,7 +77,7 @@ pub fn add(
 ) -> Result<EditStats> {
     ensure_editable(archive)?;
     if sources.is_empty() {
-        bail!("Eklenecek öğe yok");
+        bail!("Nothing to add");
     }
     let inner = norm(inner_dir);
     if !inner.is_empty() {
@@ -151,7 +151,7 @@ pub fn delete(
     ensure_editable(archive)?;
     let paths: Vec<String> = inner_paths.iter().map(|p| norm(p)).filter(|p| !p.is_empty()).collect();
     if paths.is_empty() {
-        bail!("Silinecek öğe yok");
+        bail!("Nothing to delete");
     }
     let prefixes: Vec<String> = paths.iter().map(|p| format!("{p}/")).collect();
     let removed = |name: &str| {
@@ -169,7 +169,7 @@ fn valid_name(name: &str) -> Result<()> {
         || name == ".."
         || name.chars().any(|c| matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') || c.is_control());
     if bad {
-        bail!("Geçersiz ad");
+        bail!("Invalid name");
     }
     Ok(())
 }
@@ -207,12 +207,12 @@ pub fn rename(
     valid_name(to_name)?;
     let from = norm(from);
     if from.is_empty() {
-        bail!("Öğe bulunamadı");
+        bail!("Item not found");
     }
     let prefix = format!("{from}/");
     let (taken, raw) = existing_names(archive, opts)?;
     if !raw.iter().any(|n| *n == from || n.starts_with(&prefix)) {
-        bail!("Öğe bulunamadı");
+        bail!("Item not found");
     }
     let parent = from.rsplit_once('/').map(|(p, _)| p).unwrap_or("");
     let new_from = join(parent, to_name);
@@ -220,7 +220,7 @@ pub fn rename(
         return Ok(EditStats { archive_bytes: fs::metadata(archive).map(|m| m.len()).unwrap_or(0), ..Default::default() });
     }
     if new_from.to_lowercase() != from.to_lowercase() && taken.contains(&new_from.to_lowercase()) {
-        bail!("Bu adda bir öğe zaten var");
+        bail!("An item with this name already exists");
     }
     let mapper = |name: &str| -> Option<String> {
         let n = norm(name);
@@ -255,7 +255,7 @@ pub fn create_dir(
     let full = join(&inner, name);
     let (taken, _) = existing_names(archive, opts)?;
     if taken.contains(&full.to_lowercase()) {
-        bail!("Bu adda bir öğe zaten var");
+        bail!("An item with this name already exists");
     }
     // The shared writers take an on-disk source for the metadata; use a scratch directory.
     static SEQ: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
@@ -275,7 +275,7 @@ pub fn create_dir(
 
 fn ensure_editable(archive: &Path) -> Result<()> {
     if !is_editable(archive) {
-        bail!("Bu arşiv biçimi düzenlenemez");
+        bail!("This archive format can't be edited");
     }
     Ok(())
 }
@@ -310,7 +310,7 @@ fn rewrite(
     progress: &mut dyn FnMut(Progress),
     cancelled: &dyn Fn() -> bool,
 ) -> Result<Info> {
-    let kind = kind_of(archive).context("Desteklenmeyen arşiv türü")?;
+    let kind = kind_of(archive).context("Unsupported archive type")?;
     let part = part_path(archive);
     let _ = fs::remove_file(&part); // stale leftover of a crashed edit
     let new_total: u64 = items.iter().map(|i| i.size).sum();
@@ -345,7 +345,7 @@ fn rewrite(
         Ok(n) => {
             if let Err(e) = fs::rename(&part, archive) {
                 let _ = fs::remove_file(&part);
-                return Err(anyhow::Error::new(e).context(format!("Arşiv güncellenemedi: {}", archive.display())));
+                return Err(anyhow::Error::new(e).context(format!("Couldn't update the archive: {}", archive.display())));
             }
             ctx.emit(true);
             Ok(Info { removed: n, mapped: mapped.get(), archive_bytes: fs::metadata(archive).map(|m| m.len()).unwrap_or(0) })
@@ -366,13 +366,13 @@ fn rewrite_zip(
     items: &[Item],
     ctx: &mut CompressCtx,
 ) -> Result<u64> {
-    let mut za = zip::ZipArchive::new(BufReader::new(open_source(archive)?)).context("Zip dosyası okunamadı")?;
+    let mut za = zip::ZipArchive::new(BufReader::new(open_source(archive)?)).context("Couldn't read the zip file")?;
     let mut encrypted = false;
     let mut keep_bytes = 0u64;
     for i in 0..za.len() {
-        let f = za.by_index_raw(i).context("Zip girdisi okunamadı")?;
+        let f = za.by_index_raw(i).context("Couldn't read a zip entry")?;
         encrypted |= f.encrypted();
-        let name = names::entry_name(f.name_raw(), f.name().context("Zip girdi adı çözülemedi")?).into_owned();
+        let name = names::entry_name(f.name_raw(), f.name().context("Couldn't decode a zip entry name")?).into_owned();
         if !removed(&name) {
             keep_bytes += f.compressed_size();
         }
@@ -383,16 +383,16 @@ fn rewrite_zip(
     let mut n_removed = 0u64;
     for i in 0..za.len() {
         check(ctx)?;
-        let f = za.by_index_raw(i).context("Zip girdisi okunamadı")?;
-        let name = names::entry_name(f.name_raw(), f.name().context("Zip girdi adı çözülemedi")?).into_owned();
+        let f = za.by_index_raw(i).context("Couldn't read a zip entry")?;
+        let name = names::entry_name(f.name_raw(), f.name().context("Couldn't decode a zip entry name")?).into_owned();
         if removed(&name) {
             n_removed += 1;
             continue;
         }
         let csize = f.compressed_size();
         match map(&name) {
-            Some(new) => zw.raw_copy_file_rename(f, new.as_str()).context("Zip girdisi kopyalanamadı")?,
-            None => zw.raw_copy_file(f).context("Zip girdisi kopyalanamadı")?,
+            Some(new) => zw.raw_copy_file_rename(f, new.as_str()).context("Couldn't copy a zip entry")?,
+            None => zw.raw_copy_file(f).context("Couldn't copy a zip entry")?,
         }
         ctx.current = name;
         ctx.done += csize;
@@ -453,7 +453,7 @@ fn rewrite_7z(
     }
     ctx.total += keep;
     let mut reader = sevenz_rust2::ArchiveReader::from_archive(ar, open_source(archive)?, sz_password(opts));
-    let mut sw = sevenz_rust2::ArchiveWriter::create(part).map_err(|e| anyhow::Error::new(e).context("7z oluşturulamadı"))?;
+    let mut sw = sevenz_rust2::ArchiveWriter::create(part).map_err(|e| anyhow::Error::new(e).context("Couldn't create the 7z archive"))?;
     sw.set_content_methods(sz_content_methods(5, if encrypted { opts.pw() } else { None }));
 
     let mut n_removed = 0u64;
@@ -483,7 +483,7 @@ fn rewrite_7z(
         match pushed {
             Ok(()) => Ok(true),
             Err(err) => {
-                failure = Some(anyhow::Error::new(err).context(format!("7z'ye yazılamadı: {}", e.name)));
+                failure = Some(anyhow::Error::new(err).context(format!("Couldn't write to the 7z archive: {}", e.name)));
                 Ok(false)
             }
         }
@@ -545,9 +545,9 @@ fn rewrite_tar(
             n = k;
             finish = Box::new(move || enc.finish()?.flush());
         }
-        _ => bail!("Bu arşiv biçimi düzenlenemez"),
+        _ => bail!("This archive format can't be edited"),
     }
-    finish().context("Arşiv yazılamadı")?;
+    finish().context("Couldn't write the archive")?;
     Ok(n)
 }
 
@@ -564,9 +564,9 @@ fn tar_copy<W: Write, R: Read>(
 ) -> Result<(u64, W)> {
     let mut tb = tar::Builder::new(w);
     let mut n_removed = 0u64;
-    for e in ar.entries().context("Tar okunamadı")? {
+    for e in ar.entries().context("Couldn't read the tar archive")? {
         check(ctx)?;
-        let mut e = e.context("Tar girdisi okunamadı")?;
+        let mut e = e.context("Couldn't read a tar entry")?;
         let t = e.header().entry_type();
         if !(t.is_file() || t.is_dir() || t.is_contiguous() || t.is_symlink() || t.is_hard_link()) {
             continue; // pax / GNU metadata records are regenerated by the builder
@@ -579,13 +579,13 @@ fn tar_copy<W: Write, R: Read>(
         let new_name = map(&name).unwrap_or_else(|| name.clone());
         let mut h = e.header().clone();
         if t.is_symlink() || t.is_hard_link() {
-            let target = e.link_name().context("Tar bağlantısı okunamadı")?.map(|l| l.into_owned());
+            let target = e.link_name().context("Couldn't read a tar link")?.map(|l| l.into_owned());
             match target {
                 Some(l) => tb.append_link(&mut h, &new_name, l)?,
                 None => continue,
             }
         } else {
-            tb.append_data(&mut h, &new_name, &mut e).with_context(|| format!("Kopyalanamadı: {name}"))?;
+            tb.append_data(&mut h, &new_name, &mut e).with_context(|| format!("Couldn't copy: {name}"))?;
         }
         ctx.current = name;
         ctx.done = counter.get();
@@ -677,10 +677,10 @@ mod tests {
         assert_eq!(fs::read(dest.join("proje/yeni/deep/c.txt")).unwrap(), b"ucuncu");
         assert_eq!(fs::read(dest.join("proje/z.txt")).unwrap(), b"merhaba");
         // errors
-        assert!(err(run_rename(&arch, "proje/z.txt", "YENI", &o)).contains("zaten var"));
-        assert!(err(run_rename(&arch, "proje/yok.txt", "q", &o)).contains("Öğe bulunamadı"));
+        assert!(err(run_rename(&arch, "proje/z.txt", "YENI", &o)).contains("already exists"));
+        assert!(err(run_rename(&arch, "proje/yok.txt", "q", &o)).contains("Item not found"));
         for bad in ["", ".", "..", "a/b", r"a\b", "a:b", "a*", "a?", "a\"", "a<", "a>", "a|"] {
-            assert!(err(run_rename(&arch, "proje/z.txt", bad, &o)).contains("Geçersiz ad"), "{bad}");
+            assert!(err(run_rename(&arch, "proje/z.txt", bad, &o)).contains("Invalid name"), "{bad}");
         }
         // case-only change is allowed
         run_rename(&arch, "proje/z.txt", "Z.txt", &o).unwrap();
@@ -693,9 +693,9 @@ mod tests {
         let n = names(&arch, &o);
         assert!(n.contains(&"proje/klasor".to_string()) && n.contains(&"proje/klasor/ic".to_string()), "{n:?}");
         let e = err(create_dir(&arch, "proje", "KLASOR", &o, &mut |_| {}, &|| false));
-        assert!(e.contains("zaten var"), "{e}");
+        assert!(e.contains("already exists"), "{e}");
         let e = err(create_dir(&arch, "proje", "a/b", &o, &mut |_| {}, &|| false));
-        assert!(e.contains("Geçersiz ad"), "{e}");
+        assert!(e.contains("Invalid name"), "{e}");
         let dest = out.join("y");
         extract_with(&arch, &dest, &o, &mut |_| {}, &|| false).unwrap();
         assert!(dest.join("proje/klasor/ic").is_dir());

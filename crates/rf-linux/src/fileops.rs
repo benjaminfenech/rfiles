@@ -44,7 +44,7 @@ pub fn rename(path: &Path, new_name: &str) -> anyhow::Result<bool> {
     }
     match rename_no_replace(path, &to) {
         Ok(()) => Ok(true),
-        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => bail!("Bu adla bir öğe zaten var"),
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => bail!("An item with this name already exists"),
         Err(e) => Err(e.into()),
     }
 }
@@ -75,13 +75,13 @@ pub fn rename_no_replace(from: &Path, to: &Path) -> std::io::Result<()> {
 
 /// "Yeni klasör", "Yeni klasör (2)", … — returns the created path.
 pub fn new_folder(dir: &Path) -> anyhow::Result<PathBuf> {
-    let p = unique_name(dir, "Yeni klasör", "");
+    let p = unique_name(dir, "New folder", "");
     std::fs::create_dir(&p)?;
     Ok(p)
 }
 
 pub fn new_text_file(dir: &Path) -> anyhow::Result<PathBuf> {
-    let p = unique_name(dir, "Yeni Metin Belgesi", ".txt");
+    let p = unique_name(dir, "New Text Document", ".txt");
     std::fs::OpenOptions::new().write(true).create_new(true).open(&p)?;
     Ok(p)
 }
@@ -386,7 +386,7 @@ mod tests {
         let d = base("unique");
         let a = new_folder(&d).unwrap();
         let b = new_folder(&d).unwrap();
-        assert!(a.ends_with("Yeni klasör") && b.ends_with("Yeni klasör (2)"));
+        assert!(a.ends_with("New folder") && b.ends_with("New folder (2)"));
         let f = new_text_file(&d).unwrap();
         assert!(rename(&f, "x.txt").unwrap());
         assert!(rename(&a, "x.txt").is_err(), "taken name refused");

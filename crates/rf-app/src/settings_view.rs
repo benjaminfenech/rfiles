@@ -36,16 +36,16 @@ pub enum Page {
 }
 
 const PAGES: [(Page, L, &str); 10] = [
-    (Page::General, L::Settings, "Genel"),
-    (Page::Appearance, L::Palette, "Görünüm"),
-    (Page::Layout, L::LayoutGrid, "Sayfa düzeni"),
-    (Page::Files, L::Folder, "Dosyalar ve klasörler"),
-    (Page::Actions, L::Keyboard, "Eylemler"),
-    (Page::Tags, L::Tag, "Etiketler"),
+    (Page::General, L::Settings, "General"),
+    (Page::Appearance, L::Palette, "Appearance"),
+    (Page::Layout, L::LayoutGrid, "Layout"),
+    (Page::Files, L::Folder, "Files and folders"),
+    (Page::Actions, L::Keyboard, "Actions"),
+    (Page::Tags, L::Tag, "Tags"),
     (Page::Look, L::Eye, "DirectLook"),
-    (Page::Dev, L::SquareTerminal, "Geliştirici araçları"),
-    (Page::Advanced, L::Wrench, "Gelişmiş"),
-    (Page::About, L::Info, "Hakkında"),
+    (Page::Dev, L::SquareTerminal, "Developer tools"),
+    (Page::Advanced, L::Wrench, "Advanced"),
+    (Page::About, L::Info, "About"),
 ];
 
 /// Which page is shown and which expanders are open (kept while the app runs).
@@ -77,7 +77,7 @@ pub(crate) fn switch(id: impl Into<ElementId>, p: &Palette, on: bool, toggle: im
     h_flex()
         .gap_3()
         .items_center()
-        .child(div().text_sm().text_color(p.text_secondary).child(if on { t!("Açık") } else { t!("Kapalı") }))
+        .child(div().text_sm().text_color(p.text_secondary).child(if on { t!("On") } else { t!("Off") }))
         .child(
             h_flex()
                 .id(id)
@@ -235,7 +235,7 @@ pub fn render(p: &Palette, window: &mut Window, cx: &mut App) -> AnyElement {
     let page = ui(cx).page;
     let s = cx.global::<Settings>().clone();
     let mut nav = v_flex().w(px(232.)).flex_shrink_0().h_full().px_3().pt_5().gap_0p5().child(
-        div().px_2().pb_3().text_xl().font_weight(FontWeight::SEMIBOLD).child(t!("Ayarlar")),
+        div().px_2().pb_3().text_xl().font_weight(FontWeight::SEMIBOLD).child(t!("Settings")),
     );
     for (i, (pg, icon, label)) in PAGES.iter().copied().enumerate() {
         let on = pg == page;
@@ -314,15 +314,15 @@ fn qs_command_desc() -> &'static str {
 /// Quick search: on/off, the command a desktop shortcut runs, web engine, bookmarks.
 fn quick_search_cards(p: &Palette, s: &Settings) -> Vec<AnyElement> {
     vec![
-        section(p, t!("Hızlı arama")),
+        section(p, t!("Quick search")),
         card(
             p,
             L::Search,
-            t!("Hızlı arama"),
+            t!("Quick search"),
             Some(if s.run_in_background {
-                t!("Her yerden kısayolla: uygulamalar, dosyalar, klasörler, yer imleri ve web")
+                t!("A shortcut from anywhere: apps, files, folders, bookmarks and the web")
             } else {
-                t!("Her yerden kısayolla: uygulamalar, dosyalar, klasörler, yer imleri ve web. Pencere kapalıyken de çalışması için Gelişmiş'te arka planda çalışmayı açın")
+                t!("A shortcut from anywhere: apps, files, folders, bookmarks and the web. To use it with no window open, turn on running in the background under Advanced")
             }),
             sw("quick-search", p, s.quick_search, |s, v| s.quick_search = v),
         ),
@@ -330,14 +330,14 @@ fn quick_search_cards(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         card(
             p,
             L::Keyboard,
-            t!("Kısayol"),
+            t!("Shortcut"),
             Some(qs_command_desc()),
             button("qs-copy-command", p, "Copy command", |_, cx| cx.write_to_clipboard(gpui_kit::ClipboardItem::new_string(qs_command().to_string()))),
         ),
         card(
             p,
             L::Globe,
-            t!("Web araması"),
+            t!("Web search"),
             None,
             dropdown(
                 "web-search",
@@ -355,8 +355,8 @@ fn quick_search_cards(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         card(
             p,
             L::Bookmark,
-            t!("Chrome ve Edge yer imlerini de ara"),
-            Some(t!("Yer imleri bu bilgisayarda okunur, hiçbir yere gönderilmez")),
+            t!("Search Chrome and Edge bookmarks too"),
+            Some(t!("Bookmarks are read on this PC and sent nowhere")),
             sw("qs-bookmarks", p, s.quick_search_bookmarks, |s, v| s.quick_search_bookmarks = v),
         ),
     ]
@@ -409,7 +409,7 @@ fn date_pattern_card(p: &Palette, s: &Settings, window: &mut Window, cx: &mut Ap
             _ => format!("Type a format, e.g. dd/mm/yyyy hh:mm; still using {}", s.date_pattern),
         },
     };
-    card(p, L::CalendarClock, t!("Tarih biçimi"), Some(&desc), div().w(px(220.)).child(Input::new(&inp)).into_any_element())
+    card(p, L::CalendarClock, t!("Date format"), Some(&desc), div().w(px(220.)).child(Input::new(&inp)).into_any_element())
 }
 
 /// What the date pattern accepts, and a few to pick from.
@@ -458,13 +458,13 @@ fn general(p: &Palette, s: &Settings, window: &mut Window, cx: &mut App) -> Vec<
         card(
             p,
             L::Languages,
-            t!("Dil"),
+            t!("Language"),
             None,
             dropdown(
                 "lang",
                 p,
                 s.language,
-                std::iter::once((Lang::System, t!("Sistem ayarını kullan").to_string()))
+                std::iter::once((Lang::System, t!("Use system setting").to_string()))
                     .chain(Lang::all().into_iter().map(|l| (l, l.native_name().to_string())))
                     .collect(),
                 |s, v| s.language = v,
@@ -485,9 +485,9 @@ fn general(p: &Palette, s: &Settings, window: &mut Window, cx: &mut App) -> Vec<
         p,
         s.startup,
         vec![
-            (StartupPref::Continue, t!("Kaldığınız yerden devam edin").into()),
-            (StartupPref::NewTab, t!("Yeni sekme aç").into()),
-            (StartupPref::Pages, t!("Belirli sayfaları aç").into()),
+            (StartupPref::Continue, t!("Continue where you left off").into()),
+            (StartupPref::NewTab, t!("Open a new tab").into()),
+            (StartupPref::Pages, t!("Open specific pages").into()),
         ],
         |s, v| s.startup = v,
     );
@@ -497,7 +497,7 @@ fn general(p: &Palette, s: &Settings, window: &mut Window, cx: &mut App) -> Vec<
         "startup",
         p,
         L::Power,
-        t!("Başlangıç ayarları"),
+        t!("Startup settings"),
         None,
         Some(startup_dd),
         move || {
@@ -505,12 +505,12 @@ fn general(p: &Palette, s: &Settings, window: &mut Window, cx: &mut App) -> Vec<
                 .iter()
                 .enumerate()
                 .map(|(i, page)| {
-                    let shown = if page.is_empty() { t!("Ana Sayfa").to_string() } else { page.clone() };
+                    let shown = if page.is_empty() { t!("Home").to_string() } else { page.clone() };
                     sub(
                         &pp,
                         &shown,
                         None,
-                        button(("sp-del", i), &pp, t!("Kaldır"), move |_, cx| settings::update(cx, |s| {
+                        button(("sp-del", i), &pp, t!("Remove"), move |_, cx| settings::update(cx, |s| {
                             if i < s.startup_pages.len() {
                                 s.startup_pages.remove(i);
                             }
@@ -520,9 +520,9 @@ fn general(p: &Palette, s: &Settings, window: &mut Window, cx: &mut App) -> Vec<
                 .collect();
             rows.push(sub(
                 &pp,
-                t!("Belirli sayfalar"),
-                Some(t!("\"Belirli sayfaları aç\" seçiliyken açılır.")),
-                button("sp-use", &pp, t!("Şu an açık sekmeleri kullan"), |_, cx| {
+                t!("Specific pages"),
+                Some(t!("Opens when \"Open specific pages\" is selected.")),
+                button("sp-use", &pp, t!("Use currently open tabs"), |_, cx| {
                     settings::update(cx, |s| {
                         s.startup_pages = s.session_tabs.clone();
                         s.startup = StartupPref::Pages;
@@ -533,45 +533,45 @@ fn general(p: &Palette, s: &Settings, window: &mut Window, cx: &mut App) -> Vec<
         },
         cx,
     ));
-    v.push(card(p, L::SquarePlus, t!("Her zaman yeni açılan sekmeye geç"), None, sw("focus-tab", p, s.focus_new_tab, |s, v| s.focus_new_tab = v)));
+    v.push(card(p, L::SquarePlus, t!("Always switch to the newly opened tab"), None, sw("focus-tab", p, s.focus_new_tab, |s, v| s.focus_new_tab = v)));
 
-    v.push(section(p, t!("Çift bölme")));
-    v.push(card(p, L::Columns2, t!("Yeni sekmeleri çift bölmeyle aç"), None, sw("dual-new", p, s.dual_pane_new_tabs, |s, v| s.dual_pane_new_tabs = v)));
+    v.push(section(p, t!("Dual pane")));
+    v.push(card(p, L::Columns2, t!("Open new tabs in dual pane"), None, sw("dual-new", p, s.dual_pane_new_tabs, |s, v| s.dual_pane_new_tabs = v)));
     v.push(card(
         p,
         L::SquareSplitHorizontal,
-        t!("Çift bölme yönü"),
+        t!("Dual pane orientation"),
         None,
         dropdown(
             "dual-dir",
             p,
             s.dual_pane_vertical,
-            vec![(true, t!("Yan yana").into()), (false, t!("Alt alta").into())],
+            vec![(true, t!("Side by side").into()), (false, t!("Stacked").into())],
             |s, v| s.dual_pane_vertical = v,
         ),
     ));
 
-    v.push(section(p, t!("Sağ tık menüsü")));
+    v.push(section(p, t!("Context menu")));
     let m = s.menu.clone();
     let pp = *p;
     v.push(expander(
         "ctx",
         p,
         L::SquareMenu,
-        t!("Bağlam menüsü seçenekleri"),
-        Some(t!("Menüde hangi komutların görüneceği")),
+        t!("Context menu options"),
+        Some(t!("Which commands appear in the menu")),
         None,
         move || {
             type Set = fn(&mut Settings, bool);
             let rows: [(&str, bool, Set); 8] = [
-                (t!("Yeni sekmede aç"), m.open_in_new_tab, |s, v| s.menu.open_in_new_tab = v),
-                (t!("Yeni pencerede aç"), m.open_in_new_window, |s, v| s.menu.open_in_new_window = v),
-                (t!("Öğe yolunu kopyala"), m.copy_path, |s, v| s.menu.copy_path = v),
-                (t!("Kenar çubuğuna sabitle"), m.pin, |s, v| s.menu.pin = v),
-                (t!("Sıkıştır / Çıkar"), m.compress, |s, v| s.menu.compress = v),
-                (t!("Etiketler"), m.tags, |s, v| s.menu.tags = v),
-                (t!("Rafa ekle"), m.shelf, |s, v| s.menu.shelf = v),
-                (t!("Terminalde aç"), m.terminal, |s, v| s.menu.terminal = v),
+                (t!("Open in new tab"), m.open_in_new_tab, |s, v| s.menu.open_in_new_tab = v),
+                (t!("Open in new window"), m.open_in_new_window, |s, v| s.menu.open_in_new_window = v),
+                (t!("Copy item path"), m.copy_path, |s, v| s.menu.copy_path = v),
+                (t!("Pin to sidebar"), m.pin, |s, v| s.menu.pin = v),
+                (t!("Compress / Extract"), m.compress, |s, v| s.menu.compress = v),
+                (t!("Tags"), m.tags, |s, v| s.menu.tags = v),
+                (t!("Add to shelf"), m.shelf, |s, v| s.menu.shelf = v),
+                (t!("Open in terminal"), m.terminal, |s, v| s.menu.terminal = v),
             ];
             rows.into_iter()
                 .enumerate()
@@ -581,29 +581,29 @@ fn general(p: &Palette, s: &Settings, window: &mut Window, cx: &mut App) -> Vec<
         cx,
     ));
 
-    v.push(section(p, t!("Kaydırma")));
-    v.push(card(p, L::ChevronsUpDown, t!("Akıcı kaydırma"), None, sw("smooth", p, s.smooth_scroll, |s, v| s.smooth_scroll = v)));
+    v.push(section(p, t!("Scrolling")));
+    v.push(card(p, L::ChevronsUpDown, t!("Smooth scrolling"), None, sw("smooth", p, s.smooth_scroll, |s, v| s.smooth_scroll = v)));
     v.extend(quick_search_cards(p, s));
     v
 }
 
 /// Background tint presets (Files' "Background color").
 const TINTS: [(&str, u32); 15] = [
-    ("Altın sarısı", 0xC19C00),
-    ("Turuncu", 0xCA5010),
-    ("Tuğla kırmızısı", 0xA4262C),
-    ("Kırmızı", 0xD13438),
-    ("Gül", 0xE3008C),
-    ("Mor", 0x881798),
-    ("İris", 0x8764B8),
-    ("Mavi", 0x0078D4),
-    ("Deniz", 0x038387),
-    ("Nane", 0x00B294),
-    ("Yeşil", 0x107C10),
-    ("Kamuflaj", 0x486860),
-    ("Fırtına", 0x4C4A48),
-    ("Mavi gri", 0x515C6B),
-    ("Gri", 0x7A7574),
+    ("Goldenrod", 0xC19C00),
+    ("Orange", 0xCA5010),
+    ("Brick red", 0xA4262C),
+    ("Red", 0xD13438),
+    ("Rose", 0xE3008C),
+    ("Purple", 0x881798),
+    ("Iris", 0x8764B8),
+    ("Blue", 0x0078D4),
+    ("Sea", 0x038387),
+    ("Mint", 0x00B294),
+    ("Green", 0x107C10),
+    ("Camouflage", 0x486860),
+    ("Storm", 0x4C4A48),
+    ("Blue gray", 0x515C6B),
+    ("Gray", 0x7A7574),
 ];
 
 fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
@@ -611,20 +611,20 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         card(
             p,
             L::SunMoon,
-            t!("Tema"),
+            t!("Theme"),
             None,
             dropdown(
                 "theme",
                 p,
                 s.theme,
-                vec![(ThemePref::System, t!("Sistem ayarını kullan").into()), (ThemePref::Light, crate::i18n::tx("Açık", "Light").into()), (ThemePref::Dark, t!("Koyu").into())],
+                vec![(ThemePref::System, t!("Use system setting").into()), (ThemePref::Light, t!("Light").into()), (ThemePref::Dark, t!("Dark").into())],
                 |s, v| s.theme = v,
             ),
         ),
         card(
             p,
             L::Layers,
-            t!("Arka plan malzemesi"),
+            t!("Background material"),
             Some(t!("Translucent windows let the desktop show through; with blur, compositors that support it (KDE, Hyprland) blur it.")),
             dropdown(
                 "backdrop",
@@ -634,7 +634,7 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                 vec![
                     (BackdropPref::Mica, t!("Translucent").into()),
                     (BackdropPref::Acrylic, t!("Translucent with blur").into()),
-                    (BackdropPref::Solid, t!("Düz").into()),
+                    (BackdropPref::Solid, t!("Solid").into()),
                 ],
                 |s, v| s.backdrop = v,
             ),
@@ -642,16 +642,16 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         card(
             p,
             L::Activity,
-            t!("Animasyonlar"),
-            Some(t!("Sekme açılırken ve kapanırken kısa geçişler. Hiçbir işi geciktirmez.")),
+            t!("Animations"),
+            Some(t!("Short transitions when tabs open and close. Never delays anything.")),
             dropdown(
                 "animations",
                 p,
                 s.animations,
                 vec![
-                    (AnimPref::System, t!("Sistem ayarını kullan").into()),
-                    (AnimPref::On, t!("Açık").into()),
-                    (AnimPref::Off, t!("Kapalı").into()),
+                    (AnimPref::System, t!("Use system setting").into()),
+                    (AnimPref::On, t!("On").into()),
+                    (AnimPref::Off, t!("Off").into()),
                 ],
                 |s, v| s.animations = v,
             ),
@@ -659,8 +659,8 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         card(
             p,
             L::PanelRight,
-            t!("Kaydırma çubuğunu göster"),
-            Some(t!("Ayrıntılar ve Izgara listelerinin sağında; sürükleyin ya da bir yere tıklayıp oraya atlayın.")),
+            t!("Show scrollbar"),
+            Some(t!("On the right of the Details and Grid lists. Drag it, or click a spot to jump there.")),
             sw("scrollbar", p, s.show_scrollbar, |s, v| s.show_scrollbar = v),
         ),
     ];
@@ -669,13 +669,13 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     let pp = *p;
     let swatch_now: AnyElement = match tint {
         Some(c) => div().size(px(20.)).rounded(px(4.)).bg(rgb(c)).border_1().border_color(p.border).into_any_element(),
-        None => div().text_sm().text_color(p.text_secondary).child(t!("Varsayılan")).into_any_element(),
+        None => div().text_sm().text_color(p.text_secondary).child(t!("Default")).into_any_element(),
     };
     v.push(expander(
         "tint",
         p,
         L::Paintbrush,
-        t!("Arka plan rengi"),
+        t!("Background color"),
         None,
         Some(swatch_now),
         move || {
@@ -704,7 +704,7 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                     .on_click(move |_, _, cx| settings::update(cx, |s| s.tint = color))
             };
             let mut grid = div().px_4().py_3().flex().flex_wrap().gap_2();
-            grid = grid.child(tile(0, t!("Varsayılan").to_string(), None, tint.is_none()));
+            grid = grid.child(tile(0, t!("Default").to_string(), None, tint.is_none()));
             for (i, (name, c)) in TINTS.iter().enumerate() {
                 grid = grid.child(tile(i + 1, crate::i18n::t(name).to_string(), Some(*c), tint == Some(*c)));
             }
@@ -721,14 +721,14 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         "bgimg",
         p,
         L::Image,
-        t!("Arka plan resmi"),
-        Some(img_desc.as_deref().unwrap_or(t!("Yok"))),
-        Some(button("bg-browse", p, t!("Gözat"), |window, cx| pick_into(window, cx, t!("Arka plan resmi"), PickTarget::BackgroundImage))),
+        t!("Background image"),
+        Some(img_desc.as_deref().unwrap_or(t!("None"))),
+        Some(button("bg-browse", p, t!("Browse"), |window, cx| pick_into(window, cx, t!("Background image"), PickTarget::BackgroundImage))),
         move || {
             vec![
                 sub(
                     &pp,
-                    t!("Görünürlük"),
+                    t!("Visibility"),
                     None,
                     dropdown(
                         "bg-opacity",
@@ -738,7 +738,7 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                         |s, v| s.background_opacity = v as f32 / 100.,
                     ),
                 ),
-                sub(&pp, t!("Resmi kaldır"), None, button("bg-clear", &pp, t!("Kaldır"), |_, cx| settings::update(cx, |s| s.background_image = None))),
+                sub(&pp, t!("Remove image"), None, button("bg-clear", &pp, t!("Remove"), |_, cx| settings::update(cx, |s| s.background_image = None))),
             ]
         },
         cx,
@@ -746,14 +746,14 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     // font
     let fonts = font_choices(cx);
     let current_font = s.font.clone().unwrap_or_default();
-    let mut font_opts: Vec<(usize, String)> = vec![(0, t!("Varsayılan").to_string())];
+    let mut font_opts: Vec<(usize, String)> = vec![(0, t!("Default").to_string())];
     font_opts.extend(fonts.iter().enumerate().map(|(i, f)| (i + 1, f.clone())));
     let cur_ix = fonts.iter().position(|f| *f == current_font).map(|i| i + 1).unwrap_or(0);
     let fonts2 = fonts.clone();
     v.push(card(
         p,
         L::Type,
-        t!("Yazı tipi"),
+        t!("Font"),
         None,
         select_box("font", p, font_opts.iter().find(|(i, _)| *i == cur_ix).map(|x| x.1.clone()).unwrap_or_default(), move |_| {
             font_opts
@@ -768,22 +768,22 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                 .collect()
         }),
     ));
-    v.push(card(p, L::PanelTop, t!("Araç çubuğunu göster"), Some("Ctrl+Shift+B"), sw("toolbar", p, s.show_toolbar, |s, v| s.show_toolbar = v)));
-    v.push(card(p, L::PanelBottom, t!("Durum çubuğunu göster"), None, sw("statusbar", p, s.show_statusbar, |s, v| s.show_statusbar = v)));
-    v.push(card(p, L::PanelRight, t!("Önizleme paneli"), Some("Alt+P"), sw("preview", p, s.preview_open, |s, v| s.preview_open = v)));
+    v.push(card(p, L::PanelTop, t!("Show toolbar"), Some("Ctrl+Shift+B"), sw("toolbar", p, s.show_toolbar, |s, v| s.show_toolbar = v)));
+    v.push(card(p, L::PanelBottom, t!("Show status bar"), None, sw("statusbar", p, s.show_statusbar, |s, v| s.show_statusbar = v)));
+    v.push(card(p, L::PanelRight, t!("Preview pane"), Some("Alt+P"), sw("preview", p, s.preview_open, |s, v| s.preview_open = v)));
     let hidden = s.sidebar_hidden.clone();
     let pp = *p;
     v.push(expander(
         "sidebar",
         p,
         L::PanelLeft,
-        t!("Kenar çubuğu bölümleri"),
+        t!("Sidebar sections"),
         None,
         None,
         move || {
             let shown = |k: &str| !hidden.iter().any(|h| h == k);
             vec![
-                sub(&pp, t!("Sürücüler"), None, switch("sb-drives", &pp, shown("drives"), {
+                sub(&pp, t!("Drives"), None, switch("sb-drives", &pp, shown("drives"), {
                     let on = shown("drives");
                     move |_, cx| settings::update(cx, |s| show_section(s, "drives", !on))
                 })),
@@ -791,11 +791,11 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                     let on = shown("cloud");
                     move |_, cx| settings::update(cx, |s| show_section(s, "cloud", !on))
                 })),
-                sub(&pp, t!("Ağ"), None, switch("sb-net", &pp, shown("network"), {
+                sub(&pp, t!("Network"), None, switch("sb-net", &pp, shown("network"), {
                     let on = shown("network");
                     move |_, cx| settings::update(cx, |s| show_section(s, "network", !on))
                 })),
-                sub(&pp, t!("Etiketler"), None, switch("sb-tags", &pp, shown("tags"), {
+                sub(&pp, t!("Tags"), None, switch("sb-tags", &pp, shown("tags"), {
                     let on = shown("tags");
                     move |_, cx| settings::update(cx, |s| show_section(s, "tags", !on))
                 })),
@@ -848,64 +848,64 @@ fn layout(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         card(
             p,
             L::FolderSync,
-            t!("Düzen ve sıralamayı tüm klasörlerde eşitle"),
-            Some(t!("Kapalıyken her klasör kendi görünümünü ve sıralamasını hatırlar.")),
+            t!("Use the same layout and sorting in all folders"),
+            Some(t!("When off, each folder remembers its own view and sorting.")),
             sw("sync-layout", p, s.sync_layout, |s, v| s.sync_layout = v),
         ),
         card(
             p,
             L::LayoutGrid,
-            t!("Varsayılan düzen"),
-            Some(t!("Uyarlanabilir: çoğunlukla resim/video olan klasörler ızgarada açılır.")),
+            t!("Default layout"),
+            Some(t!("Adaptive: folders that mostly contain images or videos open in grid view.")),
             dropdown(
                 "view",
                 p,
                 s.default_view,
                 vec![
-                    (DefaultView::Details, t!("Ayrıntılar").into()),
-                    (DefaultView::Grid, t!("Izgara").into()),
-                    (DefaultView::Columns, t!("Sütunlar").into()),
-                    (DefaultView::Adaptive, t!("Uyarlanabilir").into()),
+                    (DefaultView::Details, t!("Details").into()),
+                    (DefaultView::Grid, t!("Grid").into()),
+                    (DefaultView::Columns, t!("Columns").into()),
+                    (DefaultView::Adaptive, t!("Adaptive").into()),
                 ],
                 |s, v| s.default_view = v,
             ),
         ),
-        section(p, t!("Sıralama ve gruplama")),
+        section(p, t!("Sort and group")),
         card(
             p,
             L::ArrowUpDown,
-            t!("Sırala"),
+            t!("Sort"),
             None,
             dropdown(
                 "sort",
                 p,
                 s.default_sort,
                 vec![
-                    (SortKey::Name, t!("Ad").into()),
-                    (SortKey::Modified, t!("Değiştirme tarihi").into()),
-                    (SortKey::Created, t!("Oluşturma tarihi").into()),
-                    (SortKey::Type, t!("Tür").into()),
-                    (SortKey::Size, t!("Boyut").into()),
+                    (SortKey::Name, t!("Name").into()),
+                    (SortKey::Modified, t!("Date modified").into()),
+                    (SortKey::Created, t!("Date created").into()),
+                    (SortKey::Type, t!("Type").into()),
+                    (SortKey::Size, t!("Size").into()),
                 ],
                 |s, v| s.default_sort = v,
             ),
         ),
-        card(p, L::ArrowDownWideNarrow, t!("Azalan sırada"), None, sw("sort-desc", p, s.default_sort_desc, |s, v| s.default_sort_desc = v)),
-        card(p, L::FolderUp, t!("Önce klasörler"), None, sw("dirs-first", p, s.folders_first, |s, v| s.folders_first = v)),
+        card(p, L::ArrowDownWideNarrow, t!("Descending order"), None, sw("sort-desc", p, s.default_sort_desc, |s, v| s.default_sort_desc = v)),
+        card(p, L::FolderUp, t!("Folders first"), None, sw("dirs-first", p, s.folders_first, |s, v| s.folders_first = v)),
         card(
             p,
             L::ListTree,
-            t!("Gruplandır"),
+            t!("Group by"),
             None,
             dropdown(
                 "group",
                 p,
                 group_ix(&s.default_group),
-                vec![(0, t!("Yok").into()), (1, t!("Ad").into()), (2, t!("Tür").into()), (3, t!("Değiştirme tarihi").into()), (4, t!("Boyut").into())],
+                vec![(0, t!("None").into()), (1, t!("Name").into()), (2, t!("Type").into()), (3, t!("Date modified").into()), (4, t!("Size").into())],
                 |s, v| s.default_group = ["none", "name", "type", "modified", "size"][v].into(),
             ),
         ),
-        section(p, t!("Ayrıntılar görünümü")),
+        section(p, t!("Details view")),
     ];
     let c = s.columns.clone();
     let pp = *p;
@@ -913,28 +913,28 @@ fn layout(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         "columns",
         p,
         L::Columns3,
-        t!("Sütunlar"),
-        Some(t!("Ad sütunu her zaman görünür")),
+        t!("Columns"),
+        Some(t!("Name column is always visible")),
         None,
         move || {
             type Set = fn(&mut Settings, bool);
             let rows: [(&str, bool, Set); 11] = [
-                (t!("Değiştirme tarihi"), c.modified, |s, v| s.columns.modified = v),
-                (t!("Oluşturma tarihi"), c.created, |s, v| s.columns.created = v),
-                (t!("Tür"), c.kind, |s, v| s.columns.kind = v),
-                (t!("Boyut"), c.size, |s, v| s.columns.size = v),
-                (t!("Dosya etiketi"), c.tags, |s, v| s.columns.tags = v),
-                (t!("Git durumu"), c.git, |s, v| s.columns.git = v),
-                (t!("Eşitleme durumu"), c.sync, |s, v| s.columns.sync = v),
-                (t!("Son commit mesajı"), c.git_message, |s, v| s.columns.git_message = v),
-                (t!("Commit yazarı"), c.git_author, |s, v| s.columns.git_author = v),
-                (t!("Commit tarihi"), c.git_date, |s, v| s.columns.git_date = v),
+                (t!("Date modified"), c.modified, |s, v| s.columns.modified = v),
+                (t!("Date created"), c.created, |s, v| s.columns.created = v),
+                (t!("Type"), c.kind, |s, v| s.columns.kind = v),
+                (t!("Size"), c.size, |s, v| s.columns.size = v),
+                (t!("File tag"), c.tags, |s, v| s.columns.tags = v),
+                (t!("Git status"), c.git, |s, v| s.columns.git = v),
+                (t!("Sync status"), c.sync, |s, v| s.columns.sync = v),
+                (t!("Last commit message"), c.git_message, |s, v| s.columns.git_message = v),
+                (t!("Commit author"), c.git_author, |s, v| s.columns.git_author = v),
+                (t!("Commit date"), c.git_date, |s, v| s.columns.git_date = v),
                 (t!("Commit hash"), c.git_hash, |s, v| s.columns.git_hash = v),
             ];
             rows.into_iter()
                 .enumerate()
                 // the sync status is OneDrive's (cloud placeholders): Windows only
-                .filter(|(_, (label, _, _))| *label != t!("Eşitleme durumu"))
+                .filter(|(_, (label, _, _))| *label != t!("Sync status"))
                 .map(|(i, (label, on, set))| sub(&pp, label, None, switch(("col-sw", i), &pp, on, move |_, cx| settings::update(cx, |s| set(s, !on)))))
                 .collect()
         },
@@ -954,32 +954,32 @@ pub fn group_ix(g: &str) -> usize {
 }
 
 fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
-    let mut v = vec![section(p, t!("Görünüm"))];
+    let mut v = vec![section(p, t!("Appearance"))];
     let (h, dot) = (s.show_hidden, s.show_dot_files);
     let pp = *p;
     v.push(expander(
         "hidden",
         p,
         L::EyeOff,
-        t!("Gizli öğeler"),
+        t!("Hidden items"),
         None,
         None,
         move || {
             vec![
-                sub(&pp, t!("Gizli öğeleri göster"), Some("Ctrl+H"), switch("h1", &pp, h, move |_, cx| settings::update(cx, |s| s.show_hidden = !h))),
+                sub(&pp, t!("Show hidden items"), Some("Ctrl+H"), switch("h1", &pp, h, move |_, cx| settings::update(cx, |s| s.show_hidden = !h))),
                 sub(
                     &pp,
-                    t!("Nokta ile başlayan dosyaları göster"),
-                    Some(t!("Kapalıyken .git, .config gibi öğeler gizli sayılır")),
+                    t!("Show files that start with a dot"),
+                    Some(t!("When off, items such as .git and .config are treated as hidden")),
                     switch("h3", &pp, dot, move |_, cx| settings::update(cx, |s| s.show_dot_files = !dot)),
                 ),
             ]
         },
         cx,
     ));
-    v.push(card(p, L::FileType, t!("Dosya uzantılarını göster"), None, sw("ext", p, s.show_extensions, |s, v| s.show_extensions = v)));
-    v.push(card(p, L::Image, t!("Küçük resimleri göster"), None, sw("thumbs", p, s.show_thumbnails, |s, v| s.show_thumbnails = v)));
-    v.push(card(p, L::SquareCheck, t!("Seçerken onay kutularını göster"), None, sw("checkboxes", p, s.show_checkboxes, |s, v| s.show_checkboxes = v)));
+    v.push(card(p, L::FileType, t!("Show file extensions"), None, sw("ext", p, s.show_extensions, |s, v| s.show_extensions = v)));
+    v.push(card(p, L::Image, t!("Show thumbnails"), None, sw("thumbs", p, s.show_thumbnails, |s, v| s.show_thumbnails = v)));
+    v.push(card(p, L::SquareCheck, t!("Show checkboxes when selecting"), None, sw("checkboxes", p, s.show_checkboxes, |s, v| s.show_checkboxes = v)));
     // Linux has no drive letters: people name drives differently
     v.push(card(
         p,
@@ -1007,54 +1007,54 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         sw("addr-url", p, s.address_shows_url, |s, v| s.address_shows_url = v),
     ));
 
-    v.push(section(p, t!("Davranışlar")));
+    v.push(section(p, t!("Behaviors")));
     v.push(card(
         p,
         L::MousePointerClick,
-        t!("Öğeleri tek tıklamayla aç"),
+        t!("Open items with a single click"),
         None,
         dropdown(
             "single-click",
             p,
             s.single_click,
-            vec![(ClickPref::Never, t!("Asla").into()), (ClickPref::Folders, t!("Yalnızca klasörler").into()), (ClickPref::Always, t!("Her zaman").into())],
+            vec![(ClickPref::Never, t!("Never").into()), (ClickPref::Folders, t!("Folders only").into()), (ClickPref::Always, t!("Always").into())],
             |s, v| s.single_click = v,
         ),
     ));
-    v.push(card(p, L::SquarePlus, t!("Klasörleri yeni sekmede aç"), None, sw("dir-newtab", p, s.open_folders_in_new_tab, |s, v| s.open_folders_in_new_tab = v)));
+    v.push(card(p, L::SquarePlus, t!("Open folders in a new tab"), None, sw("dir-newtab", p, s.open_folders_in_new_tab, |s, v| s.open_folders_in_new_tab = v)));
     v.push(card(
         p,
         L::Trash,
-        t!("Silmeden önce onay iste"),
+        t!("Confirm before deleting"),
         None,
         dropdown(
             "confirm-del",
             p,
             s.confirm_delete,
             vec![
-                (DeletePref::Always, t!("Her zaman").into()),
-                (DeletePref::PermanentOnly, t!("Yalnızca kalıcı silmede").into()),
-                (DeletePref::Never, t!("Asla").into()),
+                (DeletePref::Always, t!("Always").into()),
+                (DeletePref::PermanentOnly, t!("Only for permanent deletion").into()),
+                (DeletePref::Never, t!("Never").into()),
             ],
             |s, v| s.confirm_delete = v,
         ),
     ));
-    v.push(card(p, L::TriangleAlert, t!("Uzantı değişince uyar"), None, sw("ext-warn", p, s.warn_extension_change, |s, v| s.warn_extension_change = v)));
-    v.push(card(p, L::MousePointer, t!("Üzerine gelince seç"), None, sw("hover-sel", p, s.select_on_hover, |s, v| s.select_on_hover = v)));
-    v.push(card(p, L::ArrowUp, t!("Boş alana çift tıklayınca üst klasöre çık"), None, sw("dbl-up", p, s.double_click_up, |s, v| s.double_click_up = v)));
-    v.push(card(p, L::FolderUp, t!("Yukarı çıkınca önceki klasörü seç"), None, sw("prev-sel", p, s.select_previous_on_up, |s, v| s.select_previous_on_up = v)));
+    v.push(card(p, L::TriangleAlert, t!("Warn when the extension changes"), None, sw("ext-warn", p, s.warn_extension_change, |s, v| s.warn_extension_change = v)));
+    v.push(card(p, L::MousePointer, t!("Select on hover"), None, sw("hover-sel", p, s.select_on_hover, |s, v| s.select_on_hover = v)));
+    v.push(card(p, L::ArrowUp, t!("Double-click empty space to go up a folder"), None, sw("dbl-up", p, s.double_click_up, |s, v| s.double_click_up = v)));
+    v.push(card(p, L::FolderUp, t!("Select the previous folder when going up"), None, sw("prev-sel", p, s.select_previous_on_up, |s, v| s.select_previous_on_up = v)));
     v.push(card(
         p,
         L::FileArchive,
-        t!("Arşivleri klasör gibi aç"),
-        Some(t!("ZIP, 7z ve tar dosyalarının içine çift tıklayarak girilir; içindeki dosyalar açılınca geçici bir klasöre çıkarılır")),
+        t!("Open archives like folders"),
+        Some(t!("Double-click a ZIP, 7z or tar file to browse it; files you open inside are extracted to a temporary folder")),
         sw("browse-arc", p, s.browse_archives, |s, v| s.browse_archives = v),
     ));
     // the name index covers NTFS/ReFS drives (Linux: the home folder and local data disks)
     v.push(card(
         p,
         L::Zap,
-        t!("Hızlı arama dizini"),
+        t!("Fast search index"),
         Some(&name_index_status()),
         sw("name-index", p, s.name_index, |s, v| s.name_index = v),
     ));
@@ -1064,13 +1064,13 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     v.push(card(
         p,
         L::HardDrive,
-        t!("Boyut biçimi"),
+        t!("Size format"),
         None,
         dropdown(
             "size-fmt",
             p,
             s.decimal_sizes,
-            vec![(false, t!("İkili (1 KB = 1024 bayt)").into()), (true, t!("Ondalık (1 KB = 1000 bayt)").into())],
+            vec![(false, t!("Binary (1 KB = 1024 bytes)").into()), (true, t!("Decimal (1 KB = 1000 bytes)").into())],
             |s, v| s.decimal_sizes = v,
         ),
     ));
@@ -1079,8 +1079,8 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         "folder-sizes",
         p,
         L::FolderSearch,
-        t!("Klasör boyutlarını hesapla"),
-        Some(t!("Boyut sütununda klasörlerin toplam boyutu gösterilir")),
+        t!("Calculate folder sizes"),
+        Some(t!("The Size column shows the total size of folders")),
         Some(sw("calc-sizes", p, s.calculate_folder_sizes, |s, v| s.calculate_folder_sizes = v)),
         move || {
             vec![
@@ -1094,7 +1094,7 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                     .rounded(theme::RADIUS_SM)
                     .bg(hsla_alpha(0xFCE100, 0.12))
                     .child(Icon::new(L::CircleAlert).size(px(14.)).text_color(rgb(0xFCE100)))
-                    .child(div().text_xs().text_color(pp.text).child(t!("Büyük klasörlerde disk ve işlemci yükü artabilir; hesap arka planda yapılır, arayüz donmaz.")))
+                    .child(div().text_xs().text_color(pp.text).child(t!("Large folders can increase disk and CPU usage; calculation runs in the background and the interface stays responsive.")))
                     .into_any_element(),
             ]
         },
@@ -1104,25 +1104,25 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     v.push(card(
         p,
         L::HardDrive,
-        t!("Klasörlerde disk üzerindeki boyutu göster"),
-        Some(t!("Boyut sütunu klasörler için dosya boyutlarının toplamı yerine kümelere yuvarlanmış boyutu gösterir; sıralama da buna göre yapılır")),
+        t!("Show size on disk for folders"),
+        Some(t!("The Size column shows folders by the space they take on disk (rounded up to whole clusters) instead of the sum of their file sizes; sorting follows it")),
         sw("folder-on-disk", p, s.folder_size_on_disk, |s, v| s.folder_size_on_disk = v),
     ));
 
     // Files' folder aliases: "@name" in the address box
-    v.push(section(p, t!("Klasör takma adları")));
+    v.push(section(p, t!("Folder aliases")));
     let aliases: Vec<(String, std::path::PathBuf)> = s.folder_aliases.iter().map(|(n, p)| (n.clone(), p.clone())).collect();
     let count = aliases.len();
     v.push(expander(
         "aliases",
         p,
         L::AtSign,
-        t!("Takma adlar"),
-        Some(t!("Adres çubuğuna @ad yazarak klasöre gidin. Eklemek için bir klasöre sağ tıklayıp \"Takma ad ver…\" seçin.")),
+        t!("Aliases"),
+        Some(t!("Type @name in the address bar to go to a folder. To add one, right-click a folder and choose \"Add alias…\".")),
         Some(div().text_sm().text_color(p.text_secondary).child(count.to_string()).into_any_element()),
         move || {
             if aliases.is_empty() {
-                return vec![sub(&pp, t!("Henüz takma ad yok"), None, div().into_any_element())];
+                return vec![sub(&pp, t!("No aliases yet"), None, div().into_any_element())];
             }
             aliases
                 .into_iter()
@@ -1133,7 +1133,7 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                         &pp,
                         &format!("@{name}"),
                         Some(&path.to_string_lossy()),
-                        button(("alias-rm", i), &pp, t!("Kaldır"), move |_, cx| {
+                        button(("alias-rm", i), &pp, t!("Remove"), move |_, cx| {
                             let key = key.clone();
                             settings::update(cx, move |s| {
                                 s.folder_aliases.remove(&key);
@@ -1155,7 +1155,7 @@ fn actions(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
         let custom = crate::keymap_editor::custom_keys(&action, cx);
         let waiting = capturing.as_deref() == Some(action.as_str());
         let shown: SharedString = if waiting {
-            t!("Tuşlara basın…").into()
+            t!("Press keys…").into()
         } else if let Some(k) = &custom {
             crate::keymap_editor::pretty(k).into()
         } else if keys.is_empty() {
@@ -1223,8 +1223,8 @@ fn actions(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
             .child(card_body(
                 p,
                 L::Keyboard,
-                t!("Klavye kısayolları").into(),
-                Some(t!("Değiştirmek için bir komuta tıklayıp yeni tuşlara basın (Esc: vazgeç). ↺ varsayılana döndürür.").into()),
+                t!("Keyboard shortcuts").into(),
+                Some(t!("To change a shortcut, click a command and press the new keys (Esc: cancel). ↺ restores the default.").into()),
                 None,
             ))
             .child(div().h(px(1.)).bg(p.divider))
@@ -1266,16 +1266,16 @@ fn tags(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
                         }),
                 )
                 .child(div().flex_1().text_sm().child(crate::i18n::td(&name)))
-                .child(button(("tag-edit", id as usize), p, t!("Yeniden adlandır"), move |window, cx| {
+                .child(button(("tag-edit", id as usize), p, t!("Rename"), move |window, cx| {
                     tag_name_dialog(Some((id, rename_name.clone())), window, cx)
                 }))
-                .child(button(("tag-del", id as usize), p, t!("Sil"), move |window, cx| {
+                .child(button(("tag-del", id as usize), p, t!("Delete"), move |window, cx| {
                     crate::prompt::show(
-                        t!("Etiket silinsin mi?"),
-                        Some(t!("Etiket tüm öğelerden kaldırılır. Dosyalar silinmez.").to_string()),
+                        t!("Delete tag?"),
+                        Some(t!("The tag is removed from all items. Files are not deleted.").to_string()),
                         None,
                         vec![
-                            crate::prompt::Button::new(t!("Sil"), crate::prompt::Kind::Danger, move |_, _, cx| {
+                            crate::prompt::Button::new(t!("Delete"), crate::prompt::Kind::Danger, move |_, _, cx| {
                                 crate::tags::update(cx, |t| t.remove(id));
                                 Ok(())
                             }),
@@ -1292,9 +1292,9 @@ fn tags(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
             .child(card_body(
                 p,
                 L::Tag,
-                t!("Etiketler").into(),
-                Some(t!("Renkli etiketlerle dosyaları klasörlerden bağımsız gruplayın. Renge tıklayarak değiştirin.").into()),
-                Some(button("tag-new", p, t!("Yeni etiket"), |window, cx| tag_name_dialog(None, window, cx))),
+                t!("Tags").into(),
+                Some(t!("Group files independently of folders using colored tags. Click a color to change it.").into()),
+                Some(button("tag-new", p, t!("New tag"), |window, cx| tag_name_dialog(None, window, cx))),
             ))
             .child(div().h(px(1.)).bg(p.divider))
             .child(list)
@@ -1303,28 +1303,28 @@ fn tags(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
 }
 
 const TAG_COLORS: [(&str, u32); 8] = [
-    ("Kırmızı", 0xFF453A),
-    ("Turuncu", 0xFF9F0A),
-    ("Sarı", 0xFFD60A),
-    ("Yeşil", 0x30D158),
-    ("Turkuaz", 0x40C8E0),
-    ("Mavi", 0x0A84FF),
-    ("Mor", 0xBF5AF2),
-    ("Gri", 0x8E8E93),
+    ("Red", 0xFF453A),
+    ("Orange", 0xFF9F0A),
+    ("Yellow", 0xFFD60A),
+    ("Green", 0x30D158),
+    ("Turquoise", 0x40C8E0),
+    ("Blue", 0x0A84FF),
+    ("Purple", 0xBF5AF2),
+    ("Gray", 0x8E8E93),
 ];
 
 fn tag_name_dialog(existing: Option<(u32, String)>, window: &mut Window, cx: &mut App) {
-    let title = if existing.is_some() { t!("Etiketi yeniden adlandır") } else { t!("Yeni etiket") };
+    let title = if existing.is_some() { t!("Rename tag") } else { t!("New tag") };
     let initial = existing.as_ref().map(|e| e.1.clone()).unwrap_or_default();
     crate::prompt::show(
         title,
         None,
-        Some((initial, t!("Etiket adı").to_string())),
+        Some((initial, t!("Tag name").to_string())),
         vec![
-            crate::prompt::Button::new(t!("Kaydet"), crate::prompt::Kind::Primary, move |value, _, cx| {
+            crate::prompt::Button::new(t!("Save"), crate::prompt::Kind::Primary, move |value, _, cx| {
                 let name = value.unwrap_or_default().trim().to_string();
                 if name.is_empty() {
-                    return Err(t!("Bir ad yazın").to_string());
+                    return Err(t!("Enter a name").to_string());
                 }
                 match existing {
                     Some((id, _)) => crate::tags::update(cx, |t| t.rename(id, &name)),
@@ -1342,21 +1342,21 @@ fn tag_name_dialog(existing: Option<(u32, String)>, window: &mut Window, cx: &mu
 }
 
 fn dev(p: &Palette, s: &Settings) -> Vec<AnyElement> {
-    let ide_label = if s.ide_path.is_empty() { t!("VS Code (otomatik)").to_string() } else { s.ide_path.clone() };
+    let ide_label = if s.ide_path.is_empty() { t!("VS Code (automatic)").to_string() } else { s.ide_path.clone() };
     vec![
         card(
             p,
             L::Code,
-            t!("Durum çubuğunda \"Düzenleyicide aç\" düğmesi"),
+            t!("\"Open in editor\" button in the status bar"),
             None,
             dropdown(
                 "ide-btn",
                 p,
                 s.ide_button,
                 vec![
-                    (IdePref::GitRepos, t!("Git depolarında göster").into()),
-                    (IdePref::Always, t!("Her zaman göster").into()),
-                    (IdePref::Never, t!("Gösterme").into()),
+                    (IdePref::GitRepos, t!("Show in Git repositories").into()),
+                    (IdePref::Always, t!("Always show").into()),
+                    (IdePref::Never, t!("Don't show").into()),
                 ],
                 |s, v| s.ide_button = v,
             ),
@@ -1364,12 +1364,12 @@ fn dev(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         card(
             p,
             L::SquareTerminal,
-            t!("Düzenleyici"),
+            t!("Editor"),
             Some(&ide_label),
             h_flex()
                 .gap_2()
-                .child(button("ide-browse", p, t!("Gözat"), |window, cx| pick_into(window, cx, t!("Düzenleyici seç"), PickTarget::Ide)))
-                .child(button("ide-reset", p, t!("Otomatik"), |_, cx| settings::update(cx, |s| s.ide_path.clear())))
+                .child(button("ide-browse", p, t!("Browse"), |window, cx| pick_into(window, cx, t!("Choose editor"), PickTarget::Ide)))
+                .child(button("ide-reset", p, t!("Automatic"), |_, cx| settings::update(cx, |s| s.ide_path.clear())))
                 .into_any_element(),
         ),
     ]
@@ -1404,8 +1404,8 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     let mut v = vec![card(
         p,
         L::Eye,
-        t!("DirectLook'u kullan"),
-        Some(t!("Boşluk ile önizleme. Ayrı bir program olarak çalışır: rfiles'ı yavaşlatmaz, biri kapanınca öteki etkilenmez.")),
+        t!("Use DirectLook"),
+        Some(t!("Preview with Space. Runs as a separate program: it doesn't slow rfiles down, and if one closes the other is unaffected.")),
         switch("dl-enabled", p, enabled, move |_, cx| {
             settings::update(cx, |s| s.directlook_enabled = !enabled);
             if enabled {
@@ -1420,11 +1420,11 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     }
     let _ = cx;
     v.extend([
-        section(p, t!("Pencere")),
+        section(p, t!("Window")),
         card(
             p,
             L::Layers,
-            t!("Arka plan"),
+            t!("Background"),
             None,
             ldropdown(
                 "look-backdrop",
@@ -1433,55 +1433,55 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                 vec![
                     (LookBackdrop::Mica, t!("Translucent").into()),
                     (LookBackdrop::Acrylic, t!("Translucent with blur").into()),
-                    (LookBackdrop::None, t!("Düz renk").into()),
+                    (LookBackdrop::None, t!("Solid color").into()),
                 ],
                 |s, v| s.look_backdrop = v,
             ),
         ),
-        card(p, L::PictureInPicture, t!("Her zaman üstte"), None, lsw("look-top", p, l.look_topmost, |s, v| s.look_topmost = v)),
+        card(p, L::PictureInPicture, t!("Always on top"), None, lsw("look-top", p, l.look_topmost, |s, v| s.look_topmost = v)),
         card(
             p,
             L::MousePointerClick,
-            t!("Açılınca pencereyi odakla"),
+            t!("Focus the window when it opens"),
             Some(t!("When off, the keyboard stays in rfiles: arrow keys move between files")),
             lsw("look-focus", p, l.look_focus_on_open, |s, v| s.look_focus_on_open = v),
         ),
-        card(p, L::CircleX, t!("Başka pencereye geçince kapat"), Some(t!("Sabitlenmiş pencereler açık kalır")), lsw("look-lostfocus", p, l.look_close_on_lost_focus, |s, v| s.look_close_on_lost_focus = v)),
-        card(p, L::Zap, t!("Geçiş animasyonu"), None, lsw("look-transition", p, l.look_transition, |s, v| s.look_transition = v)),
-        card(p, L::RefreshCw, t!("Yeniden yükle düğmesi"), None, lsw("look-reload", p, l.look_show_reload, |s, v| s.look_show_reload = v)),
-        card(p, L::FolderSync, t!("Dosya değişince yeniden yükle"), None, lsw("look-autoreload", p, l.look_auto_reload, |s, v| s.look_auto_reload = v)),
-        section(p, t!("İçerik")),
+        card(p, L::CircleX, t!("Close when another window is activated"), Some(t!("Pinned windows stay open")), lsw("look-lostfocus", p, l.look_close_on_lost_focus, |s, v| s.look_close_on_lost_focus = v)),
+        card(p, L::Zap, t!("Transition animation"), None, lsw("look-transition", p, l.look_transition, |s, v| s.look_transition = v)),
+        card(p, L::RefreshCw, t!("Reload button"), None, lsw("look-reload", p, l.look_show_reload, |s, v| s.look_show_reload = v)),
+        card(p, L::FolderSync, t!("Reload when the file changes"), None, lsw("look-autoreload", p, l.look_auto_reload, |s, v| s.look_auto_reload = v)),
+        section(p, t!("Contains")),
         card(
             p,
             L::Image,
-            t!("Resim zemini"),
+            t!("Image background"),
             None,
             ldropdown(
                 "look-imgtheme",
                 p,
                 l.look_image_theme,
-                vec![(LookImageTheme::Dark, t!("Koyu").into()), (LookImageTheme::Light, t!("Açık").into())],
+                vec![(LookImageTheme::Dark, t!("Dark").into()), (LookImageTheme::Light, t!("On").into())],
                 |s, v| s.look_image_theme = v,
             ),
         ),
-        card(p, L::RotateCw, t!("Videoları döngüde oynat"), None, lsw("look-loop", p, l.look_loop, |s, v| s.look_loop = v)),
-        card(p, L::List, t!("Metinde satır numaraları"), Some(t!("Önizlemede Alt+L")), lsw("look-lines", p, l.look_text_line_numbers, |s, v| s.look_text_line_numbers = v)),
-        card(p, L::TextAlignJustify, t!("Metinde sözcük kaydırma"), Some(t!("Önizlemede Alt+Z")), lsw("look-wrap", p, l.look_text_wrap, |s, v| s.look_text_wrap = v)),
+        card(p, L::RotateCw, t!("Loop videos"), None, lsw("look-loop", p, l.look_loop, |s, v| s.look_loop = v)),
+        card(p, L::List, t!("Line numbers in text"), Some(t!("Alt+L in the preview")), lsw("look-lines", p, l.look_text_line_numbers, |s, v| s.look_text_line_numbers = v)),
+        card(p, L::TextAlignJustify, t!("Word wrap in text"), Some(t!("Alt+Z in the preview")), lsw("look-wrap", p, l.look_text_wrap, |s, v| s.look_text_wrap = v)),
     ]);
     // text font and size
-    let font_label = if l.look_text_font.is_empty() { t!("Varsayılan").to_string() } else { l.look_text_font.clone() };
+    let font_label = if l.look_text_font.is_empty() { t!("Default").to_string() } else { l.look_text_font.clone() };
     let cur_font = l.look_text_font.clone();
     let fonts = font_choices(cx);
     v.push(card(
         p,
         L::Type,
-        t!("Metin yazı tipi"),
+        t!("Text font"),
         None,
         select_box("look-font", p, font_label, move |_| {
             std::iter::once(String::new())
                 .chain(fonts.iter().cloned())
                 .map(|f| {
-                    let label = if f.is_empty() { t!("Varsayılan").to_string() } else { f.clone() };
+                    let label = if f.is_empty() { t!("Default").to_string() } else { f.clone() };
                     let sel = f == cur_font;
                     Choice::new(label, sel, move |_, cx| {
                         let f = f.clone();
@@ -1495,7 +1495,7 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     v.push(card(
         p,
         L::ALargeSmall,
-        t!("Metin boyutu"),
+        t!("Text size"),
         None,
         select_box("look-font-size", p, format!("{cur_size} px"), move |_| {
             [11u32, 12, 13, 14, 15, 16, 18, 20, 24]
@@ -1508,13 +1508,13 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     v.push(card(
         p,
         L::ListFilter,
-        t!("Önizlenecek dosyalar"),
+        t!("Files to preview"),
         None,
         ldropdown(
             "look-ext-mode",
             p,
             l.look_ext_allow_mode,
-            vec![(false, t!("Hepsi, listedekiler hariç").to_string()), (true, t!("Yalnızca listedekiler").to_string())],
+            vec![(false, t!("All except those listed").to_string()), (true, t!("Only those listed").to_string())],
             |s, v| s.look_ext_allow_mode = v,
         ),
     ));
@@ -1524,17 +1524,17 @@ fn look(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     v.push(card(
         p,
         L::CircleSlash,
-        if allow { t!("Önizlenecek uzantılar") } else { t!("Önizlenmeyecek uzantılar") },
+        if allow { t!("Extensions to preview") } else { t!("Extensions not to preview") },
         Some(&shown),
-        button("look-ext-edit", p, t!("Düzenle…"), move |window, cx| {
-            let ok = crate::prompt::Button::new(t!("Kaydet"), crate::prompt::Kind::Primary, move |text, _, cx| {
+        button("look-ext-edit", p, t!("Edit…"), move |window, cx| {
+            let ok = crate::prompt::Button::new(t!("Save"), crate::prompt::Kind::Primary, move |text, _, cx| {
                 let text = normalize_exts(&text.unwrap_or_default());
                 look_update(cx, |s| if allow { s.look_ext_allowlist = text } else { s.look_ext_blocklist = text });
                 Ok(())
             });
             crate::prompt::show(
-                if allow { t!("Önizlenecek uzantılar") } else { t!("Önizlenmeyecek uzantılar") },
-                Some(t!("Noktalı virgülle ayırın, örneğin: .iso; .insv; .psd").to_string()),
+                if allow { t!("Extensions to preview") } else { t!("Extensions not to preview") },
+                Some(t!("Separate with semicolons, for example: .iso; .insv; .psd").to_string()),
                 Some((list.clone(), ".iso; .insv".to_string())),
                 vec![ok, crate::prompt::Button::cancel()],
                 window,
@@ -1574,9 +1574,9 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
     let start_on = rf_linux::dialogs::starts_with_windows();
     let dfm_on = crate::DEFAULT_FM.load(std::sync::atomic::Ordering::Relaxed);
     let mut out = vec![
-        link_row(p, "export", L::Upload, t!("Ayarları dışa aktar"), None, |window, cx| pick_into(window, cx, t!("Ayarları dışa aktar"), PickTarget::Export)),
-        link_row(p, "import", L::Download, t!("Ayarları içe aktar"), None, |window, cx| pick_into(window, cx, t!("Ayarları içe aktar"), PickTarget::Import)),
-        link_row(p, "edit-file", L::FilePen, t!("Ayar dosyasını düzenle"), Some(t!("settings.toml metin düzenleyicide açılır")), |_, _| {
+        link_row(p, "export", L::Upload, t!("Export settings"), None, |window, cx| pick_into(window, cx, t!("Export settings"), PickTarget::Export)),
+        link_row(p, "import", L::Download, t!("Import settings"), None, |window, cx| pick_into(window, cx, t!("Import settings"), PickTarget::Import)),
+        link_row(p, "edit-file", L::FilePen, t!("Edit settings file"), Some(t!("settings.toml opens in a text editor")), |_, _| {
             if let Some(path) = settings::path() {
                 std::thread::spawn(move || {
                     let _ = rf_linux::shell::open(&path);
@@ -1600,38 +1600,38 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         card(
             p,
             L::PanelBottom,
-            t!("Pencere kapatılınca arka planda çalışmaya devam et"),
-            Some(t!("Bildirim alanında bir simge kalır; yeni pencere anında açılır")),
+            t!("Keep running in the background when the window is closed"),
+            Some(t!("An icon stays in the system tray; new windows open instantly")),
             sw("background", p, s.run_in_background, |s, v| s.run_in_background = v),
         ),
         card(
             p,
             L::Bell,
-            t!("Uzun işlemler bitince bildirim göster"),
-            Some(t!("Kopyalama, taşıma, sıkıştırma 10 saniyeden uzun sürdüyse ve rfiles önde değilse")),
+            t!("Notify when long operations finish"),
+            Some(t!("When copying, moving or compressing took over 10 seconds and rfiles isn't in front")),
             sw("notify-ops", p, s.notify_long_ops, |s, v| s.notify_long_ops = v),
         ),
-        section(p, t!("Performans")),
+        section(p, t!("Performance")),
         card(
             p,
             L::Zap,
-            t!("Hızlı dosya işlemleri"),
+            t!("Fast file operations"),
             Some(t!("Copying, moving to another drive and permanent deletion use our parallel engine. When off, files are copied one at a time.")),
             sw("fast-ops", p, s.fast_file_ops, |s, v| s.fast_file_ops = v),
         ),
         card(
             p,
             L::ShieldCheck,
-            t!("Kopyaları doğrula"),
-            Some(t!("Kopyalama bitince her dosya kaynağıyla karşılaştırılır. Tam doğrulama kopyayı diskten okur; daha uzun sürer.")),
+            t!("Verify copies"),
+            Some(t!("Each file is compared with its source after copying. Full verification reads the copy back from the disk and takes longer.")),
             dropdown(
                 "copy-verify",
                 p,
                 s.copy_verify,
                 vec![
-                    (crate::settings::CopyVerify::Off, t!("Kapalı").into()),
-                    (crate::settings::CopyVerify::Quick, t!("Hızlı: boyut ve tarih").into()),
-                    (crate::settings::CopyVerify::Full, t!("Tam: içerik").into()),
+                    (crate::settings::CopyVerify::Off, t!("Off").into()),
+                    (crate::settings::CopyVerify::Quick, t!("Quick: size and date").into()),
+                    (crate::settings::CopyVerify::Full, t!("Full: content").into()),
                 ],
                 |s, v| s.copy_verify = v,
             ),
@@ -1639,28 +1639,28 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         card(
             p,
             L::Gauge,
-            t!("Kopyalama hız sınırı"),
-            Some(t!("Ağa veya USB belleğe kopyalarken bağlantıyı tıkamamak için.")),
+            t!("Copy speed limit"),
+            Some(t!("So copies to a network share or a USB stick don't choke the connection.")),
             dropdown(
                 "copy-limit",
                 p,
                 s.copy_speed_limit,
-                std::iter::once((0, t!("Sınırsız").to_string())).chain([5u32, 10, 25, 50, 100, 250].into_iter().map(|m| (m, format!("{m} MB/s")))).collect(),
+                std::iter::once((0, t!("Unlimited").to_string())).chain([5u32, 10, 25, 50, 100, 250].into_iter().map(|m| (m, format!("{m} MB/s")))).collect(),
                 |s, v| s.copy_speed_limit = v,
             ),
         ),
         card(
             p,
             L::Activity,
-            t!("Durum çubuğunda performans bilgisi"),
+            t!("Performance info in the status bar"),
             Some("How long the current folder took to list"),
             sw("perf-info", p, s.show_perf_info, |s, v| s.show_perf_info = v),
         ),
-        section(p, t!("Deneysel")),
+        section(p, t!("Experimental")),
         card(
             p,
             L::AppWindow,
-            t!("Varsayılan dosya yöneticisi olarak ayarla"),
+            t!("Set as default file manager"),
             Some(t!("Folders opened from other apps, and \"Show in folder\" in browsers, open in rfiles. Applies to this user only; turning it off brings back the previous file manager.")),
             switch("dfm", p, dfm_on, move |window, _| {
                 let exe = std::env::current_exe().map(|e| e.display().to_string()).unwrap_or_default();
@@ -1680,8 +1680,8 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         card(
             p,
             L::FolderTree,
-            t!("Düzleştirme seçeneğini göster"),
-            Some(t!("Klasördeki tüm alt klasörlerin dosyalarını tek seviyeye taşır. Ctrl+Z ile geri alınır.")),
+            t!("Show the flatten option"),
+            Some(t!("Moves the files from all subfolders into a single level. Ctrl+Z undoes it.")),
             sw("flatten", p, s.show_flatten, |s, v| s.show_flatten = v),
         ),
     ]);
@@ -1744,7 +1744,7 @@ fn update_card(p: &Palette) -> AnyElement {
 
 fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
     let ver = crate::about::version_full();
-    let version = format!("{} {ver}", t!("Sürüm:"));
+    let version = format!("{} {ver}", t!("Version:"));
     let pp = *p;
     vec![
         card(
@@ -1752,7 +1752,7 @@ fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
             L::FolderOpen,
             "rfiles",
             Some(&version),
-            button("copy-ver", p, t!("Kopyala"), move |_, cx| cx.write_to_clipboard(ClipboardItem::new_string(format!("rfiles {ver}")))),
+            button("copy-ver", p, t!("Copy"), move |_, cx| cx.write_to_clipboard(ClipboardItem::new_string(format!("rfiles {ver}")))),
         ),
         update_card(p),
         card(
@@ -1763,31 +1763,31 @@ fn about(p: &Palette, cx: &mut App) -> Vec<AnyElement> {
             sw("auto-upd", p, cx.global::<Settings>().auto_update, |s, v| s.auto_update = v),
         ),
         section(p, "GitHub"),
-        link_row(p, "gh-star", L::Star, t!("GitHub'da yıldız ver"), Some(t!("rfiles işinize yarıyorsa başkalarının da bulmasına yardım eder.")), |_, _| open_url(REPO_URL)),
-        link_row(p, "gh-issue", L::MessageSquare, t!("Hata bildir ya da öneride bulun"), None, |_, _| open_url(ISSUES_URL)),
-        link_row(p, "gh-notes", L::ScrollText, t!("Sürüm notları"), None, |_, _| open_url(RELEASES_URL)),
+        link_row(p, "gh-star", L::Star, t!("Star it on GitHub"), Some(t!("If rfiles is useful to you, it helps others find it.")), |_, _| open_url(REPO_URL)),
+        link_row(p, "gh-issue", L::MessageSquare, t!("Report a bug or suggest something"), None, |_, _| open_url(ISSUES_URL)),
+        link_row(p, "gh-notes", L::ScrollText, t!("Release notes"), None, |_, _| open_url(RELEASES_URL)),
         // rfiles began as the Linux port of rustyfiles
-        link_row(p, "upstream", L::GitFork, "Based on rustyfiles", Some("by Özer Güzel: github.com/gelenmedya/rustyfiles"), |_, _| open_url(UPSTREAM_URL)),
+        link_row(p, "upstream", L::GitFork, "Based on rustyfiles", Some("by Özer Güzel: github.com/gelenmedya/rustyfiles"), |_, _| open_url(UPSTREAM_URL)), // i18n-ok: a name
         div()
             .px_1()
             .text_xs()
             .text_color(p.text_secondary)
-            .child(t!("Rust + GPUI ile yazılmış, hiç donmayan hafif dosya yöneticisi."))
+            .child(t!("A lightweight file manager written in Rust + GPUI that never freezes."))
             .into_any_element(),
-        section(p, t!("Yardım ve destek")),
-        link_row(p, "open-log", L::FolderOpen, t!("Kayıt ve ayar klasörünü aç"), settings::app_dir().map(|d| d.display().to_string()).as_deref(), |_, _| {
+        section(p, t!("Help and support")),
+        link_row(p, "open-log", L::FolderOpen, t!("Open log and settings folder"), settings::app_dir().map(|d| d.display().to_string()).as_deref(), |_, _| {
             if let Some(d) = settings::app_dir() {
                 std::thread::spawn(move || {
                     let _ = rf_linux::shell::open(&d);
                 });
             }
         }),
-        section(p, t!("Açık kaynak")),
+        section(p, t!("Open source")),
         expander(
             "libs",
             p,
             L::Library,
-            t!("Üçüncü taraf kütüphaneler"),
+            t!("Third-party libraries"),
             None,
             None,
             move || {
@@ -1828,8 +1828,8 @@ enum PickTarget {
 fn pick_into(_window: &mut Window, cx: &mut App, title: &str, target: PickTarget) {
     let title = title.to_string();
     let (tx, rx) = futures::channel::oneshot::channel::<Option<std::path::PathBuf>>();
-    let images = [(t!("Resimler"), "*.png;*.jpg;*.jpeg;*.webp;*.bmp;*.gif")];
-    let toml = [(t!("Ayar dosyası"), "*.toml")];
+    let images = [(t!("Pictures"), "*.png;*.jpg;*.jpeg;*.webp;*.bmp;*.gif")];
+    let toml = [(t!("Settings file"), "*.toml")];
     let (images, toml) = (
         images.map(|(a, b)| (a.to_string(), b.to_string())),
         toml.map(|(a, b)| (a.to_string(), b.to_string())),
@@ -1888,16 +1888,16 @@ fn pick_into(_window: &mut Window, cx: &mut App, title: &str, target: PickTarget
 
 /// "Local drives' file names are kept in an index … · C:\ 2.1 million entries, 84 MB · E:\ indexing…"
 fn name_index_status() -> String {
-    let mut s = t!("Yerel sürücülerdeki dosya adları bir dizinde tutulur: alt klasörlerde arama milisaniyeler sürer. Dizin arka planda hazırlanır ve güncel tutulur.").to_string();
+    let mut s = t!("File names on the local drives are kept in an index, so searching subfolders takes milliseconds. The index is built in the background and kept up to date.").to_string();
     let parts: Vec<String> = rf_linux::indexer::status()
         .into_iter()
         .map(|(root, state, live, mem)| {
             let r = root.to_string_lossy().trim_end_matches('\\').to_string();
             match state {
-                rf_linux::indexer::State::Building => format!("{r} {}", t!("hazırlanıyor…")),
-                rf_linux::indexer::State::Failed => format!("{r} {}", t!("dizinlenemedi")),
+                rf_linux::indexer::State::Building => format!("{r} {}", t!("indexing…")),
+                rf_linux::indexer::State::Failed => format!("{r} {}", t!("couldn't be indexed")),
                 rf_linux::indexer::State::Ready => {
-                    t!("{root} {n} öğe, {mb} MB").replace("{root}", &r).replace("{n}", &crate::disk_usage::count(live as u64)).replace("{mb}", &(mem >> 20).to_string())
+                    t!("{root} {n} items, {mb} MB", root = r, n = crate::disk_usage::count(live as u64), mb = mem >> 20)
                 }
             }
         })
@@ -1951,19 +1951,19 @@ fn index_exclusions(p: &Palette, s: &Settings) -> AnyElement {
                     v_flex()
                         .flex_1()
                         .min_w_0()
-                        .child(div().text_sm().child(t!("Dizine alınmayan klasörler")))
+                        .child(div().text_sm().child(t!("Folders left out of the index")))
                         .child(div().text_xs().text_color(p.text_secondary).child(format!(
                             "{} {defaults}{}. {}",
-                            t!("Her zaman:"),
+                            t!("Always:"),
                             "",
-                            t!("Bu klasörlerin içinde arama diskte yapılır. Bir klasörü sağ tıklayıp \"Aramada dizine alma\" ile de ekleyebilirsiniz.")
+                            t!("Searching inside these folders walks the disk. You can also right-click a folder and choose \"Leave out of the search index\".")
                         ))),
                 )
-                .child(button("idx-excl-add", p, t!("Klasör ekle…"), |_window, cx| {
+                .child(button("idx-excl-add", p, t!("Add folder…"), |_window, cx| {
                     // Linux: the desktop's folder dialog through the portal, on the shell thread
                     {
                         let (tx, rx) = futures::channel::oneshot::channel::<Option<std::path::PathBuf>>();
-                        let title = t!("Dizine alınmayacak klasör").to_string();
+                        let title = t!("Folder to leave out of the index").to_string();
                         rf_linux::sta::run(move |owner| {
                             let _ = tx.send(rf_linux::dialogs::pick(owner, &title, rf_linux::dialogs::Pick::Folder));
                         });

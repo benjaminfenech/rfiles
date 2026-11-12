@@ -114,7 +114,7 @@ pub fn sync(cx: &mut App) {
     let running = cx.try_global::<LookSystem>().is_some_and(|s| s.hook.is_some());
     if want && !running {
         if quicklook_running() && !force {
-            log::info!("look: QuickLook çalışıyor, sistem geneli kısayol başlatılmadı");
+            log::info!("look: QuickLook is running, the system-wide shortcut was not started");
             return;
         }
         start(cx);
