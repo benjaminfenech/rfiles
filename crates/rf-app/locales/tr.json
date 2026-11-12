@@ -1263,5 +1263,15 @@
  "c5302ee5": "Sürücü çıkarılamadı",
  "b083d3c4": "Sürücünün bağlantısı kesilemedi",
  "b0d6ea96": "Çıkar",
- "fa055a2b": "Bağlantıyı kes"
+ "fa055a2b": "Bağlantıyı kes",
+ "1753df81": "Parola yanlış. Tekrar deneyin:",
+ "eef0a9df": "Bu sürücü şifreli. Kilidini açmak için parolasını girin:",
+ "9c799975": "Kilidi aç",
+ "bd0672da": "Parolayı girin",
+ "6a9db3f5": "Sürücünün kilidini aç",
+ "191a2dc5": "Parola",
+ "c47c37c8": "Çevrim dışı",
+ "3909a3a2": "{server} sunucusuna ulaşılamıyor",
+ "406a5eb3": "Kilitli",
+ "f0865643": "Şifreli birim"
 }

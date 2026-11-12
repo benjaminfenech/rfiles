@@ -40,7 +40,34 @@ pub struct Volume {
     crypto_backing: Option<OwnedObjectPath>,
     /// A loop device (a disk image).
     pub loop_dev: bool,
+    /// A LUKS volume nobody has unlocked yet: mounting it needs its passphrase
+    /// ([`unlock_and_mount`]). `fs` is `crypto_LUKS`.
+    pub locked: bool,
 }
+
+/// [`mount`] of a locked LUKS volume: ask for the passphrase, then [`unlock_and_mount`].
+#[derive(Debug)]
+pub struct NeedsPassphrase;
+
+impl std::fmt::Display for NeedsPassphrase {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("This drive is encrypted. Enter its passphrase to open it.")
+    }
+}
+
+impl std::error::Error for NeedsPassphrase {}
+
+/// [`unlock_and_mount`] with the wrong passphrase.
+#[derive(Debug)]
+pub struct WrongPassphrase;
+
+impl std::fmt::Display for WrongPassphrase {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Wrong passphrase.")
+    }
+}
+
+impl std::error::Error for WrongPassphrase {}
 
 fn conn() -> anyhow::Result<Connection> {
     static C: std::sync::Mutex<Option<Connection>> = std::sync::Mutex::new(None);
@@ -116,6 +143,30 @@ pub fn volumes() -> anyhow::Result<Vec<Volume>> {
     let mut out = Vec::new();
     for (path, ifaces) in &objects {
         let get = |i: &str| ifaces.iter().find(|(n, _)| n.as_str() == i).map(|(_, p)| p);
+        // a locked LUKS volume: no file system to see until it's unlocked (an unlocked one
+        // shows as its cleartext device, below)
+        if let (Some(block), Some(enc), None) = (get(BLOCK), get(ENCRYPTED), get(FS)) {
+            if obj(enc, "CleartextDevice").is_none_or(|c| c.as_str() == "/") {
+                let drive = obj(block, "Drive");
+                let drive_props = drive.as_ref().and_then(|d| iface(d, DRIVE));
+                out.push(Volume {
+                    device: prop(block, "PreferredDevice").and_then(bytes_path).or_else(|| prop(block, "Device").and_then(bytes_path)).unwrap_or_default(),
+                    label: s(block, "IdLabel"),
+                    fs: s(block, "IdType"),
+                    size: u(block, "Size"),
+                    mount_points: Vec::new(),
+                    removable: drive_props.is_some_and(|d| b(d, "Removable") || b(d, "MediaRemovable") || b(d, "Ejectable")),
+                    optical: false,
+                    ignore: b(block, "HintIgnore"),
+                    object: path.clone(),
+                    drive,
+                    crypto_backing: None,
+                    loop_dev: get(LOOP).is_some(),
+                    locked: true,
+                });
+            }
+            continue;
+        }
         let (Some(block), Some(fs)) = (get(BLOCK), get(FS)) else { continue };
         let backing = obj(block, "CryptoBackingDevice");
         // an unlocked LUKS volume's drive is its locked backing device's
@@ -131,7 +182,8 @@ pub fn volumes() -> anyhow::Result<Vec<Volume>> {
         if label.is_empty() {
             label = s(block, "HintName");
         }
-        let loop_dev = get(LOOP).is_some();
+        // an unlocked LUKS disk image: the image is its backing device's loop
+        let loop_dev = get(LOOP).is_some() || backing.as_ref().is_some_and(|bk| iface(bk, LOOP).is_some());
         out.push(Volume {
             device,
             label,
@@ -145,6 +197,7 @@ pub fn volumes() -> anyhow::Result<Vec<Volume>> {
             drive,
             crypto_backing: backing,
             loop_dev,
+            locked: false,
         });
     }
     out.sort_by(|a, b| a.device.cmp(&b.device));
@@ -201,9 +254,45 @@ pub fn mount(device: &Path) -> anyhow::Result<PathBuf> {
     if let Some(p) = v.mount_points.first() {
         return Ok(p.clone());
     }
+    if v.locked {
+        return Err(NeedsPassphrase.into());
+    }
     let c = conn()?;
     let r: String = proxy(&c, &v.object, FS)?.call("Mount", &(no_options(),)).map_err(|e| explain(e, device))?;
     Ok(PathBuf::from(r))
+}
+
+/// Unlocks the LUKS volume `device` with `passphrase`, then mounts the file system inside and
+/// returns where. [`WrongPassphrase`] when it doesn't fit.
+pub fn unlock_and_mount(device: &Path, passphrase: &str) -> anyhow::Result<PathBuf> {
+    let all = volumes()?;
+    let v = all
+        .iter()
+        .find(|v| v.locked && v.device == device)
+        .ok_or_else(|| anyhow!("{} is not a locked encrypted drive.", device.display()))?;
+    let c = conn()?;
+    let clear: OwnedObjectPath = proxy(&c, &v.object, ENCRYPTED)?.call("Unlock", &(passphrase, no_options())).map_err(|e| match &e {
+        zbus::Error::MethodError(_, Some(msg), _) if is_wrong_passphrase(msg) => anyhow::Error::new(WrongPassphrase),
+        _ => explain(e, device),
+    })?;
+    // the cleartext device's file system shows up in UDisks a moment after the unlock
+    for _ in 0..30 {
+        if let Some(inner) = volumes()?.into_iter().find(|v| v.object == clear) {
+            if let Some(p) = inner.mount_points.first() {
+                return Ok(p.clone());
+            }
+            let r: String = proxy(&c, &inner.object, FS)?.call("Mount", &(no_options(),)).map_err(|e| explain(e, device))?;
+            return Ok(PathBuf::from(r));
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    Err(anyhow!("{} is unlocked, but there's no file system inside that rfiles can open (LVM or another layer).", device.display()))
+}
+
+/// UDisks' wording for a passphrase that doesn't fit (cryptsetup's, passed on).
+fn is_wrong_passphrase(msg: &str) -> bool {
+    let m = msg.to_ascii_lowercase();
+    m.contains("no key available") || (m.contains("passphrase") && (m.contains("incorrect") || m.contains("wrong")))
 }
 
 /// The volume mounted at `root`.
@@ -256,7 +345,8 @@ pub fn eject(root: &Path) -> anyhow::Result<()> {
         unmount_volume(&c, &v)?;
         if v.loop_dev {
             // UDisks deletes a loop device it set up once unmounted (autoclear); others: ask
-            let _ = proxy(&c, &v.object, LOOP).and_then(|p| Ok(p.call::<_, _, ()>("Delete", &(no_options(),))?));
+            let image = v.crypto_backing.as_ref().unwrap_or(&v.object);
+            let _ = proxy(&c, image, LOOP).and_then(|p| Ok(p.call::<_, _, ()>("Delete", &(no_options(),))?));
         }
         return Ok(());
     };
@@ -307,6 +397,13 @@ pub fn users_of(root: &Path) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wrong_passphrase_messages() {
+        assert!(super::is_wrong_passphrase("Error unlocking /dev/sdb1: Failed to activate device: Incorrect passphrase"));
+        assert!(super::is_wrong_passphrase("Error unlocking /dev/sdb1: Failed to activate device: Operation not permitted (No key available with this passphrase)"));
+        assert!(!super::is_wrong_passphrase("Error unlocking /dev/sdb1: Device or resource busy"));
+    }
 
     #[test]
     fn byte_paths() {

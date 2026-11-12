@@ -549,7 +549,7 @@ impl FolderView {
             && (is_block_device(target) || rf_linux::remote::is_remote(target))
         {
             let text = target.to_string_lossy().into_owned();
-            self.mount_and_open(target.clone(), text, cx);
+            self.mount_and_open(target.clone(), text, None, cx);
             return;
         }
         if to == Location::RecycleBin {
@@ -564,11 +564,19 @@ impl FolderView {
     /// network location through kio-fuse / gvfs (`url` is `target`, maybe with a login added);
     /// asks for a user name and password when the server wants one, and tells the user why
     /// when it can't.
-    fn mount_and_open(&mut self, target: PathBuf, url: String, cx: &mut Context<Self>) {
+    ///
+    /// An encrypted (LUKS) drive asks for its passphrase; `passphrase` is that answer.
+    fn mount_and_open(&mut self, target: PathBuf, url: String, passphrase: Option<String>, cx: &mut Context<Self>) {
         let remote = rf_linux::remote::is_remote(&target);
         let work = cx.background_spawn({
             let (target, url) = (target.clone(), url.clone());
-            async move { if remote { rf_linux::remote::mount(&url) } else { rf_linux::udisks::mount(&target) } }
+            async move {
+                match (remote, passphrase) {
+                    (true, _) => rf_linux::remote::mount(&url),
+                    (false, Some(pass)) => rf_linux::udisks::unlock_and_mount(&target, &pass),
+                    (false, None) => rf_linux::udisks::mount(&target),
+                }
+            }
         });
         cx.spawn(async move |this, cx| {
             let r = work.await;
@@ -579,6 +587,9 @@ impl FolderView {
                     if !remote {
                         v.places.update(cx, |p, cx| p.refresh(cx));
                     }
+                }
+                (Err(e), Some(win)) if e.is::<rf_linux::udisks::NeedsPassphrase>() || e.is::<rf_linux::udisks::WrongPassphrase>() => {
+                    v.ask_passphrase(target, e.is::<rf_linux::udisks::WrongPassphrase>(), win, cx);
                 }
                 (Err(e), Some(win)) if e.is::<rf_linux::remote::NeedsLogin>() => {
                     // a login was already tried: say so above the new prompt
@@ -596,6 +607,38 @@ impl FolderView {
             });
         })
         .detach();
+    }
+
+    /// An encrypted drive: asks for its passphrase, then unlocks and opens it.
+    fn ask_passphrase(&mut self, device: PathBuf, retry: bool, win: AnyWindowHandle, cx: &mut Context<Self>) {
+        use crate::prompt::{self, Button, Kind};
+        let me = cx.entity().downgrade();
+        let name = self
+            .places
+            .read(cx)
+            .drives
+            .iter()
+            .find(|d| d.root == device)
+            .map(places::drive_name)
+            .unwrap_or_else(|| device.to_string_lossy().into_owned());
+        let msg = if retry {
+            format!("{}\n{name}", t!("Wrong passphrase. Try again:"))
+        } else {
+            format!("{}\n{name}", t!("This drive is encrypted. Enter its passphrase to unlock it:"))
+        };
+        let _ = win.update(cx, move |_, window, cx| {
+            let unlock = Button::new(t!("Unlock"), Kind::Primary, move |pass, _, cx| {
+                let pass = pass.unwrap_or_default();
+                if pass.is_empty() {
+                    return Err(t!("Enter the passphrase").to_string());
+                }
+                let device = device.clone();
+                let url = device.to_string_lossy().into_owned();
+                let _ = me.update(cx, |v, cx| v.mount_and_open(device, url, Some(pass), cx));
+                Ok(())
+            });
+            prompt::show_secret(t!("Unlock drive"), Some(msg), t!("Passphrase").to_string(), vec![unlock, Button::cancel()], window, cx);
+        });
     }
 
     /// The server wants a login: asks for the user name, then the password, then tries again.
@@ -623,7 +666,7 @@ impl FolderView {
                             return Ok(());
                         };
                         let target = target.clone();
-                        let _ = me.update(cx, |v, cx| v.mount_and_open(target, url, cx));
+                        let _ = me.update(cx, |v, cx| v.mount_and_open(target, url, None, cx));
                         Ok(())
                     });
                     prompt::show_secret(t!("Password"), Some(place), t!("Password").to_string(), vec![connect, Button::cancel()], window, cx);
@@ -3299,6 +3342,7 @@ impl FolderView {
         let places = self.places.read(cx);
         let pinned = places.pinned.clone();
         let drives = places.drives.clone();
+        let offline = places.offline.clone();
         let recent = places.recent.clone();
         let card = |id: ElementId| {
             v_flex()
@@ -3335,13 +3379,15 @@ impl FolderView {
             let frac = d.used_fraction();
             let bar_color = if frac > 0.9 { p.danger } else { p.accent };
             let unmounted = places::unmounted(&d);
+            // a share whose server doesn't answer (away from home)
+            let offline_at = offline.get(&d.root).cloned();
             drive_grid = drive_grid.child(
                 card(("drive", i).into())
                     .child(
                         h_flex()
                             .gap_3()
                             .items_center()
-                            .child(Icon::new(places::drive_icon(&d)).size(px(28.)).text_color(p.text_secondary))
+                            .child(Icon::new(places::drive_icon(&d)).size(px(28.)).text_color(if offline_at.is_some() { p.text_tertiary } else { p.text_secondary }))
                             .child(
                                 v_flex()
                                     .flex_1()
@@ -3357,9 +3403,11 @@ impl FolderView {
                                                 .child(div().h_full().rounded_full().bg(bar_color).w(relative(frac))),
                                         )
                                     })
-                                    .child(div().text_xs().text_color(p.text_secondary).child(if unmounted {
+                                    .child(div().text_xs().text_color(p.text_secondary).child(if let Some(server) = &offline_at {
+                                        format!("{} · {}", t!("Offline"), t!("can't reach {server}", server = server))
+                                    } else if unmounted {
                                         // Linux: connected, not mounted yet (a click mounts it)
-                                        format!("{} · {}", format::size(d.total), t!("Not mounted"))
+                                        format!("{} · {}", format::size(d.total), if places::locked(&d) { t!("Locked") } else { t!("Not mounted") })
                                     } else if d.total > 0 {
                                         format!("{} {} / {}", format::size(d.free), t!("free"), format::size(d.total))
                                     } else {

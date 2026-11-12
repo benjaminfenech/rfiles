@@ -179,15 +179,7 @@ pub fn release_mount(root: &std::path::Path, cx: &mut App) {
     }
 }
 
-/// Whether any app window (not a menu / flyout popup) is still open.
-/// The open main windows (not Settings, DirectLook or popups).
-pub fn main_windows(cx: &App) -> Vec<AnyWindowHandle> {
-    let open = cx.windows();
-    cx.try_global::<OpenWorkspaces>()
-        .map(|g| open.into_iter().filter(|w| g.0.iter().any(|(h, ws)| ws.upgrade().is_some() && w.window_id() == h.window_id())).collect())
-        .unwrap_or_default()
-}
-
+/// Whether any main window (not Settings, DirectLook or a menu / flyout popup) is still open.
 pub fn any_main_window(cx: &App) -> bool {
     let open = cx.windows();
     cx.try_global::<OpenWorkspaces>()
@@ -2454,17 +2446,32 @@ impl Workspace {
                     .child(div().h_full().rounded_full().bg(if frac > 0.9 { p.danger } else { p.accent }).w(relative(frac)))
                     .into_any_element()
             });
-            col = col.child(self.sidebar_item(
-                ("sb-drive", i).into(),
-                places::drive_icon(&d),
-                p.text_secondary,
-                crate::places::drive_name(&d),
-                loc,
-                active,
-                bar,
-                p,
-                cx,
-            ));
+            let item = self.sidebar_item(("sb-drive", i).into(), places::drive_icon(&d), p.text_secondary, crate::places::drive_name(&d), loc, active, bar, p, cx);
+            // a mounted stick, card or disc: an eject button at the row's end ("safely remove")
+            let ejectable = !rail && !places::unmounted(&d) && matches!(d.kind, rf_linux::DriveKind::Removable | rf_linux::DriveKind::Optical);
+            let root = d.root.clone();
+            col = col.child(div().relative().child(item).when(ejectable, |row| {
+                row.child(
+                    div().absolute().right(px(4.)).top_0().bottom_0().flex().items_center().child(
+                        div()
+                            .id(("sb-eject", i))
+                            .size(px(22.))
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .rounded(theme::RADIUS_SM)
+                            .text_color(p.text_secondary)
+                            .hover(|s| s.bg(p.pressed).text_color(p.text))
+                            .tooltip(|w, cx| gpui_kit::component::tooltip::Tooltip::new(t!("Eject")).build(w, cx))
+                            .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
+                            .on_click(cx.listener(move |this, _, window, cx| {
+                                cx.stop_propagation();
+                                this.unmount_drive(root.clone(), true, window, cx);
+                            }))
+                            .child(Icon::new(L::Eject).size(px(14.))),
+                    ),
+                )
+            }));
         }
         let cloud = self.places.read(cx).cloud.clone();
         if !cloud.is_empty() && shown("cloud") {
@@ -2478,10 +2485,15 @@ impl Workspace {
         let network = self.places.read(cx).network.clone();
         if (!network.is_empty() || !shares.is_empty()) && shown("network") {
             col = col.child(header(t!("Network")));
+            let offline = self.places.read(cx).offline.clone();
             for (i, d) in shares.into_iter().enumerate() {
                 let loc = Location::Path(d.root.clone());
                 let active = cur == loc;
-                col = col.child(self.sidebar_item(("sb-share", i).into(), places::drive_icon(&d), p.text_secondary, crate::places::drive_name(&d), loc, active, None, p, cx));
+                // its server doesn't answer (away from home): dimmed, with a note under the name
+                let off = offline.contains_key(&d.root);
+                let note = off.then(|| div().text_xs().text_color(p.text_tertiary).child(t!("Offline")).into_any_element());
+                let icon_color = if off { p.text_tertiary } else { p.text_secondary };
+                col = col.child(self.sidebar_item(("sb-share", i).into(), places::drive_icon(&d), icon_color, crate::places::drive_name(&d), loc, active, note, p, cx));
             }
             for (i, (name, target)) in network.into_iter().enumerate() {
                 let loc = Location::Path(target);
