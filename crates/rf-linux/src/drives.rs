@@ -361,6 +361,15 @@ pub fn unreachable_share(path: &Path, wait: std::time::Duration) -> Option<Strin
     (!answers && !addrs.is_empty()).then_some(host)
 }
 
+/// The shares among `roots` that [`unreachable_share`] finds offline, each with its server,
+/// checked side by side (the whole call takes at most `wait`). Blocks: call off the UI thread.
+pub fn offline_shares(roots: &[PathBuf], wait: std::time::Duration) -> Vec<(PathBuf, String)> {
+    std::thread::scope(|s| {
+        let probes: Vec<_> = roots.iter().map(|r| (r, s.spawn(move || unreachable_share(r, wait)))).collect();
+        probes.into_iter().filter_map(|(r, h)| Some((r.clone(), h.join().ok()??))).collect()
+    })
+}
+
 /// (host, port) of the fstab share mounted at `point`, for the share kinds whose port is known.
 fn share_server(fstab: &str, point: &Path) -> Option<(String, u16)> {
     fstab.lines().map(str::trim).filter(|l| !l.starts_with('#')).find_map(|l| {
@@ -384,6 +393,14 @@ fn share_server(fstab: &str, point: &Path) -> Option<(String, u16)> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn local_folders_are_never_offline() {
+        let roots = vec![std::path::PathBuf::from("/"), std::path::PathBuf::from("/usr")];
+        let t = std::time::Instant::now();
+        assert!(super::offline_shares(&roots, std::time::Duration::from_millis(200)).is_empty());
+        assert!(t.elapsed() < std::time::Duration::from_millis(200), "no probe for a local disk");
+    }
+
     #[test]
     fn share_servers_from_fstab() {
         let fstab = "//10.0.0.9/media /mnt/media cifs x-systemd.automount,_netdev 0 0\n\

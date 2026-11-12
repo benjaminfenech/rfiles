@@ -199,21 +199,42 @@ pub struct Places {
     pub recent: Vec<Recent>,
     /// Network locations ("Add a network location" shortcuts): (name, target).
     pub network: Vec<(String, std::path::PathBuf)>,
+    /// fstab shares whose server doesn't answer (away from home), with that server: shown as
+    /// offline. Checked after each refresh and every 30 s, apart from the rest (it can take
+    /// a moment and must not hold the sidebar up).
+    pub offline: std::collections::HashMap<PathBuf, String>,
     pub loaded: bool,
     _task: Option<Task<()>>,
+    _probe: Option<Task<()>>,
 }
 
 impl Places {
     pub fn new(cx: &mut Context<Self>) -> Self {
         let mut this =
-            Self { drives: Vec::new(), cloud: Vec::new(), pinned: Vec::new(), recent: Vec::new(), network: Vec::new(), loaded: false, _task: None };
+            Self {
+                drives: Vec::new(),
+                cloud: Vec::new(),
+                pinned: Vec::new(),
+                recent: Vec::new(),
+                network: Vec::new(),
+                offline: Default::default(),
+                loaded: false,
+                _task: None,
+                _probe: None,
+            };
         this.refresh(cx);
         // Notice drives appearing/disappearing (USB, network mappings) without any shell hooks.
         cx.spawn(async move |this, cx| {
             let mut mask = rf_linux::drives::drive_mask();
             let mut recheck = false;
+            let mut tick = 0u32;
             loop {
                 cx.background_executor().timer(std::time::Duration::from_secs(3)).await;
+                // back on the share's network (or off it): its offline mark follows
+                tick += 1;
+                if tick % 10 == 0 && this.update(cx, |p, cx| p.probe_offline(cx)).is_err() {
+                    break;
+                }
                 let now = rf_linux::drives::drive_mask();
                 // after a change, look once more on the next tick: a new stick's file system
                 // shows up in UDisks a moment after its device does
@@ -269,7 +290,30 @@ impl Places {
                 p.cloud = cloud;
                 p.network = network;
                 p.loaded = true;
+                p.probe_offline(cx);
                 cx.notify();
+            });
+        }));
+    }
+
+    /// Checks whether the network shares' servers answer (see `offline`).
+    fn probe_offline(&mut self, cx: &mut Context<Self>) {
+        let roots: Vec<PathBuf> = self.drives.iter().filter(|d| d.kind == DriveKind::Network).map(|d| d.root.clone()).collect();
+        if roots.is_empty() {
+            if !self.offline.is_empty() {
+                self.offline.clear();
+                cx.notify();
+            }
+            return;
+        }
+        let work = cx.background_spawn(async move { rf_linux::drives::offline_shares(&roots, std::time::Duration::from_millis(1500)) });
+        self._probe = Some(cx.spawn(async move |this, cx| {
+            let found: std::collections::HashMap<PathBuf, String> = work.await.into_iter().collect();
+            let _ = this.update(cx, |p, cx| {
+                if p.offline != found {
+                    p.offline = found;
+                    cx.notify();
+                }
             });
         }));
     }
