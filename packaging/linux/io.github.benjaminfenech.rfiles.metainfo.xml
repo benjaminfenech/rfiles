@@ -32,6 +32,14 @@
   </provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.8.0" date="2026-11-12">
+      <description>
+        <p>
+          rfiles can check for new releases and install them, and the date format is now a
+          pattern you type, with a live preview.
+        </p>
+      </description>
+    </release>
     <release version="0.7.0" date="2026-11-11">
       <description>
         <p>

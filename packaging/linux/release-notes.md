@@ -1,13 +1,12 @@
-The first release under the new name: **rustyfiles for Linux is now rfiles**, a project of its own. It began as the Linux port of [rustyfiles](https://github.com/gelenmedya/rustyfiles) by Özer Güzel, stopped following it after upstream 0.6.0, and is now Linux-only. It runs on Wayland and X11.
+Two changes you'll notice: you can type your own date format, and rfiles can now update itself.
 
-## What's new since 0.6.0-linux.1
+## What's new since 0.7.0
 
-- **New name: rfiles.** The command is `rfiles` and the Flatpak is `io.github.benjaminfenech.rfiles`. Installing over the old package keeps everything: settings, tags, pins and the session move over on first start, and so do "default file manager" and "start at login" if you had them on. Upgrade steps are under Install below.
-- **Recent files on Home.** The Recent section shows the files you opened recently in any app (the desktop's `recently-used.xbel`). Before, it was always empty on Linux.
-- **The date format applies everywhere.** Properties, the copy-conflict dialog and DirectLook's info and email cards now use the format chosen in Settings → Date format (for example day/month/year), not just the file list.
-- **No prompts.** rfiles never asks for a GitHub star or a donation. Settings → About still has the links.
-- **Menus show only what works.** "Create shortcut" and "Paste shortcut" made Windows `.lnk` files and did nothing on Linux; they're gone.
-- **Leaner.** Upstream's Windows code is removed, about 66,000 lines in all: the Windows platform layer, the Open/Save dialog DLL, the Direct3D video engine, the installer and updater, and Windows-only settings. Builds are faster, and CI tests Linux only.
+- **Updates from inside rfiles.** rfiles checks GitHub for a newer release soon after it starts and then once a day. When there is one, the status bar says so, and Settings → About has an Install button. It downloads the same kind of package you installed (.deb, .rpm, Arch or Flatpak), checks its SHA-256 against the one GitHub lists, and installs it: through `pkexec` for system packages (your desktop asks for your password), or `flatpak install` for the Flatpak. Then Restart runs the new version. The automatic check can be turned off in Settings → About.
+- **Type your own date format.** Settings → Date format is now a text field, such as `dd.mm.yyyy hh:mm` or `yyyy-mm-dd`, with a live preview and a list of the accepted parts (`dd`, `mm`, `mmm` for "Nov", `yyyy`, `hh:mm:ss` and separators such as `. / - :`; upper or lower case). A separate switch shows recent dates as "5 minutes ago". Your old choice carries over.
+- **Build dates follow the setting.** Settings → About showed its build date as year-month-day whatever you chose; it now uses your format.
+
+**Coming from 0.7.0:** 0.7.0 has no updater, so install 0.8.0 by hand once (below). After that, rfiles updates itself.
 
 ## Install
 
@@ -18,11 +17,6 @@ The first release under the new name: **rustyfiles for Linux is now rfiles**, a 
 | openSUSE | the same `.rpm` | `sudo zypper install ./rfiles-*.rpm` |
 | Arch, CachyOS, Manjaro | `rfiles-git-…-x86_64.pkg.tar.zst` | `sudo pacman -U ./rfiles-git-*.pkg.tar.zst` |
 | Any distribution | `rfiles-….x86_64.flatpak` / `.aarch64.flatpak` | `flatpak install --user ./rfiles-*.flatpak` |
-
-**Upgrading from rustyfiles 0.6.0-linux.1 or 0.5.2-linux.1:**
-
-- **.deb, .rpm, Arch:** install the rfiles package as above. It replaces the rustyfiles package (pacman asks before removing `rustyfiles-git`).
-- **Flatpak:** the app id changed, so rfiles installs alongside the old app. Once rfiles has started once, remove the old app with `flatpak uninstall io.github.benjaminfenech.rustyfiles`. The Flatpak fetches its runtime from Flathub on first install.
 
 Optional extras for previews and drives: poppler (PDFs), libavif / libheif tools (AVIF, HEIC), FFmpeg (older video formats), udisks2 (mounting drives), kio-fuse or gvfs (network locations), git (git status). The [README](https://github.com/benjaminfenech/rfiles#optional-extras) lists the package names for each distribution.
 

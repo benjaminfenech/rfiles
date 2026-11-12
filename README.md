@@ -181,12 +181,11 @@ Not done yet, roughly in order of how much they'd help:
 
 - **DirectLook outside rfiles.** Space over other apps needs a global hotkey, which Wayland doesn't give apps. A desktop-portal GlobalShortcuts binding could bring it back.
 - **rfiles as other apps' Open/Save dialog.** On Linux that's an xdg-desktop-portal FileChooser backend, a project of its own.
-- **Recent files** on the Home page from `~/.local/share/recently-used.xbel`.
 - **Drives:** unlocking LUKS volumes (needs a passphrase prompt), and an eject button on the sidebar row.
 - **A content search index** to stand in for Windows Search (Baloo, Tracker or plocate).
 - **DirectLook details:** RAW photos beyond the embedded JPEG, version strings of Windows programs, and certificate details.
 - **Taskbar progress** through the Unity LauncherEntry API (KDE, Dock-style panels).
-- **Distribution:** an AUR package, an apt/dnf repository (COPR, OBS), and Flathub.
+- **Distribution:** an AUR package (waiting for AUR account registration to reopen), an apt/dnf repository (COPR, OBS), and Flathub. Until then, install from [Releases](https://github.com/benjaminfenech/rfiles/releases); the built-in updater handles later versions.
 - **Hand checks:** a few features are built and unit-tested but haven't been tried by hand on every desktop. [docs/LINUX_PORT.md](docs/LINUX_PORT.md) says which.
 
 ## Keyboard
