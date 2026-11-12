@@ -197,7 +197,7 @@ mod tests {
         let src = d.join("s.txt");
         std::fs::write(&src, b"s").unwrap();
         let e = run_rar(Path::new("nonexistent-rar.exe"), &[src], &dest, 3, None, &mut |_| {}, &|| false).unwrap_err();
-        assert!(format!("{e:#}").contains("Dosya zaten var"));
+        assert!(format!("{e:#}").contains("The file already exists"));
         assert_eq!(std::fs::read(&dest).unwrap(), b"x");
         let _ = std::fs::remove_dir_all(&d);
     }
