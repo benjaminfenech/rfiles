@@ -80,6 +80,7 @@ overrides:
     suggests:
       - libavif-bin
       - libheif-examples
+      - libraw-bin
       - kio-fuse
       - gvfs-backends
       - git
@@ -106,6 +107,7 @@ overrides:
     suggests:
       - libavif-tools
       - libheif-tools
+      - dcraw
       - kio-fuse
       - gvfs-smb
       - git
