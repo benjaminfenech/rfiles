@@ -203,7 +203,6 @@ Not done yet, roughly in order of how much they'd help:
 
 - **DirectLook outside rfiles.** Space over other apps needs a global hotkey, which Wayland doesn't give apps. rfiles now has portal global shortcuts (quick search uses one), but other apps don't say which file is selected, so DirectLook has nothing to show over them.
 - **rfiles as other apps' Open/Save dialog.** On Linux that's an xdg-desktop-portal FileChooser backend, a project of its own.
-- **DirectLook details:** RAW photos beyond the embedded JPEG, version strings of Windows programs, and certificate details.
 - **Distribution:** an AUR package (waiting for AUR account registration to reopen), an apt/dnf repository (COPR, OBS), and Flathub. Until then, install from [Releases](https://github.com/benjaminfenech/rfiles/releases); the built-in updater handles later versions.
 - **Hand checks:** a few features are built and unit-tested but haven't been tried by hand on every desktop. [docs/LINUX_PORT.md](docs/LINUX_PORT.md) says which.
 
