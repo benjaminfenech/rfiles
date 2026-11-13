@@ -1285,5 +1285,13 @@
  "e5c5facd": "Executar comando aqui…",
  "93c562d1": "Terminal",
  "8ad63a0e": "Para \"Abrir no terminal\" e \"Executar comando aqui\". Na barra de endereços, > e um comando o executa nesta pasta",
- "c87a573e": "Não foi possível abrir um terminal"
+ "c87a573e": "Não foi possível abrir um terminal",
+ "f0b8fc79": "Essa pasta não existe",
+ "3e892b4d": "Selecionar",
+ "4b097616": "Selecionar uma pasta",
+ "01e64b32": "já existe. Salve de novo para substituí-lo.",
+ "6d1f5156": "Arquivos a salvar",
+ "ac00cfc8": "Precisa do pacote deb, rpm ou do Arch (ele instala o arquivo rfiles.portal do portal da área de trabalho); o Flatpak não pode adicionar um backend de portal.",
+ "c01651ec": "Aplicativos que pedem uma caixa de diálogo de arquivos ao portal da área de trabalho (Firefox, Chromium, aplicativos GTK, Qt e Electron) recebem o rfiles. Desativar traz de volta a caixa anterior.",
+ "de824b35": "Usar o rfiles nas caixas de diálogo Abrir e Salvar"
 }

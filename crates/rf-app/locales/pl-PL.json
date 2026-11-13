@@ -1285,5 +1285,13 @@
  "e5c5facd": "Uruchom polecenie tutaj…",
  "93c562d1": "Terminal",
  "8ad63a0e": "Dla „Otwórz w terminalu” i „Uruchom polecenie tutaj”. Na pasku adresu > i polecenie uruchamia je w tym folderze",
- "c87a573e": "Nie udało się otworzyć terminala"
+ "c87a573e": "Nie udało się otworzyć terminala",
+ "f0b8fc79": "Ten folder nie istnieje",
+ "3e892b4d": "Wybierz",
+ "4b097616": "Wybierz folder",
+ "01e64b32": "już istnieje. Zapisz ponownie, aby go zastąpić.",
+ "6d1f5156": "Pliki do zapisania",
+ "ac00cfc8": "Wymaga pakietu deb, rpm lub Arch (instaluje plik rfiles.portal portalu pulpitu); Flatpak nie może dodać zaplecza portalu.",
+ "c01651ec": "Aplikacje, które proszą portal pulpitu o okno plików (Firefox, Chromium, aplikacje GTK, Qt i Electron), dostają rfiles. Wyłączenie przywraca poprzednie okno.",
+ "de824b35": "Używaj rfiles w oknach Otwórz i Zapisz"
 }

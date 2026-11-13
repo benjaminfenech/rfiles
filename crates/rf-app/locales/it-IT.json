@@ -1285,5 +1285,13 @@
  "e5c5facd": "Esegui comando qui…",
  "93c562d1": "Terminale",
  "8ad63a0e": "Per \"Apri nel terminale\" ed \"Esegui comando qui\". Nella barra degli indirizzi, > seguito da un comando lo esegue in questa cartella",
- "c87a573e": "Impossibile aprire un terminale"
+ "c87a573e": "Impossibile aprire un terminale",
+ "f0b8fc79": "Quella cartella non esiste",
+ "3e892b4d": "Seleziona",
+ "4b097616": "Seleziona una cartella",
+ "01e64b32": "esiste già. Salva di nuovo per sostituirlo.",
+ "6d1f5156": "File da salvare",
+ "ac00cfc8": "Richiede il pacchetto deb, rpm o Arch (installa il file rfiles.portal del portale del desktop); il Flatpak non può aggiungere un backend del portale.",
+ "c01651ec": "Le app che chiedono una finestra dei file al portale del desktop (Firefox, Chromium, app GTK, Qt ed Electron) ottengono rfiles. Disattivandolo torna la finestra precedente.",
+ "de824b35": "Usa rfiles per le finestre Apri e Salva"
 }

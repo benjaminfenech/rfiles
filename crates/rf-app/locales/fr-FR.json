@@ -1285,5 +1285,13 @@
  "e5c5facd": "Exécuter une commande ici…",
  "93c562d1": "Terminal",
  "8ad63a0e": "Pour « Ouvrir dans le terminal » et « Exécuter une commande ici ». Dans la barre d'adresse, > suivi d'une commande l'exécute dans ce dossier",
- "c87a573e": "Impossible d'ouvrir un terminal"
+ "c87a573e": "Impossible d'ouvrir un terminal",
+ "f0b8fc79": "Ce dossier n'existe pas",
+ "3e892b4d": "Sélectionner",
+ "4b097616": "Sélectionner un dossier",
+ "01e64b32": "existe déjà. Enregistrez à nouveau pour le remplacer.",
+ "6d1f5156": "Fichiers à enregistrer",
+ "ac00cfc8": "Nécessite le paquet deb, rpm ou Arch (il installe le fichier rfiles.portal du portail du bureau) ; le Flatpak ne peut pas ajouter de backend de portail.",
+ "c01651ec": "Les applications qui demandent une boîte de dialogue de fichiers au portail du bureau (Firefox, Chromium, applications GTK, Qt et Electron) obtiennent rfiles. Le désactiver rétablit l'ancienne boîte de dialogue.",
+ "de824b35": "Utiliser rfiles pour les boîtes de dialogue Ouvrir et Enregistrer"
 }

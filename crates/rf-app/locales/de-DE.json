@@ -1285,5 +1285,13 @@
  "e5c5facd": "Befehl hier ausführen…",
  "93c562d1": "Terminal",
  "8ad63a0e": "Für „Im Terminal öffnen“ und „Befehl hier ausführen“. In der Adressleiste führt > mit einem Befehl ihn in diesem Ordner aus",
- "c87a573e": "Terminal konnte nicht geöffnet werden"
+ "c87a573e": "Terminal konnte nicht geöffnet werden",
+ "f0b8fc79": "Dieser Ordner existiert nicht",
+ "3e892b4d": "Auswählen",
+ "4b097616": "Einen Ordner auswählen",
+ "01e64b32": "existiert bereits. Erneut speichern, um sie zu ersetzen.",
+ "6d1f5156": "Zu speichernde Dateien",
+ "ac00cfc8": "Benötigt das deb-, rpm- oder Arch-Paket (es installiert die Datei rfiles.portal des Desktop-Portals); das Flatpak kann kein Portal-Backend hinzufügen.",
+ "c01651ec": "Apps, die das Desktop-Portal nach einem Dateidialog fragen (Firefox, Chromium, GTK-, Qt- und Electron-Apps), bekommen rfiles. Ausschalten bringt den alten Dialog zurück.",
+ "de824b35": "rfiles für Öffnen- und Speichern-Dialoge verwenden"
 }

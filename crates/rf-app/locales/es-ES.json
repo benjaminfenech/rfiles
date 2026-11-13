@@ -1285,5 +1285,13 @@
  "e5c5facd": "Ejecutar un comando aquí…",
  "93c562d1": "Terminal",
  "8ad63a0e": "Para «Abrir en el terminal» y «Ejecutar un comando aquí». En la barra de direcciones, > y un comando lo ejecuta en esta carpeta",
- "c87a573e": "No se pudo abrir un terminal"
+ "c87a573e": "No se pudo abrir un terminal",
+ "f0b8fc79": "Esa carpeta no existe",
+ "3e892b4d": "Seleccionar",
+ "4b097616": "Seleccionar una carpeta",
+ "01e64b32": "ya existe. Guarde de nuevo para reemplazarlo.",
+ "6d1f5156": "Archivos para guardar",
+ "ac00cfc8": "Necesita el paquete deb, rpm o de Arch (instala el archivo rfiles.portal del portal de escritorio); el Flatpak no puede añadir un backend de portal.",
+ "c01651ec": "Las aplicaciones que piden un cuadro de diálogo de archivos al portal de escritorio (Firefox, Chromium y aplicaciones GTK, Qt y Electron) obtienen rfiles. Al desactivarlo vuelve el cuadro anterior.",
+ "de824b35": "Usar rfiles para los cuadros de diálogo Abrir y Guardar"
 }

@@ -1285,5 +1285,13 @@
  "e5c5facd": "Opdracht hier uitvoeren…",
  "93c562d1": "Terminal",
  "8ad63a0e": "Voor \"Openen in terminal\" en \"Opdracht hier uitvoeren\". In de adresbalk voert > met een opdracht die uit in deze map",
- "c87a573e": "Kan geen terminal openen"
+ "c87a573e": "Kan geen terminal openen",
+ "f0b8fc79": "Die map bestaat niet",
+ "3e892b4d": "Selecteren",
+ "4b097616": "Een map selecteren",
+ "01e64b32": "bestaat al. Sla opnieuw op om het te vervangen.",
+ "6d1f5156": "Op te slaan bestanden",
+ "ac00cfc8": "Vereist het deb-, rpm- of Arch-pakket (dat installeert het bestand rfiles.portal van het bureaubladportaal); de Flatpak kan geen portaalbackend toevoegen.",
+ "c01651ec": "Apps die het bureaubladportaal om een bestandsdialoog vragen (Firefox, Chromium, GTK-, Qt- en Electron-apps) krijgen rfiles. Uitzetten brengt de oude dialoog terug.",
+ "de824b35": "rfiles gebruiken voor Openen- en Opslaan-dialogen"
 }
