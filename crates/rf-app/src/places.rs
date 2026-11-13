@@ -376,6 +376,8 @@ mod tests {
 
     #[test]
     fn linux_drive_names() {
+        // the root's and unlabelled volumes' names are translated: keep the language still
+        let _lock = crate::i18n::test_lock();
         let root = drive("/", "/dev/nvme0n1p2", "");
         let usb = drive("/run/media/me/KINGSTON", "/dev/sdb1", "KINGSTON");
         let smb = drive("/mnt/media", "//10.0.0.9/media", "");
