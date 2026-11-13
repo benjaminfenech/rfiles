@@ -1278,5 +1278,8 @@
  "5b71d057": "Henüz bir tuş atanmadı. Hyprland'de `hyprctl globalshortcuts` komutunun listelediği \"quick-search\" kısayolunu bağlayın, ör. bind = ALT, SPACE, global, <name>",
  "9d2e4714": "Genel kısayol",
  "93464a3e": "Masaüstünüzün atadığı bir kısayolla hızlı aramayı her uygulamadan açın (KDE ve GNOME onaylamanızı ister)",
- "a1de2fdd": "Değiştir"
+ "a1de2fdd": "Değiştir",
+ "dc3c5f2e": "Bu metni içeren dosya yok",
+ "2cff1e74": "Dosyaların içinde ara",
+ "a2e57e49": "İpucu: dosyaların içinde aramak için aramaya \"içerik:\" ile başlayın"
 }

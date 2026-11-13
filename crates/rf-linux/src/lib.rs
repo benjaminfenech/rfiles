@@ -21,6 +21,7 @@ pub mod apps;
 pub mod cert;
 pub mod clipboard;
 pub mod complete;
+pub mod content_search;
 pub mod ctxmenu;
 pub mod default_fm;
 pub mod dialogs;
