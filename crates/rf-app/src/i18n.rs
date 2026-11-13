@@ -206,6 +206,14 @@ static ACTIVE: AtomicU16 = AtomicU16::new(0);
 
 /// Sets the UI language (resolving `System`), and the decimal comma and the few words in
 /// rf-core's number and date formats.
+/// Tests that switch the global language, or read texts it changes, hold this so they don't
+/// run into each other (cargo runs tests on several threads).
+#[cfg(test)]
+pub(crate) fn test_lock() -> std::sync::MutexGuard<'static, ()> {
+    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    LOCK.lock().unwrap_or_else(|e| e.into_inner())
+}
+
 pub fn set(lang: Lang) {
     let l = lang.resolve();
     ACTIVE.store(
@@ -486,6 +494,7 @@ mod tests {
     #[test]
     fn languages_translate() {
         // One test mutates the global language; keep everything in it.
+        let _lock = test_lock();
         set(Lang::En);
         assert_eq!(t("New folder"), "New folder");
         assert_eq!(t!("{root} {n} items, {mb} MB", root = "/home", n = 5, mb = 12), "/home 5 items, 12 MB");
