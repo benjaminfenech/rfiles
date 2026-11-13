@@ -1153,6 +1153,8 @@ impl FolderView {
                 .ok();
         } else if let Location::Search { root, query } = self.location().clone() {
             let include_hidden = self.filter.show_hidden;
+            // "content:budget": files with the text inside them
+            let contents = rf_linux::content_search::content_query(&query).map(str::to_string);
             // "tag:Kırmızı" / "etiket:kırmızı": tagged items under this folder (Files' tag: query)
             let tag_paths: Option<Vec<PathBuf>> = {
                 let lower = rf_core::entry::fold_case(&query);
@@ -1189,9 +1191,19 @@ impl FolderView {
                         let _ = tx.unbounded_send(Msg::Done(Ok(n)));
                         return;
                     }
-                    // 1. our name index (milliseconds) when it covers this folder
                     let t_index = std::time::Instant::now();
-                    if let Some(paths) = rf_linux::indexer::search(&query, &root, include_hidden, 50_000) {
+                    if let Some(text) = &contents {
+                        // 1. the desktop's index (Baloo, Tracker) when it covers this folder
+                        if let Some((source, paths)) = rf_linux::content_search::indexed(&root, text, 50_000) {
+                            let found = send_index_hits(&paths, &tx, &cancel);
+                            log::info!("search: {} found \"{text}\" inside {found} files in {} ({:?})", source.name(), root.display(), t_index.elapsed());
+                            let _ = tx.unbounded_send(Msg::Done(Ok(found)));
+                            return;
+                        }
+                        log::info!("search: no desktop index covers {}; reading the files", root.display());
+                    }
+                    // 1. our name index (milliseconds) when it covers this folder
+                    if let Some(paths) = contents.is_none().then(|| rf_linux::indexer::search(&query, &root, include_hidden, 50_000)).flatten() {
                         let looked_up = t_index.elapsed();
                         let found = send_index_hits(&paths, &tx, &cancel);
                         log::info!("search: the index answered \"{query}\" in {} with {} hits ({looked_up:?} to find, {:?} with details)", root.display(), found, t_index.elapsed());
@@ -1199,9 +1211,13 @@ impl FolderView {
                         return;
                     }
                     // 2. walking the disk
-                    let q = rf_linux::search::SearchQuery { root, pattern: query, include_hidden, max_results: 50_000 };
+                    let (pattern, walk): (String, fn(_, _, _) -> _) = match contents {
+                        Some(text) => (text, rf_linux::search::search_contents),
+                        None => (query, rf_linux::search::search),
+                    };
+                    let q = rf_linux::search::SearchQuery { root, pattern, include_hidden, max_results: 50_000 };
                     let tx2 = tx.clone();
-                    let r = rf_linux::search::search(&q, &|| cancel.load(Ordering::Relaxed), &mut |hits| {
+                    let r = walk(&q, &|| cancel.load(Ordering::Relaxed), &mut |hits| {
                         let mut es = Vec::with_capacity(hits.len());
                         let mut ps = Vec::with_capacity(hits.len());
                         for h in hits {
@@ -3207,6 +3223,40 @@ impl FolderView {
         out
     }
 
+    /// A search that found nothing. A name search offers to look inside the files instead.
+    fn empty_search(&self, p: &Palette, root: PathBuf, query: String, cx: &mut Context<Self>) -> AnyElement {
+        let lower = rf_core::entry::fold_case(&query);
+        if rf_linux::content_search::content_query(&query).is_some() {
+            return empty_state(p, L::FileSearch, t!("No files contain this text").to_string(), "").into_any_element();
+        }
+        let state = empty_state(p, L::Search, t!("No matching items").to_string(), "");
+        if lower.starts_with("tag:") || lower.starts_with("etiket:") {
+            return state.into_any_element();
+        }
+        state
+            .child(
+                h_flex()
+                    .id("search-contents")
+                    .mt_2()
+                    .h(px(30.))
+                    .px_3()
+                    .gap_2()
+                    .items_center()
+                    .rounded(theme::RADIUS_SM)
+                    .text_sm()
+                    .bg(p.hover)
+                    .hover(|s| s.bg(p.pressed))
+                    .cursor_pointer()
+                    .child(Icon::new(L::FileSearch).size(px(14.)))
+                    .child(t!("Search inside files"))
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        this.navigate(Location::Search { root: root.clone(), query: format!("content:{}", query.trim()) }, cx)
+                    })),
+            )
+            .child(div().text_xs().text_color(p.text_tertiary).child(t!("Tip: start a search with \"content:\" to look inside files")))
+            .into_any_element()
+    }
+
     fn render_details(&mut self, p: &Palette, cx: &mut Context<Self>) -> AnyElement {
         let count = self.visible.len();
         // Details and Grid get a scrollbar over the list (Columns has one list per column).
@@ -3216,8 +3266,12 @@ impl FolderView {
         } else if count == 0 && self.loading && self.load_started.elapsed() >= SLOW_LOAD {
             empty_state(p, L::LoaderCircle, t!("Loading…").to_string(), "").into_any_element()
         } else if count == 0 && !self.loading {
-            let msg = if self.filter.query.is_empty() { t!("This folder is empty") } else { t!("No matching items") };
-            empty_state(p, L::FolderOpen, msg.to_string(), "").into_any_element()
+            if let Location::Search { root, query } = self.location().clone() {
+                self.empty_search(p, root, query, cx)
+            } else {
+                let msg = if self.filter.query.is_empty() { t!("This folder is empty") } else { t!("No matching items") };
+                empty_state(p, L::FolderOpen, msg.to_string(), "").into_any_element()
+            }
         } else if self.view_mode == ViewMode::Columns {
             self.render_columns(p, cx)
         } else if self.view_mode == ViewMode::Grid {
@@ -3682,7 +3736,7 @@ const DEFAULT_ROW_SIZE: u8 = 1;
 
 const SLOW_LOAD: std::time::Duration = std::time::Duration::from_millis(400);
 
-fn empty_state(p: &Palette, icon: L, title: String, sub: &'static str) -> impl IntoElement {
+fn empty_state(p: &Palette, icon: L, title: String, sub: &'static str) -> Div {
     v_flex()
         .flex_1()
         .size_full()
