@@ -35,6 +35,11 @@ contents:
     type: symlink
   - src: packaging/linux/rfiles.desktop
     dst: /usr/share/applications/rfiles.desktop
+  # rfiles as the desktop portal's Open/Save dialog (Settings turns it on)
+  - src: packaging/linux/rfiles.portal
+    dst: /usr/share/xdg-desktop-portal/portals/rfiles.portal
+  - src: packaging/linux/org.freedesktop.impl.portal.desktop.rfiles.service
+    dst: /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.rfiles.service
   - src: packaging/linux/io.github.benjaminfenech.rfiles.metainfo.xml
     dst: /usr/share/metainfo/io.github.benjaminfenech.rfiles.metainfo.xml
   - src: crates/rf-app/assets/rfiles.svg

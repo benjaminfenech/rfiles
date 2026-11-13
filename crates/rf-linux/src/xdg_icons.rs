@@ -76,6 +76,19 @@ pub fn mime_for_ext(ext: &str) -> Option<&'static str> {
     mime_db().by_ext.get(&ext.to_lowercase()).map(|(_, t)| t.as_str())
 }
 
+/// The extensions shared-mime-info gives `mime` (`"image/png"` → `["png"]`); `"image/*"`
+/// matches every image type. Sorted.
+pub fn exts_for_mime(mime: &str) -> Vec<String> {
+    let mime = mime.to_lowercase();
+    let wanted = |t: &str| match mime.strip_suffix("/*") {
+        Some(major) => t.split('/').next() == Some(major),
+        None => t == mime,
+    };
+    let mut v: Vec<String> = mime_db().by_ext.iter().filter(|(_, (_, t))| wanted(&t.to_lowercase())).map(|(e, _)| e.clone()).collect();
+    v.sort();
+    v
+}
+
 /// Icon names to try for a MIME type, most specific first.
 pub fn icon_names_for_mime(mime: &str) -> Vec<String> {
     let db = mime_db();
@@ -363,6 +376,8 @@ mod tests {
             return;
         }
         assert_eq!(mime_for_ext("png"), Some("image/png"));
+        assert!(exts_for_mime("image/png").contains(&"png".to_string()));
+        assert!(exts_for_mime("image/*").contains(&"jpg".to_string()));
         assert_eq!(mime_for_ext("PDF"), Some("application/pdf"));
         assert_eq!(mime_for_ext("definitely-not-a-type"), None);
         let names = icon_names_for_mime("application/pdf");

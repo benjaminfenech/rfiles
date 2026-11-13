@@ -38,6 +38,7 @@ mod preview;
 mod properties_view;
 mod global_keys;
 mod terminal;
+mod picker;
 mod quick_search;
 mod recycle_view;
 mod theme;
@@ -84,6 +85,8 @@ pub(crate) fn install_panic_log() {
 
 /// Whether rfiles is the default file manager (read off the UI thread at start).
 pub static DEFAULT_FM: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// This process is the Open/Save dialog service (`--file-chooser-service`).
+pub(crate) static PICKER_SERVICE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// Opens an rfiles window. `start = None` restores the session (first window) or opens Home.
 pub fn open_main_window(
     start: Option<Location>,
@@ -197,6 +200,13 @@ pub fn main() {
         return;
     }
 
+    // D-Bus started us as other apps' Open/Save dialog (see rf-linux file_chooser): no main
+    // window, a picker per call, and its own process (never handed to a running rfiles)
+    let chooser = std::env::args().nth(1).as_deref() == Some(rf_linux::file_chooser::SERVICE_ARG);
+    if chooser {
+        PICKER_SERVICE.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+
     // `--settings=directlook`: DirectLook'un simge menüsünden "DirectLook ayarları"
     let settings_arg = std::env::args().nth(1).and_then(|a| a.strip_prefix("--settings=").map(str::to_string));
     let open_look_settings = settings_arg.is_some();
@@ -209,7 +219,7 @@ pub fn main() {
         Some(p) => p.to_string_lossy().into_owned(),
         None => a,
     });
-    let arg = arg.filter(|_| !open_look_settings && !quick_search);
+    let arg = arg.filter(|_| !open_look_settings && !quick_search && !chooser);
     // the launcher's "New window" action
     let new_window = arg.as_deref() == Some(workspace::NEW_WINDOW_ARG);
     let arg = arg.filter(|_| !new_window);
@@ -304,7 +314,7 @@ pub fn main() {
         _ => String::new(),
     };
     // RFILES_MULTI_INSTANCE=1 skips forwarding (automated tests run several copies).
-    let multi = std::env::var_os("RFILES_MULTI_INSTANCE").is_some();
+    let multi = std::env::var_os("RFILES_MULTI_INSTANCE").is_some() || chooser;
     let _instance = if multi {
         None
     } else {
@@ -362,6 +372,12 @@ pub fn main() {
             rf_linux::foldersize::shared_cache().persist(d.join("foldersizes.bin"));
         }
         let bounds = restored_bounds(cx);
+        if chooser {
+            picker::serve(cx);
+            cx.set_quit_mode(gpui_kit::QuitMode::Explicit);
+            cx.activate(true);
+            return;
+        }
         if quick_search {
             // started for the quick search only: no main window (it quits when that closes,
             // unless running in the background)
