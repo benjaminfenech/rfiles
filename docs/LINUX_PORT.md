@@ -546,6 +546,24 @@ network access; Flathub would need `cargo-sources.json` instead.
   copy keeping permissions/xattrs, trash and restore, symlink loops in search.
 - Manual checks on both Wayland (KDE/GNOME) and X11 for each phase.
 
+### Hand checks
+
+Built and covered by unit tests (and, where noted, tried on Hyprland), but not yet tried by
+hand where it matters:
+
+- **Open/Save dialog** (portal FileChooser): with Firefox, Chromium and a GTK app through the
+  user's own portal on KDE Plasma and GNOME; the Settings switch and the portal restart. Tried
+  end to end on Hyprland through a private xdg-desktop-portal 1.22.
+- **Searching inside files**: Baloo on a real Plasma session and Tracker on GNOME (both tried in
+  isolation), and from the Flatpak (host `gdbus`, `baloosearch6`, `tinysparql`).
+- **Terminal**: the Settings picker and `>` in the address bar on screen; terminals other than
+  kitty and alacritty (their option tables are unit-tested).
+- **DirectLook**: RAW photos from real cameras (tried with a synthetic DNG) and classic `dcraw`;
+  the certificate and program-version card on screen.
+- **Global shortcut**: KDE's and GNOME's confirmation dialogs (Hyprland tried).
+- **Taskbar progress** from the Flatpak.
+- **Drag out to other apps** (see Phase 3).
+
 ## Open questions
 
 1. Track upstream `gelenmedya/rustyfiles`, or treat this as a hard fork? (This plan assumes
