@@ -5429,6 +5429,41 @@
   "new": true
  },
  {
+  "id": "dc3c5f2e",
+  "en": "No files contain this text",
+  "new": true
+ },
+ {
+  "id": "2cff1e74",
+  "en": "Search inside files",
+  "new": true
+ },
+ {
+  "id": "a2e57e49",
+  "en": "Tip: start a search with \"content:\" to look inside files",
+  "new": true
+ },
+ {
+  "id": "e5c5facd",
+  "en": "Run command here…",
+  "new": true
+ },
+ {
+  "id": "93c562d1",
+  "en": "Terminal",
+  "new": true
+ },
+ {
+  "id": "8ad63a0e",
+  "en": "For \"Open in terminal\" and \"Run command here\". In the address bar, > and a command runs it in this folder",
+  "new": true
+ },
+ {
+  "id": "c87a573e",
+  "en": "Couldn't open a terminal",
+  "new": true
+ },
+ {
   "id": "f0b8fc79",
   "en": "That folder doesn't exist",
   "new": true

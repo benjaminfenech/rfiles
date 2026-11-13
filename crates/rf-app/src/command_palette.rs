@@ -64,6 +64,7 @@ fn commands() -> Vec<Cmd> {
         cmd!("Preview pane", "Alt+P", L::PanelRight, TogglePreview),
         cmd!("Sidebar", "Ctrl+B", L::PanelLeft, ToggleSidebar),
         cmd!("Open in terminal", "Ctrl+Shift+`", L::SquareTerminal, OpenTerminal),
+        cmd!("Run command here…", "", L::Terminal, RunCommand),
         cmd!("Select all", "Ctrl+A", L::SquareCheck, SelectAll),
         cmd!("Invert selection", "", L::ArrowLeftRight, InvertSelection),
         cmd!("Toggle item selection", "Ctrl+Space", L::SquareCheck, ToggleSelection),

@@ -26,6 +26,8 @@ pub struct App {
     pub icon: Option<String>,
     pub mime_types: Vec<String>,
     pub terminal: bool,
+    /// `Categories` (`System;TerminalEmulator;`).
+    pub categories: Vec<String>,
     /// Kept out of menus unless it is a default.
     pub no_display: bool,
     pub path: PathBuf,
@@ -113,6 +115,7 @@ fn parse_app(id: String, path: &Path) -> Option<App> {
         icon: e.get("Icon").filter(|s| !s.is_empty()).cloned(),
         mime_types: e.get("MimeType").map(|m| m.split(';').filter(|s| !s.is_empty()).map(String::from).collect()).unwrap_or_default(),
         terminal: e.get("Terminal").is_some_and(|v| v == "true"),
+        categories: e.get("Categories").map(|m| m.split(';').filter(|s| !s.is_empty()).map(String::from).collect()).unwrap_or_default(),
         no_display: e.get("NoDisplay").is_some_and(|v| v == "true"),
         path: path.to_path_buf(),
     })
@@ -144,7 +147,7 @@ fn apps() -> &'static HashMap<String, App> {
                                 out.insert(id, app);
                             }
                             None => {
-                                out.insert(id, App { id: String::new(), name: String::new(), exec: String::new(), icon: None, mime_types: Vec::new(), terminal: false, no_display: true, path: p });
+                                out.insert(id, App { id: String::new(), name: String::new(), exec: String::new(), icon: None, mime_types: Vec::new(), terminal: false, categories: Vec::new(), no_display: true, path: p });
                             }
                         }
                     }
@@ -316,6 +319,26 @@ pub(crate) fn by_id(id: &str) -> Option<&'static App> {
 }
 
 /// Every visible app that opens files, by name (for "Choose another app").
+/// Installed terminal emulators (`Categories=TerminalEmulator`), by name.
+pub fn terminals() -> Vec<&'static App> {
+    let mut v: Vec<&App> = apps().values().filter(|a| !a.no_display && a.categories.iter().any(|c| c == "TerminalEmulator")).collect();
+    v.sort_by_key(|a| a.name.to_lowercase());
+    v
+}
+
+/// The program an app's `Exec` line runs (`kitty`, `/usr/bin/foot`), without `env VAR=x`.
+pub fn program(app: &App) -> Option<String> {
+    let words = exec_words(&app.exec);
+    let mut it = words.into_iter().peekable();
+    if it.peek().is_some_and(|w| w == "env") {
+        it.next();
+        while it.peek().is_some_and(|w| w.contains('=')) {
+            it.next();
+        }
+    }
+    it.next()
+}
+
 pub fn all_apps() -> Vec<&'static App> {
     let mut v: Vec<&App> = apps().values().filter(|a| !a.no_display && a.takes_files()).collect();
     v.sort_by_key(|a| a.name.to_lowercase());
@@ -455,7 +478,7 @@ mod tests {
     use super::*;
 
     fn app(exec: &str, terminal: bool) -> App {
-        App { id: "x.desktop".into(), name: "X".into(), exec: exec.into(), icon: Some("x-icon".into()), mime_types: vec![], terminal, no_display: false, path: "/usr/share/applications/x.desktop".into() }
+        App { id: "x.desktop".into(), name: "X".into(), exec: exec.into(), icon: Some("x-icon".into()), mime_types: vec![], terminal, categories: vec![], no_display: false, path: "/usr/share/applications/x.desktop".into() }
     }
 
     #[test]

@@ -324,7 +324,7 @@ impl FolderView {
         if single_dir && mp.terminal {
             v.push(Item::Separator);
             let d = target_dir.clone();
-            v.push(Item::action(t!("Open in terminal"), icon(L::SquareTerminal), move |_, _| open_terminal(d.clone())).hint("Ctrl+Shift+`"));
+            v.push(Item::action(t!("Open in terminal"), icon(L::SquareTerminal), move |w, cx| open_terminal(d.clone(), w, cx)).hint("Ctrl+Shift+`"));
         }
         Menu { quick: self.quick_clipboard(me, true), items: v }
     }
@@ -354,7 +354,8 @@ impl FolderView {
         v.push(Item::action(t!("Show hidden items"), icon(L::Eye), act(me, |v, _, cx| v.toggle_hidden(cx))).checked(show_hidden).hint("Ctrl+H"));
         v.push(Item::Separator);
         let d = dir.to_path_buf();
-        v.push(Item::action(t!("Open in terminal"), icon(L::SquareTerminal), move |_, _| open_terminal(d.clone())).hint("Ctrl+Shift+`"));
+        v.push(Item::action(t!("Open in terminal"), icon(L::SquareTerminal), move |w, cx| open_terminal(d.clone(), w, cx)).hint("Ctrl+Shift+`"));
+        v.push(Item::action(t!("Run command here…"), icon(L::Terminal), |w, cx| w.dispatch_action(Box::new(crate::actions::RunCommand), cx)));
         // Git (Files: initialize / clone from the folder background)
         if !self.is_search() && !crate::archive_view::is_browsable_path(dir) {
             let mut git_items = Vec::new();
@@ -685,10 +686,8 @@ fn archive_password(dest: PathBuf, finish: Finish, first: Option<String>, window
     );
 }
 
-fn open_terminal(d: PathBuf) {
-    std::thread::spawn(move || {
-        let _ = rf_linux::shell::open_terminal(&d);
-    });
+fn open_terminal(d: PathBuf, w: &mut Window, cx: &mut App) {
+    crate::terminal::open(d, None, Some(w.window_handle()), cx);
 }
 
 /// Turns the shell menu into our three lazy lists: "Show more options" (what is left after

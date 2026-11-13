@@ -1628,6 +1628,13 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
             Some(t!("When copying, moving or compressing took over 10 seconds and rfiles isn't in front")),
             sw("notify-ops", p, s.notify_long_ops, |s, v| s.notify_long_ops = v),
         ),
+        card(
+            p,
+            L::SquareTerminal,
+            t!("Terminal"),
+            Some(t!("For \"Open in terminal\" and \"Run command here\". In the address bar, > and a command runs it in this folder")),
+            terminal_choice(p, &s.terminal),
+        ),
         section(p, t!("Performance")),
         card(
             p,
@@ -1704,6 +1711,32 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         ),
     ]);
     out
+}
+
+/// The terminal picker: Automatic (naming the one it picks) and the installed terminals.
+fn terminal_choice(p: &Palette, current: &str) -> AnyElement {
+    let found = crate::terminal::choices();
+    let auto = match found.and_then(|f| f.0.as_deref()) {
+        Some(t) => format!("{} ({t})", t!("Automatic")),
+        None => t!("Automatic").to_string(),
+    };
+    let mut options: Vec<(String, String)> = vec![(String::new(), auto)];
+    options.extend(found.map(|f| f.1.clone()).unwrap_or_default().into_iter().map(|t| (t.program, t.name)));
+    if !current.is_empty() && !options.iter().any(|(v, _)| v == current) {
+        // set by hand in settings.toml
+        options.push((current.to_string(), current.to_string()));
+    }
+    let label = options.iter().find(|(v, _)| v == current).map(|(_, l)| l.clone()).unwrap_or_default();
+    let current = current.to_string();
+    select_box("terminal", p, label, move |_| {
+        options
+            .iter()
+            .map(|(v, l)| {
+                let v = v.clone();
+                Choice::new(l.clone(), v == current, move |_, cx| settings::update(cx, |s| s.terminal = v.clone()))
+            })
+            .collect()
+    })
 }
 
 /// "Use rfiles for Open and Save dialogs": the portal's FileChooser (see rf-linux file_chooser).

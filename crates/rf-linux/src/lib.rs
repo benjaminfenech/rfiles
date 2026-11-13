@@ -21,6 +21,7 @@ pub mod apps;
 pub mod cert;
 pub mod clipboard;
 pub mod complete;
+pub mod content_search;
 pub mod ctxmenu;
 pub mod default_fm;
 pub mod dialogs;
@@ -67,6 +68,7 @@ pub mod single_instance;
 pub mod sta;
 pub mod global_shortcuts;
 pub mod taskbar_progress;
+pub mod terminal;
 pub mod rotate;
 pub mod thumbs;
 /// Linux only: running command-line tools.
