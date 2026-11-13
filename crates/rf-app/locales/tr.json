@@ -1285,5 +1285,13 @@
  "e5c5facd": "Burada komut çalıştır…",
  "93c562d1": "Terminal",
  "8ad63a0e": "\"Terminalde aç\" ve \"Burada komut çalıştır\" için. Adres çubuğunda > ve bir komut, onu bu klasörde çalıştırır",
- "c87a573e": "Terminal açılamadı"
+ "c87a573e": "Terminal açılamadı",
+ "f0b8fc79": "Bu klasör yok",
+ "3e892b4d": "Seç",
+ "4b097616": "Bir klasör seçin",
+ "01e64b32": "zaten var. Değiştirmek için yeniden kaydedin.",
+ "6d1f5156": "Kaydedilecek dosyalar",
+ "ac00cfc8": "deb, rpm veya Arch paketi gerekir (masaüstü portalının rfiles.portal dosyasını kurar); Flatpak portal arka ucu ekleyemez.",
+ "c01651ec": "Masaüstü portalından dosya penceresi isteyen uygulamalar (Firefox, Chromium, GTK, Qt ve Electron uygulamaları) rfiles'ı görür. Kapatınca eski pencere geri gelir.",
+ "de824b35": "Aç ve Kaydet pencereleri için rfiles'ı kullan"
 }

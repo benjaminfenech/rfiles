@@ -839,7 +839,8 @@ fn sync_name_index(on: bool, excluded: &[String]) {
         std::thread::sleep(std::time::Duration::from_secs(delay));
         // extra instances (tests, the speed test's) leave it to the main one
         // (RFILES_INDEX=1 indexes there too, for testing)
-        let extra = std::env::var_os("RFILES_MULTI_INSTANCE").is_some() && std::env::var_os("RFILES_INDEX").is_none();
+        // (the Open/Save dialog service too: it lives a couple of minutes)
+        let extra = (std::env::var_os("RFILES_MULTI_INSTANCE").is_some() || crate::PICKER_SERVICE.load(Ordering::Relaxed)) && std::env::var_os("RFILES_INDEX").is_none();
         if STATE.load(Ordering::Relaxed) != 2 || std::env::var_os("RFILES_NO_INDEX").is_some() || extra {
             return;
         }
