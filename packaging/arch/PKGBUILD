@@ -29,6 +29,7 @@ optdepends=(
   'poppler: PDF previews'
   'libavif: full-size AVIF images'
   'libheif: full-size HEIC images'
+  'libraw: camera RAW photos at full quality'
   'ffmpeg: video formats rfiles cannot play on its own'
   'kio-fuse: network locations (smb://, sftp://, ftp://) on KDE'
   'gvfs-smb: network locations on GNOME and others (with gvfs)'
@@ -75,6 +76,10 @@ package() {
   ln -s "/usr/lib/$_name/rfiles" "$pkgdir/usr/bin/rfiles"
 
   install -Dm644 packaging/linux/rfiles.desktop "$pkgdir/usr/share/applications/rfiles.desktop"
+  # rfiles as the desktop portal's Open/Save dialog (Settings turns it on)
+  install -Dm644 packaging/linux/rfiles.portal "$pkgdir/usr/share/xdg-desktop-portal/portals/rfiles.portal"
+  install -Dm644 packaging/linux/org.freedesktop.impl.portal.desktop.rfiles.service \
+    "$pkgdir/usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.rfiles.service"
   install -Dm644 packaging/linux/io.github.benjaminfenech.rfiles.metainfo.xml \
     "$pkgdir/usr/share/metainfo/io.github.benjaminfenech.rfiles.metainfo.xml"
   install -Dm644 crates/rf-app/assets/rfiles.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/rfiles.svg"
