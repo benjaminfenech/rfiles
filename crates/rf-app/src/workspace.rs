@@ -617,6 +617,8 @@ impl Workspace {
                     let _ = view.update(cx, |v, cx| v.refresh(cx));
                 });
             }
+            // only the Open/Save dialog's list picks
+            FolderEvent::Picked(_) => {}
             FolderEvent::BulkRename(paths) => this.open_bulk_rename(paths.clone(), window, cx),
             FolderEvent::AddToShelf(paths) => {
                 let paths = paths.clone();

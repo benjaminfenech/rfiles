@@ -1692,6 +1692,7 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
                 window.refresh();
             }),
         ),
+        file_chooser_card(p),
     ];
     out.extend([
         card(
@@ -1703,6 +1704,49 @@ fn advanced(p: &Palette, s: &Settings) -> Vec<AnyElement> {
         ),
     ]);
     out
+}
+
+/// "Use rfiles for Open and Save dialogs": the portal's FileChooser (see rf-linux file_chooser).
+fn file_chooser_card(p: &Palette) -> AnyElement {
+    static STATE: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0);
+    // 0 = not read yet, 1 = off, 2 = on, 3 = not installed (read on a worker thread)
+    let state = STATE.load(std::sync::atomic::Ordering::Relaxed);
+    let refresh = || {
+        std::thread::spawn(|| {
+            let s = if !rf_linux::file_chooser::installed() { 3 } else if rf_linux::file_chooser::enabled() { 2 } else { 1 };
+            STATE.store(s, std::sync::atomic::Ordering::Relaxed);
+        });
+    };
+    if state == 0 {
+        refresh();
+    }
+    let on = state == 2;
+    let note = if state == 3 {
+        t!("Needs the deb, rpm or Arch package (it installs the desktop portal's rfiles.portal); the Flatpak can't add a portal backend.")
+    } else {
+        t!("Apps that ask the desktop portal for a file dialog (Firefox, Chromium, GTK, Qt and Electron apps) get rfiles. Turning it off gives the dialog back.")
+    };
+    card(
+        p,
+        L::FolderOpen,
+        t!("Use rfiles for Open and Save dialogs"),
+        Some(note),
+        if state == 3 {
+            div().into_any_element()
+        } else {
+            switch("file-chooser", p, on, move |window, _| {
+                STATE.store(if on { 1 } else { 2 }, std::sync::atomic::Ordering::Relaxed);
+                std::thread::spawn(move || {
+                    if let Err(e) = rf_linux::file_chooser::set_enabled(!on) {
+                        log::warn!("file chooser: {e:#}");
+                    }
+                    let s = if rf_linux::file_chooser::enabled() { 2 } else { 1 };
+                    STATE.store(s, std::sync::atomic::Ordering::Relaxed);
+                });
+                window.refresh();
+            })
+        },
+    )
 }
 
 fn open_url(url: &str) {

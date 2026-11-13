@@ -126,6 +126,8 @@ pub enum FolderEvent {
     QuickLook,
     /// Browsing into a protected archive: (archive, the given password was wrong).
     NeedPassword(PathBuf, bool),
+    /// Open/Save dialog: files opened (double-click, Enter) are its answer.
+    Picked(Vec<PathBuf>),
 }
 
 /// Details columns shown right now (see `FolderView::visible_cols`).
@@ -251,6 +253,8 @@ impl DirSize {
 
 pub struct FolderView {
     pub history: History,
+    /// In an Open/Save dialog: opening a file picks it instead of starting its app.
+    pub(crate) picker: bool,
     /// Set by the workspace while this view is one of two panes.
     pub(crate) dual: bool,
     places: Entity<Places>,
@@ -395,6 +399,7 @@ impl FolderView {
         let prefs = cx.global::<crate::settings::Settings>().clone();
         let mut this = Self {
             history: History::new(location),
+            picker: false,
             dual: false,
             places,
             images,
@@ -2561,9 +2566,29 @@ impl FolderView {
 
     // ---------- opening ----------
 
+    /// Makes this an Open/Save dialog's list: files shown only when they match `patterns`
+    /// (`*.png;*.jpg`, empty = all), or no files at all.
+    pub(crate) fn set_picker(&mut self, patterns: String, folders_only: bool, cx: &mut Context<Self>) {
+        self.picker = true;
+        if (self.filter.patterns.as_str(), self.filter.folders_only) != (patterns.as_str(), folders_only) {
+            self.filter.patterns = patterns;
+            self.filter.folders_only = folders_only;
+            self.rebuild_visible();
+        }
+        cx.notify();
+    }
+
     fn open_entry(&mut self, ei: u32, cx: &mut Context<Self>) {
         let Some(path) = self.path_of(ei) else { return };
         let e = &self.entries[ei as usize];
+        if self.picker {
+            if e.is_dir() {
+                self.navigate(Location::Path(path), cx);
+            } else {
+                cx.emit(FolderEvent::Picked(vec![path]));
+            }
+            return;
+        }
         let browse = !e.is_dir()
             && cx.global::<crate::settings::Settings>().browse_archives
             && crate::archive_view::is_browsable(&path);
@@ -2585,6 +2610,11 @@ impl FolderView {
         };
         if sel.len() == 1 {
             self.open_entry(sel[0], cx);
+        } else if self.picker {
+            let files: Vec<PathBuf> = sel.into_iter().filter(|&i| !self.entries[i as usize].is_dir()).filter_map(|i| self.path_of(i)).collect();
+            if !files.is_empty() {
+                cx.emit(FolderEvent::Picked(files));
+            }
         } else {
             let mut in_archive = Vec::new();
             for i in sel {

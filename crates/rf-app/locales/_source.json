@@ -5429,6 +5429,46 @@
   "new": true
  },
  {
+  "id": "f0b8fc79",
+  "en": "That folder doesn't exist",
+  "new": true
+ },
+ {
+  "id": "3e892b4d",
+  "en": "Select",
+  "new": true
+ },
+ {
+  "id": "4b097616",
+  "en": "Select a folder",
+  "new": true
+ },
+ {
+  "id": "01e64b32",
+  "en": "already exists. Save again to replace it.",
+  "new": true
+ },
+ {
+  "id": "6d1f5156",
+  "en": "Files to save",
+  "new": true
+ },
+ {
+  "id": "ac00cfc8",
+  "en": "Needs the deb, rpm or Arch package (it installs the desktop portal's rfiles.portal); the Flatpak can't add a portal backend.",
+  "new": true
+ },
+ {
+  "id": "c01651ec",
+  "en": "Apps that ask the desktop portal for a file dialog (Firefox, Chromium, GTK, Qt and Electron apps) get rfiles. Turning it off gives the dialog back.",
+  "new": true
+ },
+ {
+  "id": "de824b35",
+  "en": "Use rfiles for Open and Save dialogs",
+  "new": true
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"

@@ -115,25 +115,26 @@ and `pacman -Qi rfiles-git` lists them as optional dependencies.
 
 ## Setting up
 
-**DirectLook on tiling window managers.** DirectLook is its own window, like Quick Look. A
-Wayland app can't float or place its own window, so tiling compositors tile it unless a
-rule floats it. Its app id is `directlook`; the main window's is `rfiles`
+**DirectLook and the Open/Save dialog on tiling window managers.** DirectLook is its own
+window, like Quick Look, and so is the Open/Save dialog. A Wayland app can't float or place
+its own window, so tiling compositors tile them unless a rule floats them. Their app ids are
+`directlook` and `rfiles-dialog`; the main window's is `rfiles`
 (`io.github.benjaminfenech.rfiles` in the Flatpak).
 
 ```lua
 -- Hyprland, Lua config (hyprland.lua)
-hl.window_rule({ match = { class = "^(directlook)$" }, float = true, center = true })
+hl.window_rule({ match = { class = "^(directlook|rfiles-dialog)$" }, float = true, center = true })
 ```
 
 ```bash
 # Sway (~/.config/sway/config)
-for_window [app_id="directlook"] floating enable
+for_window [app_id="^(directlook|rfiles-dialog)$"] floating enable
 # i3 (X11)
-for_window [class="directlook"] floating enable
+for_window [class="^(directlook|rfiles-dialog)$"] floating enable
 ```
 
-For Hyprland's classic `hyprland.conf`, add a rule that floats (and centers) class
-`directlook`. The syntax depends on your Hyprland version
+For Hyprland's classic `hyprland.conf`, add a rule that floats (and centers) classes
+`directlook` and `rfiles-dialog`. The syntax depends on your Hyprland version
 ([window rules](https://wiki.hypr.land/Configuring/Basics/Window-Rules/)).
 
 **Quick search shortcut.** Turn on Settings → Quick search → "Global shortcut": rfiles
@@ -149,6 +150,14 @@ It works while rfiles runs (Settings → Advanced → run in the background keep
 no window open). Without the portal, bind a key to `rfiles --quick-search` instead (Flatpak:
 `flatpak run io.github.benjaminfenech.rfiles --quick-search`). On Wayland the quick search
 opens as an overlay, so tiling compositors don't tile it.
+
+**Open/Save dialog.** Settings → Advanced → "Use rfiles for Open and Save dialogs" makes
+other apps (Firefox, Chromium, GTK and Qt apps, Electron apps) show rfiles when they open or
+save a file, through the desktop portal. It names rfiles for FileChooser in your
+`~/.config/xdg-desktop-portal/portals.conf` (or your desktop's `<desktop>-portals.conf`) and
+restarts the portal; turning it off gives the dialog back. It needs the deb, rpm or Arch
+package, which install the portal's `rfiles.portal`. A Flatpak can't add a portal backend.
+Apps that draw their own dialog without the portal (some Qt and Java apps) keep theirs.
 
 **Default file manager.** Settings → Advanced → "Set as default file manager" makes folders,
 and "Show in folder" in browsers, open in rfiles, for your user only. Turning it off

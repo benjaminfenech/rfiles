@@ -1278,5 +1278,13 @@
  "5b71d057": "Henüz bir tuş atanmadı. Hyprland'de `hyprctl globalshortcuts` komutunun listelediği \"quick-search\" kısayolunu bağlayın, ör. bind = ALT, SPACE, global, <name>",
  "9d2e4714": "Genel kısayol",
  "93464a3e": "Masaüstünüzün atadığı bir kısayolla hızlı aramayı her uygulamadan açın (KDE ve GNOME onaylamanızı ister)",
- "a1de2fdd": "Değiştir"
+ "a1de2fdd": "Değiştir",
+ "f0b8fc79": "Bu klasör yok",
+ "3e892b4d": "Seç",
+ "4b097616": "Bir klasör seçin",
+ "01e64b32": "zaten var. Değiştirmek için yeniden kaydedin.",
+ "6d1f5156": "Kaydedilecek dosyalar",
+ "ac00cfc8": "deb, rpm veya Arch paketi gerekir (masaüstü portalının rfiles.portal dosyasını kurar); Flatpak portal arka ucu ekleyemez.",
+ "c01651ec": "Masaüstü portalından dosya penceresi isteyen uygulamalar (Firefox, Chromium, GTK, Qt ve Electron uygulamaları) rfiles'ı görür. Kapatınca eski pencere geri gelir.",
+ "de824b35": "Aç ve Kaydet pencereleri için rfiles'ı kullan"
 }
