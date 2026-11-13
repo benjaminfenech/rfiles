@@ -150,6 +150,12 @@ no window open). Without the portal, bind a key to `rfiles --quick-search` inste
 `flatpak run io.github.benjaminfenech.rfiles --quick-search`). On Wayland the quick search
 opens as an overlay, so tiling compositors don't tile it.
 
+**Searching inside files.** Start a search with `content:` (`content:quarterly budget`), or
+press "Search inside files" when a name search finds nothing. rfiles asks your desktop's file
+index when it is running and covers the folder: Baloo on KDE Plasma, Tracker (LocalSearch) on
+GNOME. Both read PDFs and office documents too. Elsewhere rfiles reads the files itself: text
+files up to 64 MB, slower on big folders.
+
 **Terminal.** "Open in terminal" (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>`</kbd>) opens your
 terminal in the current folder. To run a command there, type `>` and the command in the address
 bar (`> make`), or use "Run command here…" from the folder's right-click menu or the command
@@ -197,7 +203,6 @@ Not done yet, roughly in order of how much they'd help:
 
 - **DirectLook outside rfiles.** Space over other apps needs a global hotkey, which Wayland doesn't give apps. rfiles now has portal global shortcuts (quick search uses one), but other apps don't say which file is selected, so DirectLook has nothing to show over them.
 - **rfiles as other apps' Open/Save dialog.** On Linux that's an xdg-desktop-portal FileChooser backend, a project of its own.
-- **A content search index** to stand in for Windows Search (Baloo, Tracker or plocate).
 - **DirectLook details:** RAW photos beyond the embedded JPEG, version strings of Windows programs, and certificate details.
 - **Distribution:** an AUR package (waiting for AUR account registration to reopen), an apt/dnf repository (COPR, OBS), and Flathub. Until then, install from [Releases](https://github.com/benjaminfenech/rfiles/releases); the built-in updater handles later versions.
 - **Hand checks:** a few features are built and unit-tested but haven't been tried by hand on every desktop. [docs/LINUX_PORT.md](docs/LINUX_PORT.md) says which.

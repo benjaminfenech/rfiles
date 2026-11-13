@@ -50,7 +50,56 @@ pub struct SearchStats {
 /// Case-folded for matching. Dotless ı counts as i (and İ, lowered to i + combining dot, loses
 /// the dot), so "IŞIK", "ışık" and "Işık" find each other, as on Windows.
 fn fold(s: &str) -> Vec<char> {
+    fold_str(s).chars().collect()
+}
+
+/// [`fold`] as a string.
+pub(crate) fn fold_str(s: &str) -> String {
     s.to_lowercase().chars().filter(|&c| c != '\u{307}').map(|c| if c == 'ı' { 'i' } else { c }).collect()
+}
+
+/// Files larger than this aren't read by a content search (logs, disk images, videos).
+const CONTENT_MAX: u64 = 64 << 20;
+
+/// Text looked for inside files, case-insensitively and with [`fold`]'s Turkish i rules.
+pub(crate) struct ContentMatcher {
+    folded: String,
+    /// The folded text as bytes, when it is ASCII (the fast path).
+    ascii: Option<Vec<u8>>,
+}
+
+impl ContentMatcher {
+    pub(crate) fn new(text: &str) -> Self {
+        let folded = fold_str(text.trim());
+        let ascii = folded.is_ascii().then(|| folded.as_bytes().to_vec());
+        ContentMatcher { folded, ascii }
+    }
+
+    /// Whether `data` (a file's bytes) holds the text. Binary files (a NUL byte near the start)
+    /// never match: their "text" is noise, and the desktop indexes read formats like PDF.
+    pub(crate) fn matches(&self, data: &[u8]) -> bool {
+        if self.folded.is_empty() || memchr::memchr(0, &data[..data.len().min(8192)]).is_some() {
+            return false;
+        }
+        if let Some(a) = &self.ascii {
+            let lower = data.to_ascii_lowercase();
+            if memchr::memmem::find(&lower, a).is_some() {
+                return true;
+            }
+            // only non-ASCII letters that fold to ASCII (İ, ı, K for Kelvin…) can still match
+            if data.is_ascii() || !self.folded.contains(['i', 'k', 's']) {
+                return false;
+            }
+        }
+        fold_str(&String::from_utf8_lossy(data)).contains(&self.folded)
+    }
+
+    fn file_matches(&self, path: &Path, size: u64) -> bool {
+        if size == 0 || size > CONTENT_MAX {
+            return false;
+        }
+        std::fs::read(path).is_ok_and(|d| self.matches(&d))
+    }
 }
 
 pub(crate) enum Matcher {
@@ -124,6 +173,8 @@ pub(crate) fn lower_priority() {
 
 struct Shared<'a> {
     matcher: &'a Matcher,
+    /// A content search: files are matched on what's in them, not their names.
+    contents: Option<&'a ContentMatcher>,
     include_hidden: bool,
     max: usize,
     stop: &'a AtomicBool,
@@ -161,7 +212,12 @@ fn walk<'s>(sc: &rayon::Scope<'s>, sh: &'s Shared<'s>, dir: PathBuf) {
                         subdirs.push(sub);
                     }
                 }
-                if sh.matcher.is_match(&name) {
+                let hit = match sh.contents {
+                    None => sh.matcher.is_match(&name),
+                    Some(_) if !ft.is_file() => false,
+                    Some(c) => de.metadata().is_ok_and(|m| c.file_matches(&de.path(), m.len())),
+                };
+                if hit {
                     let Some(entry) = to_entry(&de) else { continue };
                     if sh.reserved.fetch_add(1, Ordering::Relaxed) >= sh.max {
                         sh.stop.store(true, Ordering::Relaxed);
@@ -200,6 +256,27 @@ pub fn search(
     cancelled: &dyn Fn() -> bool,
     on_batch: &mut dyn FnMut(Vec<SearchHit>),
 ) -> anyhow::Result<SearchStats> {
+    run(q, None, cancelled, on_batch)
+}
+
+/// Like [`search`], but finds files whose contents hold `q.pattern` (case-insensitive, plain
+/// text; no wildcards). Only regular files up to 64 MB are read, binary ones skipped. Slow on
+/// big trees: the desktop's index ([`crate::content_search::indexed`]) comes first.
+pub fn search_contents(
+    q: &SearchQuery,
+    cancelled: &dyn Fn() -> bool,
+    on_batch: &mut dyn FnMut(Vec<SearchHit>),
+) -> anyhow::Result<SearchStats> {
+    let c = ContentMatcher::new(&q.pattern);
+    run(q, Some(&c), cancelled, on_batch)
+}
+
+fn run(
+    q: &SearchQuery,
+    contents: Option<&ContentMatcher>,
+    cancelled: &dyn Fn() -> bool,
+    on_batch: &mut dyn FnMut(Vec<SearchHit>),
+) -> anyhow::Result<SearchStats> {
     anyhow::ensure!(q.root.is_dir(), "Folder not found: {}", q.root.display());
     let matcher = Matcher::new(&q.pattern);
     let max = q.max_results;
@@ -217,6 +294,7 @@ pub fn search(
 
     let shared = Shared {
         matcher: &matcher,
+        contents,
         include_hidden: q.include_hidden,
         max,
         stop: &stop,
@@ -367,6 +445,26 @@ mod tests {
         assert_eq!(run(&root, "report", 100).0, vec!["Report.TXT", "deep_report.md", "report2.txt"]);
         assert_eq!(run_h(&root, "report", 100, true).0, vec!["Report.TXT", "deep_report.md", "report gizli.txt", "report2.txt"]);
         assert_eq!(run(&root, "loop", 100).0, vec!["loop"]);
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn contents_are_searched() {
+        let root = tree("contents");
+        std::fs::write(root.join("a/b/notes.txt"), "Quarterly ZANZIBAR budget\n").unwrap();
+        std::fs::write(root.join("d/İstanbul.txt"), "Toplantı İSTANBUL'da").unwrap();
+        std::fs::write(root.join("d/other.bin"), b"zanzibar\0\x01\x02").unwrap();
+        let find = |pat: &str| {
+            let q = SearchQuery { root: root.clone(), pattern: pat.into(), include_hidden: false, max_results: 100 };
+            let mut names = Vec::new();
+            search_contents(&q, &|| false, &mut |b| names.extend(b.into_iter().map(|h| h.entry.name.to_string()))).unwrap();
+            names.sort();
+            names
+        };
+        assert_eq!(find("zanzibar"), vec!["notes.txt"], "binary files don't match");
+        assert_eq!(find("istanbul"), vec!["İstanbul.txt"]);
+        assert_eq!(find("toplanti"), vec!["İstanbul.txt"]);
+        assert!(find("notes").is_empty(), "names aren't contents");
         std::fs::remove_dir_all(&root).unwrap();
     }
 

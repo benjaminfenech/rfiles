@@ -28,6 +28,7 @@ libc = "0.2"
 chrono.workspace = true
 notify.workspace = true
 rayon.workspace = true
+memchr = "2"
 zip.workspace = true
 md-5.workspace = true
 # thumbnail cache files carry their source in PNG text chunks

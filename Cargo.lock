@@ -6694,6 +6694,7 @@ dependencies = [
  "libc",
  "log",
  "md-5",
+ "memchr",
  "notify",
  "parking_lot",
  "png 0.18.1",

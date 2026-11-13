@@ -5429,6 +5429,21 @@
   "new": true
  },
  {
+  "id": "dc3c5f2e",
+  "en": "No files contain this text",
+  "new": true
+ },
+ {
+  "id": "2cff1e74",
+  "en": "Search inside files",
+  "new": true
+ },
+ {
+  "id": "a2e57e49",
+  "en": "Tip: start a search with \"content:\" to look inside files",
+  "new": true
+ },
+ {
   "id": "e5c5facd",
   "en": "Run command here…",
   "new": true
