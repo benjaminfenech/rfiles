@@ -505,8 +505,7 @@
  },
  {
   "id": "e8fe93f8",
-  "en": "File System",
-  "new": true
+  "en": "File System"
  },
  {
   "id": "42dd4109",
@@ -2026,98 +2025,79 @@
  },
  {
   "id": "47645da8",
-  "en": "This file came from another computer and might be blocked to help protect this computer.",
-  "new": true
+  "en": "This file came from another computer and might be blocked to help protect this computer."
  },
  {
   "id": "987c7d5f",
-  "en": "Unblock",
-  "new": true
+  "en": "Unblock"
  },
  {
   "id": "df94bca5",
-  "en": "Windows app package",
-  "new": true
+  "en": "Windows app package"
  },
  {
   "id": "7e7c55b7",
-  "en": "Windows app bundle",
-  "new": true
+  "en": "Windows app bundle"
  },
  {
   "id": "4a7c3c17",
-  "en": "Android app",
-  "new": true
+  "en": "Android app"
  },
  {
   "id": "bf2614b1",
-  "en": "iOS app",
-  "new": true
+  "en": "iOS app"
  },
  {
   "id": "95f92c98",
-  "en": "NuGet package",
-  "new": true
+  "en": "NuGet package"
  },
  {
   "id": "56e8eb60",
-  "en": "ID",
-  "new": true
+  "en": "ID"
  },
  {
   "id": "0bc8ed1f",
-  "en": "Publisher",
-  "new": true
+  "en": "Publisher"
  },
  {
   "id": "e045ef67",
-  "en": "Processor",
-  "new": true
+  "en": "Processor"
  },
  {
   "id": "3f2fadec",
-  "en": "Minimum system",
-  "new": true
+  "en": "Minimum system"
  },
  {
   "id": "8700fd83",
-  "en": "Permissions",
-  "new": true
+  "en": "Permissions"
  },
  {
   "id": "3d8466cb",
-  "en": "program",
-  "new": true
+  "en": "program"
  },
  {
   "id": "516f3847",
-  "en": "shared library",
-  "new": true
+  "en": "shared library"
  },
  {
   "id": "cf93e868",
-  "en": "object file",
-  "new": true
+  "en": "object file"
  },
  {
   "id": "57867e20",
-  "en": "core dump",
-  "new": true
+  "en": "core dump"
  },
  {
   "id": "6249c9c2",
-  "en": "Loader",
-  "new": true
+  "en": "Loader"
  },
  {
   "id": "b463fa73",
-  "en": "Library name",
-  "new": true
+  "en": "Library name"
  },
  {
   "id": "2af6ce5a",
-  "en": "Needs",
-  "new": true
+  "en": "Needs"
  },
  {
   "id": "338eb632",
@@ -2577,118 +2557,95 @@
  },
  {
   "id": "c40f2321",
-  "en": "Opening…",
-  "new": true
+  "en": "Opening…"
  },
  {
   "id": "17c0192a",
-  "en": "File search is off: turn on the name index in Settings",
-  "new": true
+  "en": "File search is off: turn on the name index in Settings"
  },
  {
   "id": "a6c0558e",
-  "en": "Search apps, files or the web",
-  "new": true
+  "en": "Search apps, files or the web"
  },
  {
   "id": "53d91aad",
-  "en": "Apps",
-  "new": true
+  "en": "Apps"
  },
  {
   "id": "e5a0f27e",
-  "en": "Bookmarks",
-  "new": true
+  "en": "Bookmarks"
  },
  {
   "id": "72645431",
-  "en": "Web",
-  "new": true
+  "en": "Web"
  },
  {
   "id": "4c13322c",
-  "en": "search the web",
-  "new": true
+  "en": "search the web"
  },
  {
   "id": "7fe6d897",
-  "en": "Ctrl+Enter: show in folder",
-  "new": true
+  "en": "Ctrl+Enter: show in folder"
  },
  {
   "id": "13ef3f1f",
-  "en": "The file index is being built: some files may not show yet",
-  "new": true
+  "en": "The file index is being built: some files may not show yet"
  },
  {
   "id": "a94a26b3",
-  "en": "Enter: open",
-  "new": true
+  "en": "Enter: open"
  },
  {
   "id": "8b152cfc",
-  "en": "Shift+Enter: preview",
-  "new": true
+  "en": "Shift+Enter: preview"
  },
  {
   "id": "970763f8",
-  "en": "Esc: close",
-  "new": true
+  "en": "Esc: close"
  },
  {
   "id": "4c2f1288",
-  "en": "Another app uses this shortcut (ChatGPT, Gemini, PowerToys…): choose another one",
-  "new": true
+  "en": "Another app uses this shortcut (ChatGPT, Gemini, PowerToys…): choose another one"
  },
  {
   "id": "34a70824",
-  "en": "This shortcut can't be used: choose a key with Ctrl, Alt, Shift or Win",
-  "new": true
+  "en": "This shortcut can't be used: choose a key with Ctrl, Alt, Shift or Win"
  },
  {
   "id": "63a38eb0",
-  "en": "Click and press the new keys to change it",
-  "new": true
+  "en": "Click and press the new keys to change it"
  },
  {
   "id": "da2a95c8",
-  "en": "Quick search",
-  "new": true
+  "en": "Quick search"
  },
  {
   "id": "da565f32",
-  "en": "A shortcut from anywhere: apps, files, folders, bookmarks and the web",
-  "new": true
+  "en": "A shortcut from anywhere: apps, files, folders, bookmarks and the web"
  },
  {
   "id": "ed130bf9",
-  "en": "A shortcut from anywhere: apps, files, folders, bookmarks and the web. To use it with no window open, turn on running in the background under Advanced",
-  "new": true
+  "en": "A shortcut from anywhere: apps, files, folders, bookmarks and the web. To use it with no window open, turn on running in the background under Advanced"
  },
  {
   "id": "9d51d8fb",
-  "en": "Web search",
-  "new": true
+  "en": "Web search"
  },
  {
   "id": "772a921a",
-  "en": "Search Chrome and Edge bookmarks too",
-  "new": true
+  "en": "Search Chrome and Edge bookmarks too"
  },
  {
   "id": "699886df",
-  "en": "Bookmarks are read on this PC and sent nowhere",
-  "new": true
+  "en": "Bookmarks are read on this PC and sent nowhere"
  },
  {
   "id": "2ae21620",
-  "en": "DirectLook icon in the notification area",
-  "new": true
+  "en": "DirectLook icon in the notification area"
  },
  {
   "id": "0cb5cdfe",
-  "en": "Not shown while rfiles runs in the background: then rfiles' icon is the only one",
-  "new": true
+  "en": "Not shown while rfiles runs in the background: then rfiles' icon is the only one"
  },
  {
   "id": "b13c71bc",
@@ -2740,8 +2697,7 @@
  },
  {
   "id": "c6a48c75",
-  "en": "App: \"5 minutes ago\"; System: 05.11.2026 13:45; Universal: 2026-11-05 13:45; Day/month/year: 05/11/2026 13:45",
-  "new": true
+  "en": "App: \"5 minutes ago\"; System: 05.11.2026 13:45; Universal: 2026-11-05 13:45; Day/month/year: 05/11/2026 13:45"
  },
  {
   "id": "f9c2e80a",
@@ -2749,8 +2705,7 @@
  },
  {
   "id": "1176c704",
-  "en": "Day/month/year",
-  "new": true
+  "en": "Day/month/year"
  },
  {
   "id": "e17fbd0c",
@@ -4010,1163 +3965,931 @@
  },
  {
   "id": "8aeaae8b",
-  "en": "Compatibility",
-  "new": true
+  "en": "Compatibility"
  },
  {
   "id": "c2fe21db",
-  "en": "Security",
-  "new": true
+  "en": "Security"
  },
  {
   "id": "dc2d52ce",
-  "en": "Digital signatures",
-  "new": true
+  "en": "Digital signatures"
  },
  {
   "id": "c3fd1573",
-  "en": "Sharing",
-  "new": true
+  "en": "Sharing"
  },
  {
   "id": "34bdb0b8",
-  "en": "Customize",
-  "new": true
+  "en": "Customize"
  },
  {
   "id": "45d3ede0",
-  "en": "Not chosen",
-  "new": true
+  "en": "Not chosen"
  },
  {
   "id": "16f90b63",
-  "en": "Change…",
-  "new": true
+  "en": "Change…"
  },
  {
   "id": "fe40452f",
-  "en": "All of type",
-  "new": true
+  "en": "All of type"
  },
  {
   "id": "fbfa0f71",
-  "en": "All folders",
-  "new": true
+  "en": "All folders"
  },
  {
   "id": "e761d108",
-  "en": "Multiple types",
-  "new": true
+  "en": "Multiple types"
  },
  {
   "id": "e6640243",
-  "en": "All in",
-  "new": true
+  "en": "All in"
  },
  {
   "id": "a5a9004e",
-  "en": "Windows properties (previous versions and more)…",
-  "new": true
+  "en": "Windows properties (previous versions and more)…"
  },
  {
   "id": "0227733e",
-  "en": "Read-only (only applies to files in folder)",
-  "new": true
+  "en": "Read-only (only applies to files in folder)"
  },
  {
   "id": "8f3dc978",
-  "en": "Advanced attributes",
-  "new": true
+  "en": "Advanced attributes"
  },
  {
   "id": "2bf6e6fe",
-  "en": "Folder is ready for archiving",
-  "new": true
+  "en": "Folder is ready for archiving"
  },
  {
   "id": "ee930ed0",
-  "en": "File is ready for archiving",
-  "new": true
+  "en": "File is ready for archiving"
  },
  {
   "id": "f473ae08",
-  "en": "Allow files in this folder to have contents indexed",
-  "new": true
+  "en": "Allow files in this folder to have contents indexed"
  },
  {
   "id": "9d3c2c94",
-  "en": "Allow this file to have contents indexed",
-  "new": true
+  "en": "Allow this file to have contents indexed"
  },
  {
   "id": "0f15fcfa",
-  "en": "Compress contents to save disk space",
-  "new": true
+  "en": "Compress contents to save disk space"
  },
  {
   "id": "40287d0a",
-  "en": "Encrypt contents to secure data",
-  "new": true
+  "en": "Encrypt contents to secure data"
  },
  {
   "id": "e604e782",
-  "en": "Apply changes to subfolders and files too",
-  "new": true
+  "en": "Apply changes to subfolders and files too"
  },
  {
   "id": "f2277e4f",
-  "en": "Removable disk",
-  "new": true
+  "en": "Removable disk"
  },
  {
   "id": "35f72925",
-  "en": "Network drive",
-  "new": true
+  "en": "Network drive"
  },
  {
   "id": "f81224e3",
-  "en": "CD/DVD drive",
-  "new": true
+  "en": "CD/DVD drive"
  },
  {
   "id": "15c55918",
-  "en": "File system",
-  "new": true
+  "en": "File system"
  },
  {
   "id": "4e3e8c86",
-  "en": "Used space",
-  "new": true
+  "en": "Used space"
  },
  {
   "id": "d75aad01",
-  "en": "Free space",
-  "new": true
+  "en": "Free space"
  },
  {
   "id": "666490a9",
-  "en": "Capacity",
-  "new": true
+  "en": "Capacity"
  },
  {
   "id": "58510d92",
-  "en": "Full:",
-  "new": true
+  "en": "Full:"
  },
  {
   "id": "0d0711bc",
-  "en": "Disk Cleanup…",
-  "new": true
+  "en": "Disk Cleanup…"
  },
  {
   "id": "c6427bdb",
-  "en": "Windows properties (tools, hardware, quota)…",
-  "new": true
+  "en": "Windows properties (tools, hardware, quota)…"
  },
  {
   "id": "2bcc1a14",
-  "en": "Shell item",
-  "new": true
+  "en": "Shell item"
  },
  {
   "id": "eb5cadf0",
-  "en": "The target's icon",
-  "new": true
+  "en": "The target's icon"
  },
  {
   "id": "163b5790",
-  "en": "Target type",
-  "new": true
+  "en": "Target type"
  },
  {
   "id": "4b5bcdaf",
-  "en": "Target location",
-  "new": true
+  "en": "Target location"
  },
  {
   "id": "da922ee0",
-  "en": "Shortcut key",
-  "new": true
+  "en": "Shortcut key"
  },
  {
   "id": "1ff0c40a",
-  "en": "Normal window",
-  "new": true
+  "en": "Normal window"
  },
  {
   "id": "9be0ddbb",
-  "en": "Minimized",
-  "new": true
+  "en": "Minimized"
  },
  {
   "id": "6637de91",
-  "en": "Maximized",
-  "new": true
+  "en": "Maximized"
  },
  {
   "id": "68e6cb10",
-  "en": "Icon",
-  "new": true
+  "en": "Icon"
  },
  {
   "id": "3d8caa46",
-  "en": "Change icon…",
-  "new": true
+  "en": "Change icon…"
  },
  {
   "id": "d4358f4e",
-  "en": "8-bit (256) color",
-  "new": true
+  "en": "8-bit (256) color"
  },
  {
   "id": "43be06bf",
-  "en": "16-bit (65536) color",
-  "new": true
+  "en": "16-bit (65536) color"
  },
  {
   "id": "d72819fd",
-  "en": "System (Enhanced)",
-  "new": true
+  "en": "System (Enhanced)"
  },
  {
   "id": "4e52c6ba",
-  "en": "These settings apply to the shortcut's target:",
-  "new": true
+  "en": "These settings apply to the shortcut's target:"
  },
  {
   "id": "1fc456ce",
-  "en": "Compatibility mode",
-  "new": true
+  "en": "Compatibility mode"
  },
  {
   "id": "70ed19c3",
-  "en": "Run this program in compatibility mode for:",
-  "new": true
+  "en": "Run this program in compatibility mode for:"
  },
  {
   "id": "d30fea55",
-  "en": "Reduced color mode",
-  "new": true
+  "en": "Reduced color mode"
  },
  {
   "id": "e58db091",
-  "en": "Run in 640 × 480 screen resolution",
-  "new": true
+  "en": "Run in 640 × 480 screen resolution"
  },
  {
   "id": "b5614eee",
-  "en": "Disable fullscreen optimizations",
-  "new": true
+  "en": "Disable fullscreen optimizations"
  },
  {
   "id": "15e26370",
-  "en": "Run this program as an administrator",
-  "new": true
+  "en": "Run this program as an administrator"
  },
  {
   "id": "7332611c",
-  "en": "Register this program for restart",
-  "new": true
+  "en": "Register this program for restart"
  },
  {
   "id": "49b65f22",
-  "en": "Use legacy display ICC color management",
-  "new": true
+  "en": "Use legacy display ICC color management"
  },
  {
   "id": "4cfb8866",
-  "en": "High DPI",
-  "new": true
+  "en": "High DPI"
  },
  {
   "id": "08dcaafd",
-  "en": "Override high DPI scaling behavior. Scaling performed by:",
-  "new": true
+  "en": "Override high DPI scaling behavior. Scaling performed by:"
  },
  {
   "id": "ec85b1a2",
-  "en": "Settings are saved for your account only. This program also has settings for all users; you can change those in Windows properties.",
-  "new": true
+  "en": "Settings are saved for your account only. This program also has settings for all users; you can change those in Windows properties."
  },
  {
   "id": "be4e085e",
-  "en": "Settings are saved for your account only.",
-  "new": true
+  "en": "Settings are saved for your account only."
  },
  {
   "id": "a54424ed",
-  "en": "Object name",
-  "new": true
+  "en": "Object name"
  },
  {
   "id": "9b22be74",
-  "en": "Owner",
-  "new": true
+  "en": "Owner"
  },
  {
   "id": "80042bc5",
-  "en": "This item has no permission list: everyone can do everything.",
-  "new": true
+  "en": "This item has no permission list: everyone can do everything."
  },
  {
   "id": "30359ea8",
-  "en": "Group or user names",
-  "new": true
+  "en": "Group or user names"
  },
  {
   "id": "7a3f08e3",
-  "en": "permissions",
-  "new": true
+  "en": "permissions"
  },
  {
   "id": "546d19d2",
-  "en": "Allow",
-  "new": true
+  "en": "Allow"
  },
  {
   "id": "07d5fa87",
-  "en": "Deny",
-  "new": true
+  "en": "Deny"
  },
  {
   "id": "d1a21d09",
-  "en": "Full control",
-  "new": true
+  "en": "Full control"
  },
  {
   "id": "6e1cf464",
-  "en": "Read & execute",
-  "new": true
+  "en": "Read & execute"
  },
  {
   "id": "593c0193",
-  "en": "List folder contents",
-  "new": true
+  "en": "List folder contents"
  },
  {
   "id": "4f0befe5",
-  "en": "Read",
-  "new": true
+  "en": "Read"
  },
  {
   "id": "665c79fc",
-  "en": "Write",
-  "new": true
+  "en": "Write"
  },
  {
   "id": "7817af0c",
-  "en": "Special permissions",
-  "new": true
+  "en": "Special permissions"
  },
  {
   "id": "3da9330f",
-  "en": "This item does not inherit permissions from its parent folder.",
-  "new": true
+  "en": "This item does not inherit permissions from its parent folder."
  },
  {
   "id": "5592c7ea",
-  "en": "To change permissions, use Windows' Security window (it may ask for administrator permission).",
-  "new": true
+  "en": "To change permissions, use Windows' Security window (it may ask for administrator permission)."
  },
  {
   "id": "d09e2875",
-  "en": "Windows properties…",
-  "new": true
+  "en": "Windows properties…"
  },
  {
   "id": "c4253b6b",
-  "en": "Program",
-  "new": true
+  "en": "Program"
  },
  {
   "id": "ae2b39ad",
-  "en": "File description",
-  "new": true
+  "en": "File description"
  },
  {
   "id": "bbad6b03",
-  "en": "File version",
-  "new": true
+  "en": "File version"
  },
  {
   "id": "18d39dbf",
-  "en": "Product name",
-  "new": true
+  "en": "Product name"
  },
  {
   "id": "86ba3638",
-  "en": "Product version",
-  "new": true
+  "en": "Product version"
  },
  {
   "id": "c45020de",
-  "en": "Copyright",
-  "new": true
+  "en": "Copyright"
  },
  {
   "id": "de69ea8d",
-  "en": "Trademarks",
-  "new": true
+  "en": "Trademarks"
  },
  {
   "id": "ea991bd3",
-  "en": "Original filename",
-  "new": true
+  "en": "Original filename"
  },
  {
   "id": "c378a983",
-  "en": "Internal name",
-  "new": true
+  "en": "Internal name"
  },
  {
   "id": "590c76e2",
-  "en": "Architecture",
-  "new": true
+  "en": "Architecture"
  },
  {
   "id": "54346010",
-  "en": "Folder path",
-  "new": true
+  "en": "Folder path"
  },
  {
   "id": "d76345b8",
-  "en": "Computer",
-  "new": true
+  "en": "Computer"
  },
  {
   "id": "29fd6dae",
-  "en": "this PC",
-  "new": true
+  "en": "this PC"
  },
  {
   "id": "d3e685ed",
-  "en": "This digital signature is OK.",
-  "new": true
+  "en": "This digital signature is OK."
  },
  {
   "id": "a765d2e4",
-  "en": "This digital signature is not valid.",
-  "new": true
+  "en": "This digital signature is not valid."
  },
  {
   "id": "11c38893",
-  "en": "Signer",
-  "new": true
+  "en": "Signer"
  },
  {
   "id": "12bea3fd",
-  "en": "Digest",
-  "new": true
+  "en": "Digest"
  },
  {
   "id": "29ade1c3",
-  "en": "Timestamp",
-  "new": true
+  "en": "Timestamp"
  },
  {
   "id": "845434ff",
-  "en": "Signature details",
-  "new": true
+  "en": "Signature details"
  },
  {
   "id": "1d26afc4",
-  "en": "Digest algorithm",
-  "new": true
+  "en": "Digest algorithm"
  },
  {
   "id": "df0932dd",
-  "en": "Signing time",
-  "new": true
+  "en": "Signing time"
  },
  {
   "id": "491c49c7",
-  "en": "Not timestamped",
-  "new": true
+  "en": "Not timestamped"
  },
  {
   "id": "8d002304",
-  "en": "Network file and folder sharing",
-  "new": true
+  "en": "Network file and folder sharing"
  },
  {
   "id": "eb0bbef4",
-  "en": "Shared",
-  "new": true
+  "en": "Shared"
  },
  {
   "id": "31332218",
-  "en": "Network path",
-  "new": true
+  "en": "Network path"
  },
  {
   "id": "027c3513",
-  "en": "Not shared",
-  "new": true
+  "en": "Not shared"
  },
  {
   "id": "f6385f00",
-  "en": "Turning sharing on or changing it needs administrator permission; it is done in Windows' Sharing window.",
-  "new": true
+  "en": "Turning sharing on or changing it needs administrator permission; it is done in Windows' Sharing window."
  },
  {
   "id": "e7d4f9e6",
-  "en": "Folder icon",
-  "new": true
+  "en": "Folder icon"
  },
  {
   "id": "366dd974",
-  "en": "Restore default",
-  "new": true
+  "en": "Restore default"
  },
  {
   "id": "2dd035c8",
-  "en": "The icon is set by writing a desktop.ini file into the folder; File Explorer shows the same icon.",
-  "new": true
+  "en": "The icon is set by writing a desktop.ini file into the folder; File Explorer shows the same icon."
  },
  {
   "id": "0469eab2",
-  "en": "the signature does not match the file",
-  "new": true
+  "en": "the signature does not match the file"
  },
  {
   "id": "f74a9d07",
-  "en": "the certificate is not trusted",
-  "new": true
+  "en": "the certificate is not trusted"
  },
  {
   "id": "a80ab172",
-  "en": "the certificate has expired",
-  "new": true
+  "en": "the certificate has expired"
  },
  {
   "id": "264c42a7",
-  "en": "the certificate chain could not be built",
-  "new": true
+  "en": "the certificate chain could not be built"
  },
  {
   "id": "5e6d4f8b",
-  "en": "the certificate is explicitly distrusted",
-  "new": true
+  "en": "the certificate is explicitly distrusted"
  },
  {
   "id": "34f0ff04",
-  "en": "no signature",
-  "new": true
+  "en": "no signature"
  },
  {
   "id": "7535c339",
-  "en": "the certificate has been revoked",
-  "new": true
+  "en": "the certificate has been revoked"
  },
  {
   "id": "f4c68dc5",
-  "en": "the certificate is not valid for code signing",
-  "new": true
+  "en": "the certificate is not valid for code signing"
  },
  {
   "id": "ca4d3beb",
-  "en": "dictionaries larger than 4 GB (RAR 7)",
-  "new": true
+  "en": "dictionaries larger than 4 GB (RAR 7)"
  },
  {
   "id": "293fed25",
-  "en": "Couldn't read the 7z archive",
-  "new": true
+  "en": "Couldn't read the 7z archive"
  },
  {
   "id": "5fda02b5",
-  "en": "Couldn't create the 7z archive",
-  "new": true
+  "en": "Couldn't create the 7z archive"
  },
  {
   "id": "a81f1735",
-  "en": "a 7z compression method or header format",
-  "new": true
+  "en": "a 7z compression method or header format"
  },
  {
   "id": "d472e80b",
-  "en": "Couldn't write to the 7z archive: {}",
-  "new": true
+  "en": "Couldn't write to the 7z archive: {}"
  },
  {
   "id": "73690b65",
-  "en": "Archive",
-  "new": true
+  "en": "Archive"
  },
  {
   "id": "f3b02c5e",
-  "en": "Couldn't open the archive: {}",
-  "new": true
+  "en": "Couldn't open the archive: {}"
  },
  {
   "id": "f43ec8a5",
-  "en": "The archive is damaged or only partly downloaded; try downloading it again. (Details: {what})",
-  "new": true
+  "en": "The archive is damaged or only partly downloaded; try downloading it again. (Details: {what})"
  },
  {
   "id": "5ea5c66e",
-  "en": "Couldn't read the archive file: {x}",
-  "new": true
+  "en": "Couldn't read the archive file: {x}"
  },
  {
   "id": "15d860d4",
-  "en": "Couldn't read an archive entry: {display}",
-  "new": true
+  "en": "Couldn't read an archive entry: {display}"
  },
  {
   "id": "2540f46d",
-  "en": "Couldn't read an archive entry: {name}",
-  "new": true
+  "en": "Couldn't read an archive entry: {name}"
  },
  {
   "id": "daa3a09f",
-  "en": "Couldn't update the archive: {}",
-  "new": true
+  "en": "Couldn't update the archive: {}"
  },
  {
   "id": "df06c9fb",
-  "en": "Couldn't save the archive: {}",
-  "new": true
+  "en": "Couldn't save the archive: {}"
  },
  {
   "id": "e6758619",
-  "en": "Couldn't write the archive",
-  "new": true
+  "en": "Couldn't write the archive"
  },
  {
   "id": "9a6788d4",
-  "en": "Can't pull with a detached HEAD",
-  "new": true
+  "en": "Can't pull with a detached HEAD"
  },
  {
   "id": "225db539",
-  "en": "Can't push with a detached HEAD",
-  "new": true
+  "en": "Can't push with a detached HEAD"
  },
  {
   "id": "e8226ae7",
-  "en": "an unknown header type",
-  "new": true
+  "en": "an unknown header type"
  },
  {
   "id": "b63c5c28",
-  "en": "an unknown RAR compression method",
-  "new": true
+  "en": "an unknown RAR compression method"
  },
  {
   "id": "115333a9",
-  "en": "files of unrecorded size",
-  "new": true
+  "en": "files of unrecorded size"
  },
  {
   "id": "a36f6a0d",
-  "en": "Branch '{branch}' doesn't track a remote branch",
-  "new": true
+  "en": "Branch '{branch}' doesn't track a remote branch"
  },
  {
   "id": "d26b0d22",
-  "en": "An item with this name already exists: {}",
-  "new": true
+  "en": "An item with this name already exists: {}"
  },
  {
   "id": "e3014911",
-  "en": "This archive format can't be edited",
-  "new": true
+  "en": "This archive format can't be edited"
  },
  {
   "id": "4eb49824",
-  "en": "This archive uses a feature that isn't supported yet: {feature}.",
-  "new": true
+  "en": "This archive uses a feature that isn't supported yet: {feature}."
  },
  {
   "id": "ce02e0f5",
-  "en": "This archive is password-protected",
-  "new": true
+  "en": "This archive is password-protected"
  },
  {
   "id": "ea18ec08",
-  "en": "This archive uses the old encryption of RAR 1.5/2.0, which rfiles doesn't open. WinRAR or 7-Zip can.",
-  "new": true
+  "en": "This archive uses the old encryption of RAR 1.5/2.0, which rfiles doesn't open. WinRAR or 7-Zip can."
  },
  {
   "id": "bc9c86ab",
-  "en": "This format doesn't support passwords",
-  "new": true
+  "en": "This format doesn't support passwords"
  },
  {
   "id": "3ff4dba9",
-  "en": "This file isn't an archive, or its start is damaged.",
-  "new": true
+  "en": "This file isn't an archive, or its start is damaged."
  },
  {
   "id": "138394b5",
-  "en": "This is a very old archive in the RAR 1.3/1.4 format (1990s), which rfiles doesn't open. WinRAR or 7-Zip can.",
-  "new": true
+  "en": "This is a very old archive in the RAR 1.3/1.4 format (1990s), which rfiles doesn't open. WinRAR or 7-Zip can."
  },
  {
   "id": "02f3e4da",
-  "en": "exit code {}",
-  "new": true
+  "en": "exit code {}"
  },
  {
   "id": "79a94f04",
-  "en": "output",
-  "new": true
+  "en": "output"
  },
  {
   "id": "60837bcc",
-  "en": "A part of the multi-part archive is missing. Put all the parts (.part1.rar, .part2.rar… or .rar, .r00, .r01…) in the same folder and try again.",
-  "new": true
+  "en": "A part of the multi-part archive is missing. Put all the parts (.part1.rar, .part2.rar… or .rar, .r00, .r01…) in the same folder and try again."
  },
  {
   "id": "a9920528",
-  "en": "git status failed",
-  "new": true
+  "en": "git status failed"
  },
  {
   "id": "b5b191dc",
-  "en": "Couldn't stash the changes",
-  "new": true
+  "en": "Couldn't stash the changes"
  },
  {
   "id": "7c703379",
-  "en": "Switched branch, but the stashed changes couldn't be reapplied (they're still in git stash list)",
-  "new": true
+  "en": "Switched branch, but the stashed changes couldn't be reapplied (they're still in git stash list)"
  },
  {
   "id": "bbfc0249",
-  "en": "Couldn't read the remotes",
-  "new": true
+  "en": "Couldn't read the remotes"
  },
  {
   "id": "6e38cc63",
-  "en": "Couldn't initialise the repository",
-  "new": true
+  "en": "Couldn't initialise the repository"
  },
  {
   "id": "8e7fd036",
-  "en": "Branch not found: {branch}",
-  "new": true
+  "en": "Branch not found: {branch}"
  },
  {
   "id": "9a0feaa8",
-  "en": "Couldn't switch branch: {err}",
-  "new": true
+  "en": "Couldn't switch branch: {err}"
  },
  {
   "id": "63fb3406",
-  "en": "Couldn't switch branch: local changes conflict. Stash or discard them.\n{err}",
-  "new": true
+  "en": "Couldn't switch branch: local changes conflict. Stash or discard them.\n{err}"
  },
  {
   "id": "2ab414da",
-  "en": "Unsupported archive type",
-  "new": true
+  "en": "Unsupported archive type"
  },
  {
   "id": "5ef346d4",
-  "en": "Unsupported archive type: {}",
-  "new": true
+  "en": "Unsupported archive type: {}"
  },
  {
   "id": "5e82e4c2",
-  "en": "Couldn't open the file: {}",
-  "new": true
+  "en": "Couldn't open the file: {}"
  },
  {
   "id": "35a7a7eb",
-  "en": "Couldn't open the file: {}: {e}",
-  "new": true
+  "en": "Couldn't open the file: {}: {e}"
  },
  {
   "id": "81f0d54e",
-  "en": "Couldn't read the file: {}",
-  "new": true
+  "en": "Couldn't read the file: {}"
  },
  {
   "id": "52a8483e",
-  "en": "Couldn't create the file: {}",
-  "new": true
+  "en": "Couldn't create the file: {}"
  },
  {
   "id": "58cf8e6a",
-  "en": "No files to add were found",
-  "new": true
+  "en": "No files to add were found"
  },
  {
   "id": "a1396ec0",
-  "en": "Nothing to add",
-  "new": true
+  "en": "Nothing to add"
  },
  {
   "id": "55bfed53",
-  "en": "Invalid name",
-  "new": true
+  "en": "Invalid name"
  },
  {
   "id": "39c31128",
-  "en": "Invalid starting point: {f}",
-  "new": true
+  "en": "Invalid starting point: {f}"
  },
  {
   "id": "68a04659",
-  "en": "Invalid branch name: {branch}",
-  "new": true
+  "en": "Invalid branch name: {branch}"
  },
  {
   "id": "4c70b770",
-  "en": "Invalid branch name: {name}",
-  "new": true
+  "en": "Invalid branch name: {name}"
  },
  {
   "id": "a3446579",
-  "en": "Invalid file name",
-  "new": true
+  "en": "Invalid file name"
  },
  {
   "id": "7c2b2b48",
-  "en": "Invalid source path",
-  "new": true
+  "en": "Invalid source path"
  },
  {
   "id": "42c9f132",
-  "en": "git status failed: {}",
-  "new": true
+  "en": "git status failed: {}"
  },
  {
   "id": "88c176ed",
-  "en": "Unsafe archive entry (invalid name): {name}",
-  "new": true
+  "en": "Unsafe archive entry (invalid name): {name}"
  },
  {
   "id": "f1e28b5d",
-  "en": "Unsafe archive entry (absolute path): {name}",
-  "new": true
+  "en": "Unsafe archive entry (absolute path): {name}"
  },
  {
   "id": "5d33ac6c",
-  "en": "Unsafe archive entry (path traversal): {name}",
-  "new": true
+  "en": "Unsafe archive entry (path traversal): {name}"
  },
  {
   "id": "7df7dd02",
-  "en": "Couldn't create the destination folder",
-  "new": true
+  "en": "Couldn't create the destination folder"
  },
  {
   "id": "5e24fe7b",
-  "en": "Stopped by the user",
-  "new": true
+  "en": "Stopped by the user"
  },
  {
   "id": "1a2e0f7a",
-  "en": "The ISO has too many entries",
-  "new": true
+  "en": "The ISO has too many entries"
  },
  {
   "id": "f9cf4764",
-  "en": "Couldn't open the ISO file: {e}",
-  "new": true
+  "en": "Couldn't open the ISO file: {e}"
  },
  {
   "id": "cb8e6f59",
-  "en": "The ISO folder tree is too deep",
-  "new": true
+  "en": "The ISO folder tree is too deep"
  },
  {
   "id": "06e1c77c",
-  "en": "Couldn't read an ISO folder: {e}",
-  "new": true
+  "en": "Couldn't read an ISO folder: {e}"
  },
  {
   "id": "11723e93",
-  "en": "Couldn't read the ISO (it may be damaged): {e}",
-  "new": true
+  "en": "Couldn't read the ISO (it may be damaged): {e}"
  },
  {
   "id": "8a44ddb5",
-  "en": "Couldn't read the ISO: {e:?}",
-  "new": true
+  "en": "Couldn't read the ISO: {e:?}"
  },
  {
   "id": "e15f1103",
-  "en": "Source not found: {}",
-  "new": true
+  "en": "Source not found: {}"
  },
  {
   "id": "7cef724f",
-  "en": "Couldn't open a source file",
-  "new": true
+  "en": "Couldn't open a source file"
  },
  {
   "id": "7ea41a9c",
-  "en": "Couldn't read the folder: {}",
-  "new": true
+  "en": "Couldn't read the folder: {}"
  },
  {
   "id": "16df9ec2",
-  "en": "Couldn't create the folder",
-  "new": true
+  "en": "Couldn't create the folder"
  },
  {
   "id": "ef3f4b6c",
-  "en": "Couldn't create the folder: {}",
-  "new": true
+  "en": "Couldn't create the folder: {}"
  },
  {
   "id": "9b7be29f",
-  "en": "Couldn't copy: {name}",
-  "new": true
+  "en": "Couldn't copy: {name}"
  },
  {
   "id": "b2a616b0",
-  "en": "\"{name}\" came out damaged (checksum mismatch). The archive may be damaged; try downloading it again.",
-  "new": true
+  "en": "\"{name}\" came out damaged (checksum mismatch). The archive may be damaged; try downloading it again."
  },
  {
   "id": "1e42f327",
-  "en": "Item not found",
-  "new": true
+  "en": "Item not found"
  },
  {
   "id": "893635f7",
-  "en": "Couldn't read: {}",
-  "new": true
+  "en": "Couldn't read: {}"
  },
  {
   "id": "28ee9327",
-  "en": "Couldn't create: {}",
-  "new": true
+  "en": "Couldn't create: {}"
  },
  {
   "id": "be914279",
-  "en": "a ZIP split into parts",
-  "new": true
+  "en": "a ZIP split into parts"
  },
  {
   "id": "08891eef",
-  "en": "Wrong password",
-  "new": true
+  "en": "Wrong password"
  },
  {
   "id": "30db69d3",
-  "en": "Wrong password.",
-  "new": true
+  "en": "Wrong password."
  },
  {
   "id": "e7753e0d",
-  "en": "The RAR archive is locked",
-  "new": true
+  "en": "The RAR archive is locked"
  },
  {
   "id": "a414236e",
-  "en": "Couldn't write the RAR file (the disk may be full)",
-  "new": true
+  "en": "Couldn't write the RAR file (the disk may be full)"
  },
  {
   "id": "2ffb9857",
-  "en": "Couldn't create the RAR file",
-  "new": true
+  "en": "Couldn't create the RAR file"
  },
  {
   "id": "81188ec0",
-  "en": "Couldn't start Rar.exe",
-  "new": true
+  "en": "Couldn't start Rar.exe"
  },
  {
   "id": "ee2fe84f",
-  "en": "Not enough memory for RAR",
-  "new": true
+  "en": "Not enough memory for RAR"
  },
  {
   "id": "05866209",
-  "en": "RAR command line error",
-  "new": true
+  "en": "RAR command line error"
  },
  {
   "id": "cd8e01d9",
-  "en": "Couldn't create the RAR archive",
-  "new": true
+  "en": "Couldn't create the RAR archive"
  },
  {
   "id": "ef5d4d52",
-  "en": "Couldn't create the RAR archive (CRC error)",
-  "new": true
+  "en": "Couldn't create the RAR archive (CRC error)"
  },
  {
   "id": "1304358a",
-  "en": "Couldn't create the RAR archive (fatal error)",
-  "new": true
+  "en": "Couldn't create the RAR archive (fatal error)"
  },
  {
   "id": "40aa53e4",
-  "en": "Wrong RAR password",
-  "new": true
+  "en": "Wrong RAR password"
  },
  {
   "id": "d6330a28",
-  "en": "an encryption method",
-  "new": true
+  "en": "an encryption method"
  },
  {
   "id": "6403ee9e",
-  "en": "Nothing to delete",
-  "new": true
+  "en": "Nothing to delete"
  },
  {
   "id": "4accaca9",
-  "en": "Nothing to compress",
-  "new": true
+  "en": "Nothing to compress"
  },
  {
   "id": "3dd6e187",
-  "en": "Couldn't read the compressed file",
-  "new": true
+  "en": "Couldn't read the compressed file"
  },
  {
   "id": "8520c0df",
-  "en": "Couldn't read a tar link",
-  "new": true
+  "en": "Couldn't read a tar link"
  },
  {
   "id": "ef15a8c5",
-  "en": "Couldn't read a tar entry",
-  "new": true
+  "en": "Couldn't read a tar entry"
  },
  {
   "id": "361ed6b3",
-  "en": "Couldn't read the tar archive",
-  "new": true
+  "en": "Couldn't read the tar archive"
  },
  {
   "id": "3c7f7a85",
-  "en": "Couldn't read the UDF file system: {e}",
-  "new": true
+  "en": "Couldn't read the UDF file system: {e}"
  },
  {
   "id": "99d194b9",
-  "en": "No remote is set up",
-  "new": true
+  "en": "No remote is set up"
  },
  {
   "id": "e87d567f",
-  "en": "{what} failed: {msg}",
-  "new": true
+  "en": "{what} failed: {msg}"
  },
  {
   "id": "d78697c7",
-  "en": "WinRAR not found",
-  "new": true
+  "en": "WinRAR not found"
  },
  {
   "id": "cba1d81a",
-  "en": "the writer stopped",
-  "new": true
+  "en": "the writer stopped"
  },
  {
   "id": "94c3b5ea",
-  "en": "Couldn't write: {}",
-  "new": true
+  "en": "Couldn't write: {}"
  },
  {
   "id": "e553bf51",
-  "en": "Couldn't write: {target}",
-  "new": true
+  "en": "Couldn't write: {target}"
  },
  {
   "id": "5cef4622",
-  "en": "Write error",
-  "new": true
+  "en": "Write error"
  },
  {
   "id": "969caa62",
-  "en": "a ZIP AES encryption strength",
-  "new": true
+  "en": "a ZIP AES encryption strength"
  },
  {
   "id": "3d723a1d",
-  "en": "Couldn't read the zip file",
-  "new": true
+  "en": "Couldn't read the zip file"
  },
  {
   "id": "c9e70c0a",
-  "en": "Couldn't decode a zip entry name",
-  "new": true
+  "en": "Couldn't decode a zip entry name"
  },
  {
   "id": "56f05474",
-  "en": "Couldn't copy a zip entry",
-  "new": true
+  "en": "Couldn't copy a zip entry"
  },
  {
   "id": "90f448ad",
-  "en": "Couldn't read a zip entry",
-  "new": true
+  "en": "Couldn't read a zip entry"
  },
  {
   "id": "3461571c",
-  "en": "a ZIP compression or encryption method (possibly PKWARE strong encryption)",
-  "new": true
+  "en": "a ZIP compression or encryption method (possibly PKWARE strong encryption)"
  },
  {
   "id": "d9d8f196",
-  "en": "Invalid regular expression: {0}",
-  "new": true
+  "en": "Invalid regular expression: {0}"
  },
  {
   "id": "53a3f56e",
-  "en": "Folder not found: {}",
-  "new": true
+  "en": "Folder not found: {}"
  },
  {
   "id": "70185f6a",
-  "en": "This file type can't be rotated",
-  "new": true
+  "en": "This file type can't be rotated"
  },
  {
   "id": "74ce336f",
-  "en": "Removable Disk",
-  "new": true
+  "en": "Removable Disk"
  },
  {
   "id": "13fb8c5c",
-  "en": "Optical Drive (CD/DVD)",
-  "new": true
+  "en": "Optical Drive (CD/DVD)"
  },
  {
   "id": "ac3d365d",
-  "en": "Not Connected",
-  "new": true
+  "en": "Not Connected"
  },
  {
   "id": "728c59c3",
-  "en": "Disk usage — {}",
-  "new": true
+  "en": "Disk usage — {}"
  },
  {
   "id": "6ad9a52b",
-  "en": "Search: {query}",
-  "new": true
+  "en": "Search: {query}"
  },
  {
   "id": "a715ef0f",
-  "en": "just now",
-  "new": true
+  "en": "just now"
  },
  {
   "id": "1dab4d76",
-  "en": "{n} min ago",
-  "new": true
+  "en": "{n} min ago"
  },
  {
   "id": "185f8986",
-  "en": "{n} h ago",
-  "new": true
+  "en": "{n} h ago"
  },
  {
   "id": "0b676baa",
-  "en": "{n} d ago",
-  "new": true
+  "en": "{n} d ago"
  },
  {
   "id": "8ad2f8cf",
@@ -5175,333 +4898,267 @@
  },
  {
   "id": "80e3e0aa",
-  "en": "Couldn't add: {}",
-  "new": true
+  "en": "Couldn't add: {}"
  },
  {
   "id": "1bffda95",
-  "en": "Couldn't add to the 7z archive",
-  "new": true
+  "en": "Couldn't add to the 7z archive"
  },
  {
   "id": "6e52d64b",
-  "en": "Couldn't add to the 7z archive: {}",
-  "new": true
+  "en": "Couldn't add to the 7z archive: {}"
  },
  {
   "id": "26cce7fe",
-  "en": "The file already exists",
-  "new": true
+  "en": "The file already exists"
  },
  {
   "id": "ebde3e66",
-  "en": "Couldn't list the branches",
-  "new": true
+  "en": "Couldn't list the branches"
  },
  {
   "id": "3f1ff063",
-  "en": "Couldn't delete the branch",
-  "new": true
+  "en": "Couldn't delete the branch"
  },
  {
   "id": "73f78123",
-  "en": "Couldn't open the network location",
-  "new": true
+  "en": "Couldn't open the network location"
  },
  {
   "id": "946078d2",
-  "en": "Couldn't open the drive",
-  "new": true
+  "en": "Couldn't open the drive"
  },
  {
   "id": "51403aed",
-  "en": "Wrong user name or password. Try again:",
-  "new": true
+  "en": "Wrong user name or password. Try again:"
  },
  {
   "id": "25045119",
-  "en": "The server asks for a user name and password:",
-  "new": true
+  "en": "The server asks for a user name and password:"
  },
  {
   "id": "66ff7560",
-  "en": "Enter a user name",
-  "new": true
+  "en": "Enter a user name"
  },
  {
   "id": "db89a899",
-  "en": "Connect",
-  "new": true
+  "en": "Connect"
  },
  {
   "id": "744be623",
-  "en": "Sign in",
-  "new": true
+  "en": "Sign in"
  },
  {
   "id": "5a6db215",
-  "en": "User name",
-  "new": true
+  "en": "User name"
  },
  {
   "id": "5e7da75e",
-  "en": "Not mounted",
-  "new": true
+  "en": "Not mounted"
  },
  {
   "id": "74f576af",
-  "en": "Volume",
-  "new": true
+  "en": "Volume"
  },
  {
   "id": "77cf4173",
-  "en": "Translucent windows let the desktop show through; with blur, compositors that support it (KDE, Hyprland) blur it.",
-  "new": true
+  "en": "Translucent windows let the desktop show through; with blur, compositors that support it (KDE, Hyprland) blur it."
  },
  {
   "id": "77e6768c",
-  "en": "Translucent",
-  "new": true
+  "en": "Translucent"
  },
  {
   "id": "542b186d",
-  "en": "Translucent with blur",
-  "new": true
+  "en": "Translucent with blur"
  },
  {
   "id": "da9717e3",
-  "en": "Cloud folders",
-  "new": true
+  "en": "Cloud folders"
  },
  {
   "id": "8bbc6af3",
-  "en": "Show drives as",
-  "new": true
+  "en": "Show drives as"
  },
  {
   "id": "b80db5f4",
-  "en": "Names in the sidebar and on the home page",
-  "new": true
+  "en": "Names in the sidebar and on the home page"
  },
  {
   "id": "e559bae4",
-  "en": "Automatic: label, share or folder",
-  "new": true
+  "en": "Automatic: label, share or folder"
  },
  {
   "id": "26e4024f",
-  "en": "Mount point: /mnt/media",
-  "new": true
+  "en": "Mount point: /mnt/media"
  },
  {
   "id": "3e60dbdb",
-  "en": "Last folder: media",
-  "new": true
+  "en": "Last folder: media"
  },
  {
   "id": "52f79cf9",
-  "en": "Device or share: sda1, //server/share",
-  "new": true
+  "en": "Device or share: sda1, //server/share"
  },
  {
   "id": "03158d40",
-  "en": "Show network folders by their address",
-  "new": true
+  "en": "Show network folders by their address"
  },
  {
   "id": "cda7d248",
-  "en": "smb://server/share in the address bar, instead of where it is mounted (/run/user/…)",
-  "new": true
+  "en": "smb://server/share in the address bar, instead of where it is mounted (/run/user/…)"
  },
  {
   "id": "e17dba5f",
-  "en": "When off, the keyboard stays in rfiles: arrow keys move between files",
-  "new": true
+  "en": "When off, the keyboard stays in rfiles: arrow keys move between files"
  },
  {
   "id": "e2bc337e",
-  "en": "Open rfiles when you log in",
-  "new": true
+  "en": "Open rfiles when you log in"
  },
  {
   "id": "8515e5f4",
-  "en": "Copying, moving to another drive and permanent deletion use our parallel engine. When off, files are copied one at a time.",
-  "new": true
+  "en": "Copying, moving to another drive and permanent deletion use our parallel engine. When off, files are copied one at a time."
  },
  {
   "id": "0ad7d225",
-  "en": "Folders opened from other apps, and \"Show in folder\" in browsers, open in rfiles. Applies to this user only; turning it off brings back the previous file manager.",
-  "new": true
+  "en": "Folders opened from other apps, and \"Show in folder\" in browsers, open in rfiles. Applies to this user only; turning it off brings back the previous file manager."
  },
  {
   "id": "c5302ee5",
-  "en": "Couldn't eject the drive",
-  "new": true
+  "en": "Couldn't eject the drive"
  },
  {
   "id": "b083d3c4",
-  "en": "Couldn't unmount the drive",
-  "new": true
+  "en": "Couldn't unmount the drive"
  },
  {
   "id": "b0d6ea96",
-  "en": "Eject",
-  "new": true
+  "en": "Eject"
  },
  {
   "id": "fa055a2b",
-  "en": "Unmount",
-  "new": true
+  "en": "Unmount"
  },
  {
   "id": "1753df81",
-  "en": "Wrong passphrase. Try again:",
-  "new": true
+  "en": "Wrong passphrase. Try again:"
  },
  {
   "id": "eef0a9df",
-  "en": "This drive is encrypted. Enter its passphrase to unlock it:",
-  "new": true
+  "en": "This drive is encrypted. Enter its passphrase to unlock it:"
  },
  {
   "id": "9c799975",
-  "en": "Unlock",
-  "new": true
+  "en": "Unlock"
  },
  {
   "id": "bd0672da",
-  "en": "Enter the passphrase",
-  "new": true
+  "en": "Enter the passphrase"
  },
  {
   "id": "6a9db3f5",
-  "en": "Unlock drive",
-  "new": true
+  "en": "Unlock drive"
  },
  {
   "id": "191a2dc5",
-  "en": "Passphrase",
-  "new": true
+  "en": "Passphrase"
  },
  {
   "id": "c47c37c8",
-  "en": "Offline",
-  "new": true
+  "en": "Offline"
  },
  {
   "id": "3909a3a2",
-  "en": "can't reach {server}",
-  "new": true
+  "en": "can't reach {server}"
  },
  {
   "id": "406a5eb3",
-  "en": "Locked",
-  "new": true
+  "en": "Locked"
  },
  {
   "id": "f0865643",
-  "en": "Encrypted volume",
-  "new": true
+  "en": "Encrypted volume"
  },
  {
   "id": "27841d23",
-  "en": "Open rfiles quick search",
-  "new": true
+  "en": "Open rfiles quick search"
  },
  {
   "id": "5b71d057",
-  "en": "No key assigned yet. On Hyprland, bind the \"quick-search\" shortcut that `hyprctl globalshortcuts` lists, e.g. bind = ALT, SPACE, global, <name>",
-  "new": true
+  "en": "No key assigned yet. On Hyprland, bind the \"quick-search\" shortcut that `hyprctl globalshortcuts` lists, e.g. bind = ALT, SPACE, global, <name>"
  },
  {
   "id": "9d2e4714",
-  "en": "Global shortcut",
-  "new": true
+  "en": "Global shortcut"
  },
  {
   "id": "93464a3e",
-  "en": "Open the quick search from any app with a shortcut your desktop assigns (KDE and GNOME ask you to confirm it)",
-  "new": true
+  "en": "Open the quick search from any app with a shortcut your desktop assigns (KDE and GNOME ask you to confirm it)"
  },
  {
   "id": "a1de2fdd",
-  "en": "Change",
-  "new": true
+  "en": "Change"
  },
  {
   "id": "dc3c5f2e",
-  "en": "No files contain this text",
-  "new": true
+  "en": "No files contain this text"
  },
  {
   "id": "2cff1e74",
-  "en": "Search inside files",
-  "new": true
+  "en": "Search inside files"
  },
  {
   "id": "a2e57e49",
-  "en": "Tip: start a search with \"content:\" to look inside files",
-  "new": true
+  "en": "Tip: start a search with \"content:\" to look inside files"
  },
  {
   "id": "e5c5facd",
-  "en": "Run command here…",
-  "new": true
+  "en": "Run command here…"
  },
  {
   "id": "93c562d1",
-  "en": "Terminal",
-  "new": true
+  "en": "Terminal"
  },
  {
   "id": "8ad63a0e",
-  "en": "For \"Open in terminal\" and \"Run command here\". In the address bar, > and a command runs it in this folder",
-  "new": true
+  "en": "For \"Open in terminal\" and \"Run command here\". In the address bar, > and a command runs it in this folder"
  },
  {
   "id": "c87a573e",
-  "en": "Couldn't open a terminal",
-  "new": true
+  "en": "Couldn't open a terminal"
  },
  {
   "id": "f0b8fc79",
-  "en": "That folder doesn't exist",
-  "new": true
+  "en": "That folder doesn't exist"
  },
  {
   "id": "3e892b4d",
-  "en": "Select",
-  "new": true
+  "en": "Select"
  },
  {
   "id": "4b097616",
-  "en": "Select a folder",
-  "new": true
+  "en": "Select a folder"
  },
  {
   "id": "01e64b32",
-  "en": "already exists. Save again to replace it.",
-  "new": true
+  "en": "already exists. Save again to replace it."
  },
  {
   "id": "6d1f5156",
-  "en": "Files to save",
-  "new": true
+  "en": "Files to save"
  },
  {
   "id": "ac00cfc8",
-  "en": "Needs the deb, rpm or Arch package (it installs the desktop portal's rfiles.portal); the Flatpak can't add a portal backend.",
-  "new": true
+  "en": "Needs the deb, rpm or Arch package (it installs the desktop portal's rfiles.portal); the Flatpak can't add a portal backend."
  },
  {
   "id": "c01651ec",
-  "en": "Apps that ask the desktop portal for a file dialog (Firefox, Chromium, GTK, Qt and Electron apps) get rfiles. Turning it off gives the dialog back.",
-  "new": true
+  "en": "Apps that ask the desktop portal for a file dialog (Firefox, Chromium, GTK, Qt and Electron apps) get rfiles. Turning it off gives the dialog back."
  },
  {
   "id": "de824b35",
-  "en": "Use rfiles for Open and Save dialogs",
-  "new": true
+  "en": "Use rfiles for Open and Save dialogs"
  },
  {
   "id": "53c990b2",
