@@ -37,6 +37,7 @@ mod undo;
 mod preview;
 mod properties_view;
 mod global_keys;
+mod terminal;
 mod quick_search;
 mod recycle_view;
 mod theme;
@@ -391,6 +392,8 @@ pub fn main() {
         background::init(cx);
         quick_search::init(cx);
         global_keys::init(cx);
+        // Settings lists the terminals: find them before it opens
+        let _ = terminal::choices();
         // updates from GitHub Releases (Settings → About)
         about::spawn_checks(cx);
         // GPUI would quit by itself when the last window closes (QuitMode::Default on Windows):

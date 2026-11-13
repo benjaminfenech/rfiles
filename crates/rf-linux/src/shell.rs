@@ -46,20 +46,6 @@ pub fn open_with(path: &Path) -> anyhow::Result<()> {
 pub fn properties(path: &Path) -> anyhow::Result<()> {
     exec(path, Some("properties"), None)
 }
-/// Opens a terminal in `dir`: `$TERMINAL`, else the first common one found on `PATH`.
-pub fn open_terminal(dir: &Path) -> anyhow::Result<()> {
-    let mut candidates: Vec<String> = std::env::var("TERMINAL").ok().filter(|t| !t.is_empty()).into_iter().collect();
-    candidates.extend(
-        ["x-terminal-emulator", "kgx", "gnome-terminal", "konsole", "ptyxis", "kitty", "alacritty", "foot", "wezterm", "xterm"]
-            .map(String::from),
-    );
-    for t in &candidates {
-        if spawn_detached(crate::sandbox::launch(t).current_dir(dir)).is_ok() {
-            return Ok(());
-        }
-    }
-    anyhow::bail!("no terminal found (set $TERMINAL)")
-}
 /// Yes/No warning box owned by `owner` (call on the STA shell thread). True on "Yes".
 pub fn confirm(_owner: crate::Opaque, _title: &str, _text: &str) -> bool {
     false
