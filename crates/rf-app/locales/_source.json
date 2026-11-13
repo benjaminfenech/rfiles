@@ -5444,6 +5444,26 @@
   "new": true
  },
  {
+  "id": "e5c5facd",
+  "en": "Run command here…",
+  "new": true
+ },
+ {
+  "id": "93c562d1",
+  "en": "Terminal",
+  "new": true
+ },
+ {
+  "id": "8ad63a0e",
+  "en": "For \"Open in terminal\" and \"Run command here\". In the address bar, > and a command runs it in this folder",
+  "new": true
+ },
+ {
+  "id": "c87a573e",
+  "en": "Couldn't open a terminal",
+  "new": true
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"

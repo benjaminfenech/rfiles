@@ -1281,5 +1281,9 @@
  "a1de2fdd": "Değiştir",
  "dc3c5f2e": "Bu metni içeren dosya yok",
  "2cff1e74": "Dosyaların içinde ara",
- "a2e57e49": "İpucu: dosyaların içinde aramak için aramaya \"içerik:\" ile başlayın"
+ "a2e57e49": "İpucu: dosyaların içinde aramak için aramaya \"içerik:\" ile başlayın",
+ "e5c5facd": "Burada komut çalıştır…",
+ "93c562d1": "Terminal",
+ "8ad63a0e": "\"Terminalde aç\" ve \"Burada komut çalıştır\" için. Adres çubuğunda > ve bir komut, onu bu klasörde çalıştırır",
+ "c87a573e": "Terminal açılamadı"
 }

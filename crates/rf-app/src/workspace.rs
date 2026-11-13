@@ -355,6 +355,17 @@ impl Workspace {
                 };
                 this.clear_suggestions();
                 this.editing_address = false;
+                // ">make": run it in a terminal, in this folder
+                if let Some(cmd) = crate::terminal::address_command(&text) {
+                    let dir = this.active_tab().read(cx).location().path().map(Path::to_path_buf);
+                    if let Some(dir) = dir {
+                        let cmd = Some(cmd.to_string()).filter(|c| !c.is_empty());
+                        crate::terminal::open(dir, cmd, Some(window.window_handle()), cx);
+                    }
+                    this.focus_active(window, cx);
+                    cx.notify();
+                    return;
+                }
                 if text.trim().to_lowercase().starts_with("shell:") {
                     // resolve in the background (shell namespace), then navigate
                     let t = text.trim().to_string();
@@ -1381,6 +1392,20 @@ impl Workspace {
         Some(deferred(list).with_priority(2).into_any_element())
     }
 
+    /// "Run command here": the address bar, ready for a command (`>` and the command).
+    fn begin_command(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.active_tab().read(cx).location().path().is_none() {
+            return;
+        }
+        self.editing_address = true;
+        self.address.update(cx, |s, cx| {
+            s.set_value("> ", window, cx);
+            s.focus(window, cx);
+            s.set_cursor_position(gpui_kit::component::input::Position::new(0, 2), window, cx);
+        });
+        cx.notify();
+    }
+
     fn begin_address_edit(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let text = match self.active_tab().read(cx).location() {
             // Linux: a network folder as its address (typing it back mounts the same folder)
@@ -1692,10 +1717,8 @@ impl Workspace {
             Item::action(t!("Copy path"), MenuIcon::Lucide(L::ClipboardCopy), with(|_, p, _, cx| {
                 cx.write_to_clipboard(ClipboardItem::new_string(p.display().to_string()))
             })),
-            Item::action(t!("Open in terminal"), MenuIcon::Lucide(L::SquareTerminal), with(|_, p, _, _| {
-                std::thread::spawn(move || {
-                    let _ = rf_linux::shell::open_terminal(&p);
-                });
+            Item::action(t!("Open in terminal"), MenuIcon::Lucide(L::SquareTerminal), with(|_, p, window, cx| {
+                crate::terminal::open(p, None, Some(window.window_handle()), cx)
             })),
             // our Properties window (a drive gets its own page there)
             Item::action(t!("Properties"), MenuIcon::Lucide(L::Wrench), with(|ws, p, _, cx| {
@@ -3211,13 +3234,12 @@ impl Render for Workspace {
             .on_action(cx.listener(|this, _: &FocusSearch, window, cx| {
                 this.enter_search(window, cx);
             }))
-            .on_action(cx.listener(|this, _: &OpenTerminal, _, cx| {
+            .on_action(cx.listener(|this, _: &OpenTerminal, window, cx| {
                 if let Some(dir) = this.active_tab().read(cx).location().path().map(Path::to_path_buf) {
-                    std::thread::spawn(move || {
-                        let _ = rf_linux::shell::open_terminal(&dir);
-                    });
+                    crate::terminal::open(dir, None, Some(window.window_handle()), cx);
                 }
             }))
+            .on_action(cx.listener(|this, _: &RunCommand, window, cx| this.begin_command(window, cx)))
             // Shift / Ctrl as GPUI sees them, for drops and menus (Linux; see sys::shift_down);
             // mouse moves carry them too, so a key released outside the window can't stick
             .on_modifiers_changed(|e: &ModifiersChangedEvent, _, _| crate::sys::note_modifiers(e.modifiers))

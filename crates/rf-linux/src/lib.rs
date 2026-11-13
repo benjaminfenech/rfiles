@@ -67,6 +67,7 @@ pub mod single_instance;
 pub mod sta;
 pub mod global_shortcuts;
 pub mod taskbar_progress;
+pub mod terminal;
 pub mod rotate;
 pub mod thumbs;
 /// Linux only: running command-line tools.

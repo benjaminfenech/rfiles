@@ -392,6 +392,9 @@ pub struct Settings {
 
     // ---- Advanced
     pub show_flatten: bool,
+    /// The terminal "Open in terminal" and "Run command here" use (its program, maybe with
+    /// options); empty = the desktop's.
+    pub terminal: String,
 
     // ---- DirectLook (Hızlı Bakış, ayrı program): ayarları kendi dosyasında (`look::config`)
     /// DirectLook kullanılsın mı (kapalıyken rfiles onu başlatmaz, Boşluk bir şey yapmaz).
@@ -487,6 +490,7 @@ impl Default for Settings {
             ide_button: IdePref::GitRepos,
             ide_path: String::new(),
             show_flatten: false,
+            terminal: String::new(),
             directlook_enabled: true,
             quick_search: true,
             global_shortcut: false,

@@ -27,6 +27,7 @@ gpui_kit::actions!(
         FocusSearch,
         ToggleHidden,
         OpenTerminal,
+        RunCommand,
         Properties,
         ClearSelection,
         CopyItems,

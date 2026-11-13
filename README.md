@@ -100,7 +100,7 @@ and `pacman -Qi rfiles-git` lists them as optional dependencies.
   - "Show disk usage", a treemap of what takes the space.
   - Git status, and hashes.
   - "Open with", listing the apps for the type with your default first.
-  - "Open terminal here", and "Open in editor".
+  - "Open in terminal", "Run command here" (or `>` and a command in the address bar), and "Open in editor".
 - **Archives:** ZIP, 7z, RAR, the tar family and ISO open like folders, password-protected ones included. Add, delete and rename inside ZIP, 7z and tar, and create ZIP, 7z and tar.zst. Reading is done by [rarchive](https://github.com/gelenmedya/rarchive), rustyfiles' pure-Rust engine.
 - **DirectLook:** previews of images (JPEG XL built in, AVIF and HEIC through the tools above), SVG, PDF, video and audio with sound, text and code, archives, and a details card for everything else.
 - **Properties window:** General, Details, Hashes, and a drive's page with its space and file system.
@@ -155,6 +155,13 @@ press "Search inside files" when a name search finds nothing. rfiles asks your d
 index when it is running and covers the folder: Baloo on KDE Plasma, Tracker (LocalSearch) on
 GNOME. Both read PDFs and office documents too. Elsewhere rfiles reads the files itself: text
 files up to 64 MB, slower on big folders.
+
+**Terminal.** "Open in terminal" (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>`</kbd>) opens your
+terminal in the current folder. To run a command there, type `>` and the command in the address
+bar (`> make`), or use "Run command here…" from the folder's right-click menu or the command
+palette. The terminal stays open with a shell afterwards. Settings → Advanced → Terminal picks
+the terminal. Automatic uses `$TERMINAL`, `xdg-terminals.list`, KDE's or GNOME's setting,
+then the first common terminal installed.
 
 **Default file manager.** Settings → Advanced → "Set as default file manager" makes folders,
 and "Show in folder" in browsers, open in rfiles, for your user only. Turning it off
