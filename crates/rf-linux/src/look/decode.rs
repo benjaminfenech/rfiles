@@ -1,5 +1,6 @@
 //! Hızlı Bakış resim çözücü: image paketi → resvg (SVG) → jxl-oxide (JXL) → avifdec / heif-dec
-//! (AVIF, HEIC) → RAW'daki gömülü JPEG → PSD birleşik görüntü → kabuk küçük resmi.
+//! (AVIF, HEIC) → RAW: big enough embedded JPEG, else developed by dcraw_emu / dcraw → PSD
+//! birleşik görüntü → kabuk küçük resmi.
 //!
 //! On Linux, JPEG XL decodes in-process (pure Rust); AVIF and HEIC go through libavif's and
 //! libheif's command-line decoders when installed, so building needs no system codec library.
@@ -393,6 +394,61 @@ fn raw_embedded_jpeg(bytes: &[u8], max_side: u32) -> anyhow::Result<Decoded> {
     let (start, _) = best.context("no embedded JPEG")?;
     with_image_crate(&bytes[start..], max_side)
 }
+/// An embedded preview at least this long (or as long as the window asks for) is used as it
+/// is: developing the RAW would take a second for no visible gain.
+const RAW_PREVIEW_ENOUGH: u32 = 2560;
+
+/// A camera RAW developed by LibRaw's `dcraw_emu` (or the classic `dcraw`): half size (still
+/// 2000+ px for any recent camera, and four times faster), the camera's white balance, sRGB,
+/// turned upright. Written as PPM to stdout.
+fn raw_developed(path: &Path, bytes: &[u8], max_side: u32) -> anyhow::Result<Decoded> {
+    let tools: [(&str, &[&str]); 2] = [("dcraw_emu", &["-h", "-w", "-Z", "-"]), ("dcraw", &["-c", "-h", "-w"])];
+    let mut last: Option<anyhow::Error> = None;
+    for (prog, args) in tools {
+        let mut cmd = crate::sandbox::tool(prog, &[]);
+        cmd.args(args).arg(path_arg(path));
+        match run(cmd, TOOL_TIMEOUT) {
+            Err(e) if e.is::<NotInstalled>() => continue,
+            Err(e) => last = Some(e),
+            Ok(r) if !r.ok || r.stdout.is_empty() => last = Some(anyhow!("{prog}: {}", String::from_utf8_lossy(&r.stderr).trim())),
+            Ok(r) => match image::load_from_memory_with_format(&r.stdout, image::ImageFormat::Pnm) {
+                Ok(img) => {
+                    let mut d = one_frame(img.into_rgba8(), exif_fields(bytes).1, max_side);
+                    // half size: the photo itself is twice as long each way
+                    d.width *= 2;
+                    d.height *= 2;
+                    return Ok(d);
+                }
+                Err(e) => last = Some(anyhow!("{prog}: {e}")),
+            },
+        }
+    }
+    Err(last.unwrap_or_else(|| MissingDecoder("To preview RAW photos at full quality, install LibRaw's tools (dcraw_emu) or dcraw.").into()))
+}
+
+/// A RAW photo: its embedded preview when that is big enough, else the RAW developed, else
+/// whatever preview it has.
+fn raw_photo(path: &Path, bytes: &[u8], max_side: u32) -> anyhow::Result<Decoded> {
+    let embedded = raw_embedded_jpeg(bytes, max_side).ok().map(|mut d| {
+        if d.exif.is_empty() {
+            d.exif = exif_fields(bytes).1;
+        }
+        d
+    });
+    let enough = max_side.min(RAW_PREVIEW_ENOUGH);
+    if let Some(d) = embedded.as_ref().filter(|d| d.width.max(d.height) >= enough) {
+        log::debug!("raw {}: embedded preview {}×{}", path.display(), d.width, d.height);
+        return Ok(embedded.unwrap());
+    }
+    match raw_developed(path, bytes, max_side) {
+        Ok(d) => Ok(d),
+        Err(e) => {
+            log::debug!("raw {}: {e:#}", path.display());
+            embedded.ok_or(e)
+        }
+    }
+}
+
 fn psd(bytes: &[u8], max_side: u32) -> anyhow::Result<Decoded> {
     let p = psd::Psd::from_bytes(bytes).map_err(|e| anyhow!("psd: {e}"))?;
     let img = RgbaImage::from_raw(p.width(), p.height(), p.rgba())
@@ -475,8 +531,13 @@ pub fn decode_full(path: &Path, max_side: u32) -> anyhow::Result<Decoded> {
         }
     }
     if raw {
-        if let Ok(d) = raw_embedded_jpeg(&bytes, max_side) {
-            return Ok(d);
+        match raw_photo(path, &bytes, max_side) {
+            Ok(d) => return Ok(d),
+            // no preview inside and nothing to develop it with: a thumbnail, else the hint
+            Err(e) if e.is::<MissingDecoder>() => {
+                return crate::xdg_thumbs::thumbnail(path, max_side.min(1024)).map(|img| one_frame(img, exif_fields(&bytes).1, max_side)).map_err(|_| e);
+            }
+            Err(e) => log::debug!("raw {}: {e:#}", path.display()),
         }
     }
     if ext == "psd" || ext == "psb" {

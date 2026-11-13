@@ -29,6 +29,7 @@ optdepends=(
   'poppler: PDF previews'
   'libavif: full-size AVIF images'
   'libheif: full-size HEIC images'
+  'libraw: camera RAW photos at full quality'
   'ffmpeg: video formats rfiles cannot play on its own'
   'kio-fuse: network locations (smb://, sftp://, ftp://) on KDE'
   'gvfs-smb: network locations on GNOME and others (with gvfs)'
