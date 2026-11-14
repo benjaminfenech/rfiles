@@ -557,6 +557,79 @@ impl FolderView {
         cx.notify();
     }
 
+    /// "Create link": a link to each item beside it (in the item's own folder).
+    pub fn create_links_beside(&mut self, items: Vec<PathBuf>, cx: &mut Context<Self>) {
+        let mut by_dir: Vec<(PathBuf, Vec<PathBuf>)> = Vec::new();
+        for p in items {
+            let Some(dir) = p.parent().map(PathBuf::from) else { continue };
+            match by_dir.iter_mut().find(|(d, _)| *d == dir) {
+                Some((_, v)) => v.push(p),
+                None => by_dir.push((dir, vec![p])),
+            }
+        }
+        self.make_links(by_dir, cx);
+    }
+
+    /// "Paste as link": links in the current folder to the files on the clipboard.
+    pub fn paste_as_link(&mut self, cx: &mut Context<Self>) {
+        let Some(dir) = self.current_dir() else { return };
+        if crate::archive_view::split(&dir).is_some() {
+            return;
+        }
+        let (tx, rx) = oneshot::channel();
+        rf_linux::sta::run(move |owner| {
+            let _ = tx.send(rf_linux::clipboard::get_files(owner).ok().flatten());
+        });
+        cx.spawn(async move |this, cx| {
+            if let Ok(Some((paths, _))) = rx.await {
+                let _ = this.update(cx, |v, cx| v.make_links(vec![(dir, paths)], cx));
+            }
+        })
+        .detach();
+    }
+
+    /// Makes links to each group's targets in its folder, through the Status Center (errors
+    /// show there); what was made lands on the undo stack and is selected.
+    fn make_links(&mut self, jobs: Vec<(PathBuf, Vec<PathBuf>)>, cx: &mut Context<Self>) {
+        let jobs: Vec<_> = jobs.into_iter().filter(|(d, t)| !t.is_empty() && crate::archive_view::split(d).is_none()).collect();
+        let n: usize = jobs.iter().map(|(_, t)| t.len()).sum();
+        if n == 0 {
+            return;
+        }
+        let made = std::sync::Arc::new(parking_lot::Mutex::new(Vec::<(PathBuf, PathBuf)>::new()));
+        let m2 = made.clone();
+        let suffix = t!("link");
+        let me = cx.entity().downgrade();
+        crate::status_center::start_with(
+            cx,
+            format!("{} {}", t!("Creating links:"), crate::i18n::items(n)),
+            move |_| {
+                for (dir, targets) in &jobs {
+                    let (pairs, err) = fileops::create_links(targets, dir, suffix);
+                    m2.lock().extend(pairs);
+                    if let Some(e) = err {
+                        return Err(e.into());
+                    }
+                }
+                Ok(true)
+            },
+            Some(Box::new(move |_, cx| {
+                let pairs = std::mem::take(&mut *made.lock());
+                if pairs.is_empty() {
+                    return;
+                }
+                let names: Vec<String> = pairs.iter().filter_map(|(_, l)| l.file_name()).map(|n| n.to_string_lossy().into_owned()).collect();
+                let here: Vec<PathBuf> = pairs.iter().filter_map(|(_, l)| l.parent().map(PathBuf::from)).collect();
+                crate::undo::push(crate::undo::UndoOp::Linked { pairs });
+                let _ = me.update(cx, |v, cx| {
+                    if v.current_dir().is_some_and(|d| here.contains(&d)) {
+                        v.select_when_listed(names, cx);
+                    }
+                });
+            })),
+        );
+    }
+
     /// Files dropped onto `dest` (a folder row or the current folder background).
     pub fn drop_into(&mut self, dest: PathBuf, paths: &ExternalPaths, cx: &mut Context<Self>) {
         let sources: Vec<PathBuf> = crate::file_drag::take(paths);
@@ -564,6 +637,11 @@ impl FolderView {
             return;
         }
         let (ctrl, shift) = (crate::sys::ctrl_down(), crate::sys::shift_down());
+        // Ctrl+Shift: links (as Dolphin, Nautilus and Thunar do)
+        if ctrl && shift {
+            self.make_links(vec![(dest, sources)], cx);
+            return;
+        }
         let kind = rf_linux::dnd::default_transfer(&sources, &dest, ctrl, shift);
         crate::status_center::transfer(cx, kind, sources, dest);
     }
