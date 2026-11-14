@@ -1373,5 +1373,7 @@
  "d8d555f9": "Navn i menuen",
  "6eeff2a7": "Skriv en kommando",
  "c67c8f52": "Kommando",
- "b7c8a38d": "%f er ét element (kommandoen kører én gang for hvert), %F dem alle. Uden nogen af dem kommer elementerne til sidst. Eksempel: meld %F"
+ "b7c8a38d": "%f er ét element (kommandoen kører én gang for hvert), %F dem alle. Uden nogen af dem kommer elementerne til sidst. Eksempel: meld %F",
+ "fb2049ab": "Mappetræ",
+ "b31f262d": "Fastgjorte mapper og drev kan foldes ud til deres undermapper"
 }

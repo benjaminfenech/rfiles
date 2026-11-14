@@ -1373,5 +1373,7 @@
  "d8d555f9": "Name im Menü",
  "6eeff2a7": "Befehl eingeben",
  "c67c8f52": "Befehl",
- "b7c8a38d": "%f ist ein Element (der Befehl läuft für jedes einzeln), %F alle. Ohne beides werden die Elemente angehängt. Beispiel: meld %F"
+ "b7c8a38d": "%f ist ein Element (der Befehl läuft für jedes einzeln), %F alle. Ohne beides werden die Elemente angehängt. Beispiel: meld %F",
+ "fb2049ab": "Ordnerbaum",
+ "b31f262d": "Angeheftete Ordner und Laufwerke lassen sich zu ihren Unterordnern aufklappen"
 }

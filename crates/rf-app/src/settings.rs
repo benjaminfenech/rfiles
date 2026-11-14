@@ -277,6 +277,8 @@ pub struct Settings {
     pub sidebar_width: f32,
     /// Sidebar sections the user turned off ("drives", "cloud", "network", "tags").
     pub sidebar_hidden: Vec<String>,
+    /// Pinned folders and drives open into their subfolders in the sidebar.
+    pub sidebar_tree: bool,
     pub preview_width: f32,
     pub restore_session: bool,
     /// Last session's tab locations ("" = Home).
@@ -433,6 +435,7 @@ impl Default for Settings {
             sidebar_rail: false,
             sidebar_width: 232.,
             sidebar_hidden: Vec::new(),
+            sidebar_tree: false,
             preview_width: 300.,
             restore_session: true,
             session_tabs: Vec::new(),

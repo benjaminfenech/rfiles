@@ -1373,5 +1373,7 @@
  "d8d555f9": "Name in the menu",
  "6eeff2a7": "Enter a command",
  "c67c8f52": "Command",
- "b7c8a38d": "%f is an item (the command runs once for each), %F all of them. Without either, the items go at the end. Example: meld %F"
+ "b7c8a38d": "%f is an item (the command runs once for each), %F all of them. Without either, the items go at the end. Example: meld %F",
+ "fb2049ab": "Folder tree",
+ "b31f262d": "Pinned folders and drives open into their subfolders"
 }

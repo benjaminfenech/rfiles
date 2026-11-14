@@ -1373,5 +1373,7 @@
  "d8d555f9": "Názov v ponuke",
  "6eeff2a7": "Zadajte príkaz",
  "c67c8f52": "Príkaz",
- "b7c8a38d": "%f je jedna položka (príkaz sa spustí pre každú), %F všetky. Bez nich sa položky pridajú na koniec. Príklad: meld %F"
+ "b7c8a38d": "%f je jedna položka (príkaz sa spustí pre každú), %F všetky. Bez nich sa položky pridajú na koniec. Príklad: meld %F",
+ "fb2049ab": "Strom priečinkov",
+ "b31f262d": "Pripnuté priečinky a disky sa rozbaľujú do svojich podpriečinkov"
 }

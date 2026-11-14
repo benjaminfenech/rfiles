@@ -1373,5 +1373,7 @@
  "d8d555f9": "Naziv u izborniku",
  "6eeff2a7": "Upišite naredbu",
  "c67c8f52": "Naredba",
- "b7c8a38d": "%f je jedna stavka (naredba se pokreće za svaku), %F sve. Bez njih se stavke dodaju na kraj. Primjer: meld %F"
+ "b7c8a38d": "%f je jedna stavka (naredba se pokreće za svaku), %F sve. Bez njih se stavke dodaju na kraj. Primjer: meld %F",
+ "fb2049ab": "Stablo mapa",
+ "b31f262d": "Prikvačene mape i pogoni otvaraju se u svoje podmape"
 }

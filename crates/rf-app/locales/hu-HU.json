@@ -1373,5 +1373,7 @@
  "d8d555f9": "Név a menüben",
  "6eeff2a7": "Adjon meg egy parancsot",
  "c67c8f52": "Parancs",
- "b7c8a38d": "A %f egy elem (a parancs mindegyikre külön fut), a %F mind. Egyik nélkül az elemek a végére kerülnek. Példa: meld %F"
+ "b7c8a38d": "A %f egy elem (a parancs mindegyikre külön fut), a %F mind. Egyik nélkül az elemek a végére kerülnek. Példa: meld %F",
+ "fb2049ab": "Mappafa",
+ "b31f262d": "A rögzített mappák és meghajtók kinyithatók az almappáikra"
 }

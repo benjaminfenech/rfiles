@@ -1373,5 +1373,7 @@
  "d8d555f9": "Numele în meniu",
  "6eeff2a7": "Introduceți o comandă",
  "c67c8f52": "Comandă",
- "b7c8a38d": "%f e un element (comanda rulează pentru fiecare), %F toate. Fără ele, elementele se adaugă la final. Exemplu: meld %F"
+ "b7c8a38d": "%f e un element (comanda rulează pentru fiecare), %F toate. Fără ele, elementele se adaugă la final. Exemplu: meld %F",
+ "fb2049ab": "Arbore de foldere",
+ "b31f262d": "Folderele fixate și unitățile se deschid în subfolderele lor"
 }

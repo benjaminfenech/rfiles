@@ -1373,5 +1373,7 @@
  "d8d555f9": "Název v nabídce",
  "6eeff2a7": "Zadejte příkaz",
  "c67c8f52": "Příkaz",
- "b7c8a38d": "%f je jedna položka (příkaz se spustí pro každou), %F všechny. Bez nich se položky přidají na konec. Příklad: meld %F"
+ "b7c8a38d": "%f je jedna položka (příkaz se spustí pro každou), %F všechny. Bez nich se položky přidají na konec. Příklad: meld %F",
+ "fb2049ab": "Strom složek",
+ "b31f262d": "Připnuté složky a disky se rozbalují do svých podsložek"
 }

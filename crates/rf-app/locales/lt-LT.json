@@ -1373,5 +1373,7 @@
  "d8d555f9": "Pavadinimas meniu",
  "6eeff2a7": "Įveskite komandą",
  "c67c8f52": "Komanda",
- "b7c8a38d": "%f – vienas elementas (komanda vykdoma kiekvienam), %F – visi. Be jų elementai pridedami gale. Pavyzdys: meld %F"
+ "b7c8a38d": "%f – vienas elementas (komanda vykdoma kiekvienam), %F – visi. Be jų elementai pridedami gale. Pavyzdys: meld %F",
+ "fb2049ab": "Aplankų medis",
+ "b31f262d": "Prisegti aplankai ir diskai išsiskleidžia į savo poaplankius"
 }

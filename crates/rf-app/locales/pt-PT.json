@@ -1373,5 +1373,7 @@
  "d8d555f9": "Nome no menu",
  "6eeff2a7": "Escreva um comando",
  "c67c8f52": "Comando",
- "b7c8a38d": "%f é um item (o comando é executado para cada um), %F todos. Sem nenhum, os itens vão para o fim. Exemplo: meld %F"
+ "b7c8a38d": "%f é um item (o comando é executado para cada um), %F todos. Sem nenhum, os itens vão para o fim. Exemplo: meld %F",
+ "fb2049ab": "Árvore de pastas",
+ "b31f262d": "As pastas afixadas e as unidades expandem-se nas suas subpastas"
 }

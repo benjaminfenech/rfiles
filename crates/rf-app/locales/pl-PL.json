@@ -1373,5 +1373,7 @@
  "d8d555f9": "Nazwa w menu",
  "6eeff2a7": "Wpisz polecenie",
  "c67c8f52": "Polecenie",
- "b7c8a38d": "%f to jeden element (polecenie uruchamia się dla każdego), %F wszystkie. Bez nich elementy trafiają na koniec. Przykład: meld %F"
+ "b7c8a38d": "%f to jeden element (polecenie uruchamia się dla każdego), %F wszystkie. Bez nich elementy trafiają na koniec. Przykład: meld %F",
+ "fb2049ab": "Drzewo folderów",
+ "b31f262d": "Przypięte foldery i dyski rozwijają się do swoich podfolderów"
 }

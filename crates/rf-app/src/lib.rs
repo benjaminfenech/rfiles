@@ -30,6 +30,7 @@ mod places;
 mod settings;
 mod select_box;
 mod settings_view;
+mod sidebar_tree;
 mod shelf_view;
 mod status_center;
 mod tags;

@@ -1373,5 +1373,7 @@
  "d8d555f9": "Nosaukums izvēlnē",
  "6eeff2a7": "Ievadiet komandu",
  "c67c8f52": "Komanda",
- "b7c8a38d": "%f ir viens vienums (komanda izpildās katram), %F visi. Bez tiem vienumi tiek pievienoti beigās. Piemērs: meld %F"
+ "b7c8a38d": "%f ir viens vienums (komanda izpildās katram), %F visi. Bez tiem vienumi tiek pievienoti beigās. Piemērs: meld %F",
+ "fb2049ab": "Mapju koks",
+ "b31f262d": "Piespraustās mapes un diski izvēršas savās apakšmapēs"
 }
