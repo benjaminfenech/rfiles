@@ -100,10 +100,58 @@ impl GitStatus {
 pub fn repo_root(dir: &Path) -> Option<PathBuf> {
     dir.ancestors().find(|a| a.join(".git").exists()).map(Path::to_path_buf)
 }
-fn git_cmd(root: &Path) -> Command {
+fn base_cmd(root: &Path) -> Command {
     let mut c = crate::sandbox::tool("git", &[("GIT_OPTIONAL_LOCKS", "0"), ("GIT_TERMINAL_PROMPT", "0")]);
     c.arg("--no-optional-locks").current_dir(root).stdin(Stdio::null());
     c
+}
+
+/// Git for what rfiles runs on its own (status, log, branches, remotes), which happens just by
+/// browsing into a folder. A repository's own config can name commands git runs during those:
+/// `core.fsmonitor`, and the clean/smudge/process filters of `.gitattributes`. A downloaded or
+/// extracted folder with a crafted `.git/config` would run them, so the ones set in the
+/// repository's config (not your global or system config) are switched off here. Logs also pass
+/// `--no-show-signature`, which would run `gpg.program`.
+fn git_cmd(root: &Path) -> Command {
+    let mut c = base_cmd(root);
+    // inherited by the git processes this one starts (GIT_CONFIG_PARAMETERS)
+    c.args(["-c", "core.fsmonitor=false"]);
+    for key in repo_commands(root) {
+        c.arg("-c").arg(format!("{key}="));
+    }
+    c
+}
+
+/// Git for actions the user starts (commit, pull, push, switch branch…): the repository's
+/// config applies in full, so hooks, Git LFS and other filters work as in a terminal.
+fn user_git_cmd(root: &Path) -> Command {
+    base_cmd(root)
+}
+
+/// Filter commands (they can run during status), as set by the repository itself
+/// (local or worktree config, includes followed).
+fn repo_commands(root: &Path) -> Vec<String> {
+    let Ok(out) = base_cmd(root)
+        .args(["config", "--null", "--show-scope", "--get-regexp", r"^filter\..+\.(clean|smudge|process)$"])
+        .output()
+    else {
+        return Vec::new();
+    };
+    parse_repo_commands(&out.stdout)
+}
+
+/// `scope NUL key LF value NUL`… → the keys whose scope isn't the user's or the system's.
+fn parse_repo_commands(raw: &[u8]) -> Vec<String> {
+    let text = String::from_utf8_lossy(raw);
+    let mut parts = text.split('\0');
+    let mut keys = Vec::new();
+    while let (Some(scope), Some(entry)) = (parts.next(), parts.next()) {
+        let key = entry.split('\n').next().unwrap_or("");
+        if !key.is_empty() && !matches!(scope, "global" | "system" | "command") && !keys.iter().any(|k| k == key) {
+            keys.push(key.to_string());
+        }
+    }
+    keys
 }
 /// Runs `git status` for the repository at `repo_root` (use [`repo_root`] to find it).
 /// Errors when git is not installed or the command fails.
@@ -116,6 +164,8 @@ pub fn status(repo_root: &Path) -> Result<GitStatus> {
             "-z",
             "--untracked-files=normal",
             "--ignored=traditional",
+            // a submodule's changes would mean a `git status` inside it, with its own config
+            "--ignore-submodules=dirty",
         ])
         .output()
         .map_err(|e| {
@@ -281,9 +331,19 @@ fn spawn_err(e: std::io::Error) -> anyhow::Error {
 fn run_git(root: &Path, args: &[&str]) -> Result<std::process::Output> {
     git_cmd(root).args(args).output().map_err(spawn_err)
 }
+/// [`run_git`] for an action the user started ([`user_git_cmd`]).
+fn run_user_git(root: &Path, args: &[&str]) -> Result<std::process::Output> {
+    user_git_cmd(root).args(args).output().map_err(spawn_err)
+}
 /// Runs git and returns stdout; on failure bails with `what: <stderr>`.
 fn git_text(root: &Path, args: &[&str], what: &str) -> Result<String> {
-    let out = run_git(root, args)?;
+    text_of(run_git(root, args)?, what)
+}
+/// [`git_text`] for an action the user started.
+fn user_git_text(root: &Path, args: &[&str], what: &str) -> Result<String> {
+    text_of(run_user_git(root, args)?, what)
+}
+fn text_of(out: std::process::Output, what: &str) -> Result<String> {
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr);
         let err = if err.trim().is_empty() {
@@ -416,7 +476,7 @@ fn switch_to(root: &Path, target: &Target, force: bool) -> Result<()> {
             args.push(r);
         }
     }
-    let out = run_git(root, &args)?;
+    let out = run_user_git(root, &args)?;
     if out.status.success() {
         return Ok(());
     }
@@ -445,7 +505,7 @@ pub fn checkout(root: &Path, branch: &str, mode: CheckoutMode) -> Result<()> {
                 .trim()
                 .is_empty();
             if dirty {
-                git_text(
+                user_git_text(
                     root,
                     &[
                         "stash",
@@ -459,12 +519,12 @@ pub fn checkout(root: &Path, branch: &str, mode: CheckoutMode) -> Result<()> {
             }
             if let Err(e) = switch_to(root, &target, false) {
                 if dirty {
-                    let _ = run_git(root, &["stash", "pop"]);
+                    let _ = run_user_git(root, &["stash", "pop"]);
                 }
                 return Err(e);
             }
             if dirty {
-                git_text(
+                user_git_text(
                     root,
                     &["stash", "pop"],
                     "Switched branch, but the stashed changes couldn't be reapplied (they're still in git stash list)",
@@ -646,7 +706,7 @@ fn upstream_of(root: &Path, branch: &str) -> Option<String> {
 /// `git fetch --all --prune` with live progress lines.
 pub fn fetch(root: &Path, on_progress: &mut dyn FnMut(&str)) -> Result<()> {
     require_remote(root)?;
-    let mut c = git_cmd(root);
+    let mut c = user_git_cmd(root);
     c.args(["fetch", "--all", "--prune", "--progress"]);
     run_streaming(c, "git fetch", on_progress)
 }
@@ -659,7 +719,7 @@ pub fn pull(root: &Path, on_progress: &mut dyn FnMut(&str)) -> Result<()> {
     if upstream_of(root, &branch).is_none() {
         bail!("Branch '{branch}' doesn't track a remote branch");
     }
-    let mut c = git_cmd(root);
+    let mut c = user_git_cmd(root);
     let has_rebase_cfg = run_git(root, &["config", "--get", "pull.rebase"])
         .map(|o| o.status.success())
         .unwrap_or(false);
@@ -676,7 +736,7 @@ pub fn push(root: &Path, on_progress: &mut dyn FnMut(&str)) -> Result<()> {
     let Some(branch) = current_branch(root) else {
         bail!("Can't push with a detached HEAD");
     };
-    let mut c = git_cmd(root);
+    let mut c = user_git_cmd(root);
     c.args(["push", "--progress"]);
     if upstream_of(root, &branch).is_none() {
         let remote = remotes.iter().find(|r| *r == "origin").unwrap_or(&remotes[0]);
@@ -726,7 +786,7 @@ pub fn clone(
     let name = if name.is_empty() { "repo" } else { name };
     std::fs::create_dir_all(dest_parent)
         .map_err(|e| anyhow::Error::new(e).context("Couldn't create the destination folder"))?;
-    let mut c = git_cmd(dest_parent);
+    let mut c = user_git_cmd(dest_parent);
     c.args(["clone", "--progress", "--", url, name]);
     run_streaming(c, "git clone", on_progress)?;
     Ok(dest_parent.join(name))
@@ -745,7 +805,7 @@ pub struct Commit {
 /// `git log -1` for `path` (or HEAD when `None`). `None` when there is no such commit.
 pub fn last_commit(root: &Path, path: Option<&Path>) -> Option<Commit> {
     let mut c = git_cmd(root);
-    c.args(["log", "-1", "--format=%h%x00%s%x00%an%x00%ct"]);
+    c.args(["log", "-1", "--no-show-signature", "--format=%h%x00%s%x00%an%x00%ct"]);
     if let Some(p) = path {
         c.arg("--").arg(p);
     }
@@ -791,6 +851,7 @@ pub fn last_commits_of_children(
             "-c",
             "core.quotepath=false",
             "log",
+            "--no-show-signature",
             "--no-renames",
             "--name-only",
             "--format=%x01%h%x1f%s%x1f%an%x1f%ct",
@@ -882,6 +943,78 @@ pub fn commit_all(root: &Path, message: &str) -> Result<()> {
     if !has_changes(root) {
         bail!("Nothing to commit");
     }
-    git_text(root, &["add", "-A"], "Couldn't stage the changes")?;
-    git_text(root, &["commit", "-q", "-m", message], "Couldn't commit").map(|_| ())
+    user_git_text(root, &["add", "-A"], "Couldn't stage the changes")?;
+    user_git_text(root, &["commit", "-q", "-m", message], "Couldn't commit").map(|_| ())
+}
+
+#[cfg(test)]
+mod repo_config_tests {
+    use super::*;
+    use std::process::Command;
+
+    #[test]
+    fn scopes() {
+        let raw = b"local\0filter.evil.process\ntouch x\0global\0filter.lfs.process\ngit-lfs filter-process\0worktree\0filter.w.clean\ncat\0";
+        assert_eq!(parse_repo_commands(raw), ["filter.evil.process", "filter.w.clean"]);
+    }
+
+    /// A repository whose own config names an fsmonitor, a filter process and a gpg program:
+    /// browsing it (status, logs) must run none of them.
+    #[test]
+    fn crafted_repo_runs_nothing() {
+        if Command::new("git").arg("--version").output().is_err() {
+            return;
+        }
+        let tmp = std::env::temp_dir().join(format!("rf-git-trap-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        let repo = tmp.join("r");
+        std::fs::create_dir_all(&repo).unwrap();
+        let git = |args: &[&str]| {
+            let o = Command::new("git").args(["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]).args(args).current_dir(&repo).output().unwrap();
+            assert!(o.status.success(), "{args:?}: {}", String::from_utf8_lossy(&o.stderr));
+            String::from_utf8_lossy(&o.stdout).trim().to_string()
+        };
+        git(&["init", "-q"]);
+        std::fs::write(repo.join("a.txt"), "a\n").unwrap();
+        std::fs::write(repo.join(".gitattributes"), "*.txt filter=trap\n").unwrap();
+        git(&["add", "."]);
+        git(&["commit", "-qm", "one"]);
+        // a commit with a (fake) signature, so log.showSignature would call gpg
+        let tree = git(&["rev-parse", "HEAD^{tree}"]);
+        let parent = git(&["rev-parse", "HEAD"]);
+        let body = format!("tree {tree}\nparent {parent}\nauthor t <t@t> 1 +0000\ncommitter t <t@t> 1 +0000\ngpgsig -----BEGIN PGP SIGNATURE-----\n \n AAAA\n -----END PGP SIGNATURE-----\n\nsigned\n");
+        std::fs::write(tmp.join("commit"), body).unwrap();
+        let signed = git(&["hash-object", "-t", "commit", "-w", tmp.join("commit").to_str().unwrap()]);
+        git(&["update-ref", "HEAD", &signed]);
+        let marker = tmp.join("ran");
+        let touch = format!("touch '{}'", marker.display());
+        git(&["config", "core.fsmonitor", &format!("{touch}; false")]);
+        git(&["config", "filter.trap.process", &touch]);
+        git(&["config", "filter.trap.clean", &touch]);
+        git(&["config", "log.showSignature", "true"]);
+        git(&["config", "gpg.program", &format!("{}", tmp.join("gpg.sh").display())]);
+        std::fs::write(tmp.join("gpg.sh"), format!("#!/bin/sh\n{touch}\n")).unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(tmp.join("gpg.sh"), std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        // same size, other content and time: status has to re-read it (through the filter)
+        std::fs::write(repo.join("a.txt"), "b\n").unwrap();
+
+        let st = status(&repo).unwrap();
+        assert!(!st.is_clean());
+        assert!(last_commit(&repo, None).is_some());
+        let _ = last_commits_of_children(&repo, &repo, &["a.txt".into()], 10);
+        let _ = branches(&repo);
+        let _ = remote_url(&repo);
+        assert!(!marker.exists(), "a command from the repository's config ran");
+
+        // the same calls through plain git do run them (so the test sets up a real trap)
+        let _ = Command::new("git").args(["status", "--porcelain"]).current_dir(&repo).output();
+        let _ = Command::new("git").args(["log", "-1"]).current_dir(&repo).output();
+        let trapped = marker.exists();
+        let _ = std::fs::remove_dir_all(&tmp);
+        assert!(trapped, "plain git didn't run the trap: the test proves nothing");
+    }
 }
