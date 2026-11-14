@@ -2634,7 +2634,16 @@ impl Workspace {
             }
         }
         let network = self.places.read(cx).network.clone();
-        if (!network.is_empty() || !shares.is_empty()) && shown("network") {
+        // servers found on the network that aren't a saved location already
+        let servers: Vec<_> = self
+            .places
+            .read(cx)
+            .servers
+            .iter()
+            .filter(|s| !network.iter().any(|(_, t)| t.to_str().is_some_and(|t| t.trim_end_matches('/') == s.url.trim_end_matches('/'))))
+            .cloned()
+            .collect();
+        if (!network.is_empty() || !shares.is_empty() || !servers.is_empty()) && shown("network") {
             col = col.child(header(t!("Network")));
             let offline = self.places.read(cx).offline.clone();
             for (i, d) in shares.into_iter().enumerate() {
@@ -2650,6 +2659,25 @@ impl Workspace {
                 let loc = Location::Path(target);
                 let active = cur == loc;
                 col = col.child(self.sidebar_item(("sb-net", i).into(), L::Network, p.text_secondary, name, loc, active, None, p, cx));
+            }
+            for (i, sv) in servers.into_iter().enumerate() {
+                let loc = Location::Path(PathBuf::from(&sv.url));
+                let active = cur == loc;
+                // the protocol as a small tag at the row's end, on the name's line
+                let scheme = sv.url.split_once("://").map_or("", |(s, _)| s).to_ascii_uppercase();
+                let item = self.sidebar_item(("sb-server", i).into(), L::Server, p.text_secondary, sv.name, loc, active, None, p, cx);
+                col = col.child(div().relative().child(item).when(!rail, |row| {
+                    row.child(
+                        div()
+                            .absolute()
+                            .right(px(8.))
+                            .top_0()
+                            .bottom_0()
+                            .flex()
+                            .items_center()
+                            .child(div().px(px(5.)).rounded(px(4.)).bg(p.sidebar_bg).text_size(px(10.)).text_color(p.text_tertiary).child(scheme)),
+                    )
+                }));
             }
         }
         let tag_defs = if shown("tags") { cx.global::<crate::tags::Tags>().0.defs.clone() } else { Vec::new() };
