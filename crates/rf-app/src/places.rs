@@ -203,7 +203,7 @@ pub struct Places {
     /// File servers announcing themselves on the local network (Avahi), looked for after
     /// each refresh and every minute, apart from the rest (it takes a second or two).
     pub servers: Vec<rf_linux::network::Server>,
-    /// Phones, tablets and cameras plugged in over USB (opened through kio-fuse or gvfs).
+    /// Phones, tablets and cameras plugged in over USB (opened through gvfs or a FUSE tool).
     pub devices: Vec<rf_linux::devices::Device>,
     /// fstab shares whose server doesn't answer (away from home), with that server: shown as
     /// offline. Checked after each refresh and every 30 s, apart from the rest (it can take
@@ -294,7 +294,7 @@ impl Places {
             let recent = load_recent(14);
             let cloud = load_cloud_and_wsl();
             let network = rf_linux::network::network_shortcuts();
-            let devices = rf_linux::devices::list(rf_linux::remote::has_kio_fuse());
+            let devices = rf_linux::devices::list();
             (pinned, drives, recent, cloud, network, devices)
         });
         self._task = Some(cx.spawn(async move |this, cx| {

@@ -14,9 +14,9 @@ use anyhow::{Context as _, anyhow, bail};
 /// URL schemes opened through kio-fuse / gvfs.
 const SCHEMES: &[&str] = &["smb", "sftp", "ftp", "ftps", "fish", "webdav", "webdavs", "dav", "davs", "nfs", "afp", "mtp", "gphoto2", "camera", "afc"];
 
-/// Phones and cameras ([`crate::devices`]): KDE's `mtp:///` (every phone plugged in) has
-/// nothing after the scheme.
-const DEVICE_SCHEMES: &[&str] = &["mtp", "camera", "afc"];
+/// Phones and cameras ([`crate::devices`]): opened through gvfs or a FUSE tool, never
+/// kio-fuse (it refuses them).
+const DEVICE_SCHEMES: &[&str] = &["mtp", "gphoto2", "camera", "afc"];
 
 /// How long a mount may take (a password prompt counts).
 const MOUNT_TIMEOUT: Duration = Duration::from_secs(120);
@@ -28,8 +28,7 @@ pub fn to_url(text: &str) -> Option<String> {
     let t = text.trim();
     if let Some((scheme, rest)) = t.split_once("://") {
         let s = scheme.to_ascii_lowercase();
-        let bare_ok = DEVICE_SCHEMES.contains(&s.as_str());
-        return (SCHEMES.contains(&s.as_str()) && (bare_ok || !rest.trim_matches('/').is_empty())).then(|| format!("{s}://{rest}"));
+        return (SCHEMES.contains(&s.as_str()) && !rest.trim_matches('/').is_empty()).then(|| format!("{s}://{rest}"));
     }
     let rest = t.strip_prefix(r"\\").or_else(|| t.strip_prefix("//"))?;
     if rest.is_empty() || rest.starts_with(['?', '.', '/', '\\']) {
@@ -46,6 +45,13 @@ pub fn is_remote(p: &Path) -> bool {
 /// Opens the network location `text` (see [`to_url`]) and returns its local folder.
 pub fn mount(text: &str) -> anyhow::Result<PathBuf> {
     let url = to_url(text).ok_or_else(|| anyhow!("{text} is not a network location"))?;
+    if DEVICE_SCHEMES.iter().any(|s| url.starts_with(&format!("{s}://"))) {
+        return match gvfs(&url) {
+            Ok(p) => Ok(p),
+            Err(e) if e.is::<Missing>() => crate::devices::fuse_mount(&url),
+            Err(e) => Err(e),
+        };
+    }
     // already open (signed in earlier this session): kio-fuse would ask for the password again
     if let Some(p) = existing_kio_mount(&url) {
         return Ok(p);
@@ -190,15 +196,6 @@ fn decode(s: &str) -> String {
     rf_core::uri::decode_str(s)
 }
 
-/// Whether kio-fuse is there to open locations (KDE): phones and cameras then get KIO's
-/// URLs ([`crate::devices::list`]). Asks the session bus; off the UI thread.
-pub fn has_kio_fuse() -> bool {
-    let Ok(conn) = zbus::blocking::Connection::session() else { return false };
-    let Ok(dbus) = zbus::blocking::fdo::DBusProxy::new(&conn) else { return false };
-    let Ok(name) = zbus::names::BusName::try_from("org.kde.KIOFuse") else { return false };
-    dbus.name_has_owner(name).unwrap_or(false) || dbus.list_activatable_names().is_ok_and(|n| n.iter().any(|n| n.as_str() == "org.kde.KIOFuse"))
-}
-
 /// The layer isn't installed (as opposed to: it failed).
 #[derive(Debug)]
 struct Missing;
@@ -312,7 +309,7 @@ mod tests {
         assert_eq!(to_url("sftp://me@host:2222/srv").as_deref(), Some("sftp://me@host:2222/srv"));
         assert_eq!(to_url("ftp://ftp.example.org/pub").as_deref(), Some("ftp://ftp.example.org/pub"));
         assert_eq!(to_url("smb://"), None);
-        assert_eq!(to_url("mtp:///").as_deref(), Some("mtp:///"));
+        assert_eq!(to_url("mtp:///"), None);
         assert_eq!(to_url("gphoto2://[usb:001,007]/").as_deref(), Some("gphoto2://[usb:001,007]/"));
         assert_eq!(to_url("https://example.org"), None);
         assert_eq!(to_url("/home/me"), None);
