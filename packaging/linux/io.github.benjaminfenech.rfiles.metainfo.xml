@@ -32,12 +32,13 @@
   </provides>
   <content_rating type="oars-1.1"/>
   <releases>
-    <release version="0.9.1" date="2026-11-14">
+    <release version="0.10.0" date="2026-11-14">
       <description>
         <p>
           Security fixes: opening a git repository can no longer run commands from it, and files
-          opened from archives are no longer readable by other users. Updates are signed, and
-          the wallpaper and font actions work.
+          opened from archives are no longer readable by other users. Updates are signed.
+          From rustyfiles 0.7.0: extract several archives at once or smartly, tar and split
+          archives, tag search with AND/OR/NOT, more ways to group, and a settings search box.
         </p>
       </description>
     </release>
