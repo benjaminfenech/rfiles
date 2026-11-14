@@ -89,7 +89,7 @@ suggest them, and `pacman -Qi rfiles-git` lists them as optional dependencies.
   - Drives, named by label or mount point. Drives that aren't mounted yet are listed and mount when you open them.
   - Network shares, under Network: every share in `/etc/fstab`, mounted or not, including `x-systemd.automount` ones.
   - Network locations from Dolphin and GTK bookmarks.
-  - File servers on your local network that announce themselves over mDNS (Samba with Avahi, most NAS boxes, Macs): SMB, SFTP, WebDAV, FTP and NFS. Needs `avahi-browse` (avahi). Windows PCs that only use WS-Discovery don't show up; type `\\\\pc` or `smb://pc` in the address bar instead.
+  - File servers on your local network that announce themselves over mDNS (Samba with Avahi, most NAS boxes, Macs): SMB, SFTP, WebDAV, FTP and NFS. Needs `avahi-browse` (avahi). Windows PCs that only use WS-Discovery don't show up; type `\\pc` or `smb://pc` in the address bar instead.
   - A folder tree, if you want one (Settings → Sidebar sections → Folder tree): pinned folders and drives get an arrow that opens them into their subfolders.
 - **Files:**
   - Copy, move, rename and delete, with conflict answers, pause, a speed limit and undo/redo.
