@@ -1343,6 +1343,10 @@
  "3f5c57bb": "Aplică întregului conținut",
  "2d9081dd": "Fișierele din interior își păstrează propria permisiune de execuție.",
  "b2e1978a": "Doar proprietarul le poate modifica.",
+ "51148674": "Selectează după model",
+ "777c4aba": "Deselectează",
+ "84f7d8e1": "Tastați un nume sau un model ca *.jpg",
+ "7c6364fa": "Nume ca *.jpg sau report-??.pdf; separați mai multe cu ;. Un cuvânt fără * sau ? se potrivește oriunde în nume.",
  "3e12805a": "Montează",
  "dff7dc1b": "Imaginea de disc nu a putut fi montată"
 }

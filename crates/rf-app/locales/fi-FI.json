@@ -1343,6 +1343,10 @@
  "3f5c57bb": "Käytä kaikkeen sisältöön",
  "2d9081dd": "Sisällä olevat tiedostot säilyttävät oman suoritusoikeutensa.",
  "b2e1978a": "Vain omistaja voi muuttaa näitä.",
+ "51148674": "Valitse kuviolla",
+ "777c4aba": "Poista valinta",
+ "84f7d8e1": "Kirjoita nimi tai kuvio, kuten *.jpg",
+ "7c6364fa": "Nimiä kuten *.jpg tai report-??.pdf; erota useampi merkillä ;. Sana ilman merkkiä * tai ? osuu mihin kohtaan nimeä tahansa.",
  "3e12805a": "Liitä",
  "dff7dc1b": "Levykuvaa ei voitu liittää"
 }
