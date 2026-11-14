@@ -592,7 +592,7 @@ impl Workspace {
             FolderEvent::ToOtherPane(kind, paths) => {
                 if let Some(other) = this.other_pane(emitter) {
                     let dest = match other.read(cx).location() {
-                        Location::Path(p) if !rf_linux::ftp::is_ftp(p) && rf_linux::network::server_root(p).is_none() => Some(p.clone()),
+                        Location::Path(p) if rf_linux::network::server_root(p).is_none() => Some(p.clone()),
                         _ => None,
                     };
                     if let Some(dest) = dest {
@@ -1101,7 +1101,7 @@ impl Workspace {
             ShelfEvent::Transfer(kind, items) => {
                 let dest = match self.active_tab().read(cx).location() {
                     Location::Path(p)
-                        if !rf_linux::ftp::is_ftp(p) && rf_linux::network::server_root(p).is_none() =>
+                        if rf_linux::network::server_root(p).is_none() =>
                     {
                         Some(p.clone())
                     }

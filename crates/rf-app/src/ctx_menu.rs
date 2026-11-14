@@ -176,7 +176,7 @@ impl FolderView {
             let sel = items.to_vec();
             v.push(Item::action(t!("New folder with selection"), icon(L::FolderInput), act(me, move |v, _, cx| v.folder_with_selection(sel.clone(), cx))));
         }
-        if single_dir && crate::archive_view::split(&target_dir).is_none() && !rf_linux::ftp::is_ftp(&target_dir) {
+        if single_dir && crate::archive_view::split(&target_dir).is_none() {
             let d = target_dir.clone();
             v.push(Item::action(t!("Show disk usage"), icon(L::ChartPie), act(me, move |_, _, cx| {
                 cx.emit(FolderEvent::OpenInNewTab(Location::DiskUsage(d.clone())))
@@ -219,34 +219,23 @@ impl FolderView {
             let d = target_dir.clone();
             v.push(Item::action(t!("Flatten folder"), icon(L::FolderTree), act(me, move |v, w, cx| v.flatten_folder(d.clone(), w, cx))));
         }
-        // type-specific actions (Files: rotate, set as background, install font, run as administrator)
+        // type-specific actions (Files: rotate, set as background, install font)
         if !items.is_empty() && items.iter().all(|p| rf_linux::rotate::can_rotate(p) && crate::archive_view::split(p).is_none()) {
             v.push(Item::action(t!("Rotate right"), icon(L::RotateCw), act(me, |v, w, cx| v.rotate_selection(true, w, cx))));
             v.push(Item::action(t!("Rotate left"), icon(L::RotateCcw), act(me, |v, w, cx| v.rotate_selection(false, w, cx))));
         }
-        if items.len() == 1 {
+        // only where the desktop's portal can set wallpapers (KDE Plasma, GNOME)
+        if items.len() == 1 && rf_linux::fileactions::is_image(&items[0]) && crate::archive_view::split(&items[0]).is_none() && rf_linux::fileactions::can_set_wallpaper() {
             let p = items[0].clone();
-            if rf_linux::fileactions::is_image(&p) {
-                v.push(Item::action(t!("Set as desktop background"), icon(L::Monitor), move |_, _| {
-                    let p = p.clone();
-                    std::thread::spawn(move || {
-                        if let Err(e) = rf_linux::fileactions::set_wallpaper(&p) {
-                            log::warn!("wallpaper: {e:#}");
-                        }
-                    });
-                }));
-            } else if rf_linux::fileactions::is_runnable(&p) {
-                v.push(Item::action(t!("Run as administrator"), icon(L::ShieldCheck), move |_, _| {
-                    let p = p.clone();
-                    rf_linux::sta::run(move |owner| {
-                        if let Err(e) = rf_linux::ctxmenu::invoke_verb(owner, &ShellTarget::One(p), "runas", cursor()) {
-                            log::warn!("runas: {e:#}");
-                        }
-                    });
-                }));
-            }
+            v.push(Item::action(t!("Set as desktop background"), icon(L::Monitor), move |_, cx| {
+                let p = p.clone();
+                crate::status_center::start_with(cx, t!("Set as desktop background").to_string(), move |_| {
+                    rf_linux::fileactions::set_wallpaper(&p)?;
+                    Ok(true)
+                }, None);
+            }));
         }
-        if !items.is_empty() && items.iter().all(|p| rf_linux::fileactions::is_font(p)) {
+        if !items.is_empty() && items.iter().all(|p| rf_linux::fileactions::is_font(p) && crate::archive_view::split(p).is_none()) {
             let fonts = items.to_vec();
             v.push(Item::action(t!("Install font"), icon(L::Type), move |w, cx| {
                 let fonts = fonts.clone();
@@ -344,7 +333,7 @@ impl FolderView {
         let d = dir.to_path_buf();
         v.push(Item::action(t!("Pin to sidebar"), icon(L::Pin), act(me, move |v, _, cx| v.pin(d.clone(), cx))));
         v.push(Item::action(t!("Copy path"), icon(L::ClipboardCopy), act(me, |v, _, cx| v.copy_path(cx))));
-        if !self.is_search() && !crate::archive_view::is_browsable_path(dir) && !rf_linux::ftp::is_ftp(dir) {
+        if !self.is_search() && !crate::archive_view::is_browsable_path(dir) {
             let d = dir.to_path_buf();
             v.push(Item::action(t!("Show disk usage"), icon(L::ChartPie), act(me, move |_, _, cx| {
                 cx.emit(FolderEvent::OpenInNewTab(Location::DiskUsage(d.clone())))

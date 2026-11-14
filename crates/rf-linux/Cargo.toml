@@ -34,7 +34,7 @@ md-5.workspace = true
 # thumbnail cache files carry their source in PNG text chunks
 png = "0.18"
 # the desktop portal (app chooser); the same features GPUI already builds
-ashpd = { version = "0.13", default-features = false, features = ["async-io", "open_uri", "file_chooser", "global_shortcuts"] }
+ashpd = { version = "0.13", default-features = false, features = ["async-io", "open_uri", "file_chooser", "global_shortcuts", "wallpaper"] }
 # serves org.freedesktop.FileManager1 ("Show in folder"); already built for ashpd
 zbus = { version = "5", default-features = false, features = ["async-io", "blocking-api"] }
 # the tray icon (StatusNotifierItem + its D-Bus menu), on the same zbus

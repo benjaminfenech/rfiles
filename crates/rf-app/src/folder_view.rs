@@ -977,9 +977,6 @@ impl FolderView {
             return;
         }
         let Some(path) = self.location().path().map(|p| p.to_path_buf()) else { return };
-        if rf_linux::ftp::is_ftp(&path) {
-            return; // no change notifications over FTP; F5 refreshes
-        }
         let (tx, mut rx) = mpsc::unbounded::<Option<Vec<(String, Option<Entry>)>>>();
         // a plain folder is patched with what changed; inside an archive it is listed again
         let patchable = crate::archive_view::split(&path).is_none();
@@ -1127,20 +1124,7 @@ impl FolderView {
         let generation = self.generation;
         let cancel = self.cancel.clone();
         let (tx, mut rx) = mpsc::unbounded::<Msg>();
-        if rf_linux::ftp::is_ftp(&path) {
-            let url = path.to_string_lossy().into_owned();
-            std::thread::Builder::new()
-                .name("rf-ftp".into())
-                .spawn(move || {
-                    let r = rf_linux::ftp::list(&url).map(|es| {
-                        let n = es.len();
-                        let _ = tx.unbounded_send(Msg::Batch(es));
-                        n
-                    });
-                    let _ = tx.unbounded_send(Msg::Done(r.map_err(|e| e.to_string())));
-                })
-                .ok();
-        } else if let Some(server) = rf_linux::network::server_root(&path) {
+        if let Some(server) = rf_linux::network::server_root(&path) {
             std::thread::Builder::new()
                 .name("rf-shares".into())
                 .spawn(move || {
@@ -3783,25 +3767,12 @@ fn empty_state(p: &Palette, icon: L, title: String, sub: &'static str) -> Div {
 const RENAME_INSET: f32 = 5.;
 
 pub(crate) fn open_in_background(path: PathBuf, cx: &mut App) {
-    if !rf_linux::ftp::is_ftp(&path) && !path.exists() && crate::archive_view::split(&path).is_some() {
+    if !path.exists() && crate::archive_view::split(&path).is_some() {
         // an item inside an archive: extract just it (Status Center), open the real file
         crate::archive_view::open_items(cx, vec![path]);
         return;
     }
     std::thread::spawn(move || {
-        // FTP: download to a temp copy, then open that
-        let path = if rf_linux::ftp::is_ftp(&path) {
-            let name = path.file_name().map(|n| n.to_os_string()).unwrap_or_default();
-            let Ok(dir) = rf_linux::private_tmp::dir("ftp") else { return };
-            let local = dir.join(name);
-            if let Err(e) = rf_linux::ftp::download(&path.to_string_lossy(), &local) {
-                log::warn!("ftp download {path:?}: {e}");
-                return;
-            }
-            local
-        } else {
-            path
-        };
         if let Err(e) = rf_linux::shell::open(&path) {
             log::warn!("open {path:?}: {e}");
         }

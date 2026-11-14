@@ -238,25 +238,6 @@ impl FolderView {
         rf_linux::sta::run(move |owner| {
             let _ = tx.send(rf_linux::clipboard::get_files(owner).map_err(|e| log::warn!("paste: {e:#}")).ok().flatten());
         });
-        if rf_linux::ftp::is_ftp(&dir) {
-            // FTP: upload the clipboard files (folders are skipped), then refresh
-            let url = dir.to_string_lossy().into_owned();
-            cx.spawn(async move |this, cx| {
-                if let Ok(Some((paths, _))) = rx.await {
-                    let work = cx.background_spawn(async move {
-                        for p in paths.iter().filter(|p| p.is_file()) {
-                            if let Err(e) = rf_linux::ftp::upload(p, &url) {
-                                log::warn!("ftp upload {p:?}: {e}");
-                            }
-                        }
-                    });
-                    work.await;
-                    let _ = this.update(cx, |v, cx| v.refresh(cx));
-                }
-            })
-            .detach();
-            return;
-        }
         cx.spawn(async move |this, cx| {
             if let Ok(Some((paths, kind))) = rx.await {
                 let _ = cx.update(|cx| {
