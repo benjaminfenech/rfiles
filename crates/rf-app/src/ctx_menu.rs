@@ -278,19 +278,26 @@ impl FolderView {
                 .collect(),
             ));
         }
-        if mp.compress && items.len() == 1 && rf_archive::is_supported(&items[0]) {
-            let (a, b) = (items[0].clone(), items[0].clone());
+        if mp.compress && !items.is_empty() && items.iter().all(|p| rf_archive::is_supported(p) && crate::archive_view::split_inside(p).is_none()) {
+            use crate::status_center::{ExtractTo, extract_pick, extract_to};
+            let act = |label: String, ic: L, to: ExtractTo| {
+                let list = items.to_vec();
+                Item::action(label, icon(ic), move |_, cx| extract_to(cx, list.clone(), to.clone()))
+            };
+            let named = if items.len() == 1 {
+                format!("{} {}/", t!("Extract to folder:"), crate::ops::archive_stem(&items[0]))
+            } else {
+                t!("Extract each to its own folder").to_string()
+            };
+            let pick = items.to_vec();
             v.push(Item::sub(
                 t!("Extract"),
                 icon(L::FolderOutput),
                 vec![
-                    Item::action(t!("Extract here"), icon(L::FolderDown), move |_, cx| {
-                        let dest = a.parent().map(|p| p.to_path_buf()).unwrap_or_default();
-                        crate::status_center::extract(cx, a.clone(), Some(dest));
-                    }),
-                    Item::action(format!("{} {}\\", t!("Extract to folder:"), crate::ops::archive_stem(&b)), icon(L::FolderInput), move |_, cx| {
-                        crate::status_center::extract(cx, b.clone(), None)
-                    }),
+                    act(t!("Extract here").to_string(), L::FolderDown, ExtractTo::Here),
+                    act(t!("Extract smartly").to_string(), L::Zap, ExtractTo::Smart),
+                    act(named, L::FolderInput, ExtractTo::Named),
+                    Item::action(t!("Extract to…"), icon(L::FolderSearch), move |_, cx| extract_pick(cx, pick.clone())),
                 ],
             ));
         }
