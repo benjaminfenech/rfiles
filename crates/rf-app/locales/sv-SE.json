@@ -1383,5 +1383,8 @@
  "f6635c0b": "Resursnamn",
  "a5972166": "Andra kan lägga till, ändra och ta bort filer",
  "5ccb1948": "Tillåt gäster (utan lösenord)",
- "6a494fba": "Översikt"
+ "6a494fba": "Översikt",
+ "1463a002": "Öppna i Diskar",
+ "d08848e1": "Öppna i Partitionshanteraren",
+ "993df11d": "Öppna i GParted"
 }
