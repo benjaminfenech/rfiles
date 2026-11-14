@@ -1,24 +1,25 @@
-Security fixes and signed updates, plus archive, grouping, tag-search and settings-search features from rustyfiles 0.7.0.
+Permissions, links, templates, phones and cameras, network servers, folder sharing and a folder tree: the features other Linux file managers have that rfiles didn't.
 
-## What's new since 0.9.0
+## What's new since 0.10.0
 
-- **Browsing a git repository can no longer run commands from it.** rfiles reads git status and history by itself when you open a folder. A repository's own settings could make that run a program (an fsmonitor, a filter, a signature checker), so a downloaded or extracted folder could run code just by being opened. rfiles now switches those off for its own reads; your commits, pulls and pushes work as before, hooks and Git LFS included.
-- **Files opened from archives stay private.** They were extracted into a shared folder in `/tmp` that other users on the computer could read, including files from password-protected archives. They now go into `~/.cache/rfiles/tmp`, readable only by you, and the old folder is removed. Thumbnails and other temporary files moved there too.
-- **Signed updates.** Releases now come with a signed list of checksums, and the updater installs a package only if that signature matches the key built into rfiles. This applies to updates after this one: 0.9.0 installs 0.10.0 the old way.
-- **Create archive** offers tar and tar.gz, can **split the archive into parts** (25 MB to 4 GB, named `.001`, `.002`… as 7-Zip does), and sets the 7z dictionary size. (From rustyfiles 0.7.0.)
-- **Tag search with AND / OR / NOT:** `tag:red AND work`, `tag:red OR blue NOT done`. (From rustyfiles 0.7.0.)
-- **More ways to group:** date created, the modified date's year, month or day, tag, and folder (in search results). Click a group's header in the details view to fold it. (From rustyfiles 0.7.0.)
-- **Settings has a search box:** type a few words to find a setting on any page. (From rustyfiles 0.7.0.)
-- **Close all tabs**, **split the pane side by side or top and bottom**, close the active pane (Ctrl+Shift+W), open the selected folders in new windows (Ctrl+Alt+Enter), and **delete a git branch** from the branch menu. Settings → Keyboard shortcuts marks a shortcut two commands share. (From rustyfiles 0.7.0.)
-- **Extract several archives at once**, and two new ways: **Extract smartly** (an archive that already holds one folder isn't wrapped in a second one) and **Extract to…** (a folder you pick). Settings → Files and folders → "Open the folder after extracting" opens the result in a new tab. (From rustyfiles 0.7.0.)
-- **Set as desktop background** works on desktops that support it (KDE Plasma, GNOME) and is hidden elsewhere. **Install font** copies the font to `~/.local/share/fonts`.
-- **"Run as administrator"**, a leftover from Windows, is gone from the menu.
-- **Deleting a ZIP (or other archive) file works.** It failed with "Nothing to delete", taking the file for an item inside the archive. (A fix from rustyfiles 0.6.5.)
-- **Long names in the grid view end in "…"** instead of being cut at both ends of the tile. (A fix from rustyfiles 0.7.0.)
-- The git commit column tells apart files whose names differ only in case (`Makefile` and `makefile`).
-- Waiting for helper programs (thumbnailers, the update installer) no longer wakes the computer up every few milliseconds.
+- **Permissions in Properties.** Change the owner group and the read, write and run permissions for owner, group and others, or tick "Allow running as a program". It works on several items at once, and "Apply to everything inside" goes through a folder's contents (files keep their run permission as it was).
+- **Owner, group and permissions columns** in the details view, sortable like the others.
+- **Links.** "Create link" in the right-click menu, "Paste as link", and Ctrl+Shift while dropping. Links get a small arrow badge, and undo removes them.
+- **New file from a template.** Files and folders in `~/Templates` show up in the New menu.
+- **Select by pattern** (Ctrl+S): type `*.jpg` or `report*` to select the matching items.
+- **Paste an image or text as a file.** With a copied image or text on the clipboard, Paste writes "Pasted image.png" or "Pasted text.txt".
+- **Mount a disk image.** Right-click an ISO or IMG and choose Mount; it shows up as a drive (opening it as an archive still works too).
+- **Search filters:** `size:>10M`, `modified:7d`, `created:2024`, `type:image,video`, alone or with a name.
+- **Your actions in the right-click menu.** Dolphin service menus and Nautilus scripts already on your system appear under Actions, matched to the file type. Settings → General → Your actions adds and edits your own; they're saved as Dolphin service menus, so Dolphin shows them too.
+- **Folder tree.** Settings → Sidebar sections → Folder tree gives pinned folders, drives and Home an arrow that opens them into their subfolders.
+- **Phones, tablets and cameras** plugged in over USB show under Drives and open as folders. This needs gvfs-mtp (phones), gvfs-gphoto2 (cameras) or gvfs-afc (iPhone, iPad); without gvfs, `jmtpfs`, `gphotofs` or `ifuse` work too.
+- **File servers on your network** that announce themselves (Samba with Avahi, most NAS boxes, Macs) show under Network: SMB, SFTP, WebDAV, FTP and NFS. Needs Avahi.
+- **Share a folder on the network** from its Properties → Sharing: a share name, read-only or writable, guests or not, and a Copy button for its `smb://` address. Uses Samba's user shares, so Samba needs to be installed with user shares turned on.
+- **Open in Disks.** Right-click a drive to open it in GNOME Disks, KDE Partition Manager or GParted, whichever is installed, to format or partition it.
+- **Overview and Home.** The Windows-style start page is now called Overview, and a new Home entry in the sidebar opens your home folder. Alt+Home goes to your home folder, as in Dolphin and Nautilus.
+- Fixed flaky tests in the file watcher, journal and copy-resume code.
 
-**Updating:** from 0.8.0 or newer, Settings → About → Install (or the status bar's "rfiles 0.10.0 available"). From 0.7.0 or older, install by hand once as below.
+**Updating:** from 0.8.0 or newer, Settings → About → Install (or the status bar's "rfiles 0.11.0 available"). From 0.7.0 or older, install by hand once as below.
 
 ## Install
 
