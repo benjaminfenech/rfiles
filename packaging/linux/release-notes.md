@@ -7,6 +7,8 @@ Security fixes, signed updates, and the wallpaper and font actions now work.
 - **Signed updates.** Releases now come with a signed list of checksums, and the updater installs a package only if that signature matches the key built into rfiles. This applies to updates after this one: 0.9.0 installs 0.9.1 the old way.
 - **Set as desktop background** works on desktops that support it (KDE Plasma, GNOME) and is hidden elsewhere. **Install font** copies the font to `~/.local/share/fonts`.
 - **"Run as administrator"**, a leftover from Windows, is gone from the menu.
+- **Deleting a ZIP (or other archive) file works.** It failed with "Nothing to delete", taking the file for an item inside the archive. (A fix from rustyfiles 0.6.5.)
+- **Long names in the grid view end in "…"** instead of being cut at both ends of the tile. (A fix from rustyfiles 0.7.0.)
 - The git commit column tells apart files whose names differ only in case (`Makefile` and `makefile`).
 - Waiting for helper programs (thumbnailers, the update installer) no longer wakes the computer up every few milliseconds.
 
