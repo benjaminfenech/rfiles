@@ -1293,5 +1293,12 @@
  "6d1f5156": "Op te slaan bestanden",
  "ac00cfc8": "Vereist het deb-, rpm- of Arch-pakket (dat installeert het bestand rfiles.portal van het bureaubladportaal); de Flatpak kan geen portaalbackend toevoegen.",
  "c01651ec": "Apps die het bureaubladportaal om een bestandsdialoog vragen (Firefox, Chromium, GTK-, Qt- en Electron-apps) krijgen rfiles. Uitzetten brengt de oude dialoog terug.",
- "de824b35": "rfiles gebruiken voor Openen- en Opslaan-dialogen"
+ "de824b35": "rfiles gebruiken voor Openen- en Opslaan-dialogen",
+ "dd2f1f2e": "Branch verwijderen",
+ "8c0c7f6a": "is niet samengevoegd met een andere branch: als de branch wordt verwijderd, zijn de commits ervan niet meer via een branch bereikbaar.",
+ "341d392d": "wordt verwijderd als lokale branch. De branch op de remote blijft ongewijzigd.",
+ "f34368df": "Toch verwijderen",
+ "a46465d0": "Branch verwijderen?",
+ "56d50e5f": "Dezelfde sneltoets:",
+ "cc8ffea4": "Alle tabbladen sluiten"
 }

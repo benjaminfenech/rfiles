@@ -1293,5 +1293,12 @@
  "6d1f5156": "Kaydedilecek dosyalar",
  "ac00cfc8": "deb, rpm veya Arch paketi gerekir (masaüstü portalının rfiles.portal dosyasını kurar); Flatpak portal arka ucu ekleyemez.",
  "c01651ec": "Masaüstü portalından dosya penceresi isteyen uygulamalar (Firefox, Chromium, GTK, Qt ve Electron uygulamaları) rfiles'ı görür. Kapatınca eski pencere geri gelir.",
- "de824b35": "Aç ve Kaydet pencereleri için rfiles'ı kullan"
+ "de824b35": "Aç ve Kaydet pencereleri için rfiles'ı kullan",
+ "dd2f1f2e": "Dal sil",
+ "8c0c7f6a": "başka bir dala birleştirilmemiş: silinirse bu daldaki commit'lere artık bir daldan ulaşılamaz.",
+ "341d392d": "yerel dalı silinecek. Uzak depodaki dal olduğu gibi kalır.",
+ "f34368df": "Yine de sil",
+ "a46465d0": "Dal silinsin mi?",
+ "56d50e5f": "Aynı kısayol:",
+ "cc8ffea4": "Tüm sekmeleri kapat"
 }

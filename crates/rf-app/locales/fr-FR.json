@@ -1293,5 +1293,12 @@
  "6d1f5156": "Fichiers à enregistrer",
  "ac00cfc8": "Nécessite le paquet deb, rpm ou Arch (il installe le fichier rfiles.portal du portail du bureau) ; le Flatpak ne peut pas ajouter de backend de portail.",
  "c01651ec": "Les applications qui demandent une boîte de dialogue de fichiers au portail du bureau (Firefox, Chromium, applications GTK, Qt et Electron) obtiennent rfiles. Le désactiver rétablit l'ancienne boîte de dialogue.",
- "de824b35": "Utiliser rfiles pour les boîtes de dialogue Ouvrir et Enregistrer"
+ "de824b35": "Utiliser rfiles pour les boîtes de dialogue Ouvrir et Enregistrer",
+ "dd2f1f2e": "Supprimer la branche",
+ "8c0c7f6a": "n'est fusionnée dans aucune autre branche : si elle est supprimée, ses commits ne seront plus accessibles depuis une branche.",
+ "341d392d": "sera supprimée en tant que branche locale. La branche sur le dépôt distant reste inchangée.",
+ "f34368df": "Supprimer quand même",
+ "a46465d0": "Supprimer la branche ?",
+ "56d50e5f": "Même raccourci :",
+ "cc8ffea4": "Fermer tous les onglets"
 }

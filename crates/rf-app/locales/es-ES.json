@@ -1293,5 +1293,12 @@
  "6d1f5156": "Archivos para guardar",
  "ac00cfc8": "Necesita el paquete deb, rpm o de Arch (instala el archivo rfiles.portal del portal de escritorio); el Flatpak no puede añadir un backend de portal.",
  "c01651ec": "Las aplicaciones que piden un cuadro de diálogo de archivos al portal de escritorio (Firefox, Chromium y aplicaciones GTK, Qt y Electron) obtienen rfiles. Al desactivarlo vuelve el cuadro anterior.",
- "de824b35": "Usar rfiles para los cuadros de diálogo Abrir y Guardar"
+ "de824b35": "Usar rfiles para los cuadros de diálogo Abrir y Guardar",
+ "dd2f1f2e": "Eliminar rama",
+ "8c0c7f6a": "no está combinada con otra rama: si se elimina, sus commits ya no serán accesibles desde ninguna rama.",
+ "341d392d": "se eliminará como rama local. La rama del remoto se queda como está.",
+ "f34368df": "Eliminar de todos modos",
+ "a46465d0": "¿Eliminar la rama?",
+ "56d50e5f": "Mismo método abreviado:",
+ "cc8ffea4": "Cerrar todas las pestañas"
 }

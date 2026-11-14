@@ -1293,5 +1293,12 @@
  "6d1f5156": "Mentendő fájlok",
  "ac00cfc8": "A deb, rpm vagy Arch csomag szükséges (ez telepíti az asztali portál rfiles.portal fájlját); a Flatpak nem tud portál-háttérprogramot hozzáadni.",
  "c01651ec": "Azok az alkalmazások, amelyek fájlpárbeszédet kérnek az asztali portáltól (Firefox, Chromium, GTK-, Qt- és Electron-alkalmazások), az rfiles-t kapják. Kikapcsolva visszatér a korábbi párbeszédablak.",
- "de824b35": "Az rfiles használata a Megnyitás és Mentés párbeszédablakokhoz"
+ "de824b35": "Az rfiles használata a Megnyitás és Mentés párbeszédablakokhoz",
+ "dd2f1f2e": "Ág törlése",
+ "8c0c7f6a": "nincs egyesítve másik ágba: ha törlődik, a commitjai már nem érhetők el egyetlen ágból sem.",
+ "341d392d": "helyi ágként törlődik. A távoli ág változatlan marad.",
+ "f34368df": "Törlés mindenképp",
+ "a46465d0": "Törli az ágat?",
+ "56d50e5f": "Azonos billentyűparancs:",
+ "cc8ffea4": "Összes lap bezárása"
 }

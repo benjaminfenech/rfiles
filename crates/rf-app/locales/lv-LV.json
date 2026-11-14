@@ -1293,5 +1293,12 @@
  "6d1f5156": "Saglabājamie faili",
  "ac00cfc8": "Nepieciešama deb, rpm vai Arch pakotne (tā instalē darbvirsmas portāla failu rfiles.portal); Flatpak nevar pievienot portāla aizmuguri.",
  "c01651ec": "Lietotnes, kas darbvirsmas portālam prasa failu dialogu (Firefox, Chromium, GTK, Qt un Electron lietotnes), saņem rfiles. Izslēdzot tiek atgriezts iepriekšējais dialogs.",
- "de824b35": "Izmantot rfiles atvēršanas un saglabāšanas dialogiem"
+ "de824b35": "Izmantot rfiles atvēršanas un saglabāšanas dialogiem",
+ "dd2f1f2e": "Dzēst zaru",
+ "8c0c7f6a": "nav sapludināts ar citu zaru: ja to izdzēsīs, tā iesūtījumus vairs nevarēs sasniegt no neviena zara.",
+ "341d392d": "tiks izdzēsts kā lokālais zars. Zars attālajā krātuvē paliek nemainīgs.",
+ "f34368df": "Tomēr dzēst",
+ "a46465d0": "Dzēst zaru?",
+ "56d50e5f": "Tas pats īsinājumtaustiņš:",
+ "cc8ffea4": "Aizvērt visas cilnes"
 }

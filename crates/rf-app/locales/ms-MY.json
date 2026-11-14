@@ -1293,5 +1293,12 @@
  "6d1f5156": "Fail untuk disimpan",
  "ac00cfc8": "Memerlukan pakej deb, rpm atau Arch (ia memasang rfiles.portal portal desktop); Flatpak tidak boleh menambah bahagian belakang portal.",
  "c01651ec": "Apl yang meminta dialog fail daripada portal desktop (Firefox, Chromium, apl GTK, Qt dan Electron) mendapat rfiles. Mematikannya mengembalikan dialog sebelumnya.",
- "de824b35": "Gunakan rfiles untuk dialog Buka dan Simpan"
+ "de824b35": "Gunakan rfiles untuk dialog Buka dan Simpan",
+ "dd2f1f2e": "Padam cabang",
+ "8c0c7f6a": "tidak digabungkan ke dalam cabang lain: jika dipadam, komitnya tidak lagi boleh dicapai daripada mana-mana cabang.",
+ "341d392d": "akan dipadam sebagai cabang tempatan. Cabang pada remote kekal seperti sedia ada.",
+ "f34368df": "Padam juga",
+ "a46465d0": "Padam cabang?",
+ "56d50e5f": "Pintasan yang sama:",
+ "cc8ffea4": "Tutup semua tab"
 }

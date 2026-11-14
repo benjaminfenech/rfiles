@@ -1293,5 +1293,12 @@
  "6d1f5156": "Ficheiros a guardar",
  "ac00cfc8": "Precisa do pacote deb, rpm ou do Arch (instala o ficheiro rfiles.portal do portal do ambiente de trabalho); o Flatpak não pode adicionar um backend de portal.",
  "c01651ec": "As aplicações que pedem uma caixa de diálogo de ficheiros ao portal do ambiente de trabalho (Firefox, Chromium, aplicações GTK, Qt e Electron) recebem o rfiles. Desativar repõe a caixa anterior.",
- "de824b35": "Usar o rfiles nas caixas de diálogo Abrir e Guardar"
+ "de824b35": "Usar o rfiles nas caixas de diálogo Abrir e Guardar",
+ "dd2f1f2e": "Eliminar ramo",
+ "8c0c7f6a": "não está integrado noutro ramo: se for eliminado, os seus commits deixam de ser acessíveis a partir de um ramo.",
+ "341d392d": "será eliminado como ramo local. O ramo no remoto permanece como está.",
+ "f34368df": "Eliminar mesmo assim",
+ "a46465d0": "Eliminar o ramo?",
+ "56d50e5f": "Mesmo atalho:",
+ "cc8ffea4": "Fechar todos os separadores"
 }

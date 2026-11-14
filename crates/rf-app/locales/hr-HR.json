@@ -1293,5 +1293,12 @@
  "6d1f5156": "Datoteke za spremanje",
  "ac00cfc8": "Potreban je paket deb, rpm ili Arch (instalira datoteku rfiles.portal portala radne površine); Flatpak ne može dodati pozadinski program portala.",
  "c01651ec": "Aplikacije koje od portala radne površine traže dijalog za datoteke (Firefox, Chromium, aplikacije GTK, Qt i Electron) dobivaju rfiles. Isključivanje vraća prethodni dijalog.",
- "de824b35": "Koristi rfiles za dijaloge Otvori i Spremi"
+ "de824b35": "Koristi rfiles za dijaloge Otvori i Spremi",
+ "dd2f1f2e": "Izbriši granu",
+ "8c0c7f6a": "nije spojena s drugom granom: ako se izbriše, njezinim se commitovima više neće moći pristupiti iz nijedne grane.",
+ "341d392d": "izbrisat će se kao lokalna grana. Grana na udaljenom poslužitelju ostaje nepromijenjena.",
+ "f34368df": "Ipak izbriši",
+ "a46465d0": "Izbrisati granu?",
+ "56d50e5f": "Isti prečac:",
+ "cc8ffea4": "Zatvori sve kartice"
 }

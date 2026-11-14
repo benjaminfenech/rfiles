@@ -1293,5 +1293,12 @@
  "6d1f5156": "Mga file na ise-save",
  "ac00cfc8": "Kailangan ang deb, rpm o Arch package (ini-install nito ang rfiles.portal ng desktop portal); hindi makapagdagdag ng portal backend ang Flatpak.",
  "c01651ec": "Ang mga app na humihingi ng file dialog sa desktop portal (Firefox, Chromium, mga GTK, Qt at Electron app) ay makakakuha ng rfiles. Ang pag-off nito ay ibinabalik ang dating dialog.",
- "de824b35": "Gamitin ang rfiles para sa mga Open at Save dialog"
+ "de824b35": "Gamitin ang rfiles para sa mga Open at Save dialog",
+ "dd2f1f2e": "Burahin ang branch",
+ "8c0c7f6a": "ay hindi pa na-merge sa ibang branch: kapag binura ito, hindi na maaabot ang mga commit nito mula sa anumang branch.",
+ "341d392d": "ay buburahin bilang lokal na branch. Mananatili ang branch sa remote.",
+ "f34368df": "Burahin pa rin",
+ "a46465d0": "Burahin ang branch?",
+ "56d50e5f": "Parehong shortcut:",
+ "cc8ffea4": "Isara ang lahat ng tab"
 }

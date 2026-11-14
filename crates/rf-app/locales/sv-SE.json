@@ -1293,5 +1293,12 @@
  "6d1f5156": "Filer att spara",
  "ac00cfc8": "Kräver deb-, rpm- eller Arch-paketet (det installerar skrivbordsportalens rfiles.portal); Flatpak kan inte lägga till en portalbakände.",
  "c01651ec": "Appar som ber skrivbordsportalen om en fildialog (Firefox, Chromium, GTK-, Qt- och Electron-appar) får rfiles. Att stänga av det ger tillbaka den tidigare dialogen.",
- "de824b35": "Använd rfiles för dialogrutorna Öppna och Spara"
+ "de824b35": "Använd rfiles för dialogrutorna Öppna och Spara",
+ "dd2f1f2e": "Ta bort gren",
+ "8c0c7f6a": "har inte slagits samman med någon annan gren: om den tas bort går dess incheckningar inte längre att nå från en gren.",
+ "341d392d": "tas bort som lokal gren. Grenen på fjärrservern berörs inte.",
+ "f34368df": "Ta bort ändå",
+ "a46465d0": "Ta bort grenen?",
+ "56d50e5f": "Samma kortkommando:",
+ "cc8ffea4": "Stäng alla flikar"
 }

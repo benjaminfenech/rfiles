@@ -1293,5 +1293,12 @@
  "6d1f5156": "File da salvare",
  "ac00cfc8": "Richiede il pacchetto deb, rpm o Arch (installa il file rfiles.portal del portale del desktop); il Flatpak non può aggiungere un backend del portale.",
  "c01651ec": "Le app che chiedono una finestra dei file al portale del desktop (Firefox, Chromium, app GTK, Qt ed Electron) ottengono rfiles. Disattivandolo torna la finestra precedente.",
- "de824b35": "Usa rfiles per le finestre Apri e Salva"
+ "de824b35": "Usa rfiles per le finestre Apri e Salva",
+ "dd2f1f2e": "Elimina ramo",
+ "8c0c7f6a": "non è unito a un altro ramo: se viene eliminato, i suoi commit non saranno più raggiungibili da alcun ramo.",
+ "341d392d": "verrà eliminato come ramo locale. Il ramo sul server remoto resta invariato.",
+ "f34368df": "Elimina comunque",
+ "a46465d0": "Eliminare il ramo?",
+ "56d50e5f": "Stessa scorciatoia:",
+ "cc8ffea4": "Chiudi tutte le schede"
 }

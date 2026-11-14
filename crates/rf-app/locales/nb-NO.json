@@ -1293,5 +1293,12 @@
  "6d1f5156": "Filer som skal lagres",
  "ac00cfc8": "Krever deb-, rpm- eller Arch-pakken (den installerer skrivebordsportalens rfiles.portal); Flatpak kan ikke legge til en portalbakende.",
  "c01651ec": "Apper som ber skrivebordsportalen om en fildialog (Firefox, Chromium, GTK-, Qt- og Electron-apper), får rfiles. Slås det av, kommer den forrige dialogen tilbake.",
- "de824b35": "Bruk rfiles til dialogene Åpne og Lagre"
+ "de824b35": "Bruk rfiles til dialogene Åpne og Lagre",
+ "dd2f1f2e": "Slett gren",
+ "8c0c7f6a": "er ikke slått sammen med en annen gren. Hvis den slettes, kan ikke commitene lenger nås fra en gren.",
+ "341d392d": "slettes som lokal gren. Grenen på fjernlageret beholdes.",
+ "f34368df": "Slett likevel",
+ "a46465d0": "Slette grenen?",
+ "56d50e5f": "Samme snarvei:",
+ "cc8ffea4": "Lukk alle faner"
 }

@@ -1293,5 +1293,12 @@
  "6d1f5156": "Soubory k uložení",
  "ac00cfc8": "Vyžaduje balíček deb, rpm nebo Arch (instaluje soubor rfiles.portal portálu plochy); Flatpak nemůže přidat backend portálu.",
  "c01651ec": "Aplikace, které si u portálu plochy žádají dialog pro soubory (Firefox, Chromium, aplikace GTK, Qt a Electron), dostanou rfiles. Vypnutím se vrátí původní dialog.",
- "de824b35": "Používat rfiles pro dialogy Otevřít a Uložit"
+ "de824b35": "Používat rfiles pro dialogy Otevřít a Uložit",
+ "dd2f1f2e": "Smazat větev",
+ "8c0c7f6a": "není sloučena do jiné větve: pokud se smaže, jeho commity už nebudou dostupné z žádné větve.",
+ "341d392d": "bude smazána jako místní větev. Větev na vzdáleném serveru zůstane beze změny.",
+ "f34368df": "Přesto smazat",
+ "a46465d0": "Smazat větev?",
+ "56d50e5f": "Stejná klávesová zkratka:",
+ "cc8ffea4": "Zavřít všechny karty"
 }

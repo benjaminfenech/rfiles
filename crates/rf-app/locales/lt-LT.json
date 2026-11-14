@@ -1293,5 +1293,12 @@
  "6d1f5156": "Įrašytini failai",
  "ac00cfc8": "Reikia deb, rpm arba Arch paketo (jis įdiegia darbalaukio portalo failą rfiles.portal); „Flatpak“ negali pridėti portalo posistemės.",
  "c01651ec": "Programos, kurios prašo darbalaukio portalo failų dialogo („Firefox“, „Chromium“, GTK, Qt ir „Electron“ programos), gauna rfiles. Išjungus grąžinamas ankstesnis dialogas.",
- "de824b35": "Naudoti rfiles atidarymo ir įrašymo dialogams"
+ "de824b35": "Naudoti rfiles atidarymo ir įrašymo dialogams",
+ "dd2f1f2e": "Ištrinti šaką",
+ "8c0c7f6a": "nėra sujungta su kita šaka: ją ištrynus, jos įrašų nebebus galima pasiekti iš jokios šakos.",
+ "341d392d": "bus ištrinta kaip vietinė šaka. Šaka nuotolinėje saugykloje išliks.",
+ "f34368df": "Vis tiek ištrinti",
+ "a46465d0": "Ištrinti šaką?",
+ "56d50e5f": "Tas pats spartusis klavišas:",
+ "cc8ffea4": "Uždaryti visus skirtukus"
 }

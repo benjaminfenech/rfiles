@@ -1293,5 +1293,12 @@
  "6d1f5156": "Các tệp cần lưu",
  "ac00cfc8": "Cần gói deb, rpm hoặc Arch (gói này cài tệp rfiles.portal của cổng thông tin máy tính); Flatpak không thể thêm phần phụ trợ cổng.",
  "c01651ec": "Ứng dụng xin hộp thoại tệp từ cổng thông tin máy tính (Firefox, Chromium, ứng dụng GTK, Qt và Electron) sẽ nhận rfiles. Tắt đi sẽ trả lại hộp thoại trước đó.",
- "de824b35": "Dùng rfiles cho hộp thoại Mở và Lưu"
+ "de824b35": "Dùng rfiles cho hộp thoại Mở và Lưu",
+ "dd2f1f2e": "Xóa nhánh",
+ "8c0c7f6a": "chưa được hợp nhất vào nhánh khác: nếu xóa, sẽ không thể truy cập các commit của nó từ một nhánh nào nữa.",
+ "341d392d": "sẽ bị xóa khỏi nhánh cục bộ. Nhánh trên máy chủ từ xa vẫn giữ nguyên.",
+ "f34368df": "Vẫn xóa",
+ "a46465d0": "Xóa nhánh này?",
+ "56d50e5f": "Cùng phím tắt:",
+ "cc8ffea4": "Đóng tất cả tab"
 }

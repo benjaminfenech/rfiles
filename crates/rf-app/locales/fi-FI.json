@@ -1293,5 +1293,12 @@
  "6d1f5156": "Tallennettavat tiedostot",
  "ac00cfc8": "Vaatii deb-, rpm- tai Arch-paketin (se asentaa työpöytäportaalin rfiles.portal-tiedoston); Flatpak ei voi lisätä portaalin taustaosaa.",
  "c01651ec": "Sovellukset, jotka pyytävät työpöytäportaalilta tiedostoikkunaa (Firefox, Chromium, GTK-, Qt- ja Electron-sovellukset), saavat rfilesin. Poistaminen käytöstä palauttaa aiemman ikkunan.",
- "de824b35": "Käytä rfilesiä Avaa- ja Tallenna-ikkunoissa"
+ "de824b35": "Käytä rfilesiä Avaa- ja Tallenna-ikkunoissa",
+ "dd2f1f2e": "Poista haara",
+ "8c0c7f6a": "ei ole yhdistetty toiseen haaraan: jos se poistetaan, sen commitit eivät enää ole tavoitettavissa haarasta.",
+ "341d392d": "poistetaan paikallisena haarana. Etäpalvelimen haara säilyy ennallaan.",
+ "f34368df": "Poista silti",
+ "a46465d0": "Poistetaanko haara?",
+ "56d50e5f": "Sama pikanäppäin:",
+ "cc8ffea4": "Sulje kaikki välilehdet"
 }

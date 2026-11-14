@@ -1293,5 +1293,12 @@
  "6d1f5156": "Fișiere de salvat",
  "ac00cfc8": "Necesită pachetul deb, rpm sau Arch (instalează fișierul rfiles.portal al portalului desktop); Flatpak nu poate adăuga un backend de portal.",
  "c01651ec": "Aplicațiile care cer portalului desktop o fereastră de fișiere (Firefox, Chromium, aplicații GTK, Qt și Electron) primesc rfiles. Dezactivarea readuce fereastra anterioară.",
- "de824b35": "Utilizare rfiles pentru ferestrele Deschidere și Salvare"
+ "de824b35": "Utilizare rfiles pentru ferestrele Deschidere și Salvare",
+ "dd2f1f2e": "Ștergere ramură",
+ "8c0c7f6a": "nu este îmbinată într-o altă ramură: dacă este ștearsă, commit-urile ei nu mai pot fi accesate dintr-o ramură.",
+ "341d392d": "va fi ștearsă ca ramură locală. Ramura de pe server rămâne neschimbată.",
+ "f34368df": "Șterge oricum",
+ "a46465d0": "Ștergeți ramura?",
+ "56d50e5f": "Aceeași comandă rapidă:",
+ "cc8ffea4": "Închide toate filele"
 }

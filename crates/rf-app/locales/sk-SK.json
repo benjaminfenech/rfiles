@@ -1293,5 +1293,12 @@
  "6d1f5156": "Súbory na uloženie",
  "ac00cfc8": "Vyžaduje balík deb, rpm alebo Arch (inštaluje súbor rfiles.portal portálu pracovnej plochy); Flatpak nemôže pridať backend portálu.",
  "c01651ec": "Aplikácie, ktoré si od portálu pracovnej plochy žiadajú dialóg pre súbory (Firefox, Chromium, aplikácie GTK, Qt a Electron), dostanú rfiles. Vypnutím sa vráti pôvodný dialóg.",
- "de824b35": "Používať rfiles pre dialógy Otvoriť a Uložiť"
+ "de824b35": "Používať rfiles pre dialógy Otvoriť a Uložiť",
+ "dd2f1f2e": "Odstrániť vetvu",
+ "8c0c7f6a": "nie je zlúčená do inej vetvy: ak sa odstráni, jej commity už nebudú dostupné z žiadnej vetvy.",
+ "341d392d": "sa odstráni ako lokálna vetva. Vetva na vzdialenom serveri zostane nezmenená.",
+ "f34368df": "Napriek tomu odstrániť",
+ "a46465d0": "Odstrániť vetvu?",
+ "56d50e5f": "Rovnaká skratka:",
+ "cc8ffea4": "Zavrieť všetky karty"
 }

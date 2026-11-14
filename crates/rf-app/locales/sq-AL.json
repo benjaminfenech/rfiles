@@ -1293,5 +1293,12 @@
  "6d1f5156": "Skedarët për t'u ruajtur",
  "ac00cfc8": "Kërkon paketën deb, rpm ose Arch (ajo instalon skedarin rfiles.portal të portalit të desktopit); Flatpak nuk mund të shtojë një shërbim portali.",
  "c01651ec": "Aplikacionet që i kërkojnë portalit të desktopit një dritare skedarësh (Firefox, Chromium, aplikacionet GTK, Qt dhe Electron) marrin rfiles. Çaktivizimi rikthen dritaren e mëparshme.",
- "de824b35": "Përdor rfiles për dritaret Hap dhe Ruaj"
+ "de824b35": "Përdor rfiles për dritaret Hap dhe Ruaj",
+ "dd2f1f2e": "Fshij degën",
+ "8c0c7f6a": "nuk është bashkuar me një degë tjetër: nëse fshihet, commit-et e saj nuk mund të arrihen më nga asnjë degë.",
+ "341d392d": "do të fshihet si degë lokale. Dega në remote mbetet siç është.",
+ "f34368df": "Fshije prapë",
+ "a46465d0": "Të fshihet dega?",
+ "56d50e5f": "E njëjta shkurtore:",
+ "cc8ffea4": "Mbyll të gjitha skedat"
 }

@@ -1293,5 +1293,12 @@
  "6d1f5156": "Pliki do zapisania",
  "ac00cfc8": "Wymaga pakietu deb, rpm lub Arch (instaluje plik rfiles.portal portalu pulpitu); Flatpak nie może dodać zaplecza portalu.",
  "c01651ec": "Aplikacje, które proszą portal pulpitu o okno plików (Firefox, Chromium, aplikacje GTK, Qt i Electron), dostają rfiles. Wyłączenie przywraca poprzednie okno.",
- "de824b35": "Używaj rfiles w oknach Otwórz i Zapisz"
+ "de824b35": "Używaj rfiles w oknach Otwórz i Zapisz",
+ "dd2f1f2e": "Usuń gałąź",
+ "8c0c7f6a": "nie jest scalona z inną gałęzią: po jej usunięciu jej commity nie będą już dostępne z żadnej gałęzi.",
+ "341d392d": "zostanie usunięta jako gałąź lokalna. Gałąź na serwerze zdalnym pozostanie bez zmian.",
+ "f34368df": "Usuń mimo to",
+ "a46465d0": "Usunąć gałąź?",
+ "56d50e5f": "Taki sam skrót:",
+ "cc8ffea4": "Zamknij wszystkie karty"
 }

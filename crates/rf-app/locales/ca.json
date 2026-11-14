@@ -1293,5 +1293,12 @@
  "6d1f5156": "Fitxers per desar",
  "ac00cfc8": "Necessita el paquet deb, rpm o d'Arch (instal·la el fitxer rfiles.portal del portal d'escriptori); el Flatpak no pot afegir un rerefons de portal.",
  "c01651ec": "Les aplicacions que demanen al portal d'escriptori un diàleg de fitxers (Firefox, Chromium i aplicacions GTK, Qt i Electron) obtenen rfiles. Desactivar-ho recupera el diàleg anterior.",
- "de824b35": "Utilitza rfiles per als diàlegs Obre i Desa"
+ "de824b35": "Utilitza rfiles per als diàlegs Obre i Desa",
+ "dd2f1f2e": "Suprimeix la branca",
+ "8c0c7f6a": "no està fusionada a cap altra branca: si se suprimeix, ja no es podrà arribar als seus commits des de cap branca.",
+ "341d392d": "se suprimirà com a branca local. La branca del remot es manté tal com és.",
+ "f34368df": "Suprimeix igualment",
+ "a46465d0": "Voleu suprimir la branca?",
+ "56d50e5f": "Mateixa drecera:",
+ "cc8ffea4": "Tanca totes les pestanyes"
 }

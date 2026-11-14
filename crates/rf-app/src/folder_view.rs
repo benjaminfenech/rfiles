@@ -2310,6 +2310,13 @@ impl FolderView {
         v.into_iter().filter_map(|i| self.path_of(i)).collect()
     }
 
+    /// The selected items with whether each is a folder, in list order.
+    pub fn selection_with_kind(&self) -> Vec<(PathBuf, bool)> {
+        let mut v: Vec<u32> = self.selected.iter().copied().collect();
+        v.sort_unstable();
+        v.into_iter().filter_map(|i| Some((self.path_of(i)?, self.entries.get(i as usize)?.is_dir()))).collect()
+    }
+
     pub fn item_count(&self) -> usize {
         self.visible.len()
     }
@@ -3890,6 +3897,16 @@ impl Render for FolderView {
                     this.commit_rename(window, cx)
                 } else {
                     this.open_selected(cx)
+                }
+            }))
+            .on_action(cx.listener(|this, _: &OpenInNewWindow, _, cx| {
+                // the selected folders (a handful at most), or this folder with none selected
+                let dirs: Vec<PathBuf> = this.selection_with_kind().into_iter().filter(|(_, d)| *d).map(|(p, _)| p).take(8).collect();
+                if dirs.is_empty() && this.selected.is_empty() {
+                    cx.emit(FolderEvent::OpenInNewWindow(this.location().clone()));
+                }
+                for d in dirs {
+                    cx.emit(FolderEvent::OpenInNewWindow(Location::Path(d)));
                 }
             }))
             .on_action(cx.listener(|this, _: &Properties, _, cx| this.properties(cx)))

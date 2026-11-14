@@ -1293,5 +1293,12 @@
  "6d1f5156": "Arquivos a salvar",
  "ac00cfc8": "Precisa do pacote deb, rpm ou do Arch (ele instala o arquivo rfiles.portal do portal da área de trabalho); o Flatpak não pode adicionar um backend de portal.",
  "c01651ec": "Aplicativos que pedem uma caixa de diálogo de arquivos ao portal da área de trabalho (Firefox, Chromium, aplicativos GTK, Qt e Electron) recebem o rfiles. Desativar traz de volta a caixa anterior.",
- "de824b35": "Usar o rfiles nas caixas de diálogo Abrir e Salvar"
+ "de824b35": "Usar o rfiles nas caixas de diálogo Abrir e Salvar",
+ "dd2f1f2e": "Excluir branch",
+ "8c0c7f6a": "não foi mesclado em outra branch: se for excluído, seus commits não poderão mais ser alcançados a partir de uma branch.",
+ "341d392d": "será excluído como branch local. A branch no remoto permanece como está.",
+ "f34368df": "Excluir mesmo assim",
+ "a46465d0": "Excluir a branch?",
+ "56d50e5f": "Mesmo atalho:",
+ "cc8ffea4": "Fechar todas as guias"
 }
