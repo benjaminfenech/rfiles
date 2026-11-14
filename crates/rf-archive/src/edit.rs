@@ -264,7 +264,8 @@ pub fn create_dir(
         std::process::id(),
         SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
     ));
-    fs::create_dir_all(&scratch)?;
+    // create_dir, not create_dir_all: a folder someone else made there first is refused
+    fs::create_dir(&scratch)?;
     let mtime = fs::metadata(&scratch).and_then(|m| m.modified()).ok();
     let item = Item { path: scratch.clone(), name: full, is_dir: true, size: 0, mtime };
     let res = rewrite(archive, opts, &|_| false, &|_| None, vec![item], progress, cancelled);

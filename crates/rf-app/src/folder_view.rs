@@ -3792,8 +3792,7 @@ pub(crate) fn open_in_background(path: PathBuf, cx: &mut App) {
         // FTP: download to a temp copy, then open that
         let path = if rf_linux::ftp::is_ftp(&path) {
             let name = path.file_name().map(|n| n.to_os_string()).unwrap_or_default();
-            let dir = std::env::temp_dir().join("rfiles-ftp");
-            let _ = std::fs::create_dir_all(&dir);
+            let Ok(dir) = rf_linux::private_tmp::dir("ftp") else { return };
             let local = dir.join(name);
             if let Err(e) = rf_linux::ftp::download(&path.to_string_lossy(), &local) {
                 log::warn!("ftp download {path:?}: {e}");

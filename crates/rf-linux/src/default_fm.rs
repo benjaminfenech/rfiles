@@ -351,7 +351,7 @@ pub fn should_forward_to_explorer(arg: &str) -> bool {
 /// argument we hand to it can come straight back (a server root like `\\nas`, a folder that
 /// looked like a file). Forwards are remembered for a few seconds to break such a loop.
 fn forward_log() -> std::path::PathBuf {
-    std::env::temp_dir().join("rfiles-forward.txt")
+    crate::private_tmp::root_dir().unwrap_or_else(|_| crate::private_tmp::root()).join("forward.txt")
 }
 fn now_ms() -> u128 {
     std::time::SystemTime::now()
