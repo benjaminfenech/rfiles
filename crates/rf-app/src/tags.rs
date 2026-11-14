@@ -61,7 +61,7 @@ pub fn parse_query(text: &str) -> Vec<(Join, String)> {
         let op = match word {
             "and" | "ve" | "&" | "&&" => Some(Join::And),
             "or" | "veya" | "|" | "||" => Some(Join::Or),
-            "not" | "değil" | "degil" | "!" => Some(Join::Not),
+            "not" | "değil" | "degil" | "!" => Some(Join::Not), // i18n-ok: Turkish users type VE / VEYA / DEĞİL
             _ => None,
         };
         match op {
