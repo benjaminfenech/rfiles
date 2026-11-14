@@ -5489,6 +5489,34 @@
   "en": "Pinned folders and drives open into their subfolders"
  },
  {
+  "id": "88cbfa77",
+  "en": "Samba doesn't allow that share name"
+ },
+ {
+  "id": "2b5c5be5",
+  "en": "Sharing folders needs Samba. Install it, then turn on user shares."
+ },
+ {
+  "id": "80b34f37",
+  "en": "Samba's user shares are turned off. Turn them on with a usershare path in /etc/samba/smb.conf."
+ },
+ {
+  "id": "a7182f08",
+  "en": "Share this folder on the network"
+ },
+ {
+  "id": "f6635c0b",
+  "en": "Share name"
+ },
+ {
+  "id": "a5972166",
+  "en": "Others can add, change and delete files"
+ },
+ {
+  "id": "5ccb1948",
+  "en": "Allow guests (no password)"
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"

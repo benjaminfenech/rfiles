@@ -1375,5 +1375,12 @@
  "c67c8f52": "Polecenie",
  "b7c8a38d": "%f to jeden element (polecenie uruchamia się dla każdego), %F wszystkie. Bez nich elementy trafiają na koniec. Przykład: meld %F",
  "fb2049ab": "Drzewo folderów",
- "b31f262d": "Przypięte foldery i dyski rozwijają się do swoich podfolderów"
+ "b31f262d": "Przypięte foldery i dyski rozwijają się do swoich podfolderów",
+ "88cbfa77": "Samba nie zezwala na taką nazwę udziału",
+ "2b5c5be5": "Udostępnianie folderów wymaga Samby. Zainstaluj ją, a potem włącz udziały użytkowników.",
+ "80b34f37": "Udziały użytkowników Samby są wyłączone. Włącz je za pomocą usershare path w /etc/samba/smb.conf.",
+ "a7182f08": "Udostępnij ten folder w sieci",
+ "f6635c0b": "Nazwa udziału",
+ "a5972166": "Inni mogą dodawać, zmieniać i usuwać pliki",
+ "5ccb1948": "Zezwalaj gościom (bez hasła)"
 }

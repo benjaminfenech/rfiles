@@ -1375,5 +1375,12 @@
  "c67c8f52": "Arahan",
  "b7c8a38d": "%f ialah satu item (arahan dijalankan untuk setiap satu), %F semuanya. Tanpa kedua-duanya, item ditambah di hujung. Contoh: meld %F",
  "fb2049ab": "Pepohon folder",
- "b31f262d": "Folder dan pemacu yang disematkan boleh dibuka ke subfoldernya"
+ "b31f262d": "Folder dan pemacu yang disematkan boleh dibuka ke subfoldernya",
+ "88cbfa77": "Samba tidak membenarkan nama perkongsian itu",
+ "2b5c5be5": "Perkongsian folder memerlukan Samba. Pasangkannya, kemudian hidupkan perkongsian pengguna.",
+ "80b34f37": "Perkongsian pengguna Samba dimatikan. Hidupkannya dengan usershare path dalam /etc/samba/smb.conf.",
+ "a7182f08": "Kongsi folder ini pada rangkaian",
+ "f6635c0b": "Nama perkongsian",
+ "a5972166": "Orang lain boleh menambah, mengubah dan memadam fail",
+ "5ccb1948": "Benarkan tetamu (tanpa kata laluan)"
 }

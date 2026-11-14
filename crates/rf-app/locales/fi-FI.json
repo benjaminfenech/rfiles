@@ -1375,5 +1375,12 @@
  "c67c8f52": "Komento",
  "b7c8a38d": "%f on yksi kohde (komento ajetaan kullekin erikseen), %F kaikki. Ilman niitä kohteet lisätään loppuun. Esimerkki: meld %F",
  "fb2049ab": "Kansiopuu",
- "b31f262d": "Kiinnitetyt kansiot ja asemat avautuvat alikansioihinsa"
+ "b31f262d": "Kiinnitetyt kansiot ja asemat avautuvat alikansioihinsa",
+ "88cbfa77": "Samba ei salli tätä jaon nimeä",
+ "2b5c5be5": "Kansioiden jakaminen vaatii Samban. Asenna se ja ota käyttäjäjaot käyttöön.",
+ "80b34f37": "Samban käyttäjäjaot ovat pois päältä. Ota ne käyttöön usershare path -asetuksella tiedostossa /etc/samba/smb.conf.",
+ "a7182f08": "Jaa tämä kansio verkossa",
+ "f6635c0b": "Jaon nimi",
+ "a5972166": "Muut voivat lisätä, muuttaa ja poistaa tiedostoja",
+ "5ccb1948": "Salli vieraat (ei salasanaa)"
 }

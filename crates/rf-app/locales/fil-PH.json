@@ -1375,5 +1375,12 @@
  "c67c8f52": "Utos",
  "b7c8a38d": "Ang %f ay isang item (tatakbo ang utos para sa bawat isa), ang %F ay lahat. Kung wala ang alinman, idadagdag sa dulo ang mga item. Halimbawa: meld %F",
  "fb2049ab": "Puno ng folder",
- "b31f262d": "Nabubuksan ang mga naka-pin na folder at drive sa kanilang mga subfolder"
+ "b31f262d": "Nabubuksan ang mga naka-pin na folder at drive sa kanilang mga subfolder",
+ "88cbfa77": "Hindi pinapayagan ng Samba ang pangalang iyon ng share",
+ "2b5c5be5": "Kailangan ng Samba para magbahagi ng mga folder. I-install ito, saka i-on ang mga user share.",
+ "80b34f37": "Naka-off ang mga user share ng Samba. I-on ang mga ito gamit ang usershare path sa /etc/samba/smb.conf.",
+ "a7182f08": "Ibahagi ang folder na ito sa network",
+ "f6635c0b": "Pangalan ng share",
+ "a5972166": "Puwedeng magdagdag, magbago at magbura ng mga file ang iba",
+ "5ccb1948": "Payagan ang mga bisita (walang password)"
 }

@@ -1375,5 +1375,12 @@
  "c67c8f52": "Commande",
  "b7c8a38d": "%f est un élément (la commande s'exécute pour chacun), %F tous. Sans l'un ou l'autre, les éléments sont ajoutés à la fin. Exemple : meld %F",
  "fb2049ab": "Arborescence des dossiers",
- "b31f262d": "Les dossiers épinglés et les lecteurs se déplient sur leurs sous-dossiers"
+ "b31f262d": "Les dossiers épinglés et les lecteurs se déplient sur leurs sous-dossiers",
+ "88cbfa77": "Samba n'accepte pas ce nom de partage",
+ "2b5c5be5": "Le partage de dossiers nécessite Samba. Installez-le, puis activez les partages utilisateur.",
+ "80b34f37": "Les partages utilisateur de Samba sont désactivés. Activez-les avec un usershare path dans /etc/samba/smb.conf.",
+ "a7182f08": "Partager ce dossier sur le réseau",
+ "f6635c0b": "Nom du partage",
+ "a5972166": "Les autres peuvent ajouter, modifier et supprimer des fichiers",
+ "5ccb1948": "Autoriser les invités (sans mot de passe)"
 }

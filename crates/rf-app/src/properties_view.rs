@@ -13,6 +13,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use gpui_kit::assets::IconName as L;
 use gpui_kit::component::input::{Input, InputState};
+use rf_linux::usershare;
 use gpui_kit::component::{Icon, TitleBar, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
@@ -49,6 +50,42 @@ enum Page {
     General,
     Details,
     Hashes,
+    Sharing,
+}
+
+/// The Sharing page (a folder shared through Samba's user shares), read when the page opens.
+#[derive(Default)]
+enum ShareLoad {
+    #[default]
+    Idle,
+    Loading,
+    Ready(Option<usershare::Share>),
+    Unavailable(usershare::Unavailable),
+    Failed(String),
+}
+
+#[derive(Default)]
+struct ShareEdit {
+    load: ShareLoad,
+    on: bool,
+    writable: bool,
+    guest: bool,
+    name: Option<Entity<InputState>>,
+}
+
+impl ShareEdit {
+    fn name(&self, cx: &App) -> String {
+        self.name.as_ref().map(|n| n.read(cx).value().trim().to_string()).unwrap_or_default()
+    }
+
+    /// The share as edited, when that differs from the one there is (None: no change). The
+    /// inner None stops sharing.
+    fn change(&self, cx: &App) -> Option<Option<(String, bool, bool)>> {
+        let ShareLoad::Ready(cur) = &self.load else { return None };
+        let want = self.on.then(|| (self.name(cx), self.writable, self.guest));
+        let have = cur.as_ref().map(|s| (s.name.clone(), s.writable, s.guest));
+        (want != have).then_some(want)
+    }
 }
 
 /// Totals for a multi-selection.
@@ -207,6 +244,7 @@ pub struct PropsView {
     drive: Option<rf_linux::drives::Drive>,
     pe: Option<rf_linux::pe::PeInfo>,
     hash: Option<Entity<crate::hash_panel::HashPanel>>,
+    share: ShareEdit,
     error: Option<SharedString>,
     busy: bool,
     frame_dark: Option<bool>,
@@ -271,6 +309,7 @@ impl PropsView {
             drive: None,
             pe: None,
             hash: None,
+            share: ShareEdit::default(),
             error: None,
             busy: false,
             frame_dark: None,
@@ -435,7 +474,41 @@ impl PropsView {
     }
 
     fn dirty(&self, cx: &App) -> bool {
-        self.renamed_to(cx).is_some() || self.perm.changed()
+        self.renamed_to(cx).is_some() || self.perm.changed() || self.share.change(cx).is_some()
+    }
+
+    /// Reads whether the folder is shared (the Sharing page opened).
+    fn load_share(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(path) = self.single().map(Path::to_path_buf) else { return };
+        self.share.load = ShareLoad::Loading;
+        let task = cx.background_spawn(async move { usershare::share_of(&path).map_err(|e| e.downcast::<usershare::Unavailable>().map_err(|e| format!("{e:#}"))) });
+        cx.spawn_in(window, async move |this, cx| {
+            let r = task.await;
+            let _ = this.update_in(cx, |v, window, cx| {
+                v.share_loaded(r, window, cx);
+                cx.notify();
+            });
+        })
+        .detach();
+    }
+
+    fn share_loaded(&mut self, r: Result<Option<usershare::Share>, Result<usershare::Unavailable, String>>, window: &mut Window, cx: &mut Context<Self>) {
+        self.share.load = match r {
+            Ok(cur) => {
+                let name = cur.as_ref().map_or_else(|| usershare::default_name(&self.paths[0]), |s| s.name.clone());
+                self.share.on = cur.is_some();
+                self.share.writable = cur.as_ref().is_some_and(|s| s.writable);
+                self.share.guest = cur.as_ref().is_some_and(|s| s.guest);
+                self.share.name = Some(cx.new(|cx| {
+                    let mut s = InputState::new(window, cx);
+                    s.set_value(name, window, cx);
+                    s
+                }));
+                ShareLoad::Ready(cur)
+            }
+            Err(Ok(u)) => ShareLoad::Unavailable(u),
+            Err(Err(m)) => ShareLoad::Failed(m),
+        };
     }
 
     /// Applies the edits on a helper thread; `close` closes the window when it worked.
@@ -457,6 +530,28 @@ impl PropsView {
                 return;
             }
         }
+        let share_edit = self.share.change(cx);
+        if let Some(Some((n, _, _))) = &share_edit
+            && !usershare::name_ok(n)
+        {
+            self.error = Some(t!("Samba doesn't allow that share name").into());
+            cx.notify();
+            return;
+        }
+        let share_now = match &self.share.load {
+            ShareLoad::Ready(cur) => cur.clone(),
+            _ => None,
+        };
+        // what to do to the share: (the share there is now, the one wanted). A shared folder
+        // that is renamed gets its share moved along.
+        let share_act = match share_edit {
+            Some(want) => Some((share_now, want)),
+            None if new_name.is_some() && share_now.is_some() => {
+                let s = share_now.clone().unwrap();
+                Some((share_now, Some((s.name, s.writable, s.guest))))
+            }
+            None => None,
+        };
         let change = self.perm.change();
         let recurse = self.recurse;
         let paths = self.paths.clone();
@@ -486,14 +581,30 @@ impl PropsView {
                 renamed = Some((from, to.clone()));
                 paths[0] = to;
             }
-            Ok::<_, String>((paths, renamed))
+            let mut shared = None;
+            if let Some((now, want)) = share_act {
+                let comment = now.as_ref().map(|s| s.comment.clone()).unwrap_or_default();
+                // a new name (or no share) drops the old one
+                if let Some(old) = now.as_ref().filter(|o| want.as_ref().is_none_or(|w| w.0 != o.name)) {
+                    usershare::remove(&old.name).map_err(|e| format!("{e:#}"))?;
+                }
+                let new = want.map(|(name, writable, guest)| usershare::Share { name, path: paths[0].clone(), comment, writable, guest });
+                if let Some(n) = &new {
+                    usershare::add(n).map_err(|e| format!("{e:#}"))?;
+                }
+                shared = Some(new);
+            }
+            Ok::<_, String>((paths, renamed, shared))
         });
         cx.spawn_in(window, async move |this, cx| {
             let r = task.await;
             let _ = this.update_in(cx, |v, window, cx| {
                 v.busy = false;
                 match r {
-                    Ok((paths, renamed)) => {
+                    Ok((paths, renamed, shared)) => {
+                        if let Some(s) = shared {
+                            v.share.load = ShareLoad::Ready(s);
+                        }
                         if let Some((from, to)) = renamed {
                             crate::undo::push(crate::undo::UndoOp::Renamed { from, to });
                         }
@@ -563,6 +674,11 @@ impl PropsView {
         }
         if !info.is_dir {
             pages.push((Page::Hashes, t!("Hashes")));
+        }
+        // a folder on this computer (a network folder is someone else's to share)
+        let path = &self.paths[0];
+        if info.is_dir && !is_root(path) && rf_linux::remote::mount_url(path).is_none() {
+            pages.push((Page::Sharing, t!("Sharing")));
         }
         pages
     }
@@ -658,6 +774,56 @@ impl PropsView {
         }
 
         out
+    }
+
+    fn render_sharing(&self, p: &Palette, cx: &mut Context<Self>) -> Vec<AnyElement> {
+        let note = |text: String| div().py_2().text_sm().child(text).into_any_element();
+        let small = |text: String| div().pb_2().text_xs().text_color(p.text_secondary).child(text).into_any_element();
+        let rows = match &self.share.load {
+            ShareLoad::Idle | ShareLoad::Loading => vec![note(t!("Loading…").to_string())],
+            ShareLoad::Unavailable(usershare::Unavailable::NoSamba) => {
+                vec![note(t!("Sharing folders needs Samba. Install it, then turn on user shares.").to_string())]
+            }
+            ShareLoad::Unavailable(usershare::Unavailable::Disabled(m)) => vec![
+                note(t!("Samba's user shares are turned off. Turn them on with a usershare path in /etc/samba/smb.conf.").to_string()),
+                small(m.clone()),
+            ],
+            ShareLoad::Failed(m) => vec![note(m.clone())],
+            ShareLoad::Ready(cur) => {
+                let e = &self.share;
+                let mut rows = vec![section(p, t!("Sharing"))];
+                let flip = |f: fn(&mut ShareEdit)| {
+                    cx.listener(move |v: &mut Self, _: &ClickEvent, _, cx| {
+                        f(&mut v.share);
+                        cx.notify();
+                    })
+                };
+                rows.push(check_row(p, "share-on", t!("Share this folder on the network"), Some(e.on), flip(|s| s.on = !s.on)));
+                if e.on {
+                    if let Some(n) = &e.name {
+                        rows.push(
+                            h_flex()
+                                .gap_3()
+                                .py(px(4.))
+                                .items_center()
+                                .text_sm()
+                                .child(div().w(px(150.)).flex_shrink_0().text_color(p.text_secondary).child(t!("Share name")))
+                                .child(text_field(p, n))
+                                .into_any_element(),
+                        );
+                    }
+                    rows.push(check_row(p, "share-write", t!("Others can add, change and delete files"), Some(e.writable), flip(|s| s.writable = !s.writable)));
+                    rows.push(check_row(p, "share-guest", t!("Allow guests (no password)"), Some(e.guest), flip(|s| s.guest = !s.guest)));
+                }
+                // where others find it, once shared
+                if let Some(s) = cur.as_ref().filter(|_| e.on) {
+                    let host = std::fs::read_to_string("/proc/sys/kernel/hostname").map(|h| h.trim().to_string()).unwrap_or_default();
+                    rows.push(small(format!("smb://{host}/{}", s.name)));
+                }
+                rows
+            }
+        };
+        vec![card(p, rows)]
     }
 
     fn render_perms(&self, p: &Palette, cx: &mut Context<Self>) -> AnyElement {
@@ -1071,9 +1237,10 @@ impl Render for PropsView {
                     .when(on, |d| d.bg(p.card_bg).shadow_sm().font_weight(FontWeight::MEDIUM))
                     .when(!on, |d| d.text_color(p.text_secondary).hover(|s| s.bg(p.hover)))
                     .child(label)
-                    .on_click(cx.listener(move |v, _, _, cx| {
+                    .on_click(cx.listener(move |v, _, window, cx| {
                         v.page = pg;
                         match pg {
+                            Page::Sharing if matches!(v.share.load, ShareLoad::Idle) => v.load_share(window, cx),
                             Page::Hashes if v.hash.is_none() => {
                                 let path = v.paths[0].clone();
                                 v.hash = Some(cx.new(|cx| crate::hash_panel::HashPanel::new(path, cx)));
@@ -1089,6 +1256,7 @@ impl Render for PropsView {
             Page::General => self.render_general(&p, cx),
             Page::Details => self.render_details(&p),
             Page::Hashes => self.hash.clone().map(|h| vec![card(&p, vec![div().py_2().child(h).into_any_element()])]).unwrap_or_default(),
+            Page::Sharing => self.render_sharing(&p, cx),
         };
 
         let button = |id: &'static str, label: &'static str, primary: bool| {

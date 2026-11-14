@@ -1375,5 +1375,12 @@
  "c67c8f52": "Naredba",
  "b7c8a38d": "%f je jedna stavka (naredba se pokreće za svaku), %F sve. Bez njih se stavke dodaju na kraj. Primjer: meld %F",
  "fb2049ab": "Stablo mapa",
- "b31f262d": "Prikvačene mape i pogoni otvaraju se u svoje podmape"
+ "b31f262d": "Prikvačene mape i pogoni otvaraju se u svoje podmape",
+ "88cbfa77": "Samba ne dopušta taj naziv dijeljenja",
+ "2b5c5be5": "Dijeljenje mapa zahtijeva Sambu. Instalirajte je pa uključite korisnička dijeljenja.",
+ "80b34f37": "Korisnička dijeljenja Sambe su isključena. Uključite ih pomoću usershare path u /etc/samba/smb.conf.",
+ "a7182f08": "Dijeli ovu mapu na mreži",
+ "f6635c0b": "Naziv dijeljenja",
+ "a5972166": "Drugi mogu dodavati, mijenjati i brisati datoteke",
+ "5ccb1948": "Dopusti goste (bez lozinke)"
 }

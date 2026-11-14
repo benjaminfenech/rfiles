@@ -1375,5 +1375,12 @@
  "c67c8f52": "Příkaz",
  "b7c8a38d": "%f je jedna položka (příkaz se spustí pro každou), %F všechny. Bez nich se položky přidají na konec. Příklad: meld %F",
  "fb2049ab": "Strom složek",
- "b31f262d": "Připnuté složky a disky se rozbalují do svých podsložek"
+ "b31f262d": "Připnuté složky a disky se rozbalují do svých podsložek",
+ "88cbfa77": "Samba takový název sdílení nepovoluje",
+ "2b5c5be5": "Sdílení složek vyžaduje Sambu. Nainstalujte ji a zapněte uživatelská sdílení.",
+ "80b34f37": "Uživatelská sdílení Samby jsou vypnutá. Zapněte je pomocí usershare path v /etc/samba/smb.conf.",
+ "a7182f08": "Sdílet tuto složku v síti",
+ "f6635c0b": "Název sdílení",
+ "a5972166": "Ostatní mohou přidávat, měnit a mazat soubory",
+ "5ccb1948": "Povolit hosty (bez hesla)"
 }

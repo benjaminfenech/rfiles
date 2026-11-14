@@ -1375,5 +1375,12 @@
  "c67c8f52": "Komanda",
  "b7c8a38d": "%f – vienas elementas (komanda vykdoma kiekvienam), %F – visi. Be jų elementai pridedami gale. Pavyzdys: meld %F",
  "fb2049ab": "Aplankų medis",
- "b31f262d": "Prisegti aplankai ir diskai išsiskleidžia į savo poaplankius"
+ "b31f262d": "Prisegti aplankai ir diskai išsiskleidžia į savo poaplankius",
+ "88cbfa77": "Samba neleidžia tokio bendrinimo pavadinimo",
+ "2b5c5be5": "Aplankams bendrinti reikia Samba. Įdiekite ją, tada įjunkite naudotojų bendrinimus.",
+ "80b34f37": "Samba naudotojų bendrinimai išjungti. Įjunkite juos nurodę usershare path faile /etc/samba/smb.conf.",
+ "a7182f08": "Bendrinti šį aplanką tinkle",
+ "f6635c0b": "Bendrinimo pavadinimas",
+ "a5972166": "Kiti gali pridėti, keisti ir trinti failus",
+ "5ccb1948": "Leisti svečius (be slaptažodžio)"
 }

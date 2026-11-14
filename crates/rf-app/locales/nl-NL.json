@@ -1375,5 +1375,12 @@
  "c67c8f52": "Opdracht",
  "b7c8a38d": "%f is één item (de opdracht loopt voor elk), %F alle items. Zonder een van beide komen de items aan het eind. Voorbeeld: meld %F",
  "fb2049ab": "Mappenboom",
- "b31f262d": "Vastgemaakte mappen en stations klappen uit naar hun submappen"
+ "b31f262d": "Vastgemaakte mappen en stations klappen uit naar hun submappen",
+ "88cbfa77": "Samba staat die sharenaam niet toe",
+ "2b5c5be5": "Voor het delen van mappen is Samba nodig. Installeer het en zet daarna gebruikersshares aan.",
+ "80b34f37": "De gebruikersshares van Samba staan uit. Zet ze aan met een usershare path in /etc/samba/smb.conf.",
+ "a7182f08": "Deze map delen op het netwerk",
+ "f6635c0b": "Sharenaam",
+ "a5972166": "Anderen kunnen bestanden toevoegen, wijzigen en verwijderen",
+ "5ccb1948": "Gasten toestaan (geen wachtwoord)"
 }

@@ -1375,5 +1375,12 @@
  "c67c8f52": "Comandă",
  "b7c8a38d": "%f e un element (comanda rulează pentru fiecare), %F toate. Fără ele, elementele se adaugă la final. Exemplu: meld %F",
  "fb2049ab": "Arbore de foldere",
- "b31f262d": "Folderele fixate și unitățile se deschid în subfolderele lor"
+ "b31f262d": "Folderele fixate și unitățile se deschid în subfolderele lor",
+ "88cbfa77": "Samba nu permite acest nume de partajare",
+ "2b5c5be5": "Partajarea folderelor necesită Samba. Instalați-l, apoi activați partajările utilizatorului.",
+ "80b34f37": "Partajările utilizatorului din Samba sunt dezactivate. Activați-le cu un usershare path în /etc/samba/smb.conf.",
+ "a7182f08": "Partajează acest folder în rețea",
+ "f6635c0b": "Nume partajare",
+ "a5972166": "Alții pot adăuga, modifica și șterge fișiere",
+ "5ccb1948": "Permite oaspeți (fără parolă)"
 }

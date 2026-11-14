@@ -1375,5 +1375,12 @@
  "c67c8f52": "Komandë",
  "b7c8a38d": "%f është një element (komanda ekzekutohet për secilin), %F të gjithë. Pa asnjërin, elementet shtohen në fund. Shembull: meld %F",
  "fb2049ab": "Pema e dosjeve",
- "b31f262d": "Dosjet e fiksuara dhe disqet hapen në nëndosjet e tyre"
+ "b31f262d": "Dosjet e fiksuara dhe disqet hapen në nëndosjet e tyre",
+ "88cbfa77": "Samba nuk e lejon atë emër ndarjeje",
+ "2b5c5be5": "Ndarja e dosjeve kërkon Samba. Instalojeni, pastaj aktivizoni ndarjet e përdoruesit.",
+ "80b34f37": "Ndarjet e përdoruesit në Samba janë çaktivizuar. Aktivizojini me një usershare path te /etc/samba/smb.conf.",
+ "a7182f08": "Ndaje këtë dosje në rrjet",
+ "f6635c0b": "Emri i ndarjes",
+ "a5972166": "Të tjerët mund të shtojnë, ndryshojnë dhe fshijnë skedarë",
+ "5ccb1948": "Lejo mysafirë (pa fjalëkalim)"
 }

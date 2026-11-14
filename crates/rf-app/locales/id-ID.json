@@ -1375,5 +1375,12 @@
  "c67c8f52": "Perintah",
  "b7c8a38d": "%f adalah satu butir (perintah dijalankan untuk masing-masing), %F semuanya. Tanpa keduanya, butir ditambahkan di akhir. Contoh: meld %F",
  "fb2049ab": "Pohon folder",
- "b31f262d": "Folder dan drive yang disematkan dapat dibuka ke subfoldernya"
+ "b31f262d": "Folder dan drive yang disematkan dapat dibuka ke subfoldernya",
+ "88cbfa77": "Samba tidak mengizinkan nama share itu",
+ "2b5c5be5": "Berbagi folder memerlukan Samba. Instal, lalu aktifkan share pengguna.",
+ "80b34f37": "Share pengguna Samba nonaktif. Aktifkan dengan usershare path di /etc/samba/smb.conf.",
+ "a7182f08": "Bagikan folder ini di jaringan",
+ "f6635c0b": "Nama share",
+ "a5972166": "Orang lain dapat menambah, mengubah, dan menghapus file",
+ "5ccb1948": "Izinkan tamu (tanpa kata sandi)"
 }

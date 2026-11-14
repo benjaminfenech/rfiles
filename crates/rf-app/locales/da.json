@@ -1375,5 +1375,12 @@
  "c67c8f52": "Kommando",
  "b7c8a38d": "%f er ét element (kommandoen kører én gang for hvert), %F dem alle. Uden nogen af dem kommer elementerne til sidst. Eksempel: meld %F",
  "fb2049ab": "Mappetræ",
- "b31f262d": "Fastgjorte mapper og drev kan foldes ud til deres undermapper"
+ "b31f262d": "Fastgjorte mapper og drev kan foldes ud til deres undermapper",
+ "88cbfa77": "Samba tillader ikke det delingsnavn",
+ "2b5c5be5": "Deling af mapper kræver Samba. Installer det, og slå derefter brugerdelinger til.",
+ "80b34f37": "Sambas brugerdelinger er slået fra. Slå dem til med en usershare path i /etc/samba/smb.conf.",
+ "a7182f08": "Del denne mappe på netværket",
+ "f6635c0b": "Delingsnavn",
+ "a5972166": "Andre kan tilføje, ændre og slette filer",
+ "5ccb1948": "Tillad gæster (ingen adgangskode)"
 }

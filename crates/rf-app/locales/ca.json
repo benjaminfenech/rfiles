@@ -1375,5 +1375,12 @@
  "c67c8f52": "Ordre",
  "b7c8a38d": "%f és un element (l'ordre s'executa per a cadascun), %F tots. Sense cap dels dos, els elements van al final. Exemple: meld %F",
  "fb2049ab": "Arbre de carpetes",
- "b31f262d": "Les carpetes fixades i les unitats es despleguen en les seves subcarpetes"
+ "b31f262d": "Les carpetes fixades i les unitats es despleguen en les seves subcarpetes",
+ "88cbfa77": "Samba no permet aquest nom de recurs compartit",
+ "2b5c5be5": "Per compartir carpetes cal Samba. Instal·leu-lo i activeu les comparticions d'usuari.",
+ "80b34f37": "Les comparticions d'usuari de Samba estan desactivades. Activeu-les amb un usershare path a /etc/samba/smb.conf.",
+ "a7182f08": "Comparteix aquesta carpeta a la xarxa",
+ "f6635c0b": "Nom del recurs compartit",
+ "a5972166": "Altres poden afegir, canviar i suprimir fitxers",
+ "5ccb1948": "Permet convidats (sense contrasenya)"
 }

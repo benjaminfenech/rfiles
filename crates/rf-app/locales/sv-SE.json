@@ -1375,5 +1375,12 @@
  "c67c8f52": "Kommando",
  "b7c8a38d": "%f är ett objekt (kommandot körs för vart och ett), %F alla. Utan något av dem läggs objekten till sist. Exempel: meld %F",
  "fb2049ab": "Mappträd",
- "b31f262d": "Fästa mappar och enheter kan fällas ut till sina undermappar"
+ "b31f262d": "Fästa mappar och enheter kan fällas ut till sina undermappar",
+ "88cbfa77": "Samba tillåter inte det resursnamnet",
+ "2b5c5be5": "Mappdelning kräver Samba. Installera det och slå sedan på användardelningar.",
+ "80b34f37": "Sambas användardelningar är avstängda. Slå på dem med en usershare path i /etc/samba/smb.conf.",
+ "a7182f08": "Dela den här mappen i nätverket",
+ "f6635c0b": "Resursnamn",
+ "a5972166": "Andra kan lägga till, ändra och ta bort filer",
+ "5ccb1948": "Tillåt gäster (utan lösenord)"
 }

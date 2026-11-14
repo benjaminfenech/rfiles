@@ -1375,5 +1375,12 @@
  "c67c8f52": "Befehl",
  "b7c8a38d": "%f ist ein Element (der Befehl läuft für jedes einzeln), %F alle. Ohne beides werden die Elemente angehängt. Beispiel: meld %F",
  "fb2049ab": "Ordnerbaum",
- "b31f262d": "Angeheftete Ordner und Laufwerke lassen sich zu ihren Unterordnern aufklappen"
+ "b31f262d": "Angeheftete Ordner und Laufwerke lassen sich zu ihren Unterordnern aufklappen",
+ "88cbfa77": "Samba erlaubt diesen Freigabenamen nicht",
+ "2b5c5be5": "Zum Freigeben von Ordnern wird Samba benötigt. Installieren Sie es und aktivieren Sie Benutzerfreigaben.",
+ "80b34f37": "Die Benutzerfreigaben von Samba sind ausgeschaltet. Aktivieren Sie sie mit einem usershare path in /etc/samba/smb.conf.",
+ "a7182f08": "Diesen Ordner im Netzwerk freigeben",
+ "f6635c0b": "Freigabename",
+ "a5972166": "Andere dürfen Dateien hinzufügen, ändern und löschen",
+ "5ccb1948": "Gäste zulassen (ohne Passwort)"
 }

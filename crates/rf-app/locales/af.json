@@ -1375,5 +1375,12 @@
  "c67c8f52": "Opdrag",
  "b7c8a38d": "%f is een item (die opdrag loop een keer vir elkeen), %F almal. Sonder een van hulle kom die items aan die einde. Voorbeeld: meld %F",
  "fb2049ab": "Vouerboom",
- "b31f262d": "Vasgespelde vouers en skywe vou oop na hul subvouers"
+ "b31f262d": "Vasgespelde vouers en skywe vou oop na hul subvouers",
+ "88cbfa77": "Samba laat nie daardie deelnaam toe nie",
+ "2b5c5be5": "Om vouers te deel het Samba nodig. Installeer dit en skakel dan gebruikerdeling aan.",
+ "80b34f37": "Samba se gebruikerdeling is af. Skakel dit aan met 'n usershare path in /etc/samba/smb.conf.",
+ "a7182f08": "Deel hierdie vouer op die netwerk",
+ "f6635c0b": "Deelnaam",
+ "a5972166": "Ander kan lêers byvoeg, verander en uitvee",
+ "5ccb1948": "Laat gaste toe (geen wagwoord)"
 }
