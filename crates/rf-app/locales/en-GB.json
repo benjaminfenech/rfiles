@@ -1313,5 +1313,21 @@
  "f34368df": "Delete anyway",
  "a46465d0": "Delete the branch?",
  "56d50e5f": "Same shortcut:",
- "cc8ffea4": "Close all tabs"
+ "cc8ffea4": "Close all tabs",
+ "155ee43c": "Year",
+ "a8761ba5": "Month",
+ "4954229d": "Day",
+ "9d2cfb7d": "January",
+ "fca77633": "February",
+ "c0846390": "March",
+ "98dbac97": "April",
+ "3ba7e226": "May",
+ "e920f785": "June",
+ "011ca01f": "July",
+ "5ddb609c": "August",
+ "c212b600": "September",
+ "ecf21807": "October",
+ "3ea53a3f": "November",
+ "662dcc9e": "December",
+ "33c7776e": "No tag"
 }

@@ -1068,8 +1068,19 @@ fn layout(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                 "group",
                 p,
                 group_ix(&s.default_group),
-                vec![(0, t!("None").into()), (1, t!("Name").into()), (2, t!("Type").into()), (3, t!("Date modified").into()), (4, t!("Size").into())],
-                |s, v| s.default_group = ["none", "name", "type", "modified", "size"][v].into(),
+                vec![
+                    (0, t!("None").into()),
+                    (1, t!("Name").into()),
+                    (2, t!("Type").into()),
+                    (3, t!("Date modified").into()),
+                    (4, t!("Size").into()),
+                    (5, t!("Date created").into()),
+                    (6, t!("Year").into()),
+                    (7, t!("Month").into()),
+                    (8, t!("Day").into()),
+                    (9, t!("Tag").into()),
+                ],
+                |s, v| s.default_group = crate::folder_view::GroupBy::ALL[v.min(9)].1.into(),
             ),
         ),
         section(p, t!("Details view")),
@@ -1111,13 +1122,7 @@ fn layout(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
 }
 
 pub fn group_ix(g: &str) -> usize {
-    match g {
-        "name" => 1,
-        "type" => 2,
-        "modified" => 3,
-        "size" => 4,
-        _ => 0,
-    }
+    crate::folder_view::GroupBy::ALL.iter().position(|(_, name)| *name == g).unwrap_or(0)
 }
 
 fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
