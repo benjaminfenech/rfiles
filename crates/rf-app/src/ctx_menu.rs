@@ -522,11 +522,38 @@ impl FolderView {
 }
 
 fn own_new_items(me: &Me) -> Vec<Item> {
-    vec![
+    let mut v = vec![
         Item::action(t!("Folder"), MenuIcon::Tinted(L::Folder, crate::theme::kind_color(crate::icons::Category::Folder, true)), act(me, |v, _, cx| v.create_new(true, cx)))
             .hint("Ctrl+Shift+N"),
         Item::action(t!("Text document"), icon(L::FileText), act(me, |v, _, cx| v.create_new(false, cx))),
-    ]
+    ];
+    // the user's templates (~/Templates), as other file managers offer them
+    if let Some(dir) = rf_linux::templates::dir() {
+        let templates = template_items(me, &rf_linux::templates::list(&dir));
+        v.push(Item::Separator);
+        v.extend(templates);
+        v.push(Item::action(t!("Open templates folder"), icon(L::FolderOpen), act(me, move |v, _, cx| v.navigate(Location::Path(dir.clone()), cx))));
+    }
+    v
+}
+
+fn template_items(me: &Me, list: &[rf_linux::templates::Template]) -> Vec<Item> {
+    use rf_linux::templates::Template;
+    list.iter()
+        .map(|t| match t {
+            Template::Folder { label, items } => Item::sub(label.clone(), icon(L::Folder), template_items(me, items)),
+            Template::File { path, label } => {
+                let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                let cat = crate::icons::category(&rf_core::Entry::new(&name, rf_core::EntryKind::File, 0, 0, 0, 0));
+                let path = path.clone();
+                Item::action(
+                    label.clone(),
+                    MenuIcon::Tinted(crate::icons::icon_for(cat), crate::theme::kind_color(cat, true)),
+                    act(me, move |v, _, cx| v.create_from_template(path.clone(), cx)),
+                )
+            }
+        })
+        .collect()
 }
 
 fn tag_items(me: &Me, items: &[PathBuf], cx: &App) -> Vec<Item> {

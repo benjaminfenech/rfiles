@@ -68,6 +68,7 @@ pub mod single_instance;
 pub mod sta;
 pub mod global_shortcuts;
 pub mod taskbar_progress;
+pub mod templates;
 pub mod terminal;
 pub mod rotate;
 pub mod thumbs;
