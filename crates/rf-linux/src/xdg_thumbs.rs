@@ -41,20 +41,12 @@ fn cache_root() -> Option<PathBuf> {
 /// unreserved characters and `!$&'()*+,;=:@/` kept, everything else percent-encoded.
 pub fn file_uri(path: &Path) -> String {
     use std::os::unix::ffi::OsStrExt;
-    let mut out = String::from("file://");
-    for &b in path.as_os_str().as_bytes() {
-        if b.is_ascii_alphanumeric() || b"-._~!$&'()*+,;=:@/".contains(&b) {
-            out.push(b as char);
-        } else {
-            out.push_str(&format!("%{b:02X}"));
-        }
-    }
-    out
+    format!("file://{}", rf_core::uri::encode(path.as_os_str().as_bytes(), b"-._~!$&'()*+,;=:@/"))
 }
 
 fn md5_hex(s: &str) -> String {
     use md5::{Digest, Md5};
-    Md5::digest(s.as_bytes()).iter().map(|b| format!("{b:02x}")).collect()
+    rf_core::uri::hex(&Md5::digest(s.as_bytes()))
 }
 
 /// A cached thumbnail, if it is there and was made from this version of the file.

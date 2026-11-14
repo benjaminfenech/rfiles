@@ -30,7 +30,7 @@ pub struct Hashes {
 pub struct Cancelled;
 
 fn hex(b: &[u8]) -> String {
-    b.iter().map(|x| format!("{x:02x}")).collect()
+    rf_core::uri::hex(b)
 }
 
 /// Hashes `path`. `progress(bytes_done, bytes_total)` is called after every 1 MiB chunk;

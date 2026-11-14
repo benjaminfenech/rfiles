@@ -417,14 +417,8 @@ pub struct Found {
 }
 
 fn web_url(engine: WebSearch, q: &str) -> String {
-    let enc: String = q
-        .bytes()
-        .map(|b| match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => (b as char).to_string(),
-            b' ' => "+".to_string(),
-            _ => format!("%{b:02X}"),
-        })
-        .collect();
+    // spaces as '+', the way search forms send queries
+    let enc = rf_core::uri::encode(q.as_bytes(), b"-_.~ ").replace(' ', "+");
     match engine {
         WebSearch::Google => format!("https://www.google.com/search?q={enc}"),
         WebSearch::Bing => format!("https://www.bing.com/search?q={enc}"),

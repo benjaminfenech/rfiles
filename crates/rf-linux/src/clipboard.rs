@@ -82,25 +82,7 @@ fn payloads(paths: &[PathBuf], kind: Transfer) -> Vec<(String, Vec<u8>)> {
 
 /// `file:///a%20b` → `/a b`; other schemes and remote hosts → None.
 fn uri_to_path(uri: &str) -> Option<PathBuf> {
-    use std::os::unix::ffi::OsStringExt;
-    let rest = uri.trim().strip_prefix("file://")?;
-    // "file:///x" or "file://localhost/x"
-    let rest = if rest.starts_with('/') { rest } else { rest.strip_prefix("localhost")? };
-    let b = rest.as_bytes();
-    let mut out = Vec::with_capacity(b.len());
-    let mut i = 0;
-    while i < b.len() {
-        if b[i] == b'%' && i + 2 < b.len() {
-            if let Some(v) = std::str::from_utf8(&b[i + 1..i + 3]).ok().and_then(|h| u8::from_str_radix(h, 16).ok()) {
-                out.push(v);
-                i += 3;
-                continue;
-            }
-        }
-        out.push(b[i]);
-        i += 1;
-    }
-    Some(PathBuf::from(std::ffi::OsString::from_vec(out)))
+    rf_core::uri::file_uri_to_path(uri)
 }
 
 /// The local files of a `text/uri-list` (comments and other schemes skipped).
