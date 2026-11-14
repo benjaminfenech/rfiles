@@ -1299,5 +1299,19 @@
  "c1030759": "Pakk ut til…",
  "318f3dab": "Åpne mappen etter utpakking",
  "9024d7b4": "Når et arkiv pakkes ut til en ny mappe, åpnes mappen i en ny fane",
- "d2386650": "Mappe å pakke ut til"
+ "d2386650": "Mappe å pakke ut til",
+ "ca4436bd": "Del opp i deler",
+ "168b858e": "Ordbokstørrelse (7z)",
+ "ddde2ea1": "RAR kan ikke deles opp her. Velg ZIP eller 7z",
+ "d51fcd54": "tar-formater støtter ikke passord. Velg ZIP eller 7z",
+ "c0ae2136": "Søk i innstillinger",
+ "59b807bf": "Ingen innstillinger samsvarer",
+ "94f50c43": "Søkeresultater",
+ "dd2f1f2e": "Slett gren",
+ "8c0c7f6a": "er ikke slått sammen med en annen gren. Hvis den slettes, kan ikke commitene lenger nås fra en gren.",
+ "341d392d": "slettes som lokal gren. Grenen på fjernlageret beholdes.",
+ "f34368df": "Slett likevel",
+ "a46465d0": "Slette grenen?",
+ "56d50e5f": "Samme snarvei:",
+ "cc8ffea4": "Lukk alle faner"
 }

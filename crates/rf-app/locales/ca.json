@@ -1299,5 +1299,19 @@
  "c1030759": "Extreu a…",
  "318f3dab": "Obre la carpeta després d’extreure",
  "9024d7b4": "Quan s’extreu un arxiu comprimit a una carpeta nova, aquesta carpeta s’obre en una pestanya nova",
- "d2386650": "Carpeta on extreure"
+ "d2386650": "Carpeta on extreure",
+ "ca4436bd": "Divideix en parts",
+ "168b858e": "Mida del diccionari (7z)",
+ "ddde2ea1": "RAR no es pot dividir aquí; trieu ZIP o 7z",
+ "d51fcd54": "Els formats tar no admeten contrasenyes; trieu ZIP o 7z",
+ "c0ae2136": "Cerca a la configuració",
+ "59b807bf": "Cap opció coincideix",
+ "94f50c43": "Resultats de la cerca",
+ "dd2f1f2e": "Suprimeix la branca",
+ "8c0c7f6a": "no està fusionada a cap altra branca: si se suprimeix, ja no es podrà arribar als seus commits des de cap branca.",
+ "341d392d": "se suprimirà com a branca local. La branca del remot es manté tal com és.",
+ "f34368df": "Suprimeix igualment",
+ "a46465d0": "Voleu suprimir la branca?",
+ "56d50e5f": "Mateixa drecera:",
+ "cc8ffea4": "Tanca totes les pestanyes"
 }

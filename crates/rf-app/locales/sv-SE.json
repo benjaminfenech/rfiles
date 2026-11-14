@@ -1299,5 +1299,19 @@
  "c1030759": "Extrahera till…",
  "318f3dab": "Öppna mappen efter extrahering",
  "9024d7b4": "När ett arkiv extraheras till en ny mapp öppnas mappen på en ny flik",
- "d2386650": "Mapp att extrahera till"
+ "d2386650": "Mapp att extrahera till",
+ "ca4436bd": "Dela upp i delar",
+ "168b858e": "Ordlistestorlek (7z)",
+ "ddde2ea1": "RAR kan inte delas upp här. Välj ZIP eller 7z",
+ "d51fcd54": "tar-format stöder inte lösenord. Välj ZIP eller 7z",
+ "c0ae2136": "Sök i inställningar",
+ "59b807bf": "Ingen inställning matchar",
+ "94f50c43": "Sökresultat",
+ "dd2f1f2e": "Ta bort gren",
+ "8c0c7f6a": "har inte slagits samman med någon annan gren: om den tas bort går dess incheckningar inte längre att nå från en gren.",
+ "341d392d": "tas bort som lokal gren. Grenen på fjärrservern berörs inte.",
+ "f34368df": "Ta bort ändå",
+ "a46465d0": "Ta bort grenen?",
+ "56d50e5f": "Samma kortkommando:",
+ "cc8ffea4": "Stäng alla flikar"
 }

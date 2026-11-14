@@ -1299,5 +1299,19 @@
  "c1030759": "Estrai in…",
  "318f3dab": "Apri la cartella dopo l'estrazione",
  "9024d7b4": "Quando un archivio viene estratto in una nuova cartella, questa si apre in una nuova scheda",
- "d2386650": "Cartella di destinazione"
+ "d2386650": "Cartella di destinazione",
+ "ca4436bd": "Dividi in parti",
+ "168b858e": "Dimensione dizionario (7z)",
+ "ddde2ea1": "Qui RAR non può essere diviso; scegli ZIP o 7z",
+ "d51fcd54": "I formati tar non supportano le password; scegli ZIP o 7z",
+ "c0ae2136": "Cerca nelle impostazioni",
+ "59b807bf": "Nessuna impostazione corrisponde",
+ "94f50c43": "Risultati della ricerca",
+ "dd2f1f2e": "Elimina ramo",
+ "8c0c7f6a": "non è unito a un altro ramo: se viene eliminato, i suoi commit non saranno più raggiungibili da alcun ramo.",
+ "341d392d": "verrà eliminato come ramo locale. Il ramo sul server remoto resta invariato.",
+ "f34368df": "Elimina comunque",
+ "a46465d0": "Eliminare il ramo?",
+ "56d50e5f": "Stessa scorciatoia:",
+ "cc8ffea4": "Chiudi tutte le schede"
 }

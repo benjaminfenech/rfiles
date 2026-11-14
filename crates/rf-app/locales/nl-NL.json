@@ -1299,5 +1299,19 @@
  "c1030759": "Uitpakken naar…",
  "318f3dab": "Map openen na uitpakken",
  "9024d7b4": "Als een archief naar een nieuwe map wordt uitgepakt, wordt die map in een nieuw tabblad geopend",
- "d2386650": "Map om naar uit te pakken"
+ "d2386650": "Map om naar uit te pakken",
+ "ca4436bd": "Opsplitsen in delen",
+ "168b858e": "Woordenboekgrootte (7z)",
+ "ddde2ea1": "RAR kan hier niet worden gesplitst; kies ZIP of 7z",
+ "d51fcd54": "tar-indelingen ondersteunen geen wachtwoorden; kies ZIP of 7z",
+ "c0ae2136": "Instellingen zoeken",
+ "59b807bf": "Geen instelling gevonden",
+ "94f50c43": "Zoekresultaten",
+ "dd2f1f2e": "Branch verwijderen",
+ "8c0c7f6a": "is niet samengevoegd met een andere branch: als de branch wordt verwijderd, zijn de commits ervan niet meer via een branch bereikbaar.",
+ "341d392d": "wordt verwijderd als lokale branch. De branch op de remote blijft ongewijzigd.",
+ "f34368df": "Toch verwijderen",
+ "a46465d0": "Branch verwijderen?",
+ "56d50e5f": "Dezelfde sneltoets:",
+ "cc8ffea4": "Alle tabbladen sluiten"
 }

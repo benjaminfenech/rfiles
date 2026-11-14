@@ -5185,6 +5185,62 @@
   "en": "Folder to extract to"
  },
  {
+  "id": "ca4436bd",
+  "en": "Split into parts"
+ },
+ {
+  "id": "168b858e",
+  "en": "Dictionary size (7z)"
+ },
+ {
+  "id": "ddde2ea1",
+  "en": "RAR can't be split here; choose ZIP or 7z"
+ },
+ {
+  "id": "d51fcd54",
+  "en": "tar formats don't support passwords; choose ZIP or 7z"
+ },
+ {
+  "id": "c0ae2136",
+  "en": "Search settings"
+ },
+ {
+  "id": "59b807bf",
+  "en": "No setting matches"
+ },
+ {
+  "id": "94f50c43",
+  "en": "Search results"
+ },
+ {
+  "id": "dd2f1f2e",
+  "en": "Delete branch"
+ },
+ {
+  "id": "8c0c7f6a",
+  "en": "is not merged into another branch: if it is deleted, its commits can no longer be reached from a branch."
+ },
+ {
+  "id": "341d392d",
+  "en": "will be deleted as a local branch. The branch on the remote stays as it is."
+ },
+ {
+  "id": "f34368df",
+  "en": "Delete anyway"
+ },
+ {
+  "id": "a46465d0",
+  "en": "Delete the branch?"
+ },
+ {
+  "id": "56d50e5f",
+  "en": "Same shortcut:"
+ },
+ {
+  "id": "cc8ffea4",
+  "en": "Close all tabs"
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"

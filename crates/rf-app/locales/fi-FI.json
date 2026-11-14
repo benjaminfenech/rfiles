@@ -1299,5 +1299,19 @@
  "c1030759": "Pura kohteeseen…",
  "318f3dab": "Avaa kansio purkamisen jälkeen",
  "9024d7b4": "Kun arkisto puretaan uuteen kansioon, kansio avautuu uudessa välilehdessä",
- "d2386650": "Kansio, johon puretaan"
+ "d2386650": "Kansio, johon puretaan",
+ "ca4436bd": "Jaa osiin",
+ "168b858e": "Sanakirjan koko (7z)",
+ "ddde2ea1": "RAR-tiedostoa ei voi jakaa osiin täällä; valitse ZIP tai 7z",
+ "d51fcd54": "tar-muodot eivät tue salasanoja; valitse ZIP tai 7z",
+ "c0ae2136": "Etsi asetuksista",
+ "59b807bf": "Mikään asetus ei vastaa hakua",
+ "94f50c43": "Hakutulokset",
+ "dd2f1f2e": "Poista haara",
+ "8c0c7f6a": "ei ole yhdistetty toiseen haaraan: jos se poistetaan, sen commitit eivät enää ole tavoitettavissa haarasta.",
+ "341d392d": "poistetaan paikallisena haarana. Etäpalvelimen haara säilyy ennallaan.",
+ "f34368df": "Poista silti",
+ "a46465d0": "Poistetaanko haara?",
+ "56d50e5f": "Sama pikanäppäin:",
+ "cc8ffea4": "Sulje kaikki välilehdet"
 }

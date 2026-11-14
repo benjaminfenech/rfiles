@@ -1299,5 +1299,19 @@
  "c1030759": "Extragere în…",
  "318f3dab": "Deschide folderul după extragere",
  "9024d7b4": "Când o arhivă este extrasă într-un folder nou, folderul se deschide într-o filă nouă",
- "d2386650": "Folder de extragere"
+ "d2386650": "Folder de extragere",
+ "ca4436bd": "Împărțire în părți",
+ "168b858e": "Dimensiune dicționar (7z)",
+ "ddde2ea1": "RAR nu poate fi împărțit aici; alegeți ZIP sau 7z",
+ "d51fcd54": "Formatele tar nu acceptă parole; alegeți ZIP sau 7z",
+ "c0ae2136": "Căutare în setări",
+ "59b807bf": "Nicio setare nu se potrivește",
+ "94f50c43": "Rezultatele căutării",
+ "dd2f1f2e": "Ștergere ramură",
+ "8c0c7f6a": "nu este îmbinată într-o altă ramură: dacă este ștearsă, commit-urile ei nu mai pot fi accesate dintr-o ramură.",
+ "341d392d": "va fi ștearsă ca ramură locală. Ramura de pe server rămâne neschimbată.",
+ "f34368df": "Șterge oricum",
+ "a46465d0": "Ștergeți ramura?",
+ "56d50e5f": "Aceeași comandă rapidă:",
+ "cc8ffea4": "Închide toate filele"
 }

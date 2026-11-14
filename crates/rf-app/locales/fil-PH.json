@@ -1299,5 +1299,19 @@
  "c1030759": "I-extract sa…",
  "318f3dab": "Buksan ang folder pagkatapos mag-extract",
  "9024d7b4": "Kapag na-extract ang archive sa bagong folder, bubukas ang folder na iyon sa bagong tab",
- "d2386650": "Folder na pag-e-extract-an"
+ "d2386650": "Folder na pag-e-extract-an",
+ "ca4436bd": "Hatiin sa mga bahagi",
+ "168b858e": "Laki ng diksyunaryo (7z)",
+ "ddde2ea1": "Hindi mahahati ang RAR dito; pumili ng ZIP o 7z",
+ "d51fcd54": "Hindi sinusuportahan ng mga tar format ang password; pumili ng ZIP o 7z",
+ "c0ae2136": "Maghanap sa mga setting",
+ "59b807bf": "Walang tugmang setting",
+ "94f50c43": "Mga resulta ng paghahanap",
+ "dd2f1f2e": "Burahin ang branch",
+ "8c0c7f6a": "ay hindi pa na-merge sa ibang branch: kapag binura ito, hindi na maaabot ang mga commit nito mula sa anumang branch.",
+ "341d392d": "ay buburahin bilang lokal na branch. Mananatili ang branch sa remote.",
+ "f34368df": "Burahin pa rin",
+ "a46465d0": "Burahin ang branch?",
+ "56d50e5f": "Parehong shortcut:",
+ "cc8ffea4": "Isara ang lahat ng tab"
 }

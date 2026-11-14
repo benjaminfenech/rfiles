@@ -1299,5 +1299,19 @@
  "c1030759": "Raspakiraj u…",
  "318f3dab": "Otvori mapu nakon raspakiravanja",
  "9024d7b4": "Kad se arhiva raspakira u novu mapu, ta se mapa otvara u novoj kartici",
- "d2386650": "Mapa za raspakiravanje"
+ "d2386650": "Mapa za raspakiravanje",
+ "ca4436bd": "Podijeli na dijelove",
+ "168b858e": "Veličina rječnika (7z)",
+ "ddde2ea1": "RAR se ovdje ne može dijeliti; odaberite ZIP ili 7z",
+ "d51fcd54": "tar formati ne podržavaju lozinke; odaberite ZIP ili 7z",
+ "c0ae2136": "Traži postavke",
+ "59b807bf": "Nijedna postavka ne odgovara",
+ "94f50c43": "Rezultati pretraživanja",
+ "dd2f1f2e": "Izbriši granu",
+ "8c0c7f6a": "nije spojena s drugom granom: ako se izbriše, njezinim se commitovima više neće moći pristupiti iz nijedne grane.",
+ "341d392d": "izbrisat će se kao lokalna grana. Grana na udaljenom poslužitelju ostaje nepromijenjena.",
+ "f34368df": "Ipak izbriši",
+ "a46465d0": "Izbrisati granu?",
+ "56d50e5f": "Isti prečac:",
+ "cc8ffea4": "Zatvori sve kartice"
 }
