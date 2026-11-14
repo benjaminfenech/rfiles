@@ -32,6 +32,17 @@
   </provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.11.0" date="2026-11-14">
+      <description>
+        <p>
+          Permissions and owner columns, links, templates, select by pattern, paste an image or
+          text as a file, mount disk images, search filters, your own right-click actions, a
+          folder tree, phones and cameras, file servers on the network, folder sharing over
+          Samba, and Open in Disks. The start page is now called Overview, and Home opens your
+          home folder.
+        </p>
+      </description>
+    </release>
     <release version="0.10.0" date="2026-11-14">
       <description>
         <p>
