@@ -87,6 +87,28 @@ pub fn group_name(gid: u32) -> Option<String> {
     }
 }
 
+/// [`user_name`], remembered (for list columns: one lookup per user, not per row); the uid
+/// when it has no name.
+pub fn user_label(uid: u32) -> std::sync::Arc<str> {
+    static CACHE: std::sync::Mutex<Vec<(u32, std::sync::Arc<str>)>> = std::sync::Mutex::new(Vec::new());
+    cached(&CACHE, uid, || user_name(uid))
+}
+
+/// [`group_name`], remembered; the gid when it has no name.
+pub fn group_label(gid: u32) -> std::sync::Arc<str> {
+    static CACHE: std::sync::Mutex<Vec<(u32, std::sync::Arc<str>)>> = std::sync::Mutex::new(Vec::new());
+    cached(&CACHE, gid, || group_name(gid))
+}
+
+fn cached(cache: &std::sync::Mutex<Vec<(u32, std::sync::Arc<str>)>>, id: u32, look: impl FnOnce() -> Option<String>) -> std::sync::Arc<str> {
+    if let Some((_, n)) = cache.lock().unwrap().iter().find(|(i, _)| *i == id) {
+        return n.clone();
+    }
+    let n: std::sync::Arc<str> = look().unwrap_or_else(|| id.to_string()).into();
+    cache.lock().unwrap().push((id, n.clone()));
+    n
+}
+
 /// The groups this user is in (the ones a file of theirs can be given to), sorted by name.
 pub fn my_groups() -> Vec<(u32, String)> {
     // SAFETY: a zero-length call only returns the count
@@ -247,6 +269,9 @@ mod tests {
 
     #[test]
     fn names_of_root() {
+        assert_eq!(&*user_label(0), "root");
+        assert_eq!(&*user_label(0), "root", "from the cache");
+        assert_eq!(&*user_label(4_000_000_000), "4000000000", "no name: the id");
         assert_eq!(user_name(0).as_deref(), Some("root"));
         assert_eq!(read(Path::new("/")).unwrap().owner, "root");
     }
