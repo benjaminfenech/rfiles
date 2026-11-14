@@ -21,7 +21,7 @@ pub struct Share {
 /// Why folders can't be shared here.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Unavailable {
-    /// Samba (its `net` tool) isn't installed.
+    /// Samba's server (`smbd`) or its `net` tool isn't installed.
     NoSamba,
     /// Samba is there but user shares are off; `net`'s own words.
     Disabled(String),
@@ -38,6 +38,11 @@ impl std::fmt::Display for Unavailable {
 impl std::error::Error for Unavailable {}
 
 fn net(args: &[&str]) -> anyhow::Result<String> {
+    // `net` comes with the Samba client; without the server (smbd) a share is made but
+    // nobody serves it
+    if !crate::sandbox::in_path("smbd") && !Path::new("/usr/sbin/smbd").exists() {
+        return Err(Unavailable::NoSamba.into());
+    }
     let mut c = crate::sandbox::tool("net", &[]);
     c.arg("usershare").args(args);
     let out = match crate::tool::run(c, Duration::from_secs(20)) {
