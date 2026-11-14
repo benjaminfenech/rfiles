@@ -1342,5 +1342,9 @@
  "426ef10c": "Autoriser l'exécution comme programme",
  "3f5c57bb": "Appliquer à tout le contenu",
  "2d9081dd": "Les fichiers à l'intérieur gardent leur propre droit d'exécution.",
- "b2e1978a": "Seul le propriétaire peut les modifier."
+ "b2e1978a": "Seul le propriétaire peut les modifier.",
+ "51148674": "Sélectionner par motif",
+ "777c4aba": "Désélectionner",
+ "84f7d8e1": "Saisissez un nom ou un motif comme *.jpg",
+ "7c6364fa": "Des noms comme *.jpg ou report-??.pdf ; séparez-en plusieurs par ;. Un mot sans * ni ? correspond n'importe où dans le nom."
 }

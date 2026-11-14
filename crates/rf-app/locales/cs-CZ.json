@@ -1342,5 +1342,9 @@
  "426ef10c": "Povolit spouštění jako program",
  "3f5c57bb": "Použít na veškerý obsah",
  "2d9081dd": "Soubory uvnitř si ponechají vlastní oprávnění ke spuštění.",
- "b2e1978a": "Změnit je může jen vlastník."
+ "b2e1978a": "Změnit je může jen vlastník.",
+ "51148674": "Vybrat podle vzoru",
+ "777c4aba": "Zrušit výběr",
+ "84f7d8e1": "Zadejte název nebo vzor, např. *.jpg",
+ "7c6364fa": "Názvy jako *.jpg nebo report-??.pdf; více vzorů oddělte ;. Slovo bez * nebo ? se hledá kdekoli v názvu."
 }

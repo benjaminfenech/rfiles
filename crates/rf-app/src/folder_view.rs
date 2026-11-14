@@ -149,6 +149,18 @@ enum Row {
     Item(usize),
 }
 
+/// What the user typed in Select by pattern, as a pattern list: `;` or `,` between patterns,
+/// and a part without `*` or `?` matching anywhere in the name ("2024" → "*2024*").
+fn pattern_spec(input: &str) -> String {
+    input
+        .split([';', ','])
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+        .map(|p| if p.contains(['*', '?']) { p.to_string() } else { format!("*{p}*") })
+        .collect::<Vec<_>>()
+        .join(";")
+}
+
 fn group_key(g: GroupBy, e: &Entry, now: chrono::DateTime<chrono::Local>) -> (u32, String) {
     match g {
         GroupBy::None | GroupBy::Tag | GroupBy::Folder => (0, String::new()),
@@ -2704,6 +2716,51 @@ impl FolderView {
 
     /// Select these names (in the current folder) as soon as they're listed: a paste or a copy
     /// into this folder shows what arrived, like Explorer does.
+    /// Ctrl+S: asks for name patterns, then selects (or deselects) the items they match.
+    fn ask_select_pattern(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        static LAST: parking_lot::Mutex<String> = parking_lot::Mutex::new(String::new());
+        let me = cx.entity().downgrade();
+        let run = move |select: bool| {
+            let me = me.clone();
+            move |text: Option<String>, _: &mut Window, cx: &mut App| {
+                let text = text.unwrap_or_default();
+                if text.trim().is_empty() {
+                    return Err(t!("Type a name or a pattern such as *.jpg").to_string());
+                }
+                *LAST.lock() = text.clone();
+                let _ = me.update(cx, |v, cx| v.select_matching(&text, select, cx));
+                Ok(())
+            }
+        };
+        let last = LAST.lock().clone();
+        crate::prompt::show(
+            t!("Select by pattern"),
+            Some(t!("Names like *.jpg or report-??.pdf; separate several with ;. A word without * or ? matches anywhere in the name.").to_string()),
+            Some((last, "*.jpg; *.png".into())),
+            vec![
+                crate::prompt::Button::new(t!("Select"), crate::prompt::Kind::Primary, run(true)),
+                crate::prompt::Button::new(t!("Deselect"), crate::prompt::Kind::Normal, run(false)),
+                crate::prompt::Button::cancel(),
+            ],
+            window,
+            cx,
+        );
+    }
+
+    /// Adds the shown items whose names match `patterns` to the selection (or takes them out).
+    pub(crate) fn select_matching(&mut self, patterns: &str, select: bool, cx: &mut Context<Self>) {
+        let spec = pattern_spec(patterns);
+        let hits: Vec<u32> = self.visible.iter().copied().filter(|&ei| rf_core::entry::matches_patterns(&spec, &self.entries[ei as usize].name)).collect();
+        for ei in hits {
+            if select {
+                self.selected.insert(ei);
+            } else {
+                self.selected.remove(&ei);
+            }
+        }
+        cx.notify();
+    }
+
     pub(crate) fn select_when_listed(&mut self, names: Vec<String>, cx: &mut Context<Self>) {
         if names.is_empty() {
             return;
@@ -4143,6 +4200,7 @@ impl Render for FolderView {
                 this.selected = next;
                 cx.notify();
             }))
+            .on_action(cx.listener(|this, _: &SelectByPattern, window, cx| this.ask_select_pattern(window, cx)))
             .on_action(cx.listener(|this, _: &ToggleSelection, _, cx| {
                 if let Some(ei) = this.cursor.and_then(|c| this.visible.get(c)).copied() {
                     if !this.selected.remove(&ei) {
@@ -4298,4 +4356,21 @@ fn send_index_hits(paths: &[PathBuf], tx: &mpsc::UnboundedSender<Msg>, cancel: &
         let _ = tx.unbounded_send(Msg::Hits(es, ps));
     }
     sent
+}
+
+#[cfg(test)]
+mod pattern_tests {
+    use super::pattern_spec;
+    use rf_core::entry::matches_patterns;
+
+    #[test]
+    fn select_patterns() {
+        assert_eq!(pattern_spec(" *.jpg; *.PNG ,2024;; "), "*.jpg;*.PNG;*2024*");
+        let spec = pattern_spec("*.jpg; 2024");
+        assert!(matches_patterns(&spec, "Holiday.JPG"), "any case");
+        assert!(matches_patterns(&spec, "report-2024-q1.pdf"), "a word matches anywhere");
+        assert!(!matches_patterns(&spec, "notes.txt"));
+        assert!(matches_patterns(&pattern_spec("report-??.pdf"), "report-07.pdf"));
+        assert!(!matches_patterns(&pattern_spec("report-??.pdf"), "report-7.pdf"));
+    }
 }

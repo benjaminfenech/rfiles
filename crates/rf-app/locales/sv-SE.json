@@ -1342,5 +1342,9 @@
  "426ef10c": "Tillåt körning som program",
  "3f5c57bb": "Tillämpa på allt innehåll",
  "2d9081dd": "Filer inuti behåller sin egen körbehörighet.",
- "b2e1978a": "Bara ägaren kan ändra detta."
+ "b2e1978a": "Bara ägaren kan ändra detta.",
+ "51148674": "Markera efter mönster",
+ "777c4aba": "Avmarkera",
+ "84f7d8e1": "Skriv ett namn eller ett mönster som *.jpg",
+ "7c6364fa": "Namn som *.jpg eller report-??.pdf; skilj flera åt med ;. Ett ord utan * eller ? matchar var som helst i namnet."
 }

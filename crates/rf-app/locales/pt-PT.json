@@ -1342,5 +1342,9 @@
  "426ef10c": "Permitir execução como programa",
  "3f5c57bb": "Aplicar a todo o conteúdo",
  "2d9081dd": "Os ficheiros no interior mantêm a sua própria permissão de execução.",
- "b2e1978a": "Só o proprietário pode alterar isto."
+ "b2e1978a": "Só o proprietário pode alterar isto.",
+ "51148674": "Selecionar por padrão",
+ "777c4aba": "Desmarcar",
+ "84f7d8e1": "Escreva um nome ou um padrão como *.jpg",
+ "7c6364fa": "Nomes como *.jpg ou report-??.pdf; separe vários com ;. Uma palavra sem * ou ? corresponde em qualquer parte do nome."
 }

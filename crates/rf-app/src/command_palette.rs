@@ -76,6 +76,7 @@ fn commands() -> Vec<Cmd> {
         cmd!("Open in new window", "Ctrl+Alt+Enter", L::AppWindow, OpenInNewWindow),
         cmd!("Select all", "Ctrl+A", L::SquareCheck, SelectAll),
         cmd!("Invert selection", "", L::ArrowLeftRight, InvertSelection),
+        cmd!("Select by pattern", "Ctrl+S", L::SquareDashedMousePointer, SelectByPattern),
         cmd!("Toggle item selection", "Ctrl+Space", L::SquareCheck, ToggleSelection),
         cmd!("Copy", "Ctrl+C", L::Copy, CopyItems),
         cmd!("Cut", "Ctrl+X", L::Scissors, CutItems),
