@@ -1348,5 +1348,7 @@
  "84f7d8e1": "Escreva um nome ou um padrão como *.jpg",
  "7c6364fa": "Nomes como *.jpg ou report-??.pdf; separe vários com ;. Uma palavra sem * ou ? corresponde em qualquer parte do nome.",
  "0e130889": "Imagem colada",
- "9e8d3e6b": "Texto colado"
+ "9e8d3e6b": "Texto colado",
+ "3e12805a": "Montar",
+ "dff7dc1b": "Não foi possível montar a imagem de disco"
 }

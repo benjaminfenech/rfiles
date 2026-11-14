@@ -262,6 +262,56 @@ pub fn mount(device: &Path) -> anyhow::Result<PathBuf> {
     Ok(PathBuf::from(r))
 }
 
+/// Whether `path` looks like a disk image UDisks can attach (an ISO, IMG or raw image).
+pub fn is_disk_image(path: &Path) -> bool {
+    let ext = path.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    matches!(ext.as_str(), "iso" | "img" | "raw")
+}
+
+/// Attaches the disk image at `image` read-only (a loop device, as GNOME's Disk Image Mounter
+/// does) and mounts the file systems in it; returns where the first one is. UDisks detaches the
+/// image again once they're all unmounted (Eject in the sidebar).
+pub fn mount_image(image: &Path) -> anyhow::Result<PathBuf> {
+    let c = conn()?;
+    let file = std::fs::File::open(image).with_context(|| image.display().to_string())?;
+    let manager = Proxy::new(&c, DEST, "/org/freedesktop/UDisks2/Manager", "org.freedesktop.UDisks2.Manager")?;
+    let mut opts = no_options();
+    opts.insert("read-only", Value::Bool(true));
+    let dev: OwnedObjectPath = manager.call("LoopSetup", &(zbus::zvariant::Fd::from(&file), opts)).map_err(|e| explain(e, image))?;
+    let block = proxy(&c, &dev, BLOCK)?;
+    let device: Vec<u8> = block.get_property("Device").unwrap_or_default();
+    let device = bytes_path(&Value::from(device)).ok_or_else(|| anyhow!("UDisks gave no device for {}.", image.display()))?;
+    let dev_str = device.to_string_lossy().into_owned();
+    let ours = |v: &Volume| {
+        let d = v.device.to_string_lossy();
+        d == dev_str || d.strip_prefix(dev_str.as_str()).is_some_and(|rest| rest.starts_with('p'))
+    };
+    // the file systems (the image's own, or its partitions') show up a moment later
+    for _ in 0..30 {
+        let found: Vec<Volume> = volumes()?.into_iter().filter(|v| ours(v) && (v.locked || !v.fs.is_empty())).collect();
+        let usable: Vec<&Volume> = found.iter().filter(|v| !v.ignore || v.locked).collect();
+        if !usable.is_empty() {
+            let mut first = None;
+            let mut err = None;
+            for v in usable {
+                match mount(&v.device) {
+                    Ok(p) => first = first.or(Some(p)),
+                    Err(e) => err = err.or(Some(e)),
+                }
+            }
+            return match (first, err) {
+                (Some(p), _) => Ok(p),
+                (None, Some(e)) => Err(e),
+                (None, None) => unreachable!(),
+            };
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    // nothing to mount: let the image go again
+    let _ = proxy(&c, &dev, LOOP).and_then(|p| Ok(p.call::<_, _, ()>("Delete", &(no_options(),))?));
+    Err(anyhow!("{} has no file system rfiles can open.", image.display()))
+}
+
 /// Unlocks the LUKS volume `device` with `passphrase`, then mounts the file system inside and
 /// returns where. [`WrongPassphrase`] when it doesn't fit.
 pub fn unlock_and_mount(device: &Path, passphrase: &str) -> anyhow::Result<PathBuf> {
@@ -397,6 +447,12 @@ pub fn users_of(root: &Path) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn disk_images() {
+        assert!(is_disk_image(Path::new("/x/Fedora.ISO")) && is_disk_image(Path::new("sd.img")) && is_disk_image(Path::new("a.raw")));
+        assert!(!is_disk_image(Path::new("a.zip")) && !is_disk_image(Path::new("iso")));
+    }
 
     #[test]
     fn wrong_passphrase_messages() {

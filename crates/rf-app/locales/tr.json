@@ -1348,5 +1348,7 @@
  "84f7d8e1": "Bir ad ya da *.jpg gibi bir desen yazın",
  "7c6364fa": "*.jpg veya report-??.pdf gibi adlar; birden fazlasını ; ile ayırın. * veya ? içermeyen bir sözcük adın herhangi bir yerinde eşleşir.",
  "0e130889": "Yapıştırılan görüntü",
- "9e8d3e6b": "Yapıştırılan metin"
+ "9e8d3e6b": "Yapıştırılan metin",
+ "3e12805a": "Bağla",
+ "dff7dc1b": "Disk görüntüsü bağlanamadı"
 }

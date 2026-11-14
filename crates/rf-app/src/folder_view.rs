@@ -728,6 +728,31 @@ impl FolderView {
         .detach();
     }
 
+    /// "Mount": attaches a disk image (ISO, IMG) as a read-only drive and opens it. Eject in the
+    /// sidebar lets it go again.
+    pub fn mount_image(&mut self, image: PathBuf, cx: &mut Context<Self>) {
+        let work = cx.background_spawn({
+            let image = image.clone();
+            async move { rf_linux::udisks::mount_image(&image) }
+        });
+        cx.spawn(async move |this, cx| {
+            let r = work.await;
+            let _ = this.update(cx, |v, cx| match r {
+                Ok(point) => {
+                    v.navigate(Location::Path(point), cx);
+                    v.places.update(cx, |p, cx| p.refresh(cx));
+                }
+                Err(e) => {
+                    log::warn!("mount {}: {e:#}", image.display());
+                    if let Some(win) = cx.active_window() {
+                        crate::ops::alert_box(t!("Couldn't mount the disk image").to_string(), format!("{e}"), win, cx);
+                    }
+                }
+            });
+        })
+        .detach();
+    }
+
     /// An encrypted drive: asks for its passphrase, then unlocks and opens it.
     fn ask_passphrase(&mut self, device: PathBuf, retry: bool, win: AnyWindowHandle, cx: &mut Context<Self>) {
         use crate::prompt::{self, Button, Kind};

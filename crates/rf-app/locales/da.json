@@ -1348,5 +1348,7 @@
  "84f7d8e1": "Skriv et navn eller et mønster som *.jpg",
  "7c6364fa": "Navne som *.jpg eller report-??.pdf; adskil flere med ;. Et ord uden * eller ? passer hvor som helst i navnet.",
  "0e130889": "Indsat billede",
- "9e8d3e6b": "Indsat tekst"
+ "9e8d3e6b": "Indsat tekst",
+ "3e12805a": "Montér",
+ "dff7dc1b": "Diskaftrykket kunne ikke monteres"
 }
