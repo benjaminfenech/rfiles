@@ -1303,5 +1303,8 @@
  "ca4436bd": "Dividir en partes",
  "168b858e": "Tamaño del diccionario (7z)",
  "ddde2ea1": "RAR no se puede dividir aquí; elija ZIP o 7z",
- "d51fcd54": "Los formatos tar no admiten contraseñas; elija ZIP o 7z"
+ "d51fcd54": "Los formatos tar no admiten contraseñas; elija ZIP o 7z",
+ "c0ae2136": "Buscar en la configuración",
+ "59b807bf": "Ninguna configuración coincide",
+ "94f50c43": "Resultados de la búsqueda"
 }

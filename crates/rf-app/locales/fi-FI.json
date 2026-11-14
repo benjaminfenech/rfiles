@@ -1303,5 +1303,8 @@
  "ca4436bd": "Jaa osiin",
  "168b858e": "Sanakirjan koko (7z)",
  "ddde2ea1": "RAR-tiedostoa ei voi jakaa osiin täällä; valitse ZIP tai 7z",
- "d51fcd54": "tar-muodot eivät tue salasanoja; valitse ZIP tai 7z"
+ "d51fcd54": "tar-muodot eivät tue salasanoja; valitse ZIP tai 7z",
+ "c0ae2136": "Etsi asetuksista",
+ "59b807bf": "Mikään asetus ei vastaa hakua",
+ "94f50c43": "Hakutulokset"
 }
