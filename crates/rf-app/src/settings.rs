@@ -218,6 +218,11 @@ pub struct ColumnPrefs {
     pub git_date: bool,
     pub git_hash: bool,
     pub git_widths: [u16; 4],
+    /// Owner, group and permissions (`rwxr-xr-x`).
+    pub owner: bool,
+    pub group: bool,
+    pub permissions: bool,
+    pub unix_widths: [u16; 3],
 }
 
 impl Default for ColumnPrefs {
@@ -237,6 +242,10 @@ impl Default for ColumnPrefs {
             git_date: false,
             git_hash: false,
             git_widths: [240, 130, 140, 90],
+            owner: false,
+            group: false,
+            permissions: false,
+            unix_widths: [110, 110, 100],
         }
     }
 }

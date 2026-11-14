@@ -37,6 +37,11 @@ pub struct Entry {
     /// The name Explorer shows for a folder with a localized name (desktop.ini
     /// `LocalizedResourceName`: Downloads → "İndirilenler"). The real name stays in `name`.
     pub label: Option<Arc<str>>,
+    /// Unix permission bits (`0o7777`), 0 when unknown (archives, other systems).
+    pub mode: u32,
+    /// Owner and group ids (meaningful when `mode` isn't 0).
+    pub uid: u32,
+    pub gid: u32,
 }
 
 impl Entry {
@@ -45,7 +50,15 @@ impl Entry {
             Some(i) if kind == EntryKind::File && i > 0 && i + 1 < name.len() => shared_ext(&name[i + 1..]),
             _ => shared_ext(""),
         };
-        Self { name: name.into(), ext, kind, size, modified_ms, created_ms, attrs, label: None }
+        Self { name: name.into(), ext, kind, size, modified_ms, created_ms, attrs, label: None, mode: 0, uid: 0, gid: 0 }
+    }
+
+    /// The owner, group and permission bits (a listing on Linux sets them).
+    pub fn with_unix(mut self, mode: u32, uid: u32, gid: u32) -> Self {
+        self.mode = mode & 0o7777;
+        self.uid = uid;
+        self.gid = gid;
+        self
     }
 
     /// The name to show (and sort and type-select by): the localized one when there is one.

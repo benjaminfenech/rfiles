@@ -5325,6 +5325,38 @@
   "en": "Open templates folder"
  },
  {
+  "id": "0cd5e716",
+  "en": "Various"
+ },
+ {
+  "id": "0574902c",
+  "en": "Group"
+ },
+ {
+  "id": "26c0a538",
+  "en": "Execute"
+ },
+ {
+  "id": "69bad712",
+  "en": "Others"
+ },
+ {
+  "id": "426ef10c",
+  "en": "Allow running as a program"
+ },
+ {
+  "id": "3f5c57bb",
+  "en": "Apply to everything inside"
+ },
+ {
+  "id": "2d9081dd",
+  "en": "Files inside keep their own execute permission."
+ },
+ {
+  "id": "b2e1978a",
+  "en": "Only the owner can change these."
+ },
+ {
   "id": "0e130889",
   "en": "Pasted image"
  },
