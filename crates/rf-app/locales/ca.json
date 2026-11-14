@@ -1293,5 +1293,21 @@
  "6d1f5156": "Fitxers per desar",
  "ac00cfc8": "Necessita el paquet deb, rpm o d'Arch (instal·la el fitxer rfiles.portal del portal d'escriptori); el Flatpak no pot afegir un rerefons de portal.",
  "c01651ec": "Les aplicacions que demanen al portal d'escriptori un diàleg de fitxers (Firefox, Chromium i aplicacions GTK, Qt i Electron) obtenen rfiles. Desactivar-ho recupera el diàleg anterior.",
- "de824b35": "Utilitza rfiles per als diàlegs Obre i Desa"
+ "de824b35": "Utilitza rfiles per als diàlegs Obre i Desa",
+ "155ee43c": "Any",
+ "a8761ba5": "Mes",
+ "4954229d": "Dia",
+ "9d2cfb7d": "gener",
+ "fca77633": "febrer",
+ "c0846390": "març",
+ "98dbac97": "abril",
+ "3ba7e226": "maig",
+ "e920f785": "juny",
+ "011ca01f": "juliol",
+ "5ddb609c": "agost",
+ "c212b600": "setembre",
+ "ecf21807": "octubre",
+ "3ea53a3f": "novembre",
+ "662dcc9e": "desembre",
+ "33c7776e": "Sense etiqueta"
 }

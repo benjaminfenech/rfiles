@@ -1293,5 +1293,21 @@
  "6d1f5156": "Įrašytini failai",
  "ac00cfc8": "Reikia deb, rpm arba Arch paketo (jis įdiegia darbalaukio portalo failą rfiles.portal); „Flatpak“ negali pridėti portalo posistemės.",
  "c01651ec": "Programos, kurios prašo darbalaukio portalo failų dialogo („Firefox“, „Chromium“, GTK, Qt ir „Electron“ programos), gauna rfiles. Išjungus grąžinamas ankstesnis dialogas.",
- "de824b35": "Naudoti rfiles atidarymo ir įrašymo dialogams"
+ "de824b35": "Naudoti rfiles atidarymo ir įrašymo dialogams",
+ "155ee43c": "Metai",
+ "a8761ba5": "Mėnuo",
+ "4954229d": "Diena",
+ "9d2cfb7d": "Sausis",
+ "fca77633": "Vasaris",
+ "c0846390": "Kovas",
+ "98dbac97": "Balandis",
+ "3ba7e226": "Gegužė",
+ "e920f785": "Birželis",
+ "011ca01f": "Liepa",
+ "5ddb609c": "Rugpjūtis",
+ "c212b600": "Rugsėjis",
+ "ecf21807": "Spalis",
+ "3ea53a3f": "Lapkritis",
+ "662dcc9e": "Gruodis",
+ "33c7776e": "Be žymos"
 }

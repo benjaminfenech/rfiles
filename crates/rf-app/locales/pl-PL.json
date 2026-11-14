@@ -1293,5 +1293,21 @@
  "6d1f5156": "Pliki do zapisania",
  "ac00cfc8": "Wymaga pakietu deb, rpm lub Arch (instaluje plik rfiles.portal portalu pulpitu); Flatpak nie może dodać zaplecza portalu.",
  "c01651ec": "Aplikacje, które proszą portal pulpitu o okno plików (Firefox, Chromium, aplikacje GTK, Qt i Electron), dostają rfiles. Wyłączenie przywraca poprzednie okno.",
- "de824b35": "Używaj rfiles w oknach Otwórz i Zapisz"
+ "de824b35": "Używaj rfiles w oknach Otwórz i Zapisz",
+ "155ee43c": "Rok",
+ "a8761ba5": "Miesiąc",
+ "4954229d": "Dzień",
+ "9d2cfb7d": "Styczeń",
+ "fca77633": "Luty",
+ "c0846390": "Marzec",
+ "98dbac97": "Kwiecień",
+ "3ba7e226": "Maj",
+ "e920f785": "Czerwiec",
+ "011ca01f": "Lipiec",
+ "5ddb609c": "Sierpień",
+ "c212b600": "Wrzesień",
+ "ecf21807": "Październik",
+ "3ea53a3f": "Listopad",
+ "662dcc9e": "Grudzień",
+ "33c7776e": "Brak tagu"
 }

@@ -1293,5 +1293,21 @@
  "6d1f5156": "Fișiere de salvat",
  "ac00cfc8": "Necesită pachetul deb, rpm sau Arch (instalează fișierul rfiles.portal al portalului desktop); Flatpak nu poate adăuga un backend de portal.",
  "c01651ec": "Aplicațiile care cer portalului desktop o fereastră de fișiere (Firefox, Chromium, aplicații GTK, Qt și Electron) primesc rfiles. Dezactivarea readuce fereastra anterioară.",
- "de824b35": "Utilizare rfiles pentru ferestrele Deschidere și Salvare"
+ "de824b35": "Utilizare rfiles pentru ferestrele Deschidere și Salvare",
+ "155ee43c": "An",
+ "a8761ba5": "Lună",
+ "4954229d": "Zi",
+ "9d2cfb7d": "ianuarie",
+ "fca77633": "februarie",
+ "c0846390": "martie",
+ "98dbac97": "aprilie",
+ "3ba7e226": "mai",
+ "e920f785": "iunie",
+ "011ca01f": "iulie",
+ "5ddb609c": "august",
+ "c212b600": "septembrie",
+ "ecf21807": "octombrie",
+ "3ea53a3f": "noiembrie",
+ "662dcc9e": "decembrie",
+ "33c7776e": "Fără etichetă"
 }

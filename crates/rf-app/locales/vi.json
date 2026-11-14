@@ -1293,5 +1293,21 @@
  "6d1f5156": "Các tệp cần lưu",
  "ac00cfc8": "Cần gói deb, rpm hoặc Arch (gói này cài tệp rfiles.portal của cổng thông tin máy tính); Flatpak không thể thêm phần phụ trợ cổng.",
  "c01651ec": "Ứng dụng xin hộp thoại tệp từ cổng thông tin máy tính (Firefox, Chromium, ứng dụng GTK, Qt và Electron) sẽ nhận rfiles. Tắt đi sẽ trả lại hộp thoại trước đó.",
- "de824b35": "Dùng rfiles cho hộp thoại Mở và Lưu"
+ "de824b35": "Dùng rfiles cho hộp thoại Mở và Lưu",
+ "155ee43c": "Năm",
+ "a8761ba5": "Tháng",
+ "4954229d": "Ngày",
+ "9d2cfb7d": "Tháng 1",
+ "fca77633": "Tháng 2",
+ "c0846390": "Tháng 3",
+ "98dbac97": "Tháng 4",
+ "3ba7e226": "Tháng 5",
+ "e920f785": "Tháng 6",
+ "011ca01f": "Tháng 7",
+ "5ddb609c": "Tháng 8",
+ "c212b600": "Tháng 9",
+ "ecf21807": "Tháng 10",
+ "3ea53a3f": "Tháng 11",
+ "662dcc9e": "Tháng 12",
+ "33c7776e": "Không có nhãn"
 }

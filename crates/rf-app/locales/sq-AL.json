@@ -1293,5 +1293,21 @@
  "6d1f5156": "Skedarët për t'u ruajtur",
  "ac00cfc8": "Kërkon paketën deb, rpm ose Arch (ajo instalon skedarin rfiles.portal të portalit të desktopit); Flatpak nuk mund të shtojë një shërbim portali.",
  "c01651ec": "Aplikacionet që i kërkojnë portalit të desktopit një dritare skedarësh (Firefox, Chromium, aplikacionet GTK, Qt dhe Electron) marrin rfiles. Çaktivizimi rikthen dritaren e mëparshme.",
- "de824b35": "Përdor rfiles për dritaret Hap dhe Ruaj"
+ "de824b35": "Përdor rfiles për dritaret Hap dhe Ruaj",
+ "155ee43c": "Viti",
+ "a8761ba5": "Muaji",
+ "4954229d": "Dita",
+ "9d2cfb7d": "Janar",
+ "fca77633": "Shkurt",
+ "c0846390": "Mars",
+ "98dbac97": "Prill",
+ "3ba7e226": "Maj",
+ "e920f785": "Qershor",
+ "011ca01f": "Korrik",
+ "5ddb609c": "Gusht",
+ "c212b600": "Shtator",
+ "ecf21807": "Tetor",
+ "3ea53a3f": "Nëntor",
+ "662dcc9e": "Dhjetor",
+ "33c7776e": "Pa etiketë"
 }

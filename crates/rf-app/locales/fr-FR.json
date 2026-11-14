@@ -1293,5 +1293,21 @@
  "6d1f5156": "Fichiers à enregistrer",
  "ac00cfc8": "Nécessite le paquet deb, rpm ou Arch (il installe le fichier rfiles.portal du portail du bureau) ; le Flatpak ne peut pas ajouter de backend de portail.",
  "c01651ec": "Les applications qui demandent une boîte de dialogue de fichiers au portail du bureau (Firefox, Chromium, applications GTK, Qt et Electron) obtiennent rfiles. Le désactiver rétablit l'ancienne boîte de dialogue.",
- "de824b35": "Utiliser rfiles pour les boîtes de dialogue Ouvrir et Enregistrer"
+ "de824b35": "Utiliser rfiles pour les boîtes de dialogue Ouvrir et Enregistrer",
+ "155ee43c": "Année",
+ "a8761ba5": "Mois",
+ "4954229d": "Jour",
+ "9d2cfb7d": "Janvier",
+ "fca77633": "Février",
+ "c0846390": "Mars",
+ "98dbac97": "Avril",
+ "3ba7e226": "Mai",
+ "e920f785": "Juin",
+ "011ca01f": "Juillet",
+ "5ddb609c": "Août",
+ "c212b600": "Septembre",
+ "ecf21807": "Octobre",
+ "3ea53a3f": "Novembre",
+ "662dcc9e": "Décembre",
+ "33c7776e": "Sans étiquette"
 }
