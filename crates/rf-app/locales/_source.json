@@ -5185,6 +5185,22 @@
   "en": "Folder to extract to"
  },
  {
+  "id": "ca4436bd",
+  "en": "Split into parts"
+ },
+ {
+  "id": "168b858e",
+  "en": "Dictionary size (7z)"
+ },
+ {
+  "id": "ddde2ea1",
+  "en": "RAR can't be split here; choose ZIP or 7z"
+ },
+ {
+  "id": "d51fcd54",
+  "en": "tar formats don't support passwords; choose ZIP or 7z"
+ },
+ {
   "id": "155ee43c",
   "en": "Year"
  },
