@@ -71,6 +71,8 @@ struct ShareEdit {
     writable: bool,
     guest: bool,
     name: Option<Entity<InputState>>,
+    /// The address was just copied (its button shows a tick).
+    copied: bool,
 }
 
 impl ShareEdit {
@@ -818,7 +820,24 @@ impl PropsView {
                 // where others find it, once shared
                 if let Some(s) = cur.as_ref().filter(|_| e.on) {
                     let host = std::fs::read_to_string("/proc/sys/kernel/hostname").map(|h| h.trim().to_string()).unwrap_or_default();
-                    rows.push(small(format!("smb://{host}/{}", s.name)));
+                    let addr = format!("smb://{host}/{}", s.name);
+                    let copy = link_button(p, "share-copy", if e.copied { L::Check } else { L::Copy }, t!("Copy")).on_click(cx.listener({
+                        let addr = addr.clone();
+                        move |v, _, _, cx| {
+                            cx.write_to_clipboard(ClipboardItem::new_string(addr.clone()));
+                            v.share.copied = true;
+                            cx.notify();
+                        }
+                    }));
+                    rows.push(
+                        h_flex()
+                            .gap_3()
+                            .pb_2()
+                            .items_center()
+                            .child(div().flex_1().min_w_0().text_xs().text_color(p.text_secondary).child(addr))
+                            .child(copy)
+                            .into_any_element(),
+                    );
                 }
                 rows
             }
