@@ -1375,5 +1375,12 @@
  "c67c8f52": "Command",
  "b7c8a38d": "%f is an item (the command runs once for each), %F all of them. Without either, the items go at the end. Example: meld %F",
  "fb2049ab": "Folder tree",
- "b31f262d": "Pinned folders and drives open into their subfolders"
+ "b31f262d": "Pinned folders and drives open into their subfolders",
+ "88cbfa77": "Samba doesn't allow that share name",
+ "2b5c5be5": "Sharing folders needs Samba. Install it, then turn on user shares.",
+ "80b34f37": "Samba's user shares are turned off. Turn them on with a usershare path in /etc/samba/smb.conf.",
+ "a7182f08": "Share this folder on the network",
+ "f6635c0b": "Share name",
+ "a5972166": "Others can add, change and delete files",
+ "5ccb1948": "Allow guests (no password)"
 }

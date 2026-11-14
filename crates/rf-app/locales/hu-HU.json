@@ -1375,5 +1375,12 @@
  "c67c8f52": "Parancs",
  "b7c8a38d": "A %f egy elem (a parancs mindegyikre külön fut), a %F mind. Egyik nélkül az elemek a végére kerülnek. Példa: meld %F",
  "fb2049ab": "Mappafa",
- "b31f262d": "A rögzített mappák és meghajtók kinyithatók az almappáikra"
+ "b31f262d": "A rögzített mappák és meghajtók kinyithatók az almappáikra",
+ "88cbfa77": "A Samba nem engedi ezt a megosztásnevet",
+ "2b5c5be5": "Mappák megosztásához Samba kell. Telepítse, majd kapcsolja be a felhasználói megosztásokat.",
+ "80b34f37": "A Samba felhasználói megosztásai ki vannak kapcsolva. Kapcsolja be őket egy usershare path beállítással az /etc/samba/smb.conf fájlban.",
+ "a7182f08": "Mappa megosztása a hálózaton",
+ "f6635c0b": "Megosztás neve",
+ "a5972166": "Mások hozzáadhatnak, módosíthatnak és törölhetnek fájlokat",
+ "5ccb1948": "Vendégek engedélyezése (jelszó nélkül)"
 }

@@ -1375,5 +1375,12 @@
  "c67c8f52": "Lệnh",
  "b7c8a38d": "%f là một mục (lệnh chạy cho từng mục), %F là tất cả. Không có cả hai thì các mục được thêm vào cuối. Ví dụ: meld %F",
  "fb2049ab": "Cây thư mục",
- "b31f262d": "Thư mục và ổ đĩa đã ghim mở ra các thư mục con"
+ "b31f262d": "Thư mục và ổ đĩa đã ghim mở ra các thư mục con",
+ "88cbfa77": "Samba không cho phép tên chia sẻ đó",
+ "2b5c5be5": "Chia sẻ thư mục cần Samba. Hãy cài đặt rồi bật chia sẻ của người dùng.",
+ "80b34f37": "Chia sẻ của người dùng trong Samba đang tắt. Bật bằng usershare path trong /etc/samba/smb.conf.",
+ "a7182f08": "Chia sẻ thư mục này trên mạng",
+ "f6635c0b": "Tên chia sẻ",
+ "a5972166": "Người khác có thể thêm, thay đổi và xóa tệp",
+ "5ccb1948": "Cho phép khách (không cần mật khẩu)"
 }

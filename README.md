@@ -96,6 +96,7 @@ suggest them, and `pacman -Qi rfiles-git` lists them as optional dependencies.
   - Copy, move, rename and delete, with conflict answers, pause, a speed limit and undo/redo.
   - Progress on rfiles' taskbar or dock icon while files copy, on desktops that show it (KDE Plasma, Ubuntu Dock / Dash to Dock, Plank).
   - Bulk rename.
+  - Share a folder on the network from its Properties (Sharing tab), through Samba's user shares like Dolphin and Nautilus: a share name, read-only or writable, guests or not. Needs Samba with user shares turned on (`usershare path` in `/etc/samba/smb.conf`).
   - The trash, shared with other file managers.
   - Copy and paste with other apps, and dragging files out to them on Wayland.
 - **Looks:**

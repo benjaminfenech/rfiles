@@ -1375,5 +1375,12 @@
  "c67c8f52": "Comando",
  "b7c8a38d": "%f é um item (o comando roda para cada um), %F todos. Sem nenhum dos dois, os itens vão no fim. Exemplo: meld %F",
  "fb2049ab": "Árvore de pastas",
- "b31f262d": "Pastas fixadas e unidades se expandem em suas subpastas"
+ "b31f262d": "Pastas fixadas e unidades se expandem em suas subpastas",
+ "88cbfa77": "O Samba não permite esse nome de compartilhamento",
+ "2b5c5be5": "Compartilhar pastas requer o Samba. Instale-o e depois ative os compartilhamentos de usuário.",
+ "80b34f37": "Os compartilhamentos de usuário do Samba estão desativados. Ative-os com um usershare path em /etc/samba/smb.conf.",
+ "a7182f08": "Compartilhar esta pasta na rede",
+ "f6635c0b": "Nome do compartilhamento",
+ "a5972166": "Outras pessoas podem adicionar, alterar e excluir arquivos",
+ "5ccb1948": "Permitir convidados (sem senha)"
 }

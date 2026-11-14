@@ -1375,5 +1375,12 @@
  "c67c8f52": "Kommando",
  "b7c8a38d": "%f er ett element (kommandoen kjøres for hvert), %F alle. Uten noen av dem legges elementene til på slutten. Eksempel: meld %F",
  "fb2049ab": "Mappetre",
- "b31f262d": "Festede mapper og stasjoner kan brettes ut til undermappene sine"
+ "b31f262d": "Festede mapper og stasjoner kan brettes ut til undermappene sine",
+ "88cbfa77": "Samba tillater ikke det delingsnavnet",
+ "2b5c5be5": "Deling av mapper krever Samba. Installer det, og slå deretter på brukerdelinger.",
+ "80b34f37": "Brukerdelingene i Samba er slått av. Slå dem på med en usershare path i /etc/samba/smb.conf.",
+ "a7182f08": "Del denne mappen på nettverket",
+ "f6635c0b": "Delingsnavn",
+ "a5972166": "Andre kan legge til, endre og slette filer",
+ "5ccb1948": "Tillat gjester (uten passord)"
 }

@@ -1375,5 +1375,12 @@
  "c67c8f52": "Príkaz",
  "b7c8a38d": "%f je jedna položka (príkaz sa spustí pre každú), %F všetky. Bez nich sa položky pridajú na koniec. Príklad: meld %F",
  "fb2049ab": "Strom priečinkov",
- "b31f262d": "Pripnuté priečinky a disky sa rozbaľujú do svojich podpriečinkov"
+ "b31f262d": "Pripnuté priečinky a disky sa rozbaľujú do svojich podpriečinkov",
+ "88cbfa77": "Samba takýto názov zdieľania nepovoľuje",
+ "2b5c5be5": "Zdieľanie priečinkov vyžaduje Sambu. Nainštalujte ju a zapnite používateľské zdieľania.",
+ "80b34f37": "Používateľské zdieľania Samby sú vypnuté. Zapnite ich pomocou usershare path v /etc/samba/smb.conf.",
+ "a7182f08": "Zdieľať tento priečinok v sieti",
+ "f6635c0b": "Názov zdieľania",
+ "a5972166": "Ostatní môžu pridávať, meniť a mazať súbory",
+ "5ccb1948": "Povoliť hostí (bez hesla)"
 }

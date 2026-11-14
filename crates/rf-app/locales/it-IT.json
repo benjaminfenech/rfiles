@@ -1375,5 +1375,12 @@
  "c67c8f52": "Comando",
  "b7c8a38d": "%f è un elemento (il comando viene eseguito per ciascuno), %F tutti. Senza nessuno dei due, gli elementi vanno in fondo. Esempio: meld %F",
  "fb2049ab": "Albero delle cartelle",
- "b31f262d": "Le cartelle fissate e le unità si espandono nelle loro sottocartelle"
+ "b31f262d": "Le cartelle fissate e le unità si espandono nelle loro sottocartelle",
+ "88cbfa77": "Samba non consente quel nome di condivisione",
+ "2b5c5be5": "Per condividere le cartelle serve Samba. Installalo, poi attiva le condivisioni utente.",
+ "80b34f37": "Le condivisioni utente di Samba sono disattivate. Attivale con un usershare path in /etc/samba/smb.conf.",
+ "a7182f08": "Condividi questa cartella in rete",
+ "f6635c0b": "Nome condivisione",
+ "a5972166": "Gli altri possono aggiungere, modificare ed eliminare file",
+ "5ccb1948": "Consenti ospiti (senza password)"
 }

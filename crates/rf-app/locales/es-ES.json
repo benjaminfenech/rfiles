@@ -1375,5 +1375,12 @@
  "c67c8f52": "Orden",
  "b7c8a38d": "%f es un elemento (la orden se ejecuta para cada uno), %F todos. Sin ninguno, los elementos van al final. Ejemplo: meld %F",
  "fb2049ab": "Árbol de carpetas",
- "b31f262d": "Las carpetas ancladas y las unidades se despliegan en sus subcarpetas"
+ "b31f262d": "Las carpetas ancladas y las unidades se despliegan en sus subcarpetas",
+ "88cbfa77": "Samba no permite ese nombre de recurso compartido",
+ "2b5c5be5": "Para compartir carpetas se necesita Samba. Instálalo y activa los recursos compartidos de usuario.",
+ "80b34f37": "Los recursos compartidos de usuario de Samba están desactivados. Actívalos con un usershare path en /etc/samba/smb.conf.",
+ "a7182f08": "Compartir esta carpeta en la red",
+ "f6635c0b": "Nombre del recurso compartido",
+ "a5972166": "Otros pueden añadir, cambiar y eliminar archivos",
+ "5ccb1948": "Permitir invitados (sin contraseña)"
 }

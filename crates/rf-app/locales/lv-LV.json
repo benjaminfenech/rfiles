@@ -1375,5 +1375,12 @@
  "c67c8f52": "Komanda",
  "b7c8a38d": "%f ir viens vienums (komanda izpildās katram), %F visi. Bez tiem vienumi tiek pievienoti beigās. Piemērs: meld %F",
  "fb2049ab": "Mapju koks",
- "b31f262d": "Piespraustās mapes un diski izvēršas savās apakšmapēs"
+ "b31f262d": "Piespraustās mapes un diski izvēršas savās apakšmapēs",
+ "88cbfa77": "Samba neatļauj šādu koplietojuma nosaukumu",
+ "2b5c5be5": "Mapju koplietošanai vajag Samba. Instalējiet to un ieslēdziet lietotāju koplietojumus.",
+ "80b34f37": "Samba lietotāju koplietojumi ir izslēgti. Ieslēdziet tos ar usershare path failā /etc/samba/smb.conf.",
+ "a7182f08": "Koplietot šo mapi tīklā",
+ "f6635c0b": "Koplietojuma nosaukums",
+ "a5972166": "Citi var pievienot, mainīt un dzēst failus",
+ "5ccb1948": "Atļaut viesus (bez paroles)"
 }

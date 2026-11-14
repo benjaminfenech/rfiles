@@ -1375,5 +1375,12 @@
  "c67c8f52": "Komut",
  "b7c8a38d": "%f bir öğedir (komut her biri için çalışır), %F hepsidir. İkisi de yoksa öğeler sona eklenir. Örnek: meld %F",
  "fb2049ab": "Klasör ağacı",
- "b31f262d": "Sabitlenen klasörler ve sürücüler alt klasörlerine açılır"
+ "b31f262d": "Sabitlenen klasörler ve sürücüler alt klasörlerine açılır",
+ "88cbfa77": "Samba bu paylaşım adına izin vermiyor",
+ "2b5c5be5": "Klasör paylaşmak için Samba gerekir. Kurun, ardından kullanıcı paylaşımlarını açın.",
+ "80b34f37": "Samba kullanıcı paylaşımları kapalı. /etc/samba/smb.conf içinde bir usershare path ile açın.",
+ "a7182f08": "Bu klasörü ağda paylaş",
+ "f6635c0b": "Paylaşım adı",
+ "a5972166": "Başkaları dosya ekleyebilir, değiştirebilir ve silebilir",
+ "5ccb1948": "Konuklara izin ver (parolasız)"
 }
