@@ -592,13 +592,12 @@ fn extract_now(cx: &mut App, archive: std::path::PathBuf, to: ExtractTo) {
     start_with(cx, title, work, Some(done));
 }
 
-/// Like `compress_level`, encrypted (ZIP: AES-256, 7z: AES-256 incl. names).
-pub fn compress_protected(cx: &mut App, sources: Vec<std::path::PathBuf>, dest: std::path::PathBuf, format: rf_archive::Format, level: u32, password: String) {
+/// Creates an archive with options: a password, a 7z dictionary size, parts of a given size.
+pub fn compress_opts(cx: &mut App, sources: Vec<std::path::PathBuf>, dest: std::path::PathBuf, format: rf_archive::Format, level: u32, opts: rf_archive::CompressOptions) {
     let title = format!("{} {} → {}", t!("Compressing:"), crate::i18n::items(sources.len()), short(&dest));
     start(cx, title, move |t| {
         let cancel = t.cancel.clone();
         let mut prog = archive_progress(&t);
-        let opts = rf_archive::CompressOptions { password: Some(password) };
         match rf_archive::compress_with(&sources, &dest, format, level, &opts, &mut prog, &|| cancel.load(Ordering::Relaxed)) {
             Ok(_) => Ok(true),
             Err(e) if e.downcast_ref::<rf_archive::Cancelled>().is_some() => Ok(false),
