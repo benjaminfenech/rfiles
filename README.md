@@ -162,6 +162,13 @@ running and covers the folder, rfiles asks it: Baloo on KDE Plasma, Tracker (Loc
 GNOME. Both also search PDFs and office documents. Otherwise rfiles reads the files itself,
 which covers text files up to 64 MB and is slower in big folders.
 
+**Search filters.** Add filters to a search, alone or with a name: `size:>10M` (also `<`,
+`10M..1G`, `empty`, `large`), `modified:7d` or `created:2024` (also `today`, `yesterday`,
+`2024-05`, `>2024-05-01`, `2023..2024-06`), and `type:image` (also `video`, `audio`,
+`document`, `pdf`, `code`, `archive`, `folder`, `file`, or an extension like `type:rs`;
+`type:image,video` for either). `holiday type:image modified:1y` finds this year's holiday
+photos.
+
 **Terminal.** "Open in terminal" (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>&#96;</kbd>) opens your
 terminal in the current folder. To run a command there, type `>` and the command in the address
 bar (`> make`), or use "Run command here…" from the folder's right-click menu or the command
