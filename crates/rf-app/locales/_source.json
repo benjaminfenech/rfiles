@@ -5161,6 +5161,30 @@
   "en": "Use rfiles for Open and Save dialogs"
  },
  {
+  "id": "4822d6ae",
+  "en": "Extract each to its own folder"
+ },
+ {
+  "id": "3a5aa560",
+  "en": "Extract smartly"
+ },
+ {
+  "id": "c1030759",
+  "en": "Extract to…"
+ },
+ {
+  "id": "318f3dab",
+  "en": "Open the folder after extracting"
+ },
+ {
+  "id": "9024d7b4",
+  "en": "When an archive is extracted into a new folder, that folder opens in a new tab"
+ },
+ {
+  "id": "d2386650",
+  "en": "Folder to extract to"
+ },
+ {
   "id": "ca4436bd",
   "en": "Split into parts"
  },
