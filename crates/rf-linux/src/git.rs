@@ -779,10 +779,8 @@ pub fn last_commits_of_children(
     let mut out = HashMap::new();
     let Some(rel) = rel_inside(root, dir) else { return out };
     let prefix = if rel.is_empty() { String::new() } else { format!("{rel}/") };
-    let wanted: HashMap<String, &String> = names
-        .iter()
-        .map(|n| (n.to_lowercase(), n))
-        .collect();
+    // exact names: Linux file names are case-sensitive (Makefile and makefile are two files)
+    let wanted: HashMap<&str, &String> = names.iter().map(|n| (n.as_str(), n)).collect();
     if wanted.is_empty() {
         return out;
     }
@@ -829,7 +827,7 @@ pub fn last_commits_of_children(
         if first.is_empty() {
             continue;
         }
-        if let Some(name) = wanted.get(&first.to_lowercase()) {
+        if let Some(name) = wanted.get(first) {
             out.entry((*name).clone()).or_insert_with(|| cm.clone());
             if out.len() == wanted.len() {
                 break;
@@ -884,4 +882,34 @@ pub fn commit_all(root: &Path, message: &str) -> Result<()> {
     }
     git_text(root, &["add", "-A"], "Couldn't stage the changes")?;
     git_text(root, &["commit", "-q", "-m", message], "Couldn't commit").map(|_| ())
+}
+
+#[cfg(test)]
+mod commit_column_tests {
+    use super::*;
+
+    #[test]
+    fn names_differing_in_case_get_their_own_commit() {
+        if Command::new("git").arg("--version").output().is_err() {
+            return;
+        }
+        let repo = std::env::temp_dir().join(format!("rf-git-case-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&repo);
+        std::fs::create_dir_all(&repo).unwrap();
+        let git = |args: &[&str]| {
+            let o = Command::new("git").args(["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]).args(args).current_dir(&repo).output().unwrap();
+            assert!(o.status.success(), "{args:?}");
+        };
+        git(&["init", "-q"]);
+        std::fs::write(repo.join("Makefile"), "a").unwrap();
+        git(&["add", "Makefile"]);
+        git(&["commit", "-qm", "upper"]);
+        std::fs::write(repo.join("makefile"), "b").unwrap();
+        git(&["add", "makefile"]);
+        git(&["commit", "-qm", "lower"]);
+        let got = last_commits_of_children(&repo, &repo, &["Makefile".into(), "makefile".into()], 100);
+        let _ = std::fs::remove_dir_all(&repo);
+        assert_eq!(got["Makefile"].message, "upper");
+        assert_eq!(got["makefile"].message, "lower");
+    }
 }
