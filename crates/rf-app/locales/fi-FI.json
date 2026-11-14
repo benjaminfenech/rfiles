@@ -1293,5 +1293,9 @@
  "6d1f5156": "Tallennettavat tiedostot",
  "ac00cfc8": "Vaatii deb-, rpm- tai Arch-paketin (se asentaa työpöytäportaalin rfiles.portal-tiedoston); Flatpak ei voi lisätä portaalin taustaosaa.",
  "c01651ec": "Sovellukset, jotka pyytävät työpöytäportaalilta tiedostoikkunaa (Firefox, Chromium, GTK-, Qt- ja Electron-sovellukset), saavat rfilesin. Poistaminen käytöstä palauttaa aiemman ikkunan.",
- "de824b35": "Käytä rfilesiä Avaa- ja Tallenna-ikkunoissa"
+ "de824b35": "Käytä rfilesiä Avaa- ja Tallenna-ikkunoissa",
+ "ca4436bd": "Jaa osiin",
+ "168b858e": "Sanakirjan koko (7z)",
+ "ddde2ea1": "RAR-tiedostoa ei voi jakaa osiin täällä; valitse ZIP tai 7z",
+ "d51fcd54": "tar-muodot eivät tue salasanoja; valitse ZIP tai 7z"
 }

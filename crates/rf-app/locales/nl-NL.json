@@ -1293,5 +1293,9 @@
  "6d1f5156": "Op te slaan bestanden",
  "ac00cfc8": "Vereist het deb-, rpm- of Arch-pakket (dat installeert het bestand rfiles.portal van het bureaubladportaal); de Flatpak kan geen portaalbackend toevoegen.",
  "c01651ec": "Apps die het bureaubladportaal om een bestandsdialoog vragen (Firefox, Chromium, GTK-, Qt- en Electron-apps) krijgen rfiles. Uitzetten brengt de oude dialoog terug.",
- "de824b35": "rfiles gebruiken voor Openen- en Opslaan-dialogen"
+ "de824b35": "rfiles gebruiken voor Openen- en Opslaan-dialogen",
+ "ca4436bd": "Opsplitsen in delen",
+ "168b858e": "Woordenboekgrootte (7z)",
+ "ddde2ea1": "RAR kan hier niet worden gesplitst; kies ZIP of 7z",
+ "d51fcd54": "tar-indelingen ondersteunen geen wachtwoorden; kies ZIP of 7z"
 }

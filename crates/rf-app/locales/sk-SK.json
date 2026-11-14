@@ -1293,5 +1293,9 @@
  "6d1f5156": "Súbory na uloženie",
  "ac00cfc8": "Vyžaduje balík deb, rpm alebo Arch (inštaluje súbor rfiles.portal portálu pracovnej plochy); Flatpak nemôže pridať backend portálu.",
  "c01651ec": "Aplikácie, ktoré si od portálu pracovnej plochy žiadajú dialóg pre súbory (Firefox, Chromium, aplikácie GTK, Qt a Electron), dostanú rfiles. Vypnutím sa vráti pôvodný dialóg.",
- "de824b35": "Používať rfiles pre dialógy Otvoriť a Uložiť"
+ "de824b35": "Používať rfiles pre dialógy Otvoriť a Uložiť",
+ "ca4436bd": "Rozdeliť na časti",
+ "168b858e": "Veľkosť slovníka (7z)",
+ "ddde2ea1": "RAR sa tu nedá rozdeliť; vyberte ZIP alebo 7z",
+ "d51fcd54": "Formáty tar nepodporujú heslá; vyberte ZIP alebo 7z"
 }

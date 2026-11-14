@@ -1293,5 +1293,9 @@
  "6d1f5156": "Zu speichernde Dateien",
  "ac00cfc8": "Benötigt das deb-, rpm- oder Arch-Paket (es installiert die Datei rfiles.portal des Desktop-Portals); das Flatpak kann kein Portal-Backend hinzufügen.",
  "c01651ec": "Apps, die das Desktop-Portal nach einem Dateidialog fragen (Firefox, Chromium, GTK-, Qt- und Electron-Apps), bekommen rfiles. Ausschalten bringt den alten Dialog zurück.",
- "de824b35": "rfiles für Öffnen- und Speichern-Dialoge verwenden"
+ "de824b35": "rfiles für Öffnen- und Speichern-Dialoge verwenden",
+ "ca4436bd": "In Teile aufteilen",
+ "168b858e": "Wörterbuchgröße (7z)",
+ "ddde2ea1": "RAR kann hier nicht aufgeteilt werden; wählen Sie ZIP oder 7z",
+ "d51fcd54": "tar-Formate unterstützen keine Kennwörter; wählen Sie ZIP oder 7z"
 }

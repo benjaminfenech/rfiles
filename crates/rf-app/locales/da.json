@@ -1293,5 +1293,9 @@
  "6d1f5156": "Filer, der skal gemmes",
  "ac00cfc8": "Kræver deb-, rpm- eller Arch-pakken (den installerer skrivebordsportalens rfiles.portal); Flatpak kan ikke tilføje en portalbackend.",
  "c01651ec": "Apps, der beder skrivebordsportalen om en fildialog (Firefox, Chromium, GTK-, Qt- og Electron-apps), får rfiles. Slås det fra, kommer den tidligere dialog tilbage.",
- "de824b35": "Brug rfiles til dialogerne Åbn og Gem"
+ "de824b35": "Brug rfiles til dialogerne Åbn og Gem",
+ "ca4436bd": "Opdel i dele",
+ "168b858e": "Ordbogsstørrelse (7z)",
+ "ddde2ea1": "RAR kan ikke opdeles her; vælg ZIP eller 7z",
+ "d51fcd54": "tar-formater understøtter ikke adgangskoder; vælg ZIP eller 7z"
 }

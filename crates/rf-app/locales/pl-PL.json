@@ -1293,5 +1293,9 @@
  "6d1f5156": "Pliki do zapisania",
  "ac00cfc8": "Wymaga pakietu deb, rpm lub Arch (instaluje plik rfiles.portal portalu pulpitu); Flatpak nie może dodać zaplecza portalu.",
  "c01651ec": "Aplikacje, które proszą portal pulpitu o okno plików (Firefox, Chromium, aplikacje GTK, Qt i Electron), dostają rfiles. Wyłączenie przywraca poprzednie okno.",
- "de824b35": "Używaj rfiles w oknach Otwórz i Zapisz"
+ "de824b35": "Używaj rfiles w oknach Otwórz i Zapisz",
+ "ca4436bd": "Podziel na części",
+ "168b858e": "Rozmiar słownika (7z)",
+ "ddde2ea1": "Archiwum RAR nie może być tu dzielone; wybierz ZIP lub 7z",
+ "d51fcd54": "Formaty tar nie obsługują haseł; wybierz ZIP lub 7z"
 }

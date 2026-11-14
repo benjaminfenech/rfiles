@@ -1293,5 +1293,9 @@
  "6d1f5156": "Mentendő fájlok",
  "ac00cfc8": "A deb, rpm vagy Arch csomag szükséges (ez telepíti az asztali portál rfiles.portal fájlját); a Flatpak nem tud portál-háttérprogramot hozzáadni.",
  "c01651ec": "Azok az alkalmazások, amelyek fájlpárbeszédet kérnek az asztali portáltól (Firefox, Chromium, GTK-, Qt- és Electron-alkalmazások), az rfiles-t kapják. Kikapcsolva visszatér a korábbi párbeszédablak.",
- "de824b35": "Az rfiles használata a Megnyitás és Mentés párbeszédablakokhoz"
+ "de824b35": "Az rfiles használata a Megnyitás és Mentés párbeszédablakokhoz",
+ "ca4436bd": "Felosztás részekre",
+ "168b858e": "Szótárméret (7z)",
+ "ddde2ea1": "A RAR itt nem osztható részekre; válasszon ZIP-et vagy 7z-t",
+ "d51fcd54": "A tar formátumok nem támogatják a jelszót; válasszon ZIP-et vagy 7z-t"
 }

@@ -1293,5 +1293,9 @@
  "6d1f5156": "要保存的文件",
  "ac00cfc8": "需要 deb、rpm 或 Arch 软件包（它会安装桌面门户的 rfiles.portal）；Flatpak 无法添加门户后端。",
  "c01651ec": "向桌面门户请求文件对话框的应用（Firefox、Chromium、GTK、Qt 和 Electron 应用）会使用 rfiles。关闭后会恢复之前的对话框。",
- "de824b35": "在“打开”和“保存”对话框中使用 rfiles"
+ "de824b35": "在“打开”和“保存”对话框中使用 rfiles",
+ "ca4436bd": "分卷",
+ "168b858e": "字典大小 (7z)",
+ "ddde2ea1": "此处无法对 RAR 分卷；请选择 ZIP 或 7z",
+ "d51fcd54": "tar 格式不支持密码；请选择 ZIP 或 7z"
 }

@@ -1293,5 +1293,9 @@
  "6d1f5156": "Skedarët për t'u ruajtur",
  "ac00cfc8": "Kërkon paketën deb, rpm ose Arch (ajo instalon skedarin rfiles.portal të portalit të desktopit); Flatpak nuk mund të shtojë një shërbim portali.",
  "c01651ec": "Aplikacionet që i kërkojnë portalit të desktopit një dritare skedarësh (Firefox, Chromium, aplikacionet GTK, Qt dhe Electron) marrin rfiles. Çaktivizimi rikthen dritaren e mëparshme.",
- "de824b35": "Përdor rfiles për dritaret Hap dhe Ruaj"
+ "de824b35": "Përdor rfiles për dritaret Hap dhe Ruaj",
+ "ca4436bd": "Ndaje në pjesë",
+ "168b858e": "Madhësia e fjalorit (7z)",
+ "ddde2ea1": "RAR nuk mund të ndahet këtu; zgjidh ZIP ose 7z",
+ "d51fcd54": "Formatet tar nuk mbështesin fjalëkalime; zgjidh ZIP ose 7z"
 }
