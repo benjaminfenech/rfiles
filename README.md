@@ -162,7 +162,7 @@ running and covers the folder, rfiles asks it: Baloo on KDE Plasma, Tracker (Loc
 GNOME. Both also search PDFs and office documents. Otherwise rfiles reads the files itself,
 which covers text files up to 64 MB and is slower in big folders.
 
-**Terminal.** "Open in terminal" (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>`</kbd>) opens your
+**Terminal.** "Open in terminal" (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>&#96;</kbd>) opens your
 terminal in the current folder. To run a command there, type `>` and the command in the address
 bar (`> make`), or use "Run command here…" from the folder's right-click menu or the command
 palette. When the command finishes, the terminal stays open with a shell. Settings →

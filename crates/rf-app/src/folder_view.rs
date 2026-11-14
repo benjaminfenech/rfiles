@@ -1953,6 +1953,9 @@ impl FolderView {
                         .text_xs()
                         .text_center()
                         .line_clamp(2)
+                        // a longer name ends in "…" on its second line, instead of that line being
+                        // cut at both ends by the tile ("ding Page HTML Tem")
+                        .text_ellipsis()
                         .when(dim, |d| d.opacity(0.6))
                         .on_mouse_down(MouseButton::Left, cx.listener(|this, _: &MouseDownEvent, _, _| this.name_hit = true))
                         .child(SharedString::from(shown_name(e, show_ext)))

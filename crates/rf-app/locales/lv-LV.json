@@ -1293,5 +1293,15 @@
  "6d1f5156": "Saglabājamie faili",
  "ac00cfc8": "Nepieciešama deb, rpm vai Arch pakotne (tā instalē darbvirsmas portāla failu rfiles.portal); Flatpak nevar pievienot portāla aizmuguri.",
  "c01651ec": "Lietotnes, kas darbvirsmas portālam prasa failu dialogu (Firefox, Chromium, GTK, Qt un Electron lietotnes), saņem rfiles. Izslēdzot tiek atgriezts iepriekšējais dialogs.",
- "de824b35": "Izmantot rfiles atvēršanas un saglabāšanas dialogiem"
+ "de824b35": "Izmantot rfiles atvēršanas un saglabāšanas dialogiem",
+ "4822d6ae": "Izvērst katru savā mapē",
+ "3a5aa560": "Izvērst gudri",
+ "c1030759": "Izvērst uz…",
+ "318f3dab": "Pēc izvēršanas atvērt mapi",
+ "9024d7b4": "Kad arhīvs tiek izvērsts jaunā mapē, šī mape tiek atvērta jaunā cilnē",
+ "d2386650": "Mape, uz kuru izvērst",
+ "ca4436bd": "Sadalīt daļās",
+ "168b858e": "Vārdnīcas izmērs (7z)",
+ "ddde2ea1": "RAR šeit nevar sadalīt daļās; izvēlieties ZIP vai 7z",
+ "d51fcd54": "tar formāti neatbalsta paroles; izvēlieties ZIP vai 7z"
 }

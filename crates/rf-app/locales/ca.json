@@ -1293,5 +1293,15 @@
  "6d1f5156": "Fitxers per desar",
  "ac00cfc8": "Necessita el paquet deb, rpm o d'Arch (instal·la el fitxer rfiles.portal del portal d'escriptori); el Flatpak no pot afegir un rerefons de portal.",
  "c01651ec": "Les aplicacions que demanen al portal d'escriptori un diàleg de fitxers (Firefox, Chromium i aplicacions GTK, Qt i Electron) obtenen rfiles. Desactivar-ho recupera el diàleg anterior.",
- "de824b35": "Utilitza rfiles per als diàlegs Obre i Desa"
+ "de824b35": "Utilitza rfiles per als diàlegs Obre i Desa",
+ "4822d6ae": "Extreu cada un a la seva pròpia carpeta",
+ "3a5aa560": "Extreu de manera intel·ligent",
+ "c1030759": "Extreu a…",
+ "318f3dab": "Obre la carpeta després d’extreure",
+ "9024d7b4": "Quan s’extreu un arxiu comprimit a una carpeta nova, aquesta carpeta s’obre en una pestanya nova",
+ "d2386650": "Carpeta on extreure",
+ "ca4436bd": "Divideix en parts",
+ "168b858e": "Mida del diccionari (7z)",
+ "ddde2ea1": "RAR no es pot dividir aquí; trieu ZIP o 7z",
+ "d51fcd54": "Els formats tar no admeten contrasenyes; trieu ZIP o 7z"
 }

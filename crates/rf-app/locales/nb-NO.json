@@ -1293,5 +1293,15 @@
  "6d1f5156": "Filer som skal lagres",
  "ac00cfc8": "Krever deb-, rpm- eller Arch-pakken (den installerer skrivebordsportalens rfiles.portal); Flatpak kan ikke legge til en portalbakende.",
  "c01651ec": "Apper som ber skrivebordsportalen om en fildialog (Firefox, Chromium, GTK-, Qt- og Electron-apper), får rfiles. Slås det av, kommer den forrige dialogen tilbake.",
- "de824b35": "Bruk rfiles til dialogene Åpne og Lagre"
+ "de824b35": "Bruk rfiles til dialogene Åpne og Lagre",
+ "4822d6ae": "Pakk ut hver til sin egen mappe",
+ "3a5aa560": "Pakk ut smart",
+ "c1030759": "Pakk ut til…",
+ "318f3dab": "Åpne mappen etter utpakking",
+ "9024d7b4": "Når et arkiv pakkes ut til en ny mappe, åpnes mappen i en ny fane",
+ "d2386650": "Mappe å pakke ut til",
+ "ca4436bd": "Del opp i deler",
+ "168b858e": "Ordbokstørrelse (7z)",
+ "ddde2ea1": "RAR kan ikke deles opp her. Velg ZIP eller 7z",
+ "d51fcd54": "tar-formater støtter ikke passord. Velg ZIP eller 7z"
 }

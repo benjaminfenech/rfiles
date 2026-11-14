@@ -1293,5 +1293,15 @@
  "6d1f5156": "Datoteke za spremanje",
  "ac00cfc8": "Potreban je paket deb, rpm ili Arch (instalira datoteku rfiles.portal portala radne površine); Flatpak ne može dodati pozadinski program portala.",
  "c01651ec": "Aplikacije koje od portala radne površine traže dijalog za datoteke (Firefox, Chromium, aplikacije GTK, Qt i Electron) dobivaju rfiles. Isključivanje vraća prethodni dijalog.",
- "de824b35": "Koristi rfiles za dijaloge Otvori i Spremi"
+ "de824b35": "Koristi rfiles za dijaloge Otvori i Spremi",
+ "4822d6ae": "Raspakiraj svaku u zasebnu mapu",
+ "3a5aa560": "Pametno raspakiraj",
+ "c1030759": "Raspakiraj u…",
+ "318f3dab": "Otvori mapu nakon raspakiravanja",
+ "9024d7b4": "Kad se arhiva raspakira u novu mapu, ta se mapa otvara u novoj kartici",
+ "d2386650": "Mapa za raspakiravanje",
+ "ca4436bd": "Podijeli na dijelove",
+ "168b858e": "Veličina rječnika (7z)",
+ "ddde2ea1": "RAR se ovdje ne može dijeliti; odaberite ZIP ili 7z",
+ "d51fcd54": "tar formati ne podržavaju lozinke; odaberite ZIP ili 7z"
 }
