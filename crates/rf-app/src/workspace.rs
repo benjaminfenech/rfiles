@@ -2190,7 +2190,7 @@ impl Workspace {
             .py_0p5()
             .rounded(theme::RADIUS_SM)
             .hover(|s| s.bg(p.hover))
-            .child(Icon::new(L::House).size(px(14.)).text_color(p.text_secondary))
+            .child(Icon::new(L::LayoutDashboard).size(px(14.)).text_color(p.text_secondary))
             .on_click(cx.listener(|this, _, window, cx| {
                 cx.stop_propagation();
                 this.navigate(Location::Home, window, cx);
@@ -2491,17 +2491,32 @@ impl Workspace {
                     cx.notify();
                 }
             }));
+        // the overview page (drives, pins, recent files; called Home on Windows) and, apart
+        // from it, the home folder
         col = col.child(self.sidebar_item(
             "sb-home".into(),
-            L::House,
+            L::LayoutDashboard,
             p.accent,
-            t!("Home").into(),
+            t!("Overview").into(),
             Location::Home,
             cur == Location::Home,
             None,
             p,
             cx,
         ));
+        if let Some(home) = dirs::home_dir() {
+            let loc = Location::Path(home.clone());
+            let active = cur == loc;
+            let item = self.sidebar_item("sb-homedir".into(), L::House, p.accent, t!("Home").into(), loc, active, None, p, cx);
+            // the folder tree opens it like a pin
+            let toggle = tree.then(|| self.tree_toggle(&home, 4., p, cx));
+            col = col.child(div().relative().child(item).children(toggle));
+            if tree {
+                let mut rows = Vec::new();
+                self.tree_rows(&home, 1, &cur, &mut rows, p, cx);
+                col = col.children(rows);
+            }
+        }
         // dropping folders on the header pins them
         col = col.child(
             div()
@@ -3302,7 +3317,13 @@ impl Render for Workspace {
             }))
             .on_action(cx.listener(|this, _: &GoForward, _, cx| this.with_tab(cx, |v, cx| v.forward(cx))))
             .on_action(cx.listener(|this, _: &GoUp, _, cx| this.with_tab(cx, |v, cx| v.up(cx))))
-            .on_action(cx.listener(|this, _: &GoHome, window, cx| this.navigate(Location::Home, window, cx)))
+            // Alt+Home: the home folder, as in other Linux file managers
+            .on_action(cx.listener(|this, _: &GoHome, window, cx| {
+                if let Some(h) = dirs::home_dir() {
+                    this.navigate(Location::Path(h), window, cx)
+                }
+            }))
+            .on_action(cx.listener(|this, _: &GoOverview, window, cx| this.navigate(Location::Home, window, cx)))
             .on_action(cx.listener(|this, _: &Refresh, _, cx| this.with_tab(cx, |v, cx| v.refresh(cx))))
             .on_action(cx.listener(|this, _: &ToggleHidden, _, cx| this.with_tab(cx, |v, cx| v.toggle_hidden(cx))))
             .on_action(cx.listener(|this, _: &NewTab, window, cx| this.open_tab(Location::Home, window, cx)))
