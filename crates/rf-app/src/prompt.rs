@@ -210,7 +210,7 @@ impl Render for DialogView {
         }
         let mut choice_rows = Vec::new();
         for (ci, c) in self.choices.iter().enumerate() {
-            let mut seg = h_flex().p(px(2.)).gap(px(2.)).rounded(theme::RADIUS_SM).bg(p.content_bg).border_1().border_color(p.border);
+            let mut seg = h_flex().flex_wrap().p(px(2.)).gap(px(2.)).rounded(theme::RADIUS_SM).bg(p.content_bg).border_1().border_color(p.border);
             let cur = c.selected.get();
             for (oi, o) in c.options.iter().enumerate() {
                 let on = oi == cur;
