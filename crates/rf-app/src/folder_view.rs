@@ -640,7 +640,7 @@ impl FolderView {
 
     pub fn tab_icon(&self) -> L {
         match self.location() {
-            Location::Home => L::House,
+            Location::Home => L::LayoutDashboard,
             Location::Settings => L::Settings,
             Location::RecycleBin => L::Trash,
             Location::Search { .. } => L::Search,

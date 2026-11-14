@@ -672,7 +672,7 @@ fn general(p: &Palette, s: &Settings, window: &mut Window, cx: &mut App) -> Vec<
                 .iter()
                 .enumerate()
                 .map(|(i, page)| {
-                    let shown = if page.is_empty() { t!("Home").to_string() } else { page.clone() };
+                    let shown = if page.is_empty() { t!("Overview").to_string() } else { page.clone() };
                     sub(
                         &pp,
                         &shown,

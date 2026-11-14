@@ -5517,16 +5517,8 @@
   "en": "Allow guests (no password)"
  },
  {
-  "id": "1463a002",
-  "en": "Open in Disks"
- },
- {
-  "id": "d08848e1",
-  "en": "Open in Partition Manager"
- },
- {
-  "id": "993df11d",
-  "en": "Open in GParted"
+  "id": "6a494fba",
+  "en": "Overview"
  },
  {
   "id": "53c990b2",
@@ -5553,5 +5545,17 @@
   "key": "@percent",
   "en": "{v}%",
   "note": "where the % sign goes in this language"
+ },
+ {
+  "id": "1463a002",
+  "en": "Open in Disks"
+ },
+ {
+  "id": "d08848e1",
+  "en": "Open in Partition Manager"
+ },
+ {
+  "id": "993df11d",
+  "en": "Open in GParted"
  }
 ]

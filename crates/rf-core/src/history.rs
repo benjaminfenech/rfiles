@@ -95,7 +95,7 @@ impl Location {
 
     pub fn title(&self) -> String {
         match self {
-            Location::Home => "Home".into(),
+            Location::Home => "Overview".into(),
             Location::RecycleBin => "Trash".into(),
             Location::Settings => "Settings".into(),
             Location::Tag(_) => "Tag".into(),
