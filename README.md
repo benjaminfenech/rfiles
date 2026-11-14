@@ -81,7 +81,7 @@ suggest them, and `pacman -Qi rfiles-git` lists them as optional dependencies.
 
 - **Browsing:**
   - Tabs, dual pane, and details, grid and column views, with live updates as files change.
-  - Grouping, the preview pane, search, colour tags and the Shelf.
+  - Grouping, the preview pane, search, colour tags (search them with `tag:red`, or `tag:red AND work`, `tag:red OR blue NOT done`) and the Shelf.
   - Breadcrumbs, and `~` in the address bar.
   - Quick search: names, apps and browser bookmarks from Chrome, Chromium, Edge, Brave and Vivaldi.
 - **Sidebar:**
