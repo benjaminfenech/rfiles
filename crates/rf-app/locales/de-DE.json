@@ -1293,5 +1293,11 @@
  "6d1f5156": "Zu speichernde Dateien",
  "ac00cfc8": "Benötigt das deb-, rpm- oder Arch-Paket (es installiert die Datei rfiles.portal des Desktop-Portals); das Flatpak kann kein Portal-Backend hinzufügen.",
  "c01651ec": "Apps, die das Desktop-Portal nach einem Dateidialog fragen (Firefox, Chromium, GTK-, Qt- und Electron-Apps), bekommen rfiles. Ausschalten bringt den alten Dialog zurück.",
- "de824b35": "rfiles für Öffnen- und Speichern-Dialoge verwenden"
+ "de824b35": "rfiles für Öffnen- und Speichern-Dialoge verwenden",
+ "4822d6ae": "Jeweils in einen eigenen Ordner entpacken",
+ "3a5aa560": "Intelligent entpacken",
+ "c1030759": "Entpacken nach…",
+ "318f3dab": "Ordner nach dem Entpacken öffnen",
+ "9024d7b4": "Wird ein Archiv in einen neuen Ordner entpackt, öffnet sich dieser Ordner in einem neuen Tab",
+ "d2386650": "Zielordner zum Entpacken"
 }

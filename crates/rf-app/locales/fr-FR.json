@@ -1293,5 +1293,11 @@
  "6d1f5156": "Fichiers à enregistrer",
  "ac00cfc8": "Nécessite le paquet deb, rpm ou Arch (il installe le fichier rfiles.portal du portail du bureau) ; le Flatpak ne peut pas ajouter de backend de portail.",
  "c01651ec": "Les applications qui demandent une boîte de dialogue de fichiers au portail du bureau (Firefox, Chromium, applications GTK, Qt et Electron) obtiennent rfiles. Le désactiver rétablit l'ancienne boîte de dialogue.",
- "de824b35": "Utiliser rfiles pour les boîtes de dialogue Ouvrir et Enregistrer"
+ "de824b35": "Utiliser rfiles pour les boîtes de dialogue Ouvrir et Enregistrer",
+ "4822d6ae": "Extraire chacune dans son propre dossier",
+ "3a5aa560": "Extraction intelligente",
+ "c1030759": "Extraire vers…",
+ "318f3dab": "Ouvrir le dossier après l'extraction",
+ "9024d7b4": "Quand une archive est extraite dans un nouveau dossier, ce dossier s'ouvre dans un nouvel onglet",
+ "d2386650": "Dossier d'extraction"
 }

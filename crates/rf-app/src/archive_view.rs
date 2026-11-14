@@ -199,6 +199,12 @@ pub fn is_browsable_path(p: &Path) -> bool {
 /// Only touches the disk when some component is named like an archive: callers run this on
 /// the UI thread, and even a `stat` of an offline share's automount point waits for its mount
 /// to time out.
+/// [`split`] for an item somewhere inside an archive: None for the archive file itself (which
+/// splits as its own root, with an empty inner path).
+pub fn split_inside(path: &Path) -> Option<(PathBuf, PathBuf)> {
+    split(path).filter(|(_, inner)| !inner.as_os_str().is_empty())
+}
+
 pub fn split(path: &Path) -> Option<(PathBuf, PathBuf)> {
     if !is_browsable_path(path) || path.is_dir() {
         return None;
