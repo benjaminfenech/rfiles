@@ -1334,5 +1334,13 @@
  "e91a91d8": "Enganxa com a enllaç",
  "0ddb0669": "enllaç",
  "1ca7ab63": "S'estan creant enllaços:",
- "cb31fb22": "Obre la carpeta de plantilles"
+ "cb31fb22": "Obre la carpeta de plantilles",
+ "0cd5e716": "Diversos",
+ "0574902c": "Grup",
+ "26c0a538": "Execució",
+ "69bad712": "Altres",
+ "426ef10c": "Permet executar-lo com a programa",
+ "3f5c57bb": "Aplica-ho a tot el contingut",
+ "2d9081dd": "Els fitxers de dins conserven el seu propi permís d'execució.",
+ "b2e1978a": "Només el propietari pot canviar-ho."
 }
