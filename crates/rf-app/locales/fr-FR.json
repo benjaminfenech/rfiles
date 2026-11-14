@@ -1335,6 +1335,14 @@
  "0ddb0669": "lien",
  "1ca7ab63": "Création de liens :",
  "cb31fb22": "Ouvrir le dossier des modèles",
+ "0cd5e716": "Divers",
+ "0574902c": "Groupe",
+ "26c0a538": "Exécution",
+ "69bad712": "Autres",
+ "426ef10c": "Autoriser l'exécution comme programme",
+ "3f5c57bb": "Appliquer à tout le contenu",
+ "2d9081dd": "Les fichiers à l'intérieur gardent leur propre droit d'exécution.",
+ "b2e1978a": "Seul le propriétaire peut les modifier.",
  "3e12805a": "Monter",
  "dff7dc1b": "Impossible de monter l'image disque"
 }

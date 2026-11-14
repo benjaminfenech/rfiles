@@ -58,7 +58,7 @@ pub mod indexer;
 pub mod nameindex;
 pub mod remote;
 pub mod folder_custom;
-pub mod security;
+pub mod perms;
 pub mod sandbox;
 pub mod props;
 pub mod recycle;

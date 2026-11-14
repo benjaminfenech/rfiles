@@ -143,14 +143,11 @@ fn entry_from(name: &str, link: bool, meta: &std::fs::Metadata) -> Option<Entry>
         a |= attrs::REPARSE_POINT;
     }
     let kind = if is_dir { EntryKind::Dir } else { EntryKind::File };
-    Some(Entry::new(
-        name,
-        kind,
-        if is_dir { 0 } else { meta.len() },
-        ms(meta.modified()),
-        ms(meta.created()),
-        a,
-    ))
+    use std::os::unix::fs::MetadataExt;
+    Some(
+        Entry::new(name, kind, if is_dir { 0 } else { meta.len() }, ms(meta.modified()), ms(meta.created()), a)
+            .with_unix(meta.mode(), meta.uid(), meta.gid()),
+    )
 }
 
 #[cfg(test)]
@@ -179,6 +176,10 @@ mod tests {
         assert!(all.iter().any(|e| &*e.name == "f7.txt" && e.size == 5 && &*e.ext == "txt"));
         assert!(all.iter().any(|e| &*e.name == ".hidden" && e.attrs & attrs::HIDDEN != 0));
         assert!(all.iter().any(|e| &*e.name == "link" && e.is_dir() && e.attrs & attrs::REPARSE_POINT != 0));
+        // owner, group and permission bits
+        use std::os::unix::fs::MetadataExt;
+        let m = std::fs::metadata(dir.join("f7.txt")).unwrap();
+        assert!(all.iter().any(|e| &*e.name == "f7.txt" && e.mode == m.mode() & 0o7777 && e.uid == m.uid() && e.gid == m.gid() && e.mode != 0));
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
