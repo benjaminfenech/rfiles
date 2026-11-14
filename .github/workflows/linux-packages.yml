@@ -35,7 +35,7 @@ jobs:
             nfpm_arch: arm64
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
           # the version counts commits
@@ -89,7 +89,7 @@ jobs:
         run: |
           retry() { for i in 1 2 3; do "$@" && return 0; echo "attempt $i of 3 failed: $*"; [ $i = 3 ] || sleep 15; done; return 1; }
           retry pacman -Syu --noconfirm --needed git
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -129,7 +129,7 @@ jobs:
       # flatpak-builder's sandbox (bubblewrap) needs it
       options: --privileged
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
