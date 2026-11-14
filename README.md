@@ -88,6 +88,7 @@ suggest them, and `pacman -Qi rfiles-git` lists them as optional dependencies.
   - Your XDG folders.
   - Drives, named by label or mount point. Drives that aren't mounted yet are listed and mount when you open them.
   - Network shares, under Network: every share in `/etc/fstab`, mounted or not, including `x-systemd.automount` ones.
+  - Phones, tablets and cameras plugged in over USB (MTP, PTP, iPhone/iPad), under Drives. They open through kio-fuse on KDE or gvfs elsewhere, so you need kio-extras or gvfs-mtp / gvfs-gphoto2 / gvfs-afc.
   - Network locations from Dolphin and GTK bookmarks.
   - A folder tree, if you want one (Settings → Sidebar sections → Folder tree): pinned folders and drives get an arrow that opens them into their subfolders.
 - **Files:**

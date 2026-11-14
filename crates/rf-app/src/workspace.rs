@@ -2567,7 +2567,8 @@ impl Workspace {
         // mapped drives with the others, as Explorer does)
         let (shares, drives): (Vec<_>, Vec<_>) = drives.into_iter().partition(|d| d.kind == rf_linux::DriveKind::Network);
         let drives = if shown("drives") { drives } else { Vec::new() };
-        if !drives.is_empty() {
+        let devices = if shown("drives") { self.places.read(cx).devices.clone() } else { Vec::new() };
+        if !drives.is_empty() || !devices.is_empty() {
             col = col.child(header(t!("Drives")));
         }
         for (i, d) in drives.into_iter().enumerate() {
@@ -2616,6 +2617,12 @@ impl Workspace {
                 )
             }));
             col = col.children(rows);
+        }
+        // phones and cameras: opening one mounts it through kio-fuse or gvfs, like a network place
+        for (i, d) in devices.into_iter().enumerate() {
+            let loc = Location::Path(PathBuf::from(&d.url));
+            let active = cur == loc;
+            col = col.child(self.sidebar_item(("sb-device", i).into(), places::device_icon(&d), p.text_secondary, d.name.clone(), loc, active, None, p, cx));
         }
         let cloud = self.places.read(cx).cloud.clone();
         if !cloud.is_empty() && shown("cloud") {

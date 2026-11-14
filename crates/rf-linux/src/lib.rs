@@ -39,6 +39,7 @@ pub mod hash;
 pub mod apppkg;
 pub mod elf;
 pub mod design;
+pub mod devices;
 pub mod journal;
 pub mod known;
 pub mod keys;
