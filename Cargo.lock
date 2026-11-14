@@ -6726,6 +6726,7 @@ dependencies = [
  "filmcraft-media",
  "filmcraft-time",
  "rayon",
+ "rf-core",
  "serde",
  "serde_json",
 ]

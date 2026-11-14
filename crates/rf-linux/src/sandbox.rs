@@ -4,13 +4,11 @@
 //! host programs (apps, terminals, git, ffmpeg, poppler, gio, thumbnailers) through
 //! `flatpak-spawn --host` ([`tool`], [`launch`]). Outside Flatpak all of this is a no-op.
 
-use std::collections::HashMap;
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::sync::OnceLock;
 
-use parking_lot::Mutex;
 
 /// The Flatpak app id when running inside Flatpak.
 pub fn flatpak_id() -> Option<&'static str> {
@@ -93,20 +91,7 @@ fn in_sandbox(prog: &OsStr) -> bool {
 
 /// Whether the host has `prog` (asked once per program).
 fn on_host(prog: &OsStr) -> bool {
-    static SEEN: Mutex<Option<HashMap<OsString, bool>>> = Mutex::new(None);
-    if let Some(&known) = SEEN.lock().get_or_insert_with(HashMap::new).get(prog) {
-        return known;
-    }
-    let found = Command::new("flatpak-spawn")
-        .args(["--host", "sh", "-c", "command -v -- \"$1\" >/dev/null", "sh"])
-        .arg(prog)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .is_ok_and(|s| s.success());
-    SEEN.lock().get_or_insert_with(HashMap::new).insert(prog.to_os_string(), found);
-    found
+    rf_core::host::has(prog)
 }
 
 /// Whether `prog` can be run: on `PATH` (or an existing absolute path); inside Flatpak, in

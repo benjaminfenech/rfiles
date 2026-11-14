@@ -3,10 +3,12 @@
 pub mod entry;
 pub mod format;
 pub mod history;
+pub mod host;
 pub mod rename;
 pub mod shelf;
 pub mod sort;
 pub mod tags;
+pub mod uri;
 pub mod treemap;
 
 pub use entry::{Entry, EntryKind, attrs};

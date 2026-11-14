@@ -21,28 +21,12 @@ const IDLE: Duration = Duration::from_secs(60);
 /// A `file://` URI as a path (percent-decoded; the host part, if any, ignored). Other schemes
 /// (trash:, smb:) aren't local paths: None. A plain absolute path is taken as it is.
 pub fn uri_to_path(uri: &str) -> Option<PathBuf> {
-    use std::os::unix::ffi::OsStringExt;
     if uri.starts_with('/') {
         return Some(PathBuf::from(uri));
     }
     let rest = uri.strip_prefix("file://")?;
     // file://host/path → /path
-    let path = &rest[rest.find('/')?..];
-    let b = path.as_bytes();
-    let mut out = Vec::with_capacity(b.len());
-    let mut i = 0;
-    while i < b.len() {
-        if b[i] == b'%'
-            && let Some(v) = path.get(i + 1..i + 3).and_then(|h| u8::from_str_radix(h, 16).ok())
-        {
-            out.push(v);
-            i += 3;
-            continue;
-        }
-        out.push(b[i]);
-        i += 1;
-    }
-    Some(PathBuf::from(std::ffi::OsString::from_vec(out)))
+    Some(rf_core::uri::decode_path(&rest[rest.find('/')?..]))
 }
 
 /// The rfiles launches for a call: one per folder. `select` shows each item selected in its

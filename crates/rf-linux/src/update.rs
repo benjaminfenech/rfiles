@@ -196,7 +196,7 @@ pub fn download(asset: &Asset, dir: &Path, progress: &dyn Fn(u64, u64), cancel: 
     }
     file.sync_all()?;
     drop(file);
-    let got: String = hash.finalize().iter().map(|b| format!("{b:02x}")).collect();
+    let got = rf_core::uri::hex(&hash.finalize());
     if got != want || (asset.size > 0 && done != asset.size) {
         let _ = std::fs::remove_file(&part);
         bail!("the download of {} is damaged (checksum doesn't match): not installing it", asset.name);
