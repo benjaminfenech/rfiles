@@ -483,6 +483,23 @@ fn names(paths: &[PathBuf]) -> String {
 mod tests {
     use super::*;
 
+    /// A .zip file itself is not an item inside an archive (deleting it asked to delete ""
+    /// from inside it); its entries are.
+    #[test]
+    fn an_archive_is_not_inside_itself() {
+        let dir = std::env::temp_dir().join(format!("rf-av-inside-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let zip = dir.join("pack.zip");
+        // an empty ZIP (its end record): the path rules look at the name and that it is a file
+        let mut eocd = b"PK\x05\x06".to_vec();
+        eocd.resize(22, 0);
+        std::fs::write(&zip, eocd).unwrap();
+        assert!(split(&zip).is_some_and(|(_, inner)| inner.as_os_str().is_empty()), "the root still splits");
+        assert_eq!(split_inside(&zip), None);
+        assert_eq!(split_inside(&zip.join("a.txt")), Some((zip.clone(), PathBuf::from("a.txt"))));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
     #[test]
     fn extracts_just_the_items_asked_for() {
         let base = std::env::temp_dir().join(format!("rf-av-items-{}", std::process::id()));
