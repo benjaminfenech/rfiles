@@ -1293,5 +1293,11 @@
  "6d1f5156": "Ficheiros a guardar",
  "ac00cfc8": "Precisa do pacote deb, rpm ou do Arch (instala o ficheiro rfiles.portal do portal do ambiente de trabalho); o Flatpak não pode adicionar um backend de portal.",
  "c01651ec": "As aplicações que pedem uma caixa de diálogo de ficheiros ao portal do ambiente de trabalho (Firefox, Chromium, aplicações GTK, Qt e Electron) recebem o rfiles. Desativar repõe a caixa anterior.",
- "de824b35": "Usar o rfiles nas caixas de diálogo Abrir e Guardar"
+ "de824b35": "Usar o rfiles nas caixas de diálogo Abrir e Guardar",
+ "4822d6ae": "Extrair cada um para a sua própria pasta",
+ "3a5aa560": "Extrair de forma inteligente",
+ "c1030759": "Extrair para…",
+ "318f3dab": "Abrir a pasta após a extração",
+ "9024d7b4": "Quando um arquivo é extraído para uma nova pasta, essa pasta abre num novo separador",
+ "d2386650": "Pasta de destino da extração"
 }
