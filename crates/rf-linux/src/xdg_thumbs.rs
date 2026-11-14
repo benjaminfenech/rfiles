@@ -196,7 +196,8 @@ fn exec_args(exec: &str, input: &Path, uri: &str, out: &Path, px: u32) -> Vec<St
 fn external(path: &Path, uri: &str, mime: &str, px: u32) -> Result<RgbaImage, NoThumb> {
     let Some(exec) = thumbnailers().get(mime) else { return Err(NoThumb::Unsupported) };
     static N: AtomicU32 = AtomicU32::new(0);
-    let out = std::env::temp_dir().join(format!("rfiles-thumb-{}-{}.png", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+    let dir = crate::private_tmp::dir("thumbs").map_err(|e| NoThumb::Failed(e.into()))?;
+    let out = dir.join(format!("{}-{}.png", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
     let args = exec_args(exec, path, uri, &out, px);
     let Some((prog, rest)) = args.split_first() else { return Err(NoThumb::Unsupported) };
     let fail = |e: anyhow::Error| NoThumb::Failed(e);

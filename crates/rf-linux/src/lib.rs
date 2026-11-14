@@ -48,6 +48,7 @@ pub mod listing;
 pub mod localized;
 pub mod network;
 pub mod pe;
+pub mod private_tmp;
 pub mod fileactions;
 pub mod file_chooser;
 pub mod fileinfo;
