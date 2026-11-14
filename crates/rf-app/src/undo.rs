@@ -12,6 +12,8 @@ use rf_linux::fileops::Transfer;
 pub enum UndoOp {
     Renamed { from: PathBuf, to: PathBuf },
     Created { path: PathBuf },
+    /// Symbolic links made: (target, link).
+    Linked { pairs: Vec<(PathBuf, PathBuf)> },
     /// (source, result) pairs reported by the shell.
     Transferred { kind: Transfer, pairs: Vec<(PathBuf, PathBuf)> },
     /// (original path, path inside the Recycle Bin)
@@ -49,6 +51,7 @@ pub fn undo(cx: &mut App) {
             });
         }
         UndoOp::Created { path } => crate::status_center::delete_ex(cx, vec![path], false, false),
+        UndoOp::Linked { pairs } => crate::status_center::delete_ex(cx, pairs.into_iter().map(|(_, l)| l).collect(), false, false),
         UndoOp::Transferred { kind: Transfer::Copy, pairs } => {
             crate::status_center::delete_ex(cx, pairs.into_iter().map(|(_, dst)| dst).collect(), false, false)
         }
@@ -97,6 +100,13 @@ pub fn redo(cx: &mut App) {
             });
         }
         UndoOp::Created { .. } => {}
+        UndoOp::Linked { pairs } => {
+            for (target, link) in pairs {
+                if let Err(e) = rf_linux::fileops::make_link(&target, &link) {
+                    log::warn!("redo link {}: {e}", link.display());
+                }
+            }
+        }
         UndoOp::Transferred { kind, pairs } => {
             let mut groups: std::collections::BTreeMap<PathBuf, Vec<PathBuf>> = Default::default();
             for (src, dst) in pairs {

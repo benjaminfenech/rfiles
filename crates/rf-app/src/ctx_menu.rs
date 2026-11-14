@@ -172,6 +172,10 @@ impl FolderView {
         if mp.copy_path {
             v.push(Item::action(t!("Copy item path"), icon(L::ClipboardCopy), act(me, |v, _, cx| v.copy_path(cx))).hint("Ctrl+Shift+C"));
         }
+        if crate::archive_view::split(dir).is_none() {
+            let sel = items.to_vec();
+            v.push(Item::action(t!("Create link"), icon(L::Link), act(me, move |v, _, cx| v.create_links_beside(sel.clone(), cx))));
+        }
         if !self.is_search() {
             let sel = items.to_vec();
             v.push(Item::action(t!("New folder with selection"), icon(L::FolderInput), act(me, move |v, _, cx| v.folder_with_selection(sel.clone(), cx))));
@@ -337,6 +341,9 @@ impl FolderView {
         v.push(Item::Separator);
         let fallback = Rc::new(own_new_items(me));
         v.push(Item::Sub { label: t!("New").into(), icon: icon(L::CirclePlus), items: Sub::Pending { key: "new", fallback: Some(fallback) } });
+        if crate::archive_view::split(dir).is_none() && rf_linux::clipboard::has_files() {
+            v.push(Item::action(t!("Paste as link"), icon(L::Link), act(me, |v, _, cx| v.paste_as_link(cx))));
+        }
         let d = dir.to_path_buf();
         v.push(Item::action(t!("Pin to sidebar"), icon(L::Pin), act(me, move |v, _, cx| v.pin(d.clone(), cx))));
         v.push(Item::action(t!("Copy path"), icon(L::ClipboardCopy), act(me, |v, _, cx| v.copy_path(cx))));

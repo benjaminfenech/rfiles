@@ -2087,6 +2087,27 @@ impl FolderView {
                         .text_color(theme::kind_color(cat, p.dark))
                         .into_any_element(),
                 };
+                // a symbolic link: a badge on the icon's corner
+                let visual = if e.is_symlink() {
+                    div()
+                        .relative()
+                        .child(visual)
+                        .child(
+                            div()
+                                .absolute()
+                                .left_0()
+                                .bottom_0()
+                                .p(px(2.))
+                                .rounded(px(4.))
+                                .bg(p.card_bg)
+                                .border_1()
+                                .border_color(p.border)
+                                .child(Icon::new(L::Link).size(px(12.)).text_color(p.text_secondary)),
+                        )
+                        .into_any_element()
+                } else {
+                    visual
+                };
                 let rename_input = self.renaming.as_ref().filter(|(i, _)| *i == ei).map(|(_, inp)| inp.clone());
                 let label: AnyElement = match rename_input {
                     // the text stays where the label was: centered, the label's size
@@ -3319,6 +3340,8 @@ impl FolderView {
                                 .into_any_element(),
                         })
                         .child(name_el)
+                        // a symbolic link: a small badge, as other file managers show
+                        .children(e.is_symlink().then(|| Icon::new(L::Link).size(px(12.)).flex_shrink_0().text_color(p.text_secondary)))
                         // encrypted: an archive member that needs a password, or an EFS file
                         .children((e.attrs & rf_core::attrs::ENCRYPTED != 0).then(|| Icon::new(L::Lock).size(px(12.)).flex_shrink_0().text_color(p.text_secondary)))
                         .children(tag_dots)
