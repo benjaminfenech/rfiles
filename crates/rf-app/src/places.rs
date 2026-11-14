@@ -203,6 +203,8 @@ pub struct Places {
     /// File servers announcing themselves on the local network (Avahi), looked for after
     /// each refresh and every minute, apart from the rest (it takes a second or two).
     pub servers: Vec<rf_linux::network::Server>,
+    /// Phones, tablets and cameras plugged in over USB (opened through kio-fuse or gvfs).
+    pub devices: Vec<rf_linux::devices::Device>,
     /// fstab shares whose server doesn't answer (away from home), with that server: shown as
     /// offline. Checked after each refresh and every 30 s, apart from the rest (it can take
     /// a moment and must not hold the sidebar up).
@@ -223,6 +225,7 @@ impl Places {
                 recent: Vec::new(),
                 network: Vec::new(),
                 servers: Vec::new(),
+                devices: Vec::new(),
                 offline: Default::default(),
                 loaded: false,
                 _task: None,
@@ -232,7 +235,9 @@ impl Places {
         this.refresh(cx);
         // Notice drives appearing/disappearing (USB, network mappings) without any shell hooks.
         cx.spawn(async move |this, cx| {
-            let mut mask = rf_linux::drives::drive_mask();
+            // a phone or camera has no block device: USB devices coming and going count too
+            let stamp = || (rf_linux::drives::drive_mask(), rf_linux::devices::usb_stamp());
+            let mut mask = stamp();
             let mut recheck = false;
             let mut tick = 0u32;
             loop {
@@ -245,7 +250,7 @@ impl Places {
                 if tick.is_multiple_of(20) && this.update(cx, |p, cx| p.discover(cx)).is_err() {
                     break;
                 }
-                let now = rf_linux::drives::drive_mask();
+                let now = stamp();
                 // after a change, look once more on the next tick: a new stick's file system
                 // shows up in UDisks a moment after its device does
                 if now != mask || recheck {
@@ -289,16 +294,18 @@ impl Places {
             let recent = load_recent(14);
             let cloud = load_cloud_and_wsl();
             let network = rf_linux::network::network_shortcuts();
-            (pinned, drives, recent, cloud, network)
+            let devices = rf_linux::devices::list(rf_linux::remote::has_kio_fuse());
+            (pinned, drives, recent, cloud, network, devices)
         });
         self._task = Some(cx.spawn(async move |this, cx| {
-            let (pinned, drives, recent, cloud, network) = work.await;
+            let (pinned, drives, recent, cloud, network, devices) = work.await;
             let _ = this.update(cx, |p, cx| {
                 p.pinned = pinned;
                 p.drives = drives;
                 p.recent = recent;
                 p.cloud = cloud;
                 p.network = network;
+                p.devices = devices;
                 p.loaded = true;
                 p.probe_offline(cx);
                 p.discover(cx);
@@ -345,6 +352,14 @@ impl Places {
                 }
             });
         }));
+    }
+}
+
+pub fn device_icon(d: &rf_linux::devices::Device) -> L {
+    match d.kind {
+        rf_linux::devices::DeviceKind::Phone => L::Smartphone,
+        rf_linux::devices::DeviceKind::Camera => L::Camera,
+        rf_linux::devices::DeviceKind::Apple => L::TabletSmartphone,
     }
 }
 

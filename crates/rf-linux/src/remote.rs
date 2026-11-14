@@ -12,7 +12,11 @@ use std::time::Duration;
 use anyhow::{Context as _, anyhow, bail};
 
 /// URL schemes opened through kio-fuse / gvfs.
-const SCHEMES: &[&str] = &["smb", "sftp", "ftp", "ftps", "fish", "webdav", "webdavs", "dav", "davs", "nfs", "afp"];
+const SCHEMES: &[&str] = &["smb", "sftp", "ftp", "ftps", "fish", "webdav", "webdavs", "dav", "davs", "nfs", "afp", "mtp", "gphoto2", "camera", "afc"];
+
+/// Phones and cameras ([`crate::devices`]): KDE's `mtp:///` (every phone plugged in) has
+/// nothing after the scheme.
+const DEVICE_SCHEMES: &[&str] = &["mtp", "camera", "afc"];
 
 /// How long a mount may take (a password prompt counts).
 const MOUNT_TIMEOUT: Duration = Duration::from_secs(120);
@@ -24,7 +28,8 @@ pub fn to_url(text: &str) -> Option<String> {
     let t = text.trim();
     if let Some((scheme, rest)) = t.split_once("://") {
         let s = scheme.to_ascii_lowercase();
-        return (SCHEMES.contains(&s.as_str()) && !rest.trim_matches('/').is_empty()).then(|| format!("{s}://{rest}"));
+        let bare_ok = DEVICE_SCHEMES.contains(&s.as_str());
+        return (SCHEMES.contains(&s.as_str()) && (bare_ok || !rest.trim_matches('/').is_empty())).then(|| format!("{s}://{rest}"));
     }
     let rest = t.strip_prefix(r"\\").or_else(|| t.strip_prefix("//"))?;
     if rest.is_empty() || rest.starts_with(['?', '.', '/', '\\']) {
@@ -125,6 +130,7 @@ fn gvfs_url(name: &str) -> Option<String> {
         "smb-share" => ("smb", format!("/{}", get("share")?)),
         "sftp" | "ftp" | "ftps" | "nfs" | "afp-volume" => (if kind == "afp-volume" { "afp" } else { kind }, get("prefix").unwrap_or_default()),
         "dav" => (if get("ssl").as_deref() == Some("true") { "davs" } else { "dav" }, get("prefix").unwrap_or_default()),
+        "mtp" | "gphoto2" | "afc" => (kind, String::new()),
         _ => return None,
     };
     Some(format!("{scheme}://{user}{host}{port}{}", path.trim_end_matches('/')))
@@ -182,6 +188,15 @@ fn encode(s: &str) -> String {
 
 fn decode(s: &str) -> String {
     rf_core::uri::decode_str(s)
+}
+
+/// Whether kio-fuse is there to open locations (KDE): phones and cameras then get KIO's
+/// URLs ([`crate::devices::list`]). Asks the session bus; off the UI thread.
+pub fn has_kio_fuse() -> bool {
+    let Ok(conn) = zbus::blocking::Connection::session() else { return false };
+    let Ok(dbus) = zbus::blocking::fdo::DBusProxy::new(&conn) else { return false };
+    let Ok(name) = zbus::names::BusName::try_from("org.kde.KIOFuse") else { return false };
+    dbus.name_has_owner(name).unwrap_or(false) || dbus.list_activatable_names().is_ok_and(|n| n.iter().any(|n| n.as_str() == "org.kde.KIOFuse"))
 }
 
 /// The layer isn't installed (as opposed to: it failed).
@@ -297,6 +312,8 @@ mod tests {
         assert_eq!(to_url("sftp://me@host:2222/srv").as_deref(), Some("sftp://me@host:2222/srv"));
         assert_eq!(to_url("ftp://ftp.example.org/pub").as_deref(), Some("ftp://ftp.example.org/pub"));
         assert_eq!(to_url("smb://"), None);
+        assert_eq!(to_url("mtp:///").as_deref(), Some("mtp:///"));
+        assert_eq!(to_url("gphoto2://[usb:001,007]/").as_deref(), Some("gphoto2://[usb:001,007]/"));
         assert_eq!(to_url("https://example.org"), None);
         assert_eq!(to_url("/home/me"), None);
         assert_eq!(to_url(r"\\?\C:\x"), None);
@@ -320,6 +337,10 @@ mod tests {
         assert_eq!(display_url(&g).as_deref(), Some("sftp://box:2222"));
         let g = PathBuf::from(format!("{run}/gvfs/dav:host=cloud,ssl=true,prefix=%2Fremote.php%2Fwebdav/x"));
         assert_eq!(display_url(&g).as_deref(), Some("davs://cloud/remote.php/webdav/x"));
+        let g = PathBuf::from(format!("{run}/gvfs/mtp:host=Google_Pixel_7_2A1B/Internal shared storage"));
+        assert_eq!(display_url(&g).as_deref(), Some("mtp://Google_Pixel_7_2A1B/Internal shared storage"));
+        let g = PathBuf::from(format!("{run}/gvfs/gphoto2:host=%5Busb%3A001%2C007%5D/DCIM"));
+        assert_eq!(display_url(&g).as_deref(), Some("gphoto2://[usb:001,007]/DCIM"));
         assert_eq!(display_url(Path::new("/home/me")), None);
         assert_eq!(display_url(Path::new(&format!("{run}/kio-fuse-X/smb"))), None);
     }
