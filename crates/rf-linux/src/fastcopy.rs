@@ -1334,6 +1334,16 @@ mod tests {
         std::fs::read_dir(dir).unwrap().flatten().filter(|e| e.file_name().to_string_lossy().ends_with(".rfpart")).count()
     }
 
+    /// Waits (up to a second) for a closed journal's lock to go. A child process another test
+    /// starts at that moment holds a copy of the file until it runs its program, and an flock
+    /// lock stays while any copy is open; `interrupted()` skips a journal that looks locked.
+    fn unlocked(journal: &Path) {
+        let until = std::time::Instant::now() + std::time::Duration::from_secs(1);
+        while crate::journal::in_use(journal) && std::time::Instant::now() < until {
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+    }
+
     /// A copy cut off half-way (some files finished and recorded, one partial at its real name,
     /// a replace whose temporary copy was left behind), then resumed: the result is the same as
     /// an uncut copy, nothing is asked again, the user's "replace" answer still holds, and the
@@ -1375,6 +1385,7 @@ mod tests {
         jr.sync();
         let journal = jr.path.clone();
         drop(jr); // the process dies: the journal stays
+        unlocked(&journal);
         let found = interrupted().into_iter().find(|i| i.journal == journal).expect("the cut job is found");
         assert_eq!(found.dest, dst);
         assert_eq!(found.sources, vec![src.clone()]);
@@ -1490,10 +1501,12 @@ mod tests {
         let jr = journal_start(Transfer::Copy, false, Verify::Off, std::slice::from_ref(&src), &dst, &p).expect("journal");
         let journal = jr.path.clone();
         drop(jr);
+        unlocked(&journal);
         let held = crate::journal::Writer::append(&journal).unwrap();
         assert!(!interrupted().iter().any(|i| i.journal == journal));
         assert!(resume(&journal, Arc::new(tracker())).is_err());
         drop(held);
+        unlocked(&journal);
         assert!(interrupted().iter().any(|i| i.journal == journal));
         assert!(resume(&journal, Arc::new(tracker())).unwrap());
         assert_eq!(std::fs::read(dst.join("dosya.txt")).unwrap(), b"bir");
