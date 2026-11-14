@@ -194,7 +194,9 @@ and "Show in folder" in browsers, open in rfiles, for your user only. Turning it
 brings your previous file manager back.
 
 **Drives.** The eject button next to a USB stick, SD card or disc in the sidebar removes it
-safely. Right-click a drive to unmount it. Encrypted (LUKS) drives have a lock icon and ask for
+safely. Right-click a drive to unmount it, or to open it in GNOME Disks, KDE Partition Manager
+or GParted (whichever is installed) to format or partition it; rfiles doesn't format drives
+itself. Encrypted (LUKS) drives have a lock icon and ask for
 their passphrase when you open them. Network shares from fstab whose server can't be reached
 are marked offline. Mounting an internal disk may ask for an administrator password, which
 needs a polkit agent. KDE and GNOME start one for you; on Hyprland or Sway, start one yourself,

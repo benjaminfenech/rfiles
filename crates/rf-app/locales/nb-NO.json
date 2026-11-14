@@ -1383,5 +1383,8 @@
  "f6635c0b": "Delingsnavn",
  "a5972166": "Andre kan legge til, endre og slette filer",
  "5ccb1948": "Tillat gjester (uten passord)",
- "6a494fba": "Oversikt"
+ "6a494fba": "Oversikt",
+ "1463a002": "Åpne i Disker",
+ "d08848e1": "Åpne i Partisjonsbehandler",
+ "993df11d": "Åpne i GParted"
 }

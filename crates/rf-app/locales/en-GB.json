@@ -1383,5 +1383,8 @@
  "f6635c0b": "Share name",
  "a5972166": "Others can add, change and delete files",
  "5ccb1948": "Allow guests (no password)",
- "6a494fba": "Overview"
+ "6a494fba": "Overview",
+ "1463a002": "Open in Disks",
+ "d08848e1": "Open in Partition Manager",
+ "993df11d": "Open in GParted"
 }

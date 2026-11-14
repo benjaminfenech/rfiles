@@ -1762,6 +1762,27 @@ impl Workspace {
                 items.splice(at..at, extra);
             }
         }
+        // a drive (mounted or not): formatting and partitioning are left to the desktop's disk
+        // tool, which shows what's on the disk and asks first
+        let device = self.places.read(cx).drives.iter().find(|d| d.root == path).map(|d| d.source.clone()).filter(|s| s.starts_with("/dev/"));
+        if let (Some(device), Some(tool)) = (device, rf_linux::drives::disk_tool()) {
+            use rf_linux::drives::DiskTool;
+            let label = match tool {
+                DiskTool::Disks => t!("Open in Disks"),
+                DiskTool::PartitionManager => t!("Open in Partition Manager"),
+                DiskTool::GParted => t!("Open in GParted"),
+            };
+            // just above Properties
+            let at = items.len().saturating_sub(1);
+            items.insert(
+                at,
+                Item::action(label, MenuIcon::Lucide(L::HardDrive), move |_, _| {
+                    if let Err(e) = rf_linux::drives::open_disk_tool(tool, &device) {
+                        log::warn!("{e:#}");
+                    }
+                }),
+            );
+        }
         crate::fluent_menu::show(Menu { quick: Vec::new(), items }, window.mouse_position(), window, cx);
     }
 
