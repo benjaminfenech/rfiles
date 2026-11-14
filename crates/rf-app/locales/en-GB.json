@@ -1300,6 +1300,10 @@
  "318f3dab": "Open the folder after extracting",
  "9024d7b4": "When an archive is extracted into a new folder, that folder opens in a new tab",
  "d2386650": "Folder to extract to",
+ "ca4436bd": "Split into parts",
+ "168b858e": "Dictionary size (7z)",
+ "ddde2ea1": "RAR can't be split here; choose ZIP or 7z",
+ "d51fcd54": "tar formats don't support passwords; choose ZIP or 7z",
  "c0ae2136": "Search settings",
  "59b807bf": "No setting matches",
  "94f50c43": "Search results"

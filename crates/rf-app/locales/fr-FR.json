@@ -1300,6 +1300,10 @@
  "318f3dab": "Ouvrir le dossier après l'extraction",
  "9024d7b4": "Quand une archive est extraite dans un nouveau dossier, ce dossier s'ouvre dans un nouvel onglet",
  "d2386650": "Dossier d'extraction",
+ "ca4436bd": "Fractionner en volumes",
+ "168b858e": "Taille du dictionnaire (7z)",
+ "ddde2ea1": "RAR ne peut pas être fractionné ici ; choisissez ZIP ou 7z",
+ "d51fcd54": "Les formats tar ne prennent pas en charge les mots de passe ; choisissez ZIP ou 7z",
  "c0ae2136": "Rechercher dans les paramètres",
  "59b807bf": "Aucun paramètre ne correspond",
  "94f50c43": "Résultats de la recherche"
