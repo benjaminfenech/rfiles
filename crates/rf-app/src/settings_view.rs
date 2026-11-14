@@ -748,10 +748,132 @@ fn general(p: &Palette, s: &Settings, window: &mut Window, cx: &mut App) -> Vec<
         cx,
     ));
 
+    v.push(own_actions_card(p, s, cx));
+
     v.push(section(p, t!("Scrolling")));
     v.push(card(p, L::ChevronsUpDown, t!("Smooth scrolling"), None, sw("smooth", p, s.smooth_scroll, |s, v| s.smooth_scroll = v)));
     v.extend(quick_search_cards(p, s));
     v
+}
+
+/// Settings → General → "Your actions": commands of the user's own in the right-click menu,
+/// saved as Dolphin service menus (Dolphin offers them too). Actions installed for Dolphin or
+/// Nautilus show in the menu as well; their folder is a click away.
+fn own_actions_card(p: &Palette, s: &Settings, cx: &mut App) -> AnyElement {
+    let pp = *p;
+    let submenu = s.menu.shell_submenu;
+    expander(
+        "own-actions",
+        p,
+        L::Zap,
+        t!("Your actions"),
+        Some(t!("Your own commands in the right-click menu. They're saved as Dolphin service menus, so Dolphin shows them too.")),
+        Some(button("action-new", p, t!("Add action"), |window, cx| action_dialog(None, window, cx))),
+        move || {
+            let dir = rf_linux::servicemenus::user_dir();
+            let mut rows: Vec<AnyElement> = dir
+                .as_deref()
+                .map(rf_linux::servicemenus::own_actions)
+                .unwrap_or_default()
+                .into_iter()
+                .enumerate()
+                .map(|(i, a)| {
+                    let (edit, del) = (a.clone(), a.file.clone());
+                    let desc = a.command.clone();
+                    sub(
+                        &pp,
+                        &a.name,
+                        Some(&desc),
+                        h_flex()
+                            .gap_2()
+                            .child(button(("action-edit", i), &pp, t!("Edit"), move |window, cx| action_dialog(Some(edit.clone()), window, cx)))
+                            .child(button(("action-del", i), &pp, t!("Delete"), move |window, _| {
+                                if let Err(e) = std::fs::remove_file(&del) {
+                                    log::warn!("delete action {}: {e}", del.display());
+                                }
+                                window.refresh();
+                            }))
+                            .into_any_element(),
+                    )
+                })
+                .collect();
+            rows.push(sub(
+                &pp,
+                t!("Show actions in a submenu"),
+                Some(t!("Off: listed at the bottom of the menu")),
+                switch("actions-submenu", &pp, submenu, move |_, cx| settings::update(cx, |s| s.menu.shell_submenu = !submenu)),
+            ));
+            if let Some(d) = dir {
+                rows.push(sub(
+                    &pp,
+                    t!("Service menus folder"),
+                    Some(t!("Actions installed for Dolphin, and Nautilus scripts, show in the menu too")),
+                    button("actions-folder", &pp, t!("Open"), move |_, _| {
+                        let d = d.clone();
+                        std::thread::spawn(move || {
+                            let _ = std::fs::create_dir_all(&d);
+                            let _ = rf_linux::shell::open(&d);
+                        });
+                    }),
+                ));
+            }
+            rows
+        },
+        cx,
+    )
+}
+
+/// Adds an action (`existing` = None) or edits one: its name and what it applies to, then the
+/// command.
+fn action_dialog(existing: Option<rf_linux::servicemenus::OwnAction>, window: &mut Window, cx: &mut App) {
+    use rf_linux::servicemenus::{Applies, Count};
+    use std::cell::Cell;
+    use std::rc::Rc;
+    let applies_ix = Rc::new(Cell::new(existing.as_ref().map_or(0, |a| Applies::ALL.iter().position(|x| *x == a.applies).unwrap_or(0))));
+    let count_ix = Rc::new(Cell::new(existing.as_ref().map_or(0, |a| Count::ALL.iter().position(|x| *x == a.count).unwrap_or(0))));
+    let choices = vec![
+        crate::prompt::Choice {
+            label: t!("For").into(),
+            options: vec![t!("All").into(), t!("Files").into(), t!("Folders").into(), t!("Images").into(), t!("Media").into()],
+            selected: applies_ix.clone(),
+        },
+        crate::prompt::Choice { label: t!("Items").into(), options: vec![t!("Any").into(), t!("One").into(), t!("Two").into()], selected: count_ix.clone() },
+    ];
+    let title = if existing.is_some() { t!("Edit action") } else { t!("Add action") };
+    let name0 = existing.as_ref().map(|a| a.name.clone()).unwrap_or_default();
+    let next = crate::prompt::Button::new(t!("Next"), crate::prompt::Kind::Primary, move |value, window, cx| {
+        let name = value.unwrap_or_default().trim().to_string();
+        if name.is_empty() {
+            return Err(t!("Enter a name").to_string());
+        }
+        let (applies, count) = (Applies::ALL[applies_ix.get()], Count::ALL[count_ix.get()]);
+        let existing = existing.clone();
+        window.defer(cx, move |window, cx| command_dialog(existing, name, applies, count, window, cx));
+        Ok(())
+    });
+    crate::prompt::show_with(title, None, Some((name0, t!("Name in the menu").to_string())), choices, vec![next, crate::prompt::Button::cancel()], window, cx);
+}
+
+fn command_dialog(existing: Option<rf_linux::servicemenus::OwnAction>, name: String, applies: rf_linux::servicemenus::Applies, count: rf_linux::servicemenus::Count, window: &mut Window, cx: &mut App) {
+    let cmd0 = existing.as_ref().map(|a| a.command.clone()).unwrap_or_default();
+    let save = crate::prompt::Button::new(t!("Save"), crate::prompt::Kind::Primary, move |value, window, _| {
+        let command = value.unwrap_or_default().trim().to_string();
+        if command.is_empty() {
+            return Err(t!("Enter a command").to_string());
+        }
+        let Some(dir) = rf_linux::servicemenus::user_dir() else { return Err("no data folder".into()) };
+        rf_linux::servicemenus::save_action(&dir, existing.as_ref().map(|a| a.file.as_path()), &name, &command, applies, count).map_err(|e| e.to_string())?;
+        window.refresh();
+        Ok(())
+    });
+    crate::prompt::show(
+        t!("Command"),
+        Some(t!("%f is an item (the command runs once for each), %F all of them. Without either, the items go at the end. Example: meld %F").to_string()),
+        Some((cmd0, "gimp %F".into())),
+        vec![save, crate::prompt::Button::cancel()],
+        window,
+        cx,
+    );
 }
 
 /// Background tint presets (Files' "Background color").

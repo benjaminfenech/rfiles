@@ -241,6 +241,129 @@ pub fn run(action: &Action, files: &[PathBuf]) -> anyhow::Result<()> {
     Ok(())
 }
 
+// ---------------------------------------------------------------------------------------------
+// The user's own actions, made in Settings: service menus named `rfiles-*.desktop` in the
+// user's `kio/servicemenus`, so Dolphin offers them too.
+// ---------------------------------------------------------------------------------------------
+
+/// What an action of the user's applies to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Applies {
+    #[default]
+    All,
+    Files,
+    Folders,
+    Images,
+    /// Video and audio.
+    Media,
+}
+
+impl Applies {
+    pub const ALL: [Applies; 5] = [Applies::All, Applies::Files, Applies::Folders, Applies::Images, Applies::Media];
+
+    fn mime(self) -> &'static str {
+        match self {
+            Applies::All => "all/all;",
+            Applies::Files => "all/allfiles;",
+            Applies::Folders => "inode/directory;",
+            Applies::Images => "image/*;",
+            Applies::Media => "video/*;audio/*;",
+        }
+    }
+
+    fn from_mime(m: &str) -> Self {
+        Applies::ALL.into_iter().find(|a| a.mime().trim_end_matches(';') == m.trim_end_matches(';')).unwrap_or_default()
+    }
+}
+
+/// How many items an action of the user's takes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Count {
+    #[default]
+    Any,
+    One,
+    /// Exactly two (comparing).
+    Two,
+}
+
+impl Count {
+    pub const ALL: [Count; 3] = [Count::Any, Count::One, Count::Two];
+}
+
+/// An action made in rfiles' Settings.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OwnAction {
+    pub file: PathBuf,
+    pub name: String,
+    /// The command, with `%f` (each item), `%F` (all of them) and the other field codes.
+    pub command: String,
+    pub applies: Applies,
+    pub count: Count,
+}
+
+/// Where the user's service menus go (`~/.local/share/kio/servicemenus`).
+pub fn user_dir() -> Option<PathBuf> {
+    dirs::data_dir().map(|d| d.join("kio/servicemenus"))
+}
+
+/// The actions made in rfiles (`rfiles-*.desktop`) in `dir`, by name.
+pub fn own_actions(dir: &Path) -> Vec<OwnAction> {
+    let Ok(rd) = std::fs::read_dir(dir) else { return Vec::new() };
+    let mut out: Vec<OwnAction> = rd
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.file_name().is_some_and(|n| n.to_string_lossy().starts_with("rfiles-")) && p.extension().is_some_and(|x| x == "desktop"))
+        .filter_map(|file| {
+            let g = groups(&std::fs::read_to_string(&file).ok()?);
+            let e = g.get("Desktop Entry")?;
+            let a = g.get("Desktop Action run")?;
+            let count = match e.get("X-KDE-RequiredNumberOfUrls").map(String::as_str) {
+                Some("2") => Count::Two,
+                _ if e.get("X-KDE-MaxNumberOfUrls").is_some_and(|v| v == "1") => Count::One,
+                _ => Count::Any,
+            };
+            Some(OwnAction { name: a.get("Name")?.clone(), command: a.get("Exec")?.clone(), applies: Applies::from_mime(e.get("MimeType").map_or("", String::as_str)), count, file })
+        })
+        .collect();
+    out.sort_by_key(|a| a.name.to_lowercase());
+    out
+}
+
+/// A value for a desktop file: one line, backslashes escaped.
+fn value(s: &str) -> String {
+    s.replace('\\', "\\\\").replace('\n', "\\n").replace('\r', "")
+}
+
+/// Saves an action as a service menu in `dir` (over `existing`, when editing one): returns its
+/// file. The file name comes from the name, kept when editing.
+pub fn save_action(dir: &Path, existing: Option<&Path>, name: &str, command: &str, applies: Applies, count: Count) -> std::io::Result<PathBuf> {
+    std::fs::create_dir_all(dir)?;
+    let file = match existing {
+        Some(f) => f.to_path_buf(),
+        None => {
+            let slug: String = name.chars().map(|c| if c.is_alphanumeric() { c.to_ascii_lowercase() } else { '-' }).collect::<String>().split('-').filter(|s| !s.is_empty()).collect::<Vec<_>>().join("-");
+            let slug = if slug.is_empty() { "action".to_string() } else { slug };
+            crate::fileops::unique_name(dir, &format!("rfiles-{slug}"), ".desktop")
+        }
+    };
+    let counts = match count {
+        Count::Any => String::new(),
+        Count::One => "X-KDE-MaxNumberOfUrls=1\n".into(),
+        Count::Two => "X-KDE-RequiredNumberOfUrls=2\n".into(),
+    };
+    let text = format!(
+        "[Desktop Entry]\nType=Service\nX-KDE-ServiceTypes=KonqPopupMenu/Plugin\nMimeType={}\nX-KDE-Protocols=file\n{counts}Actions=run;\n\n[Desktop Action run]\nName={}\nIcon=system-run\nExec={}\n",
+        applies.mime(),
+        value(name),
+        value(command),
+    );
+    // a new file, then a rename: never half a file for Dolphin or a menu to read
+    let tmp = file.with_extension("desktop.new");
+    std::fs::write(&tmp, text)?;
+    std::fs::rename(&tmp, &file)?;
+    Ok(file)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -279,6 +402,33 @@ mod tests {
         assert!(parse("[Desktop Entry]\nActions=a;b\n[Desktop Action a]\nName=A\n").is_none());
         assert!(parse("[Desktop Entry]\nActions=a\n[Desktop Action a]\nName=A\nExec=rfiles-no-such-program %f\n").is_none(), "not installed");
         assert!(exec_installed("env LANG=C sh -c true") && !exec_installed("env X=1"));
+    }
+
+    #[test]
+    fn own_actions_round_trip() {
+        let d = std::env::temp_dir().join(format!("rf-own-actions-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&d);
+        let f = save_action(&d, None, "Compare with Meld!", "sh -c 'meld \"$1\" \"$2\"' x %F", Applies::Files, Count::Two).unwrap();
+        assert_eq!(f, d.join("rfiles-compare-with-meld.desktop"));
+        let again = save_action(&d, None, "Compare with Meld!", "sh %F", Applies::All, Count::Any).unwrap();
+        assert_eq!(again, d.join("rfiles-compare-with-meld (2).desktop"), "a second one doesn't overwrite");
+        let mine = own_actions(&d);
+        assert_eq!(mine.len(), 2);
+        assert_eq!(mine[0].name, "Compare with Meld!");
+        let m = mine.iter().find(|a| a.file == f).unwrap();
+        assert_eq!((m.command.as_str(), m.applies, m.count), ("sh -c 'meld \"$1\" \"$2\"' x %F", Applies::Files, Count::Two));
+        // what the menu reads from it: files only, exactly two
+        let menu = parse(&std::fs::read_to_string(&f).unwrap()).unwrap();
+        assert!(menu.applies(&[t("image/png"), t("text/plain")]) && !menu.applies(&[t("image/png")]));
+        // editing keeps the file
+        save_action(&d, Some(&f), "Pics", "sh %f", Applies::Images, Count::One).unwrap();
+        let m = own_actions(&d).into_iter().find(|a| a.file == f).unwrap();
+        assert_eq!((m.name.as_str(), m.applies, m.count), ("Pics", Applies::Images, Count::One));
+        // one line, whatever is typed
+        save_action(&d, Some(&f), "two\nlines", "sh %f", Applies::Media, Count::Any).unwrap();
+        assert_eq!(own_actions(&d).into_iter().find(|a| a.file == f).unwrap().name, "two\nlines");
+        assert!(!std::fs::read_to_string(&f).unwrap().contains("two\nlines\n"));
+        let _ = std::fs::remove_dir_all(&d);
     }
 
     #[test]
