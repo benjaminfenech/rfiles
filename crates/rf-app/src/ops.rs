@@ -396,6 +396,24 @@ impl FolderView {
         .detach();
     }
 
+    /// New → a template: a copy of it here, then rename it inline.
+    pub fn create_from_template(&mut self, template: PathBuf, cx: &mut Context<Self>) {
+        let Some(dir) = self.current_dir() else { return };
+        if crate::archive_view::split(&dir).is_some() {
+            return;
+        }
+        let task = cx.background_spawn(async move { rf_linux::templates::create_from(&template, &dir) });
+        cx.spawn(async move |this, cx| match task.await {
+            Ok(path) => {
+                crate::undo::push(crate::undo::UndoOp::Created { path: path.clone() });
+                let name = path.file_name().map(|n| n.to_string_lossy().into_owned());
+                let _ = this.update(cx, |v, cx| v.expect_new_item(name, cx));
+            }
+            Err(e) => log::warn!("new from template: {e}"),
+        })
+        .detach();
+    }
+
     /// "Create folder with selection": a new folder here, the selected items moved into it,
     /// then rename the folder inline.
     pub fn folder_with_selection(&mut self, items: Vec<PathBuf>, cx: &mut Context<Self>) {
