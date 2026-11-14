@@ -13,6 +13,11 @@ pub enum SortKey {
     Created,
     Size,
     Type,
+    /// By owner and group id (Linux; the names come from the user database).
+    Owner,
+    Group,
+    /// By the permission bits.
+    Permissions,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -74,6 +79,9 @@ impl SortSpec {
             SortKey::Created => a.created_ms.cmp(&b.created_ms),
             SortKey::Size => a.size.cmp(&b.size),
             SortKey::Type => a.ext.cmp(&b.ext),
+            SortKey::Owner => a.uid.cmp(&b.uid),
+            SortKey::Group => a.gid.cmp(&b.gid),
+            SortKey::Permissions => a.mode.cmp(&b.mode),
         };
         let ord = primary.then_with(|| natural_cmp(a.shown(), b.shown()));
         match self.dir {
@@ -287,6 +295,21 @@ fn rank(c: char) -> u32 {
 mod tests {
     use super::*;
     use crate::entry::EntryKind;
+
+    #[test]
+    fn owner_group_and_permissions_sort() {
+        let e = |n: &str, mode, uid, gid| Entry::new(n, EntryKind::File, 0, 0, 0, 0).with_unix(mode, uid, gid);
+        let list = vec![e("a", 0o644, 1000, 100), e("b", 0o755, 0, 0), e("c", 0o600, 1000, 5)];
+        let order = |key| {
+            let mut idx: Vec<u32> = (0..3).collect();
+            SortSpec { key, ..Default::default() }.sort_indices(&list, &mut idx);
+            idx.iter().map(|&i| list[i as usize].name.to_string()).collect::<Vec<_>>().join("")
+        };
+        assert_eq!(order(SortKey::Owner), "bac", "root first, then by name");
+        assert_eq!(order(SortKey::Group), "bca");
+        assert_eq!(order(SortKey::Permissions), "cab");
+        assert_eq!(e("x", 0o100755, 1, 1).mode, 0o755, "only the permission bits are kept");
+    }
 
     #[test]
     fn natural_order() {
