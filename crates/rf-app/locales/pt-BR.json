@@ -1294,6 +1294,12 @@
  "ac00cfc8": "Precisa do pacote deb, rpm ou do Arch (ele instala o arquivo rfiles.portal do portal da área de trabalho); o Flatpak não pode adicionar um backend de portal.",
  "c01651ec": "Aplicativos que pedem uma caixa de diálogo de arquivos ao portal da área de trabalho (Firefox, Chromium, aplicativos GTK, Qt e Electron) recebem o rfiles. Desativar traz de volta a caixa anterior.",
  "de824b35": "Usar o rfiles nas caixas de diálogo Abrir e Salvar",
+ "4822d6ae": "Extrair cada um para a própria pasta",
+ "3a5aa560": "Extrair de forma inteligente",
+ "c1030759": "Extrair para…",
+ "318f3dab": "Abrir a pasta após extrair",
+ "9024d7b4": "Quando um arquivo compactado é extraído para uma nova pasta, essa pasta abre em uma nova guia",
+ "d2386650": "Pasta de destino da extração",
  "c0ae2136": "Pesquisar configurações",
  "59b807bf": "Nenhuma configuração corresponde",
  "94f50c43": "Resultados da pesquisa"

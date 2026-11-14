@@ -1294,6 +1294,12 @@
  "ac00cfc8": "Vaatii deb-, rpm- tai Arch-paketin (se asentaa työpöytäportaalin rfiles.portal-tiedoston); Flatpak ei voi lisätä portaalin taustaosaa.",
  "c01651ec": "Sovellukset, jotka pyytävät työpöytäportaalilta tiedostoikkunaa (Firefox, Chromium, GTK-, Qt- ja Electron-sovellukset), saavat rfilesin. Poistaminen käytöstä palauttaa aiemman ikkunan.",
  "de824b35": "Käytä rfilesiä Avaa- ja Tallenna-ikkunoissa",
+ "4822d6ae": "Pura kukin omaan kansioonsa",
+ "3a5aa560": "Pura älykkäästi",
+ "c1030759": "Pura kohteeseen…",
+ "318f3dab": "Avaa kansio purkamisen jälkeen",
+ "9024d7b4": "Kun arkisto puretaan uuteen kansioon, kansio avautuu uudessa välilehdessä",
+ "d2386650": "Kansio, johon puretaan",
  "c0ae2136": "Etsi asetuksista",
  "59b807bf": "Mikään asetus ei vastaa hakua",
  "94f50c43": "Hakutulokset"

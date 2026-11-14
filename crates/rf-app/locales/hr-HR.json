@@ -1294,6 +1294,12 @@
  "ac00cfc8": "Potreban je paket deb, rpm ili Arch (instalira datoteku rfiles.portal portala radne površine); Flatpak ne može dodati pozadinski program portala.",
  "c01651ec": "Aplikacije koje od portala radne površine traže dijalog za datoteke (Firefox, Chromium, aplikacije GTK, Qt i Electron) dobivaju rfiles. Isključivanje vraća prethodni dijalog.",
  "de824b35": "Koristi rfiles za dijaloge Otvori i Spremi",
+ "4822d6ae": "Raspakiraj svaku u zasebnu mapu",
+ "3a5aa560": "Pametno raspakiraj",
+ "c1030759": "Raspakiraj u…",
+ "318f3dab": "Otvori mapu nakon raspakiravanja",
+ "9024d7b4": "Kad se arhiva raspakira u novu mapu, ta se mapa otvara u novoj kartici",
+ "d2386650": "Mapa za raspakiravanje",
  "c0ae2136": "Traži postavke",
  "59b807bf": "Nijedna postavka ne odgovara",
  "94f50c43": "Rezultati pretraživanja"

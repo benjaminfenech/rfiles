@@ -1294,6 +1294,12 @@
  "ac00cfc8": "Memerlukan paket deb, rpm, atau Arch (paket itu memasang rfiles.portal milik portal desktop); Flatpak tidak dapat menambahkan backend portal.",
  "c01651ec": "Aplikasi yang meminta dialog file ke portal desktop (Firefox, Chromium, aplikasi GTK, Qt, dan Electron) mendapatkan rfiles. Menonaktifkannya mengembalikan dialog sebelumnya.",
  "de824b35": "Gunakan rfiles untuk dialog Buka dan Simpan",
+ "4822d6ae": "Ekstrak masing-masing ke folder sendiri",
+ "3a5aa560": "Ekstrak dengan cerdas",
+ "c1030759": "Ekstrak ke…",
+ "318f3dab": "Buka folder setelah mengekstrak",
+ "9024d7b4": "Saat arsip diekstrak ke folder baru, folder itu dibuka di tab baru",
+ "d2386650": "Folder tujuan ekstrak",
  "c0ae2136": "Cari pengaturan",
  "59b807bf": "Tidak ada pengaturan yang cocok",
  "94f50c43": "Hasil pencarian"

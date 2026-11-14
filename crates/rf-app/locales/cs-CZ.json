@@ -1294,6 +1294,12 @@
  "ac00cfc8": "Vyžaduje balíček deb, rpm nebo Arch (instaluje soubor rfiles.portal portálu plochy); Flatpak nemůže přidat backend portálu.",
  "c01651ec": "Aplikace, které si u portálu plochy žádají dialog pro soubory (Firefox, Chromium, aplikace GTK, Qt a Electron), dostanou rfiles. Vypnutím se vrátí původní dialog.",
  "de824b35": "Používat rfiles pro dialogy Otevřít a Uložit",
+ "4822d6ae": "Rozbalit každý do vlastní složky",
+ "3a5aa560": "Rozbalit chytře",
+ "c1030759": "Rozbalit do…",
+ "318f3dab": "Po rozbalení otevřít složku",
+ "9024d7b4": "Když se archiv rozbalí do nové složky, složka se otevře na nové kartě",
+ "d2386650": "Cílová složka pro rozbalení",
  "c0ae2136": "Hledat v nastavení",
  "59b807bf": "Žádné nastavení neodpovídá",
  "94f50c43": "Výsledky hledání"
