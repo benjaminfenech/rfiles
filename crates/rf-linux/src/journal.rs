@@ -129,6 +129,20 @@ pub fn in_use(path: &Path) -> bool {
 mod tests {
     use super::*;
 
+    /// Whether the lock is free within a second. A child process another test starts at the
+    /// same moment holds a copy of the writer's file until it runs its program (the file is
+    /// closed then), and an flock lock stays while any copy is open.
+    fn freed(p: &std::path::Path) -> bool {
+        let until = std::time::Instant::now() + std::time::Duration::from_secs(1);
+        while in_use(p) {
+            if std::time::Instant::now() > until {
+                return false;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+        true
+    }
+
     fn tmp(name: &str) -> std::path::PathBuf {
         let d = std::env::temp_dir().join(format!("rf-journal-{}-{name}", std::process::id()));
         let _ = std::fs::remove_file(&d);
@@ -146,7 +160,7 @@ mod tests {
             assert!(in_use(&p), "an open writer marks the job as running");
             assert_eq!(Writer::append(&p).err().map(|e| e.kind()), Some(std::io::ErrorKind::ResourceBusy), "one writer at a time");
         }
-        assert!(!in_use(&p));
+        assert!(freed(&p));
         // a torn record (no newline) and garbage after a crash
         let mut f = OpenOptions::new().append(true).open(&p).unwrap();
         f.write_all(line(&["F", "1"]).as_bytes()).unwrap();
@@ -181,7 +195,7 @@ mod tests {
         w.record(&["F", "1"]).unwrap();
         w.sync().unwrap();
         drop(w);
-        assert!(!in_use(&p));
+        assert!(freed(&p));
         assert_eq!(read(&p).unwrap(), vec![vec!["B".to_string()], vec!["F".into(), "1".into()]]);
         assert!(!p.with_extension("jrn-new").exists());
         let _ = std::fs::remove_file(&p);
