@@ -230,6 +230,8 @@ struct Cols {
     sync: bool,
     /// commit message, author, date, hash
     commit: [bool; 4],
+    /// owner, group, permissions
+    unix: [bool; 3],
 }
 
 /// Drag payload of a details-header column edge.
@@ -364,7 +366,7 @@ pub struct FolderView {
     row_size: u8,
     /// Column resize in progress: (column, mouse x at start, width at start), live widths.
     col_drag: Option<(usize, f32, f32)>,
-    col_live: Option<[f32; 11]>,
+    col_live: Option<[f32; 14]>,
     col_save_gen: u64,
     pub(crate) grid_style: GridStyle,
     content_width: Pixels,
@@ -2883,11 +2885,11 @@ impl FolderView {
 
     /// Column widths (modified, created, type, size, tags, git, sync): the live drag, else Settings.
     /// …then the commit columns (message, author, date, hash) at 7..11.
-    fn col_widths(&self, cx: &App) -> [f32; 11] {
+    fn col_widths(&self, cx: &App) -> [f32; 14] {
         self.col_live.unwrap_or_else(|| {
             let c = &cx.global::<crate::settings::Settings>().columns;
-            let (a, b, g) = (c.widths, c.extra_widths, c.git_widths);
-            [a[0], a[1], a[2], a[3], b[0], b[1], b[2], g[0], g[1], g[2], g[3]].map(f32::from)
+            let (a, b, g, u) = (c.widths, c.extra_widths, c.git_widths, c.unix_widths);
+            [a[0], a[1], a[2], a[3], b[0], b[1], b[2], g[0], g[1], g[2], g[3], u[0], u[1], u[2]].map(f32::from)
         })
     }
 
@@ -2929,7 +2931,12 @@ impl FolderView {
         let date = take(c.git_date && repo, w[9]);
         let author = take(c.git_author && repo, w[8]);
         let hash = take(c.git_hash && repo, w[10]);
-        Cols { modified, created, kind, size, tags, git, sync, commit: [message, author, date, hash] }
+        // only where items have them (not inside archives)
+        let unix = self.location().path().is_some_and(|p| !crate::archive_view::is_browsable_path(p));
+        let owner = take(c.owner && unix, w[11]);
+        let group = take(c.group && unix, w[12]);
+        let perms = take(c.permissions && unix, w[13]);
+        Cols { modified, created, kind, size, tags, git, sync, commit: [message, author, date, hash], unix: [owner, group, perms] }
     }
 
     /// Width the visible Details columns leave unused (what [`Self::visible_cols`] still had free).
@@ -2948,6 +2955,11 @@ impl FolderView {
         for (i, on) in vis.commit.iter().enumerate() {
             if *on {
                 used += w[7 + i];
+            }
+        }
+        for (i, on) in vis.unix.iter().enumerate() {
+            if *on {
+                used += w[11 + i];
             }
         }
         (f32::from(self.content_width) - 180. - 24. - used).max(0.)
@@ -3043,6 +3055,9 @@ impl FolderView {
             .children(vis.commit[1].then(|| plain("h-gauth", t!("Commit author"), w[8]).child(handle(8, cx))))
             .children(vis.commit[2].then(|| plain("h-gdate", t!("Commit date"), w[9]).child(handle(9, cx))))
             .children(vis.commit[3].then(|| plain("h-ghash", t!("Commit hash"), w[10]).child(handle(10, cx))))
+            .children(vis.unix[0].then(|| col("h-owner", t!("Owner"), SortKey::Owner, Some(px(w[11])), false, cx).relative().child(handle(11, cx))))
+            .children(vis.unix[1].then(|| col("h-group", t!("Group"), SortKey::Group, Some(px(w[12])), false, cx).relative().child(handle(12, cx))))
+            .children(vis.unix[2].then(|| col("h-perms", t!("Permissions"), SortKey::Permissions, Some(px(w[13])), false, cx).relative().child(handle(13, cx))))
             .children(vis.modified.then(|| {
                 col("h-mod", t!("Date modified"), SortKey::Modified, Some(px(w[0])), false, cx).relative().child(handle(0, cx))
             }))
@@ -3073,6 +3088,7 @@ impl FolderView {
                         s.columns.widths = [w[0], w[1], w[2], w[3]].map(|x| x as u16);
                         s.columns.extra_widths = [w[4], w[5], w[6]].map(|x| x as u16);
                         s.columns.git_widths = [w[7], w[8], w[9], w[10]].map(|x| x as u16);
+                        s.columns.unix_widths = [w[11], w[12], w[13]].map(|x| x as u16);
                     });
                 }
             });
@@ -3212,6 +3228,29 @@ impl FolderView {
                         .whitespace_nowrap()
                         .overflow_hidden()
                         .text_ellipsis()
+                        .child(text)
+                        .into_any_element()
+                })
+                .collect();
+            // owner, group, permissions (empty where an item has none: inside an archive)
+            let unix_cells: Vec<AnyElement> = (0..3)
+                .filter(|&i| vis.unix[i])
+                .map(|i| {
+                    let text: SharedString = match i {
+                        _ if e.mode == 0 => SharedString::default(),
+                        0 => rf_linux::perms::user_label(e.uid).to_string().into(),
+                        1 => rf_linux::perms::group_label(e.gid).to_string().into(),
+                        _ => rf_linux::perms::mode_string(e.mode).into(),
+                    };
+                    div()
+                        .w(px(cw[11 + i]))
+                        .flex_shrink_0()
+                        .px_2()
+                        .text_color(p.text_secondary)
+                        .whitespace_nowrap()
+                        .overflow_hidden()
+                        .text_ellipsis()
+                        .when(i == 2, |d| d.font_family("monospace"))
                         .child(text)
                         .into_any_element()
                 })
@@ -3410,6 +3449,7 @@ impl FolderView {
                 .children(git_cell)
                 .children(sync_cell)
                 .children(commit_cells)
+                .children(unix_cells)
                 .children(show_date.then(|| {
                     div()
                         .w(px(cw[0]))

@@ -1,6 +1,7 @@
 //! Our own Properties window, with the tabs of Windows' property sheet:
 //! - General: name, type, the app it opens with (and "Change…"), location, size / size on disk /
-//!   contents, times, read-only. A drive shows its file system and how full it is instead.
+//!   contents, times, and the Permissions section (owner, group, read / write / execute). A
+//!   drive shows its file system and how full it is instead.
 //! - Details: the version resource of programs, media / document properties, the file facts.
 //! - Hashes (files).
 //!
@@ -16,14 +17,12 @@ use gpui_kit::component::{Icon, TitleBar, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 use rf_core::{Entry, EntryKind, format};
-use rf_linux::fileinfo::{ARCHIVE, COMPRESSED, ENCRYPTED, Info, NOT_INDEXED};
+use rf_linux::fileinfo::Info;
+use rf_linux::perms::{self, Perms};
 
 use crate::image_cache::ImageCache;
 use crate::t;
 use crate::theme::{self, Palette};
-
-const READONLY: u32 = 0x1;
-const HIDDEN: u32 = 0x2;
 
 /// Opens a Properties window for `paths` (one window per call), on the display of the window
 /// in front.
@@ -89,55 +88,96 @@ impl Flag {
     }
 }
 
-/// The attribute checkboxes (indexed = NOT_CONTENT_INDEXED clear).
-#[derive(Clone, Copy, Default, PartialEq)]
-struct Attrs {
-    readonly: Flag,
-    hidden: Flag,
-    archive: Flag,
-    indexed: Flag,
-    compressed: Flag,
-    encrypted: Flag,
+/// The permission bits of the grid: owner, group, others × read, write, execute.
+const BITS: [u32; 9] = [0o400, 0o200, 0o100, 0o040, 0o020, 0o010, 0o004, 0o002, 0o001];
+
+/// The selection's permissions folded together: a value the items share, or None where they
+/// differ.
+#[derive(Clone, Default)]
+struct Fold {
+    bits: [Option<bool>; 9],
+    owner: Option<String>,
+    group: Option<(u32, String)>,
+    any_dir: bool,
+    any_file: bool,
+    /// Whether this user may change every item (owns it, or is root).
+    mine: bool,
+    n: usize,
 }
 
-impl Attrs {
-    fn all(&mut self) -> [&mut Flag; 6] {
-        [&mut self.readonly, &mut self.hidden, &mut self.archive, &mut self.indexed, &mut self.compressed, &mut self.encrypted]
+impl Fold {
+    fn add(&mut self, p: &Perms) {
+        let first = self.n == 0;
+        for (slot, bit) in self.bits.iter_mut().zip(BITS) {
+            let on = p.mode & bit != 0;
+            *slot = if first || *slot == Some(on) { Some(on) } else { None };
+        }
+        self.owner = if first || self.owner.as_deref() == Some(p.owner.as_str()) { Some(p.owner.clone()) } else { None };
+        self.group = if first || self.group.as_ref().map(|g| g.0) == Some(p.gid) { Some((p.gid, p.group.clone())) } else { None };
+        self.any_dir |= p.is_dir;
+        self.any_file |= !p.is_dir;
+        self.mine = (first || self.mine) && p.changeable();
+        self.n += 1;
+    }
+}
+
+/// The Permissions section's checkboxes and group, as loaded and as edited.
+#[derive(Clone, Default)]
+struct PermEdit {
+    fold: Fold,
+    bits: [Flag; 9],
+    /// A group picked from the list.
+    new_gid: Option<u32>,
+}
+
+impl PermEdit {
+    fn from(fold: Fold) -> Self {
+        let bits = fold.bits.map(Flag::load);
+        PermEdit { fold, bits, new_gid: None }
+    }
+    fn loaded(&self) -> bool {
+        self.fold.n > 0
+    }
+    fn change(&self) -> perms::Change {
+        let mut ch = perms::Change::default();
+        for (f, bit) in self.bits.iter().zip(BITS) {
+            if let (true, Some(on)) = (f.changed(), f.now) {
+                if on {
+                    ch.set |= bit;
+                } else {
+                    ch.clear |= bit;
+                }
+            }
+        }
+        ch.gid = self.new_gid.filter(|g| self.fold.group.as_ref().map(|x| x.0) != Some(*g));
+        ch
     }
     fn changed(&self) -> bool {
-        let mut c = *self;
-        c.all().iter().any(|f| f.changed())
+        !self.change().is_empty()
     }
-    fn commit(&mut self) {
-        for f in self.all() {
-            f.commit();
+    /// "Allow running as a program": on gives execute to whoever may read (the owner always),
+    /// off takes it from everyone.
+    fn set_executable(&mut self, on: bool) {
+        for class in 0..3 {
+            let (r, x) = (class * 3, class * 3 + 2);
+            if !on {
+                self.bits[x].now = Some(false);
+            } else if class == 0 || self.bits[r].now == Some(true) {
+                self.bits[x].now = Some(true);
+            }
         }
     }
-}
-
-/// Folds one item's attribute bits into the selection's tri-states.
-fn merge_attrs(acc: &mut [Option<bool>; 6], attrs: u32, first: bool) {
-    let bits = [
-        attrs & READONLY != 0,
-        attrs & HIDDEN != 0,
-        attrs & ARCHIVE != 0,
-        attrs & NOT_INDEXED == 0,
-        attrs & COMPRESSED != 0,
-        attrs & ENCRYPTED != 0,
-    ];
-    for (a, b) in acc.iter_mut().zip(bits) {
-        *a = if first || *a == Some(b) { Some(b) } else { None };
-    }
-}
-
-fn attrs_from(v: [Option<bool>; 6]) -> Attrs {
-    Attrs {
-        readonly: Flag::load(v[0]),
-        hidden: Flag::load(v[1]),
-        archive: Flag::load(v[2]),
-        indexed: Flag::load(v[3]),
-        compressed: Flag::load(v[4]),
-        encrypted: Flag::load(v[5]),
+    fn commit(&mut self, groups: &[(u32, String)]) {
+        for f in &mut self.bits {
+            f.commit();
+        }
+        for (slot, f) in self.fold.bits.iter_mut().zip(&self.bits) {
+            *slot = f.now;
+        }
+        if let Some(g) = self.new_gid.take() {
+            let name = groups.iter().find(|x| x.0 == g).map_or_else(|| g.to_string(), |x| x.1.clone());
+            self.fold.group = Some((g, name));
+        }
     }
 }
 
@@ -145,6 +185,7 @@ fn attrs_from(v: [Option<bool>; 6]) -> Attrs {
 #[derive(Default)]
 struct Loaded {
     info: Option<Result<Info, String>>,
+    perms: Option<Perms>,
     drive: Option<rf_linux::drives::Drive>,
     pe: Option<rf_linux::pe::PeInfo>,
 }
@@ -158,12 +199,13 @@ pub struct PropsView {
     totals: Option<Totals>,
     media: Vec<(&'static str, String)>,
     name: Option<Entity<InputState>>,
-    attrs: Attrs,
-    /// A folder's attribute change goes down its whole tree too.
+    perm: PermEdit,
+    /// The groups this user may give items to.
+    groups: Vec<(u32, String)>,
+    /// A folder's permission change goes down its whole tree too.
     recurse: bool,
     drive: Option<rf_linux::drives::Drive>,
     pe: Option<rf_linux::pe::PeInfo>,
-    security: Option<Result<rf_linux::security::Security, String>>,
     hash: Option<Entity<crate::hash_panel::HashPanel>>,
     error: Option<SharedString>,
     busy: bool,
@@ -223,11 +265,11 @@ impl PropsView {
             totals: None,
             media: Vec::new(),
             name,
-            attrs: Attrs::default(),
+            perm: PermEdit::default(),
+            groups: Vec::new(),
             recurse: false,
             drive: None,
             pe: None,
-            security: None,
             hash: None,
             error: None,
             busy: false,
@@ -236,6 +278,7 @@ impl PropsView {
             focus: cx.focus_handle(),
         };
         v.load(window, cx);
+        v.load_groups(cx);
         window.focus(&v.focus, cx);
         window.activate_window();
         v
@@ -255,13 +298,13 @@ impl PropsView {
                 let _ = this.update_in(cx, |v, _, cx| {
                     v.drive = l.drive;
                     v.pe = l.pe;
-                    if let Some(Ok(i)) = &l.info {
-                        let mut acc = [None; 6];
-                        merge_attrs(&mut acc, i.attrs, true);
-                        v.attrs = attrs_from(acc);
-                        if v.drive.is_none() {
-                            v.start_details(i.is_dir, cx);
-                        }
+                    if let Some(p) = &l.perms {
+                        let mut fold = Fold::default();
+                        fold.add(p);
+                        v.perm = PermEdit::from(fold);
+                    }
+                    if let (Some(Ok(i)), None) = (&l.info, &v.drive) {
+                        v.start_details(i.is_dir, cx);
                     }
                     v.info = l.info;
                     cx.notify();
@@ -271,20 +314,22 @@ impl PropsView {
         } else {
             self.totals = Some(Totals::default());
             let paths = self.paths.clone();
-            let (tx, mut rx) = futures::channel::mpsc::unbounded::<(Totals, [Option<bool>; 6])>();
+            let (tx, mut rx) = futures::channel::mpsc::unbounded::<(Totals, Fold)>();
             std::thread::Builder::new()
                 .name("rf-props".into())
                 .spawn(move || {
                     let cache = crate::preview::size_cache();
                     let mut t = Totals::default();
-                    let mut acc = [None; 6];
+                    let mut acc = Fold::default();
                     let mut first_file = true;
-                    for (i, p) in paths.iter().enumerate() {
+                    for p in &paths {
                         if cancel.load(Ordering::Relaxed) {
                             return;
                         }
                         let Ok(info) = rf_linux::fileinfo::info(p) else { continue };
-                        merge_attrs(&mut acc, info.attrs, i == 0);
+                        if let Ok(pm) = perms::read(p) {
+                            acc.add(&pm);
+                        }
                         if info.is_dir {
                             t.sel_dirs += 1;
                             t.dirs += 1;
@@ -306,7 +351,7 @@ impl PropsView {
                             };
                             first_file = false;
                         }
-                        let _ = tx.unbounded_send((t.clone(), acc));
+                        let _ = tx.unbounded_send((t.clone(), acc.clone()));
                     }
                     t.done = true;
                     let _ = tx.unbounded_send((t, acc));
@@ -321,7 +366,7 @@ impl PropsView {
                         .update(cx, |v, cx| {
                             v.totals = Some(t);
                             if first || done {
-                                v.attrs = attrs_from(acc);
+                                v.perm = PermEdit::from(acc);
                             }
                             cx.notify();
                         })
@@ -334,6 +379,19 @@ impl PropsView {
             })
             .detach();
         }
+    }
+
+    /// The groups this user is in, for the group list.
+    fn load_groups(&mut self, cx: &mut Context<Self>) {
+        let task = cx.background_spawn(async move { perms::my_groups() });
+        cx.spawn(async move |this, cx| {
+            let g = task.await;
+            let _ = this.update(cx, |v, cx| {
+                v.groups = g;
+                cx.notify();
+            });
+        })
+        .detach();
     }
 
     /// Folder contents (folders) or media properties (files), after the basic info arrived.
@@ -366,24 +424,6 @@ impl PropsView {
         }
     }
 
-    /// The Security tab reads the ACL when first shown.
-    fn load_security(&mut self, cx: &mut Context<Self>) {
-        if self.security.is_some() {
-            return;
-        }
-        let p = self.paths[0].clone();
-        let task = cx.background_spawn(async move { rf_linux::security::read(&p).map_err(|e| format!("{e:#}")) });
-        cx.spawn(async move |this, cx| {
-            let r = task.await;
-            let _ = this.update(cx, |v, cx| {
-                v.security = Some(r);
-                cx.notify();
-            });
-        })
-        .detach();
-        self.security = None;
-    }
-
     fn renamed_to(&self, cx: &App) -> Option<String> {
         match (&self.name, self.single()) {
             (Some(n), Some(p)) => {
@@ -395,8 +435,7 @@ impl PropsView {
     }
 
     fn dirty(&self, cx: &App) -> bool {
-        self.renamed_to(cx).is_some()
-            || self.attrs.changed()
+        self.renamed_to(cx).is_some() || self.perm.changed()
     }
 
     /// Applies the edits on a helper thread; `close` closes the window when it worked.
@@ -418,18 +457,7 @@ impl PropsView {
                 return;
             }
         }
-        // attribute bits to set / clear
-        let a = self.attrs;
-        let (mut set, mut clear) = (0u32, 0u32);
-        for (flag, bit, inverted) in [(a.readonly, READONLY, false), (a.hidden, HIDDEN, false), (a.archive, ARCHIVE, false), (a.indexed, NOT_INDEXED, true)] {
-            if let (true, Some(on)) = (flag.changed(), flag.now) {
-                if on != inverted {
-                    set |= bit;
-                } else {
-                    clear |= bit;
-                }
-            }
-        }
+        let change = self.perm.change();
         let recurse = self.recurse;
         let paths = self.paths.clone();
         let cancel = self.cancel.clone();
@@ -439,12 +467,11 @@ impl PropsView {
             let mut paths = paths;
             let named = |p: &Path, e: &dyn std::fmt::Display| format!("{}: {e}", file_name(p));
             for p in &paths {
-                let tree = recurse && p.is_dir();
-                if set != 0 || clear != 0 {
-                    if tree {
-                        rf_linux::fileinfo::set_attrs_tree(p, set, clear, &|| cancel.load(Ordering::Relaxed)).map_err(|e| named(p, &e))?;
+                if !change.is_empty() {
+                    if recurse && p.is_dir() {
+                        perms::apply_tree(p, &change, &|| cancel.load(Ordering::Relaxed)).map_err(|e| named(p, &e))?;
                     } else {
-                        rf_linux::fileinfo::set_attrs(p, set, clear).map_err(|e| named(p, &e))?;
+                        perms::apply(p, &change).map_err(|e| named(p, &e))?;
                     }
                 }
             }
@@ -471,7 +498,8 @@ impl PropsView {
                             crate::undo::push(crate::undo::UndoOp::Renamed { from, to });
                         }
                         v.paths = paths;
-                        v.attrs.commit();
+                        let groups = v.groups.clone();
+                        v.perm.commit(&groups);
                         v.recurse = false;
                         if close {
                             window.remove_window();
@@ -625,21 +653,114 @@ impl PropsView {
             ));
         }
 
-        out.push(self.render_attrs(p, cx));
+        if self.perm.loaded() {
+            out.push(self.render_perms(p, cx));
+        }
 
         out
     }
 
-    fn render_attrs(&self, p: &Palette, cx: &mut Context<Self>) -> AnyElement {
-        let a = self.attrs;
-        let flag = |id: &'static str, label: &'static str, f: Flag, pick: fn(&mut Attrs) -> &mut Flag, cx: &mut Context<Self>| {
-            check_row(p, id, label, f.now, cx.listener(move |v, _, _, cx| {
-                pick(&mut v.attrs).toggle();
-                cx.notify();
-            }))
+    fn render_perms(&self, p: &Palette, cx: &mut Context<Self>) -> AnyElement {
+        let e = &self.perm;
+        let f = &e.fold;
+        let can = f.mine;
+        let mut rows = vec![section(p, t!("Permissions"))];
+        rows.push(row(p, t!("Owner"), f.owner.clone().unwrap_or_else(|| t!("Various").to_string())));
+        let gid = e.new_gid.or(f.group.as_ref().map(|g| g.0));
+        let group_label = match (e.new_gid, &f.group) {
+            (Some(g), _) => self.groups.iter().find(|x| x.0 == g).map_or_else(|| g.to_string(), |x| x.1.clone()),
+            (None, Some((_, n))) => n.clone(),
+            (None, None) => t!("Various").to_string(),
         };
-        // hidden is a name starting with a dot; the advanced attributes are Windows'
-        let rows = vec![section(p, t!("Attributes")), flag("ro", t!("Read-only"), a.readonly, |a| &mut a.readonly, cx)];
+        if can && self.groups.len() > 1 {
+            let groups = self.groups.clone();
+            let this = cx.entity().downgrade();
+            let pick = crate::select_box::select_box("perm-group", p, group_label, move |_| {
+                groups
+                    .iter()
+                    .map(|(g, name)| {
+                        let (g, this) = (*g, this.clone());
+                        crate::select_box::Choice::new(name.clone(), Some(g) == gid, move |_, cx| {
+                            let _ = this.update(cx, |v, cx| {
+                                v.perm.new_gid = Some(g);
+                                cx.notify();
+                            });
+                        })
+                    })
+                    .collect()
+            });
+            rows.push(
+                h_flex()
+                    .gap_3()
+                    .py(px(4.))
+                    .items_center()
+                    .text_sm()
+                    .child(div().w(px(150.)).flex_shrink_0().text_color(p.text_secondary).child(t!("Group")))
+                    .child(div().w(px(200.)).child(pick))
+                    .into_any_element(),
+            );
+        } else {
+            rows.push(row(p, t!("Group"), group_label));
+        }
+
+        // the grid: who × what
+        let head = |label: &'static str| div().w(px(64.)).flex().justify_center().text_xs().text_color(p.text_secondary).child(label);
+        rows.push(
+            h_flex()
+                .gap_3()
+                .pt_2()
+                .child(div().w(px(150.)).flex_shrink_0())
+                .child(head(t!("Read")))
+                .child(head(t!("Write")))
+                .child(head(if f.any_file { t!("Execute") } else { t!("Open") }))
+                .into_any_element(),
+        );
+        for (class, label) in [t!("Owner"), t!("Group"), t!("Others")].into_iter().enumerate() {
+            let mut line = h_flex().gap_3().py(px(4.)).items_center().text_sm().child(div().w(px(150.)).flex_shrink_0().text_color(p.text_secondary).child(label));
+            for col in 0..3 {
+                let i = class * 3 + col;
+                line = line.child(
+                    div()
+                        .id(("perm-bit", i))
+                        .w(px(64.))
+                        .flex()
+                        .justify_center()
+                        .when(can, |d| d.cursor_pointer())
+                        .when(!can, |d| d.opacity(0.5))
+                        .child(check_mark(p, e.bits[i].now))
+                        .on_click(cx.listener(move |v, _, _, cx| {
+                            if v.perm.fold.mine {
+                                v.perm.bits[i].toggle();
+                                cx.notify();
+                            }
+                        })),
+                );
+            }
+            rows.push(line.into_any_element());
+        }
+
+        // scripts and AppImages: one checkbox for the usual case
+        if f.any_file && !f.any_dir {
+            let on = e.bits[2].now;
+            rows.push(check_row(p, "perm-exec", t!("Allow running as a program"), on, cx.listener(move |v, _, _, cx| {
+                if v.perm.fold.mine {
+                    v.perm.set_executable(on != Some(true));
+                    cx.notify();
+                }
+            })));
+        }
+        if f.any_dir && can {
+            rows.push(check_row(p, "perm-recurse", t!("Apply to everything inside"), Some(self.recurse), cx.listener(|v, _, _, cx| {
+                v.recurse = !v.recurse;
+                cx.notify();
+            })));
+            if self.recurse {
+                rows.push(div().text_xs().text_color(p.text_secondary).pb_1().child(t!("Files inside keep their own execute permission.")).into_any_element());
+            }
+        }
+        if !can {
+            rows.push(div().text_xs().text_color(p.text_secondary).py_1().child(t!("Only the owner can change these.")).into_any_element());
+        }
         card(p, rows)
     }
 
@@ -718,12 +839,6 @@ impl PropsView {
             out.push(card(p, rows));
         }
         if let (Some(path), Some(Ok(i))) = (self.single(), &self.info) {
-            let mut letters = String::new();
-            for (bit, c) in [(READONLY, 'R'), (HIDDEN, 'H'), (0x4, 'S'), (ARCHIVE, 'A'), (COMPRESSED, 'C'), (ENCRYPTED, 'E'), (0x400, 'L'), (0x1000, 'O')] {
-                if i.attrs & bit != 0 {
-                    letters.push(c);
-                }
-            }
             let mut rows = vec![
                 section(p, t!("File")),
                 row(p, t!("Name"), file_name(path)),
@@ -731,12 +846,13 @@ impl PropsView {
                 row(p, t!("Created"), format::datetime_full(i.created_ms)),
                 row(p, t!("Modified"), format::datetime_full(i.modified_ms)),
                 row(p, t!("Size"), format::size(i.size)),
-                row(p, t!("Attributes"), if letters.is_empty() { "—".into() } else { letters }),
             ];
-            if let Some(Ok(s)) = &self.security {
-                if let Some(o) = &s.owner {
-                    rows.push(row(p, t!("Owner"), o.clone()));
-                }
+            let f = &self.perm.fold;
+            if let (Some(o), Some((_, g))) = (&f.owner, &f.group) {
+                let mode: u32 = f.bits.iter().zip(BITS).filter(|(b, _)| **b == Some(true)).map(|(_, bit)| bit).sum();
+                rows.push(row(p, t!("Permissions"), perms::mode_string(mode)));
+                rows.push(row(p, t!("Owner"), o.clone()));
+                rows.push(row(p, t!("Group"), g.clone()));
             }
             if let Ok(pc) = std::env::var("COMPUTERNAME") {
                 rows.push(row(p, t!("Computer"), format!("{pc} ({})", t!("this PC"))));
@@ -765,6 +881,7 @@ fn load_one(p: &Path) -> Loaded {
             l.pe = rf_linux::pe::info(p);
         }
     }
+    l.perms = perms::read(p).ok();
     l.info = Some(info);
     l
 }
@@ -861,11 +978,6 @@ fn check_row(
     on: Option<bool>,
     click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 ) -> AnyElement {
-    let (fill, mark) = match on {
-        Some(true) => (Some(p.accent), Some(L::Check)),
-        None => (Some(p.accent), Some(L::Minus)),
-        Some(false) => (None, None),
-    };
     h_flex()
         .id(id)
         .gap_3()
@@ -873,21 +985,29 @@ fn check_row(
         .items_center()
         .text_sm()
         .cursor_pointer()
-        .child(
-            div()
-                .size(px(18.))
-                .flex_shrink_0()
-                .flex()
-                .items_center()
-                .justify_center()
-                .rounded(px(4.))
-                .when_some(fill, |d, c| d.bg(c))
-                .when(fill.is_none(), |d| d.border_1().border_color(p.text_secondary))
-                .children(mark.map(|m| Icon::new(m).size(px(12.)).text_color(p.accent_text))),
-        )
+        .child(check_mark(p, on))
         .child(div().flex_1().min_w_0().child(label))
         .on_click(click)
         .into_any_element()
+}
+
+/// A checkbox: ticked, empty, or a dash when the selection is mixed (None).
+fn check_mark(p: &Palette, on: Option<bool>) -> Div {
+    let (fill, mark) = match on {
+        Some(true) => (Some(p.accent), Some(L::Check)),
+        None => (Some(p.accent), Some(L::Minus)),
+        Some(false) => (None, None),
+    };
+    div()
+        .size(px(18.))
+        .flex_shrink_0()
+        .flex()
+        .items_center()
+        .justify_center()
+        .rounded(px(4.))
+        .when_some(fill, |d, c| d.bg(c))
+        .when(fill.is_none(), |d| d.border_1().border_color(p.text_secondary))
+        .children(mark.map(|m| Icon::new(m).size(px(12.)).text_color(p.accent_text)))
 }
 
 impl Render for PropsView {
@@ -958,7 +1078,6 @@ impl Render for PropsView {
                                 let path = v.paths[0].clone();
                                 v.hash = Some(cx.new(|cx| crate::hash_panel::HashPanel::new(path, cx)));
                             }
-                            Page::Details => v.load_security(cx),
                             _ => {}
                         }
                         cx.notify();
@@ -992,6 +1111,7 @@ impl Render for PropsView {
         let dirty = self.dirty(cx);
 
         v_flex()
+            .relative()
             .size_full()
             .bg(p.window_bg)
             .text_color(p.text)
@@ -1039,26 +1159,50 @@ impl Render for PropsView {
                             .on_click(cx.listener(|v, _, window, cx| v.apply(false, window, cx))),
                     ),
             )
+            // the group list, painted on top
+            .children(crate::select_box::current(window, cx))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{ARCHIVE, NOT_INDEXED, Path, READONLY, attrs_from, is_pe, is_root, merge_attrs};
+    use super::{BITS, Fold, Path, PermEdit, is_pe, is_root};
+    use rf_linux::perms::Perms;
+
+    fn item(mode: u32, gid: u32, is_dir: bool) -> Perms {
+        let uid = rf_linux::perms::my_uid();
+        Perms { mode, uid, gid, owner: "me".into(), group: format!("g{gid}"), is_dir }
+    }
 
     #[test]
-    fn attribute_tristates_merge() {
-        let mut acc = [None; 6];
-        merge_attrs(&mut acc, READONLY | ARCHIVE, true);
-        merge_attrs(&mut acc, ARCHIVE | NOT_INDEXED, false);
-        // read-only mixed, hidden off, archive on, indexed mixed
-        assert_eq!(&acc[..4], &[None, Some(false), Some(true), None]);
-        let mut a = attrs_from(acc);
-        assert!(!a.changed());
-        a.readonly.toggle();
-        assert!(a.changed());
-        a.commit();
-        assert!(!a.changed());
+    fn permissions_fold_and_change() {
+        let mut f = Fold::default();
+        f.add(&item(0o644, 1, false));
+        f.add(&item(0o664, 2, false));
+        assert_eq!(f.bits[4], None, "group write differs");
+        assert_eq!(f.bits[0], Some(true));
+        assert!(f.group.is_none() && f.owner.as_deref() == Some("me") && f.mine);
+        let mut e = PermEdit::from(f);
+        assert!(!e.changed());
+        e.bits[4].toggle();
+        assert_eq!(e.change().set, 0o020);
+        e.new_gid = Some(1);
+        assert_eq!(e.change().gid, Some(1), "a group the items don't all share is a change");
+        e.commit(&[(1, "g1".into())]);
+        assert!(!e.changed());
+        assert_eq!(e.fold.group, Some((1, "g1".into())));
+    }
+
+    #[test]
+    fn allow_running_follows_read() {
+        let mut f = Fold::default();
+        f.add(&item(0o640, 1, false));
+        let mut e = PermEdit::from(f);
+        e.set_executable(true);
+        assert_eq!(e.change().set, 0o110, "owner and group (who may read), not others");
+        e.set_executable(false);
+        assert!(!e.changed());
+        let _ = BITS;
     }
 
     #[test]
