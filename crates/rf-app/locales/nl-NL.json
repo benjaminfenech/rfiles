@@ -1333,5 +1333,9 @@
  "7d72271b": "Koppeling maken",
  "e91a91d8": "Plakken als koppeling",
  "0ddb0669": "koppeling",
- "1ca7ab63": "Koppelingen maken:"
+ "1ca7ab63": "Koppelingen maken:",
+ "51148674": "Selecteren op patroon",
+ "777c4aba": "Deselecteren",
+ "84f7d8e1": "Typ een naam of een patroon zoals *.jpg",
+ "7c6364fa": "Namen zoals *.jpg of report-??.pdf; scheid meerdere met ;. Een woord zonder * of ? past overal in de naam."
 }

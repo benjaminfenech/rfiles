@@ -1333,5 +1333,9 @@
  "7d72271b": "Vytvoriť odkaz",
  "e91a91d8": "Vložiť ako odkaz",
  "0ddb0669": "odkaz",
- "1ca7ab63": "Vytváranie odkazov:"
+ "1ca7ab63": "Vytváranie odkazov:",
+ "51148674": "Vybrať podľa vzoru",
+ "777c4aba": "Zrušiť výber",
+ "84f7d8e1": "Zadajte názov alebo vzor, napr. *.jpg",
+ "7c6364fa": "Názvy ako *.jpg alebo report-??.pdf; viac vzorov oddeľte ;. Slovo bez * alebo ? sa hľadá kdekoľvek v názve."
 }

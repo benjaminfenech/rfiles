@@ -1333,5 +1333,9 @@
  "7d72271b": "Crear enlace",
  "e91a91d8": "Pegar como enlace",
  "0ddb0669": "enlace",
- "1ca7ab63": "Creando enlaces:"
+ "1ca7ab63": "Creando enlaces:",
+ "51148674": "Seleccionar por patrón",
+ "777c4aba": "Deseleccionar",
+ "84f7d8e1": "Escribe un nombre o un patrón como *.jpg",
+ "7c6364fa": "Nombres como *.jpg o report-??.pdf; separa varios con ;. Una palabra sin * ni ? coincide en cualquier parte del nombre."
 }

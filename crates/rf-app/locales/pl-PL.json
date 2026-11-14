@@ -1333,5 +1333,9 @@
  "7d72271b": "Utwórz dowiązanie",
  "e91a91d8": "Wklej jako dowiązanie",
  "0ddb0669": "dowiązanie",
- "1ca7ab63": "Tworzenie dowiązań:"
+ "1ca7ab63": "Tworzenie dowiązań:",
+ "51148674": "Zaznacz według wzorca",
+ "777c4aba": "Odznacz",
+ "84f7d8e1": "Wpisz nazwę lub wzorzec, np. *.jpg",
+ "7c6364fa": "Nazwy jak *.jpg lub report-??.pdf; kilka oddziel znakiem ;. Słowo bez * lub ? pasuje w dowolnym miejscu nazwy."
 }

@@ -1333,5 +1333,9 @@
  "7d72271b": "Hivatkozás létrehozása",
  "e91a91d8": "Beillesztés hivatkozásként",
  "0ddb0669": "hivatkozás",
- "1ca7ab63": "Hivatkozások létrehozása:"
+ "1ca7ab63": "Hivatkozások létrehozása:",
+ "51148674": "Kijelölés minta szerint",
+ "777c4aba": "Kijelölés megszüntetése",
+ "84f7d8e1": "Írjon be egy nevet vagy egy mintát, pl. *.jpg",
+ "7c6364fa": "Nevek, mint *.jpg vagy report-??.pdf; többet ;-vel válasszon el. A * vagy ? nélküli szó a név bármely részén egyezik."
 }

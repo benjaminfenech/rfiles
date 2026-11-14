@@ -1333,5 +1333,9 @@
  "7d72271b": "Sukurti nuorodą",
  "e91a91d8": "Įklijuoti kaip nuorodą",
  "0ddb0669": "nuoroda",
- "1ca7ab63": "Kuriamos nuorodos:"
+ "1ca7ab63": "Kuriamos nuorodos:",
+ "51148674": "Žymėti pagal šabloną",
+ "777c4aba": "Atžymėti",
+ "84f7d8e1": "Įveskite pavadinimą arba šabloną, pvz., *.jpg",
+ "7c6364fa": "Pavadinimai, pvz., *.jpg ar report-??.pdf; kelis atskirkite ;. Žodis be * ar ? atitinka bet kurioje pavadinimo vietoje."
 }

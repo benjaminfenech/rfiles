@@ -1333,5 +1333,9 @@
  "7d72271b": "Criar link",
  "e91a91d8": "Colar como link",
  "0ddb0669": "link",
- "1ca7ab63": "Criando links:"
+ "1ca7ab63": "Criando links:",
+ "51148674": "Selecionar por padrão",
+ "777c4aba": "Desmarcar",
+ "84f7d8e1": "Digite um nome ou um padrão como *.jpg",
+ "7c6364fa": "Nomes como *.jpg ou report-??.pdf; separe vários com ;. Uma palavra sem * ou ? corresponde em qualquer parte do nome."
 }

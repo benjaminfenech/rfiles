@@ -5321,6 +5321,22 @@
   "en": "Creating links:"
  },
  {
+  "id": "84f7d8e1",
+  "en": "Type a name or a pattern such as *.jpg"
+ },
+ {
+  "id": "51148674",
+  "en": "Select by pattern"
+ },
+ {
+  "id": "7c6364fa",
+  "en": "Names like *.jpg or report-??.pdf; separate several with ;. A word without * or ? matches anywhere in the name."
+ },
+ {
+  "id": "777c4aba",
+  "en": "Deselect"
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"

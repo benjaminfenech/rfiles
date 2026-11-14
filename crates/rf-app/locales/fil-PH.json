@@ -1333,5 +1333,9 @@
  "7d72271b": "Gumawa ng link",
  "e91a91d8": "I-paste bilang link",
  "0ddb0669": "link",
- "1ca7ab63": "Gumagawa ng mga link:"
+ "1ca7ab63": "Gumagawa ng mga link:",
+ "51148674": "Pumili ayon sa pattern",
+ "777c4aba": "Alisin sa pagpili",
+ "84f7d8e1": "Mag-type ng pangalan o pattern gaya ng *.jpg",
+ "7c6364fa": "Mga pangalan gaya ng *.jpg o report-??.pdf; paghiwalayin ang ilan gamit ang ;. Ang salitang walang * o ? ay tumutugma kahit saan sa pangalan."
 }

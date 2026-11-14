@@ -1333,5 +1333,9 @@
  "7d72271b": "Tạo liên kết",
  "e91a91d8": "Dán dưới dạng liên kết",
  "0ddb0669": "liên kết",
- "1ca7ab63": "Đang tạo liên kết:"
+ "1ca7ab63": "Đang tạo liên kết:",
+ "51148674": "Chọn theo mẫu",
+ "777c4aba": "Bỏ chọn",
+ "84f7d8e1": "Nhập tên hoặc mẫu như *.jpg",
+ "7c6364fa": "Tên như *.jpg hoặc report-??.pdf; phân cách nhiều mẫu bằng ;. Từ không có * hoặc ? khớp ở bất kỳ đâu trong tên."
 }

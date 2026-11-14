@@ -1333,5 +1333,9 @@
  "7d72271b": "Crea un enllaç",
  "e91a91d8": "Enganxa com a enllaç",
  "0ddb0669": "enllaç",
- "1ca7ab63": "S'estan creant enllaços:"
+ "1ca7ab63": "S'estan creant enllaços:",
+ "51148674": "Selecciona per patró",
+ "777c4aba": "Desselecciona",
+ "84f7d8e1": "Escriviu un nom o un patró com *.jpg",
+ "7c6364fa": "Noms com *.jpg o report-??.pdf; separeu-ne diversos amb ;. Una paraula sense * ni ? coincideix a qualsevol lloc del nom."
 }

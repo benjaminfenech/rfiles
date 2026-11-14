@@ -1333,5 +1333,9 @@
  "7d72271b": "Skapa länk",
  "e91a91d8": "Klistra in som länk",
  "0ddb0669": "länk",
- "1ca7ab63": "Skapar länkar:"
+ "1ca7ab63": "Skapar länkar:",
+ "51148674": "Markera efter mönster",
+ "777c4aba": "Avmarkera",
+ "84f7d8e1": "Skriv ett namn eller ett mönster som *.jpg",
+ "7c6364fa": "Namn som *.jpg eller report-??.pdf; skilj flera åt med ;. Ett ord utan * eller ? matchar var som helst i namnet."
 }

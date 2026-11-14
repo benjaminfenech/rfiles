@@ -1333,5 +1333,9 @@
  "7d72271b": "Creează legătură",
  "e91a91d8": "Lipește ca legătură",
  "0ddb0669": "legătură",
- "1ca7ab63": "Se creează legături:"
+ "1ca7ab63": "Se creează legături:",
+ "51148674": "Selectează după model",
+ "777c4aba": "Deselectează",
+ "84f7d8e1": "Tastați un nume sau un model ca *.jpg",
+ "7c6364fa": "Nume ca *.jpg sau report-??.pdf; separați mai multe cu ;. Un cuvânt fără * sau ? se potrivește oriunde în nume."
 }
