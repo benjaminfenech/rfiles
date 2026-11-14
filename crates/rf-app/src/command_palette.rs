@@ -42,6 +42,7 @@ fn commands() -> Vec<Cmd> {
         cmd!("Forward", "Alt+→", L::ArrowRight, GoForward),
         cmd!("Up one level", "Alt+↑", L::ArrowUp, GoUp),
         cmd!("Home", "Alt+Home", L::House, GoHome),
+        cmd!("Overview", "", L::LayoutDashboard, GoOverview),
         cmd!("Settings", "Ctrl+,", L::Settings, GoSettings),
         cmd!("Trash", "", L::Trash, GoRecycleBin),
         cmd!("Focus address bar", "Ctrl+L", L::TextCursorInput, FocusAddress),

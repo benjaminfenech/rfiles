@@ -7,6 +7,7 @@ gpui_kit::actions!(
         GoForward,
         GoUp,
         GoHome,
+        GoOverview,
         Refresh,
         OpenSelected,
         SelectNext,
