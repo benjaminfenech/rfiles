@@ -1306,5 +1306,12 @@
  "d51fcd54": "tar formats don't support passwords; choose ZIP or 7z",
  "c0ae2136": "Search settings",
  "59b807bf": "No setting matches",
- "94f50c43": "Search results"
+ "94f50c43": "Search results",
+ "dd2f1f2e": "Delete branch",
+ "8c0c7f6a": "is not merged into another branch: if it is deleted, its commits can no longer be reached from a branch.",
+ "341d392d": "will be deleted as a local branch. The branch on the remote stays as it is.",
+ "f34368df": "Delete anyway",
+ "a46465d0": "Delete the branch?",
+ "56d50e5f": "Same shortcut:",
+ "cc8ffea4": "Close all tabs"
 }

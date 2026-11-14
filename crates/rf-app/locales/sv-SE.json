@@ -1306,5 +1306,12 @@
  "d51fcd54": "tar-format stöder inte lösenord. Välj ZIP eller 7z",
  "c0ae2136": "Sök i inställningar",
  "59b807bf": "Ingen inställning matchar",
- "94f50c43": "Sökresultat"
+ "94f50c43": "Sökresultat",
+ "dd2f1f2e": "Ta bort gren",
+ "8c0c7f6a": "har inte slagits samman med någon annan gren: om den tas bort går dess incheckningar inte längre att nå från en gren.",
+ "341d392d": "tas bort som lokal gren. Grenen på fjärrservern berörs inte.",
+ "f34368df": "Ta bort ändå",
+ "a46465d0": "Ta bort grenen?",
+ "56d50e5f": "Samma kortkommando:",
+ "cc8ffea4": "Stäng alla flikar"
 }

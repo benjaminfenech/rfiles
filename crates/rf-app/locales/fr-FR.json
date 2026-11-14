@@ -1306,5 +1306,12 @@
  "d51fcd54": "Les formats tar ne prennent pas en charge les mots de passe ; choisissez ZIP ou 7z",
  "c0ae2136": "Rechercher dans les paramètres",
  "59b807bf": "Aucun paramètre ne correspond",
- "94f50c43": "Résultats de la recherche"
+ "94f50c43": "Résultats de la recherche",
+ "dd2f1f2e": "Supprimer la branche",
+ "8c0c7f6a": "n'est fusionnée dans aucune autre branche : si elle est supprimée, ses commits ne seront plus accessibles depuis une branche.",
+ "341d392d": "sera supprimée en tant que branche locale. La branche sur le dépôt distant reste inchangée.",
+ "f34368df": "Supprimer quand même",
+ "a46465d0": "Supprimer la branche ?",
+ "56d50e5f": "Même raccourci :",
+ "cc8ffea4": "Fermer tous les onglets"
 }

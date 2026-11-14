@@ -789,6 +789,19 @@ impl Workspace {
         self.activate(0, window, cx);
     }
 
+    /// Closes every tab and leaves one at Home (the closed ones can be reopened, Ctrl+Shift+T).
+    fn close_all_tabs(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let old = self.tabs.len();
+        self.open_tab(Location::Home, window, cx);
+        // (the new tab is the last one)
+        for i in (0..old.min(self.tabs.len().saturating_sub(1))).rev() {
+            let tab = self.tabs.remove(i);
+            self.closed.push(tab.view().read(cx).location().clone());
+        }
+        self.tab_scrolled_to = None;
+        self.activate(0, window, cx);
+    }
+
     fn close_tabs_to_side(&mut self, ix: usize, right: bool, window: &mut Window, cx: &mut Context<Self>) {
         let range: Vec<usize> = if right { (ix + 1..self.tabs.len()).collect() } else { (0..ix).collect() };
         for i in range.into_iter().rev() {
@@ -839,6 +852,7 @@ impl Workspace {
             .enabled(n > 1),
             Item::action(t!("Close tabs to the left"), MenuIcon::None, act(|ws, ix, w, cx| ws.close_tabs_to_side(ix, false, w, cx))).enabled(ix > 0),
             Item::action(t!("Close tabs to the right"), MenuIcon::None, act(|ws, ix, w, cx| ws.close_tabs_to_side(ix, true, w, cx))).enabled(ix + 1 < n),
+            Item::action(t!("Close all tabs"), MenuIcon::None, act(|ws, _, w, cx| ws.close_all_tabs(w, cx))),
             Item::action(t!("Close tab"), MenuIcon::Lucide(L::X), act(|ws, ix, w, cx| ws.close_tab(ix, w, cx))).hint("Ctrl+W"),
             Item::Separator,
             Item::action(t!("Reopen closed tab"), MenuIcon::Lucide(L::RotateCcw), act(|ws, _, w, cx| {
@@ -3186,6 +3200,10 @@ impl Render for Workspace {
                 this.open_tab(loc, window, cx);
             }))
             .on_action(cx.listener(|this, _: &CloseOtherTabs, window, cx| this.close_other_tabs(window, cx)))
+            .on_action(cx.listener(|this, _: &CloseAllTabs, window, cx| this.close_all_tabs(window, cx)))
+            .on_action(cx.listener(|this, _: &SplitPaneSideBySide, window, cx| this.split_pane(true, window, cx)))
+            .on_action(cx.listener(|this, _: &SplitPaneStacked, window, cx| this.split_pane(false, window, cx)))
+            .on_action(cx.listener(|this, _: &CloseActivePane, window, cx| this.close_active_pane(window, cx)))
             .on_action(cx.listener(|_, _: &ToggleTheme, window, cx| {
                 use crate::settings::ThemePref;
                 let dark = crate::theme::Palette::for_window(window).dark;

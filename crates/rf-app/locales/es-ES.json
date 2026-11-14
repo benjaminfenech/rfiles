@@ -1306,5 +1306,12 @@
  "d51fcd54": "Los formatos tar no admiten contraseñas; elija ZIP o 7z",
  "c0ae2136": "Buscar en la configuración",
  "59b807bf": "Ninguna configuración coincide",
- "94f50c43": "Resultados de la búsqueda"
+ "94f50c43": "Resultados de la búsqueda",
+ "dd2f1f2e": "Eliminar rama",
+ "8c0c7f6a": "no está combinada con otra rama: si se elimina, sus commits ya no serán accesibles desde ninguna rama.",
+ "341d392d": "se eliminará como rama local. La rama del remoto se queda como está.",
+ "f34368df": "Eliminar de todos modos",
+ "a46465d0": "¿Eliminar la rama?",
+ "56d50e5f": "Mismo método abreviado:",
+ "cc8ffea4": "Cerrar todas las pestañas"
 }

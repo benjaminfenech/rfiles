@@ -1306,5 +1306,12 @@
  "d51fcd54": "A tar formátumok nem támogatják a jelszót; válasszon ZIP-et vagy 7z-t",
  "c0ae2136": "Beállítások keresése",
  "59b807bf": "Nincs egyező beállítás",
- "94f50c43": "Keresési eredmények"
+ "94f50c43": "Keresési eredmények",
+ "dd2f1f2e": "Ág törlése",
+ "8c0c7f6a": "nincs egyesítve másik ágba: ha törlődik, a commitjai már nem érhetők el egyetlen ágból sem.",
+ "341d392d": "helyi ágként törlődik. A távoli ág változatlan marad.",
+ "f34368df": "Törlés mindenképp",
+ "a46465d0": "Törli az ágat?",
+ "56d50e5f": "Azonos billentyűparancs:",
+ "cc8ffea4": "Összes lap bezárása"
 }

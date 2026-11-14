@@ -1306,5 +1306,12 @@
  "d51fcd54": "Formatet tar nuk mbështesin fjalëkalime; zgjidh ZIP ose 7z",
  "c0ae2136": "Kërko te cilësimet",
  "59b807bf": "Asnjë cilësim nuk përputhet",
- "94f50c43": "Rezultatet e kërkimit"
+ "94f50c43": "Rezultatet e kërkimit",
+ "dd2f1f2e": "Fshij degën",
+ "8c0c7f6a": "nuk është bashkuar me një degë tjetër: nëse fshihet, commit-et e saj nuk mund të arrihen më nga asnjë degë.",
+ "341d392d": "do të fshihet si degë lokale. Dega në remote mbetet siç është.",
+ "f34368df": "Fshije prapë",
+ "a46465d0": "Të fshihet dega?",
+ "56d50e5f": "E njëjta shkurtore:",
+ "cc8ffea4": "Mbyll të gjitha skedat"
 }

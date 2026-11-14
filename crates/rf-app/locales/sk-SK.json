@@ -1306,5 +1306,12 @@
  "d51fcd54": "Formáty tar nepodporujú heslá; vyberte ZIP alebo 7z",
  "c0ae2136": "Hľadať v nastaveniach",
  "59b807bf": "Žiadne nastavenie nezodpovedá",
- "94f50c43": "Výsledky vyhľadávania"
+ "94f50c43": "Výsledky vyhľadávania",
+ "dd2f1f2e": "Odstrániť vetvu",
+ "8c0c7f6a": "nie je zlúčená do inej vetvy: ak sa odstráni, jej commity už nebudú dostupné z žiadnej vetvy.",
+ "341d392d": "sa odstráni ako lokálna vetva. Vetva na vzdialenom serveri zostane nezmenená.",
+ "f34368df": "Napriek tomu odstrániť",
+ "a46465d0": "Odstrániť vetvu?",
+ "56d50e5f": "Rovnaká skratka:",
+ "cc8ffea4": "Zavrieť všetky karty"
 }

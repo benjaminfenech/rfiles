@@ -1306,5 +1306,12 @@
  "d51fcd54": "tar biçimleri parola desteklemez; ZIP ya da 7z seçin",
  "c0ae2136": "Ayarlarda ara",
  "59b807bf": "Eşleşen ayar yok",
- "94f50c43": "Arama sonuçları"
+ "94f50c43": "Arama sonuçları",
+ "dd2f1f2e": "Dal sil",
+ "8c0c7f6a": "başka bir dala birleştirilmemiş: silinirse bu daldaki commit'lere artık bir daldan ulaşılamaz.",
+ "341d392d": "yerel dalı silinecek. Uzak depodaki dal olduğu gibi kalır.",
+ "f34368df": "Yine de sil",
+ "a46465d0": "Dal silinsin mi?",
+ "56d50e5f": "Aynı kısayol:",
+ "cc8ffea4": "Tüm sekmeleri kapat"
 }
