@@ -5325,6 +5325,14 @@
   "en": "Open templates folder"
  },
  {
+  "id": "3e12805a",
+  "en": "Mount"
+ },
+ {
+  "id": "dff7dc1b",
+  "en": "Couldn't mount the disk image"
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"
