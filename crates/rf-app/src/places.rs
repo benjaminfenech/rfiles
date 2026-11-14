@@ -200,6 +200,9 @@ pub struct Places {
     pub recent: Vec<Recent>,
     /// Network locations ("Add a network location" shortcuts): (name, target).
     pub network: Vec<(String, std::path::PathBuf)>,
+    /// File servers announcing themselves on the local network (Avahi), looked for after
+    /// each refresh and every minute, apart from the rest (it takes a second or two).
+    pub servers: Vec<rf_linux::network::Server>,
     /// fstab shares whose server doesn't answer (away from home), with that server: shown as
     /// offline. Checked after each refresh and every 30 s, apart from the rest (it can take
     /// a moment and must not hold the sidebar up).
@@ -207,6 +210,7 @@ pub struct Places {
     pub loaded: bool,
     _task: Option<Task<()>>,
     _probe: Option<Task<()>>,
+    _discover: Option<Task<()>>,
 }
 
 impl Places {
@@ -218,10 +222,12 @@ impl Places {
                 pinned: Vec::new(),
                 recent: Vec::new(),
                 network: Vec::new(),
+                servers: Vec::new(),
                 offline: Default::default(),
                 loaded: false,
                 _task: None,
                 _probe: None,
+                _discover: None,
             };
         this.refresh(cx);
         // Notice drives appearing/disappearing (USB, network mappings) without any shell hooks.
@@ -234,6 +240,9 @@ impl Places {
                 // back on the share's network (or off it): its offline mark follows
                 tick += 1;
                 if tick.is_multiple_of(10) && this.update(cx, |p, cx| p.probe_offline(cx)).is_err() {
+                    break;
+                }
+                if tick.is_multiple_of(20) && this.update(cx, |p, cx| p.discover(cx)).is_err() {
                     break;
                 }
                 let now = rf_linux::drives::drive_mask();
@@ -292,7 +301,26 @@ impl Places {
                 p.network = network;
                 p.loaded = true;
                 p.probe_offline(cx);
+                p.discover(cx);
                 cx.notify();
+            });
+        }));
+    }
+
+    /// Looks for file servers on the local network (see `servers`).
+    fn discover(&mut self, cx: &mut Context<Self>) {
+        if self._discover.is_some() {
+            return;
+        }
+        let work = cx.background_spawn(async move { rf_linux::network::discover() });
+        self._discover = Some(cx.spawn(async move |this, cx| {
+            let found = work.await;
+            let _ = this.update(cx, |p, cx| {
+                p._discover = None;
+                if p.servers != found {
+                    p.servers = found;
+                    cx.notify();
+                }
             });
         }));
     }

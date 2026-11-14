@@ -2627,7 +2627,16 @@ impl Workspace {
             }
         }
         let network = self.places.read(cx).network.clone();
-        if (!network.is_empty() || !shares.is_empty()) && shown("network") {
+        // servers found on the network that aren't a saved location already
+        let servers: Vec<_> = self
+            .places
+            .read(cx)
+            .servers
+            .iter()
+            .filter(|s| !network.iter().any(|(_, t)| t.to_str().is_some_and(|t| t.trim_end_matches('/') == s.url.trim_end_matches('/'))))
+            .cloned()
+            .collect();
+        if (!network.is_empty() || !shares.is_empty() || !servers.is_empty()) && shown("network") {
             col = col.child(header(t!("Network")));
             let offline = self.places.read(cx).offline.clone();
             for (i, d) in shares.into_iter().enumerate() {
@@ -2643,6 +2652,13 @@ impl Workspace {
                 let loc = Location::Path(target);
                 let active = cur == loc;
                 col = col.child(self.sidebar_item(("sb-net", i).into(), L::Network, p.text_secondary, name, loc, active, None, p, cx));
+            }
+            for (i, sv) in servers.into_iter().enumerate() {
+                let loc = Location::Path(PathBuf::from(&sv.url));
+                let active = cur == loc;
+                let scheme = sv.url.split_once("://").map_or("", |(s, _)| s).to_ascii_uppercase();
+                let note = div().text_xs().text_color(p.text_tertiary).child(scheme).into_any_element();
+                col = col.child(self.sidebar_item(("sb-server", i).into(), L::Server, p.text_secondary, sv.name, loc, active, Some(note), p, cx));
             }
         }
         let tag_defs = if shown("tags") { cx.global::<crate::tags::Tags>().0.defs.clone() } else { Vec::new() };
