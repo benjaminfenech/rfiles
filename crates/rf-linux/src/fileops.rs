@@ -94,6 +94,43 @@ pub fn unique_name(dir: &Path, stem: &str, ext: &str) -> PathBuf {
     (2..).map(|i| dir.join(format!("{stem} ({i}){ext}"))).find(|p| std::fs::symlink_metadata(p).is_err()).unwrap()
 }
 
+/// The name for a link to `target` in `dir`: the target's own name when it's free and the target
+/// lives elsewhere, else "name (`suffix`)" (before the extension, for files), numbered after that.
+pub fn link_name(target: &Path, dir: &Path, suffix: &str) -> PathBuf {
+    let name = target.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "/".into());
+    let own = dir.join(&name);
+    if target.parent() != Some(dir) && std::fs::symlink_metadata(&own).is_err() {
+        return own;
+    }
+    // a folder's name has no extension; neither does ".bashrc"
+    let dot = if target.is_dir() { None } else { name.rfind('.').filter(|i| *i > 0) };
+    let (stem, ext) = match dot {
+        Some(i) => (&name[..i], &name[i..]),
+        None => (name.as_str(), ""),
+    };
+    unique_name(dir, &format!("{stem} ({suffix})"), ext)
+}
+
+/// A symbolic link to `target` (made absolute) at `link`.
+pub fn make_link(target: &Path, link: &Path) -> std::io::Result<()> {
+    let target = if target.is_absolute() { target.to_path_buf() } else { std::path::absolute(target)? };
+    std::os::unix::fs::symlink(target, link)
+}
+
+/// Links to every target in `dir` ([`link_name`] names): (target, link) pairs. Stops at the first
+/// error, keeping the links made so far in the result.
+pub fn create_links(targets: &[PathBuf], dir: &Path, suffix: &str) -> (Vec<(PathBuf, PathBuf)>, Option<std::io::Error>) {
+    let mut made = Vec::new();
+    for t in targets {
+        let link = link_name(t, dir, suffix);
+        if let Err(e) = make_link(t, &link) {
+            return (made, Some(e));
+        }
+        made.push((t.clone(), link));
+    }
+    (made, None)
+}
+
 // ---------------------------------------------------------------------------------------------
 // Tracked operations (in-app Status Center): progress callback + cancellation. Same Tracker
 // as rf-win.
@@ -368,6 +405,28 @@ pub fn delete_tracked(paths: &[PathBuf], permanent: bool, tracker: Arc<Tracker>)
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn links_get_free_names() {
+        let d = std::env::temp_dir().join(format!("rf-links-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(d.join("sub")).unwrap();
+        std::fs::write(d.join("photo.jpg"), b"x").unwrap();
+        std::fs::create_dir_all(d.join("my.folder")).unwrap();
+        // elsewhere: the target's own name
+        let (made, err) = create_links(&[d.join("photo.jpg")], &d.join("sub"), "link");
+        assert!(err.is_none());
+        assert_eq!(made[0].1, d.join("sub/photo.jpg"));
+        assert_eq!(std::fs::read_link(&made[0].1).unwrap(), d.join("photo.jpg"));
+        // beside the target: a suffix before the extension, then numbers
+        assert_eq!(create_links(&[d.join("photo.jpg")], &d, "link").0[0].1, d.join("photo (link).jpg"));
+        assert_eq!(create_links(&[d.join("photo.jpg")], &d, "link").0[0].1, d.join("photo (link) (2).jpg"));
+        // a folder's dot isn't an extension
+        assert_eq!(link_name(&d.join("my.folder"), &d, "link"), d.join("my.folder (link)"));
+        // taken in the other folder too
+        assert_eq!(link_name(&d.join("photo.jpg"), &d.join("sub"), "link"), d.join("sub/photo (link).jpg"));
+        let _ = std::fs::remove_dir_all(&d);
+    }
+
     use super::*;
 
     fn base(name: &str) -> PathBuf {

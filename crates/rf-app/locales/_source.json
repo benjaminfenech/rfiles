@@ -5305,6 +5305,22 @@
   "en": "No tag"
  },
  {
+  "id": "7d72271b",
+  "en": "Create link"
+ },
+ {
+  "id": "e91a91d8",
+  "en": "Paste as link"
+ },
+ {
+  "id": "0ddb0669",
+  "en": "link"
+ },
+ {
+  "id": "1ca7ab63",
+  "en": "Creating links:"
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"
