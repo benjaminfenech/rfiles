@@ -1299,5 +1299,9 @@
  "c1030759": "Rozbalit do…",
  "318f3dab": "Po rozbalení otevřít složku",
  "9024d7b4": "Když se archiv rozbalí do nové složky, složka se otevře na nové kartě",
- "d2386650": "Cílová složka pro rozbalení"
+ "d2386650": "Cílová složka pro rozbalení",
+ "ca4436bd": "Rozdělit na části",
+ "168b858e": "Velikost slovníku (7z)",
+ "ddde2ea1": "RAR zde nelze rozdělit; zvolte ZIP nebo 7z",
+ "d51fcd54": "Formáty tar nepodporují hesla; zvolte ZIP nebo 7z"
 }

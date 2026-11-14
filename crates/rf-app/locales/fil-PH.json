@@ -1299,5 +1299,9 @@
  "c1030759": "I-extract sa…",
  "318f3dab": "Buksan ang folder pagkatapos mag-extract",
  "9024d7b4": "Kapag na-extract ang archive sa bagong folder, bubukas ang folder na iyon sa bagong tab",
- "d2386650": "Folder na pag-e-extract-an"
+ "d2386650": "Folder na pag-e-extract-an",
+ "ca4436bd": "Hatiin sa mga bahagi",
+ "168b858e": "Laki ng diksyunaryo (7z)",
+ "ddde2ea1": "Hindi mahahati ang RAR dito; pumili ng ZIP o 7z",
+ "d51fcd54": "Hindi sinusuportahan ng mga tar format ang password; pumili ng ZIP o 7z"
 }

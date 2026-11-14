@@ -1299,5 +1299,9 @@
  "c1030759": "Extreu a…",
  "318f3dab": "Obre la carpeta després d’extreure",
  "9024d7b4": "Quan s’extreu un arxiu comprimit a una carpeta nova, aquesta carpeta s’obre en una pestanya nova",
- "d2386650": "Carpeta on extreure"
+ "d2386650": "Carpeta on extreure",
+ "ca4436bd": "Divideix en parts",
+ "168b858e": "Mida del diccionari (7z)",
+ "ddde2ea1": "RAR no es pot dividir aquí; trieu ZIP o 7z",
+ "d51fcd54": "Els formats tar no admeten contrasenyes; trieu ZIP o 7z"
 }

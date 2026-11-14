@@ -1299,5 +1299,9 @@
  "c1030759": "Estrai in…",
  "318f3dab": "Apri la cartella dopo l'estrazione",
  "9024d7b4": "Quando un archivio viene estratto in una nuova cartella, questa si apre in una nuova scheda",
- "d2386650": "Cartella di destinazione"
+ "d2386650": "Cartella di destinazione",
+ "ca4436bd": "Dividi in parti",
+ "168b858e": "Dimensione dizionario (7z)",
+ "ddde2ea1": "Qui RAR non può essere diviso; scegli ZIP o 7z",
+ "d51fcd54": "I formati tar non supportano le password; scegli ZIP o 7z"
 }

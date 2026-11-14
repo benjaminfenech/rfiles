@@ -1299,5 +1299,9 @@
  "c1030759": "Kicsomagolás ide…",
  "318f3dab": "Mappa megnyitása kicsomagolás után",
  "9024d7b4": "Ha egy archívum új mappába lett kicsomagolva, a mappa új lapon nyílik meg",
- "d2386650": "Kicsomagolás célmappája"
+ "d2386650": "Kicsomagolás célmappája",
+ "ca4436bd": "Felosztás részekre",
+ "168b858e": "Szótárméret (7z)",
+ "ddde2ea1": "A RAR itt nem osztható részekre; válasszon ZIP-et vagy 7z-t",
+ "d51fcd54": "A tar formátumok nem támogatják a jelszót; válasszon ZIP-et vagy 7z-t"
 }

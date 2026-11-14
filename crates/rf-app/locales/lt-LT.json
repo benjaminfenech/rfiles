@@ -1299,5 +1299,9 @@
  "c1030759": "Išskleisti į…",
  "318f3dab": "Išskleidus atidaryti aplanką",
  "9024d7b4": "Kai archyvas išskleidžiamas į naują aplanką, tas aplankas atidaromas naujame skirtuke",
- "d2386650": "Aplankas, į kurį išskleisti"
+ "d2386650": "Aplankas, į kurį išskleisti",
+ "ca4436bd": "Padalyti į dalis",
+ "168b858e": "Žodyno dydis (7z)",
+ "ddde2ea1": "RAR čia padalyti negalima; pasirinkite ZIP arba 7z",
+ "d51fcd54": "tar formatai nepalaiko slaptažodžių; pasirinkite ZIP arba 7z"
 }

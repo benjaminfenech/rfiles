@@ -1299,5 +1299,9 @@
  "c1030759": "Izvērst uz…",
  "318f3dab": "Pēc izvēršanas atvērt mapi",
  "9024d7b4": "Kad arhīvs tiek izvērsts jaunā mapē, šī mape tiek atvērta jaunā cilnē",
- "d2386650": "Mape, uz kuru izvērst"
+ "d2386650": "Mape, uz kuru izvērst",
+ "ca4436bd": "Sadalīt daļās",
+ "168b858e": "Vārdnīcas izmērs (7z)",
+ "ddde2ea1": "RAR šeit nevar sadalīt daļās; izvēlieties ZIP vai 7z",
+ "d51fcd54": "tar formāti neatbalsta paroles; izvēlieties ZIP vai 7z"
 }

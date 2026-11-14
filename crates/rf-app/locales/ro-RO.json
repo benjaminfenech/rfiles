@@ -1299,5 +1299,9 @@
  "c1030759": "Extragere în…",
  "318f3dab": "Deschide folderul după extragere",
  "9024d7b4": "Când o arhivă este extrasă într-un folder nou, folderul se deschide într-o filă nouă",
- "d2386650": "Folder de extragere"
+ "d2386650": "Folder de extragere",
+ "ca4436bd": "Împărțire în părți",
+ "168b858e": "Dimensiune dicționar (7z)",
+ "ddde2ea1": "RAR nu poate fi împărțit aici; alegeți ZIP sau 7z",
+ "d51fcd54": "Formatele tar nu acceptă parole; alegeți ZIP sau 7z"
 }

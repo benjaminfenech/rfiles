@@ -1299,5 +1299,9 @@
  "c1030759": "Ekstrakto në…",
  "318f3dab": "Hap dosjen pas ekstraktimit",
  "9024d7b4": "Kur një arkiv ekstraktohet në një dosje të re, ajo dosje hapet në një skedë të re",
- "d2386650": "Dosja ku do të ekstraktohet"
+ "d2386650": "Dosja ku do të ekstraktohet",
+ "ca4436bd": "Ndaje në pjesë",
+ "168b858e": "Madhësia e fjalorit (7z)",
+ "ddde2ea1": "RAR nuk mund të ndahet këtu; zgjidh ZIP ose 7z",
+ "d51fcd54": "Formatet tar nuk mbështesin fjalëkalime; zgjidh ZIP ose 7z"
 }
