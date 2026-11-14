@@ -451,7 +451,13 @@ fn group_items(me: &Me, group: GroupBy) -> Vec<Item> {
         grp(t!("Name"), GroupBy::Name),
         grp(t!("Type"), GroupBy::Type),
         grp(t!("Date modified"), GroupBy::Modified),
+        grp(t!("Year"), GroupBy::Year),
+        grp(t!("Month"), GroupBy::Month),
+        grp(t!("Day"), GroupBy::Day),
+        grp(t!("Date created"), GroupBy::Created),
         grp(t!("Size"), GroupBy::Size),
+        grp(t!("Tag"), GroupBy::Tag),
+        grp(t!("Folder"), GroupBy::Folder),
     ]
 }
 

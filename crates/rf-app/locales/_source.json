@@ -5241,6 +5241,70 @@
   "en": "Close all tabs"
  },
  {
+  "id": "155ee43c",
+  "en": "Year"
+ },
+ {
+  "id": "a8761ba5",
+  "en": "Month"
+ },
+ {
+  "id": "4954229d",
+  "en": "Day"
+ },
+ {
+  "id": "9d2cfb7d",
+  "en": "January"
+ },
+ {
+  "id": "fca77633",
+  "en": "February"
+ },
+ {
+  "id": "c0846390",
+  "en": "March"
+ },
+ {
+  "id": "98dbac97",
+  "en": "April"
+ },
+ {
+  "id": "3ba7e226",
+  "en": "May"
+ },
+ {
+  "id": "e920f785",
+  "en": "June"
+ },
+ {
+  "id": "011ca01f",
+  "en": "July"
+ },
+ {
+  "id": "5ddb609c",
+  "en": "August"
+ },
+ {
+  "id": "c212b600",
+  "en": "September"
+ },
+ {
+  "id": "ecf21807",
+  "en": "October"
+ },
+ {
+  "id": "3ea53a3f",
+  "en": "November"
+ },
+ {
+  "id": "662dcc9e",
+  "en": "December"
+ },
+ {
+  "id": "33c7776e",
+  "en": "No tag"
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"
