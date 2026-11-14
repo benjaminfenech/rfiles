@@ -1349,5 +1349,7 @@
  "7c6364fa": "Des noms comme *.jpg ou report-??.pdf ; séparez-en plusieurs par ;. Un mot sans * ni ? correspond n'importe où dans le nom.",
  "0e130889": "Image collée",
  "9e8d3e6b": "Texte collé",
+ "3e12805a": "Monter",
+ "dff7dc1b": "Impossible de monter l'image disque",
  "cbf2ee3b": "Scripts"
 }

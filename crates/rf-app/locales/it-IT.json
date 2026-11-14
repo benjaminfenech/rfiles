@@ -1349,5 +1349,7 @@
  "7c6364fa": "Nomi come *.jpg o report-??.pdf; separane più di uno con ;. Una parola senza * o ? corrisponde in qualsiasi punto del nome.",
  "0e130889": "Immagine incollata",
  "9e8d3e6b": "Testo incollato",
+ "3e12805a": "Monta",
+ "dff7dc1b": "Impossibile montare l'immagine disco",
  "cbf2ee3b": "Script"
 }

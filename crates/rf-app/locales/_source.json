@@ -5381,6 +5381,14 @@
   "en": "Pasted text"
  },
  {
+  "id": "3e12805a",
+  "en": "Mount"
+ },
+ {
+  "id": "dff7dc1b",
+  "en": "Couldn't mount the disk image"
+ },
+ {
   "id": "cbf2ee3b",
   "en": "Scripts"
  },

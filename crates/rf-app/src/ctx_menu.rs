@@ -162,6 +162,14 @@ impl FolderView {
         if has_files {
             v.push(Item::Sub { label: t!("Open with").into(), icon: icon(L::LayoutGrid), items: Sub::Pending { key: "openwith", fallback: None } });
         }
+        // a disk image: attach it as a drive (opening it shows it as an archive)
+        if items.len() == 1 && rf_linux::udisks::is_disk_image(&items[0]) 
+            // (not one inside another archive; an image itself splits as its own root)
+            && !crate::archive_view::split_inside(&items[0]).is_some_and(|(_, inner)| !inner.as_os_str().is_empty())
+        {
+            let img = items[0].clone();
+            v.push(Item::action(t!("Mount"), icon(L::HardDrive), act(me, move |v, _, cx| v.mount_image(img.clone(), cx))));
+        }
         if self.is_search() && items.len() == 1 {
             let p = items[0].clone();
             v.push(Item::action(t!("Open file location"), icon(L::FolderOpen), act(me, move |v, _, cx| {

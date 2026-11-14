@@ -1349,5 +1349,7 @@
  "7c6364fa": "Names like *.jpg or report-??.pdf; separate several with ;. A word without * or ? matches anywhere in the name.",
  "0e130889": "Pasted image",
  "9e8d3e6b": "Pasted text",
+ "3e12805a": "Mount",
+ "dff7dc1b": "Couldn't mount the disk image",
  "cbf2ee3b": "Scripts"
 }

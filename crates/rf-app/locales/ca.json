@@ -1349,5 +1349,7 @@
  "7c6364fa": "Noms com *.jpg o report-??.pdf; separeu-ne diversos amb ;. Una paraula sense * ni ? coincideix a qualsevol lloc del nom.",
  "0e130889": "Imatge enganxada",
  "9e8d3e6b": "Text enganxat",
+ "3e12805a": "Munta",
+ "dff7dc1b": "No s'ha pogut muntar la imatge de disc",
  "cbf2ee3b": "Scripts"
 }

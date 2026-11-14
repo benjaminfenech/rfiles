@@ -1349,5 +1349,7 @@
  "7c6364fa": "Nazwy jak *.jpg lub report-??.pdf; kilka oddziel znakiem ;. Słowo bez * lub ? pasuje w dowolnym miejscu nazwy.",
  "0e130889": "Wklejony obraz",
  "9e8d3e6b": "Wklejony tekst",
+ "3e12805a": "Zamontuj",
+ "dff7dc1b": "Nie udało się zamontować obrazu dysku",
  "cbf2ee3b": "Skrypty"
 }

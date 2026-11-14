@@ -1349,5 +1349,7 @@
  "7c6364fa": "Názvy jako *.jpg nebo report-??.pdf; více vzorů oddělte ;. Slovo bez * nebo ? se hledá kdekoli v názvu.",
  "0e130889": "Vložený obrázek",
  "9e8d3e6b": "Vložený text",
+ "3e12805a": "Připojit",
+ "dff7dc1b": "Obraz disku se nepodařilo připojit",
  "cbf2ee3b": "Skripty"
 }
