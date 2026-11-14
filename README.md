@@ -36,7 +36,9 @@ Download the package for your system from the
 **Updates:** rfiles checks for a newer release shortly after it starts and then once a day.
 When there is one, the status bar and Settings → About say so; you can turn the automatic check
 off there. Clicking Install downloads the same kind of package you installed, checks its SHA-256
-against the one on GitHub, and installs it. The .deb, .rpm and Arch packages go through `pkexec`,
+against the release's `SHA256SUMS`, and installs it. That list is signed with rfiles' release key
+(`packaging/linux/release-key.pub.pem`, also built into rfiles), and a release whose signature
+doesn't match is refused. The .deb, .rpm and Arch packages go through `pkexec`,
 so your desktop asks for your password; the Flatpak goes through `flatpak install`. Restart then
 opens the new version. A copy built from source only gets a link to the release.
 
@@ -266,8 +268,10 @@ flatpak-builder --user --install --force-clean build-flatpak packaging/flatpak/i
 
 **Releases:** in a PR, set the version in `Cargo.toml`, put its tag in
 `packaging/linux/RELEASE` (`v<version>`, like `v0.7.0`) and write the notes in
-`packaging/linux/release-notes.md`. Once it merges into `main`, CI tags it, builds every package
-and publishes the release.
+`packaging/linux/release-notes.md`. Once it merges into `main`, CI tags it, builds every package,
+signs their `SHA256SUMS` with the `RFILES_SIGNING_KEY` secret (an Ed25519 key in PEM form) and
+publishes the release. Without the secret, or with a key that doesn't match
+`packaging/linux/release-key.pub.pem`, nothing is published.
 
 **rustyfiles:** rfiles no longer merges upstream, but a cross-platform fix can still be
 cherry-picked (`git remote add upstream https://github.com/gelenmedya/rustyfiles`).

@@ -92,6 +92,30 @@ jobs:
         run: |
           # a hand-pushed tag (or a run by hand): its release, if there isn't one yet
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --verify-tag --title "rfiles ${TAG#v}" --notes "rfiles $TAG."
+      # the public key to check the signature against (the one built into rfiles)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ needs.tag.outputs.tag }}
+          path: src
+          sparse-checkout: packaging/linux/release-key.pub.pem
+          sparse-checkout-cone-mode: false
+      - name: Sign the checksums
+        env:
+          # Ed25519 private key (PEM); its public half is packaging/linux/release-key.pub.pem.
+          # rfiles' updater installs only files listed in a SHA256SUMS this key signed.
+          SIGNING_KEY: ${{ secrets.RFILES_SIGNING_KEY }}
+        run: |
+          [[ -n "$SIGNING_KEY" ]] || { echo "the RFILES_SIGNING_KEY secret is missing: not publishing unsigned packages" >&2; exit 1; }
+          key="$RUNNER_TEMP/release-key.pem"
+          (umask 077 && printf '%s\n' "$SIGNING_KEY" > "$key")
+          cd dist
+          rm -f SHA256SUMS SHA256SUMS.sig
+          sha256sum -- * > SHA256SUMS
+          openssl pkeyutl -sign -inkey "$key" -rawin -in SHA256SUMS -out SHA256SUMS.sig
+          rm -f "$key"
+          # a key that doesn't match the built-in one would make every update fail: stop here
+          openssl pkeyutl -verify -pubin -inkey ../src/packaging/linux/release-key.pub.pem -rawin -in SHA256SUMS -sigfile SHA256SUMS.sig
+          cat SHA256SUMS
       - name: Attach the packages and publish
         run: |
           ls -l dist
