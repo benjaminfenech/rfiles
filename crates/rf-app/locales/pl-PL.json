@@ -1343,6 +1343,10 @@
  "3f5c57bb": "Zastosuj do całej zawartości",
  "2d9081dd": "Pliki wewnątrz zachowują własne uprawnienie do wykonywania.",
  "b2e1978a": "Tylko właściciel może to zmienić.",
+ "51148674": "Zaznacz według wzorca",
+ "777c4aba": "Odznacz",
+ "84f7d8e1": "Wpisz nazwę lub wzorzec, np. *.jpg",
+ "7c6364fa": "Nazwy jak *.jpg lub report-??.pdf; kilka oddziel znakiem ;. Słowo bez * lub ? pasuje w dowolnym miejscu nazwy.",
  "0e130889": "Wklejony obraz",
  "9e8d3e6b": "Wklejony tekst"
 }

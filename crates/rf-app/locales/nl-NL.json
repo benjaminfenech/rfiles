@@ -1343,6 +1343,10 @@
  "3f5c57bb": "Toepassen op alles erin",
  "2d9081dd": "Bestanden erin houden hun eigen uitvoerrecht.",
  "b2e1978a": "Alleen de eigenaar kan dit wijzigen.",
+ "51148674": "Selecteren op patroon",
+ "777c4aba": "Deselecteren",
+ "84f7d8e1": "Typ een naam of een patroon zoals *.jpg",
+ "7c6364fa": "Namen zoals *.jpg of report-??.pdf; scheid meerdere met ;. Een woord zonder * of ? past overal in de naam.",
  "0e130889": "Geplakte afbeelding",
  "9e8d3e6b": "Geplakte tekst"
 }

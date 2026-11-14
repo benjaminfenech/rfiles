@@ -1343,6 +1343,10 @@
  "3f5c57bb": "Applica a tutto il contenuto",
  "2d9081dd": "I file all'interno mantengono il proprio permesso di esecuzione.",
  "b2e1978a": "Solo il proprietario può modificarli.",
+ "51148674": "Seleziona per schema",
+ "777c4aba": "Deseleziona",
+ "84f7d8e1": "Digita un nome o uno schema come *.jpg",
+ "7c6364fa": "Nomi come *.jpg o report-??.pdf; separane più di uno con ;. Una parola senza * o ? corrisponde in qualsiasi punto del nome.",
  "0e130889": "Immagine incollata",
  "9e8d3e6b": "Testo incollato"
 }
