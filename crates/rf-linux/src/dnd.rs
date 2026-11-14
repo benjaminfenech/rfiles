@@ -4,12 +4,6 @@
 // Functions return safe defaults until they get a Linux implementation.
 use std::path::{Path, PathBuf};
 use crate::fileops::Transfer;
-/// Shell data object for items that share one parent folder.
-pub fn data_object(_items: &[PathBuf]) -> anyhow::Result<crate::Opaque> {
-    Err(
-        anyhow::anyhow!("rf-linux: `data_object` is not implemented on Linux yet").into(),
-    )
-}
 /// Runs a modal OLE drag on the calling thread (must be the shell STA thread — see `sta::run`).
 /// `ui_thread` is the id of the thread that owns the window where the drag started; its input
 /// state is attached so this thread can take mouse capture while the button is still down.

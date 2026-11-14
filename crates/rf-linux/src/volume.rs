@@ -37,9 +37,3 @@ pub fn volume_info(_root: &Path) -> anyhow::Result<VolumeInfo> {
         anyhow::anyhow!("rf-linux: `volume_info` is not implemented on Linux yet").into(),
     )
 }
-/// Ejects a removable (or optical) drive by invoking the shell's "Eject" verb, which is exactly
-/// what Explorer does (flushes, locks, dismounts and asks the device to power down).
-/// Fails when files are still open on the drive.
-pub fn eject(_drive_letter: char) -> anyhow::Result<()> {
-    Err(anyhow::anyhow!("rf-linux: `eject` is not implemented on Linux yet").into())
-}
