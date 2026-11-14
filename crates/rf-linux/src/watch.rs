@@ -133,9 +133,13 @@ mod tests {
         }
         let during = calls.load(Ordering::Relaxed);
         assert!(during >= 2, "reported {during} times during a 2 s burst");
-        // and once more after it settles
-        std::thread::sleep(Duration::from_millis(400));
-        assert!(calls.load(Ordering::Relaxed) > during);
+        // and once more after it settles: the last report can come up to max_wait (750 ms)
+        // after the burst, more on a busy machine, so wait for it rather than a fixed time
+        let settle = Instant::now();
+        while calls.load(Ordering::Relaxed) <= during && settle.elapsed() < Duration::from_secs(5) {
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert!(calls.load(Ordering::Relaxed) > during, "no report after the burst settled");
         drop(_w);
         let _ = std::fs::remove_dir_all(&dir);
     }
