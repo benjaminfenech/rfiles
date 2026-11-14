@@ -238,25 +238,6 @@ impl FolderView {
         rf_linux::sta::run(move |owner| {
             let _ = tx.send(rf_linux::clipboard::get_files(owner).map_err(|e| log::warn!("paste: {e:#}")).ok().flatten());
         });
-        if rf_linux::ftp::is_ftp(&dir) {
-            // FTP: upload the clipboard files (folders are skipped), then refresh
-            let url = dir.to_string_lossy().into_owned();
-            cx.spawn(async move |this, cx| {
-                if let Ok(Some((paths, _))) = rx.await {
-                    let work = cx.background_spawn(async move {
-                        for p in paths.iter().filter(|p| p.is_file()) {
-                            if let Err(e) = rf_linux::ftp::upload(p, &url) {
-                                log::warn!("ftp upload {p:?}: {e}");
-                            }
-                        }
-                    });
-                    work.await;
-                    let _ = this.update(cx, |v, cx| v.refresh(cx));
-                }
-            })
-            .detach();
-            return;
-        }
         cx.spawn(async move |this, cx| {
             if let Ok(Some((paths, kind))) = rx.await {
                 let _ = cx.update(|cx| {
@@ -283,11 +264,13 @@ impl FolderView {
         if paths.is_empty() {
             return;
         }
-        // inside an archive: remove the entries from it (always asks: there is no recycle bin)
-        if let Some((archive, _)) = crate::archive_view::split(&paths[0]) {
+        // inside an archive: remove the entries from it (always asks: there is no recycle bin).
+        // An archive file itself splits as its own root (an empty inner path): that is a plain
+        // file to delete (deleting a .zip asked to remove "" from inside it and failed)
+        if let Some((archive, _)) = crate::archive_view::split_inside(&paths[0]) {
             let inners: Vec<String> = paths
                 .iter()
-                .filter_map(|p| crate::archive_view::split(p).filter(|(a, _)| *a == archive))
+                .filter_map(|p| crate::archive_view::split_inside(p).filter(|(a, _)| *a == archive))
                 .map(|(_, i)| i.to_string_lossy().replace('\\', "/"))
                 .collect();
             let what = if inners.len() == 1 { format!("\"{}\"", inners[0].rsplit('/').next().unwrap_or_default()) } else { crate::i18n::items(inners.len()) };

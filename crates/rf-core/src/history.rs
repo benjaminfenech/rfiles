@@ -339,35 +339,8 @@ mod clean_tests {
 /// `%XX` escapes (and `+` for a space, as search links write queries) to text; invalid escapes
 /// stay as they are.
 fn percent_decode(s: &str) -> String {
-    let b = s.as_bytes();
-    let mut out = Vec::with_capacity(b.len());
-    let mut i = 0;
-    while i < b.len() {
-        match b[i] {
-            b'%' if i + 2 < b.len() => {
-                let hex = std::str::from_utf8(&b[i + 1..i + 3]).ok().and_then(|h| u8::from_str_radix(h, 16).ok());
-                match hex {
-                    Some(v) => {
-                        out.push(v);
-                        i += 3;
-                    }
-                    None => {
-                        out.push(b'%');
-                        i += 1;
-                    }
-                }
-            }
-            b'+' => {
-                out.push(b' ');
-                i += 1;
-            }
-            c => {
-                out.push(c);
-                i += 1;
-            }
-        }
-    }
-    String::from_utf8_lossy(&out).into_owned()
+    // '+' first: an escaped plus (%2B) stays a plus
+    crate::uri::decode_str(&s.replace('+', " "))
 }
 
 #[cfg(test)]

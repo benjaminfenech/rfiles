@@ -177,33 +177,11 @@ pub fn with_login(text: &str, user: &str, password: &str) -> Option<String> {
 
 /// Percent-escapes what can't stand in a URL's user or password part.
 fn encode(s: &str) -> String {
-    let mut out = String::new();
-    for b in s.bytes() {
-        if b.is_ascii_alphanumeric() || b"-._~!$&'()*+,;=".contains(&b) {
-            out.push(b as char);
-        } else {
-            out.push_str(&format!("%{b:02X}"));
-        }
-    }
-    out
+    rf_core::uri::encode(s.as_bytes(), b"-._~!$&'()*+,;=")
 }
 
 fn decode(s: &str) -> String {
-    let b = s.as_bytes();
-    let mut out = Vec::new();
-    let mut i = 0;
-    while i < b.len() {
-        if b[i] == b'%'
-            && let Some(v) = s.get(i + 1..i + 3).and_then(|h| u8::from_str_radix(h, 16).ok())
-        {
-            out.push(v);
-            i += 3;
-        } else {
-            out.push(b[i]);
-            i += 1;
-        }
-    }
-    String::from_utf8_lossy(&out).into_owned()
+    rf_core::uri::decode_str(s)
 }
 
 /// The layer isn't installed (as opposed to: it failed).

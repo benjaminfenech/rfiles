@@ -1,8 +1,13 @@
 //! Updates from GitHub Releases: is there a newer release, which of its files fits this
 //! install (the .deb, .rpm, Arch package or Flatpak it came from, for this CPU), a download
-//! checked against the SHA-256 GitHub publishes for it, and the install, done the way the
-//! user would do it by hand (`apt-get`, `dnf`/`zypper`, `pacman` through `pkexec`, which asks
-//! for the password; `flatpak install` needs none).
+//! checked against the release's signed checksums, and the install, done the way the user
+//! would do it by hand (`apt-get`, `dnf`/`zypper`, `pacman` through `pkexec`, which asks for
+//! the password; `flatpak install` needs none).
+//!
+//! Every release carries `SHA256SUMS` and `SHA256SUMS.sig`, an Ed25519 signature made in CI
+//! with a key kept as a repository secret. Its public half, [`RELEASE_KEY`], is built into
+//! rfiles. A package is installed only when its SHA-256 is in a list that key signed: a
+//! release or download swapped on GitHub's side, without the key, is refused.
 //!
 //! Everything here blocks (network, package tools): worker threads only.
 
@@ -34,8 +39,8 @@ pub struct Asset {
     pub name: String,
     pub url: String,
     pub size: u64,
-    /// Lowercase hex, from GitHub's `digest` ("sha256:…"); `None` for files uploaded before
-    /// GitHub kept digests.
+    /// Lowercase hex, from the release's signed `SHA256SUMS` ([`verify_signed`]); `None` until
+    /// then, or when the list doesn't name the file. [`download`] refuses a file without it.
     pub sha256: Option<String>,
 }
 
@@ -80,7 +85,8 @@ fn parse_release(json: &str) -> Result<Release> {
                         name: x["name"].as_str()?.to_string(),
                         url: x["browser_download_url"].as_str()?.to_string(),
                         size: x["size"].as_u64().unwrap_or(0),
-                        sha256: x["digest"].as_str().and_then(|d| d.strip_prefix("sha256:")).map(str::to_ascii_lowercase),
+                        // only a signed checksum counts (verify_signed), not GitHub's own digest
+                        sha256: None,
                     })
                 })
                 .collect()
@@ -151,6 +157,57 @@ pub fn pick_asset<'a>(release: &'a Release, kind: Install, arch: &str) -> Option
     })
 }
 
+/// The Ed25519 public key release checksums are signed with (raw 32 bytes; the same key as
+/// `packaging/linux/release-key.pub.pem`).
+pub const RELEASE_KEY: [u8; 32] = include!("../../../packaging/linux/release-key.pub.bytes");
+
+const SUMS: &str = "SHA256SUMS";
+const SUMS_SIG: &str = "SHA256SUMS.sig";
+
+/// Fetches the release's `SHA256SUMS` and its signature, checks the signature against
+/// [`RELEASE_KEY`] and returns the release with each listed file's SHA-256 filled in.
+/// Fails when the release isn't signed or the signature doesn't match.
+pub fn verify_signed(release: &Release) -> Result<Release> {
+    let find = |name: &str| release.assets.iter().find(|a| a.name == name);
+    let (Some(sums), Some(sig)) = (find(SUMS), find(SUMS_SIG)) else {
+        bail!("release {} isn't signed: not installing it", release.version);
+    };
+    let sums_text = fetch_small(&sums.url)?;
+    let sig = fetch_small(&sig.url)?;
+    let hashes = check_sums(&sums_text, &sig, &RELEASE_KEY)?;
+    let mut r = release.clone();
+    for a in &mut r.assets {
+        a.sha256 = hashes.get(&a.name).cloned();
+    }
+    Ok(r)
+}
+
+/// Verifies `sig` over `sums` with `key` and parses `sha256sum` lines (`<hex>  <name>`).
+fn check_sums(sums: &[u8], sig: &[u8], key: &[u8; 32]) -> Result<std::collections::HashMap<String, String>> {
+    use ring::signature::{ED25519, UnparsedPublicKey};
+    UnparsedPublicKey::new(&ED25519, key)
+        .verify(sums, sig)
+        .map_err(|_| anyhow!("the release's signature doesn't match rfiles' release key: not installing it"))?;
+    let text = std::str::from_utf8(sums).context("SHA256SUMS")?;
+    Ok(text
+        .lines()
+        .filter_map(|l| {
+            let (hash, name) = l.split_once(' ')?;
+            let name = name.trim_start_matches([' ', '*']);
+            (hash.len() == 64 && hash.bytes().all(|b| b.is_ascii_hexdigit())).then(|| (name.to_string(), hash.to_ascii_lowercase()))
+        })
+        .collect())
+}
+
+/// A small release file (the checksums, their signature), at most 1 MiB.
+fn fetch_small(url: &str) -> Result<Vec<u8>> {
+    let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(30))).build().into();
+    let mut res = agent.get(url).header("User-Agent", user_agent()).call().context("download")?;
+    let mut out = Vec::new();
+    res.body_mut().as_reader().take(1 << 20).read_to_end(&mut out).context("download")?;
+    Ok(out)
+}
+
 /// Where updates are downloaded: the cache folder (inside Flatpak the host's, so the host's
 /// `flatpak` and `pkexec` can read the file).
 pub fn download_dir() -> PathBuf {
@@ -160,7 +217,7 @@ pub fn download_dir() -> PathBuf {
 /// Downloads `asset` into `dir` (older downloads there are removed) and checks its SHA-256.
 /// `progress(done, total)` is called as it arrives; `cancel` stops it.
 pub fn download(asset: &Asset, dir: &Path, progress: &dyn Fn(u64, u64), cancel: &dyn Fn() -> bool) -> Result<PathBuf> {
-    let want = asset.sha256.as_deref().ok_or_else(|| anyhow!("GitHub has no checksum for {}: not installing it", asset.name))?;
+    let want = asset.sha256.as_deref().ok_or_else(|| anyhow!("{} isn't in the release's signed checksums: not installing it", asset.name))?;
     if asset.name.contains(['/', '\\']) || asset.name.starts_with('.') {
         bail!("unexpected file name {:?}", asset.name);
     }
@@ -196,7 +253,7 @@ pub fn download(asset: &Asset, dir: &Path, progress: &dyn Fn(u64, u64), cancel: 
     }
     file.sync_all()?;
     drop(file);
-    let got: String = hash.finalize().iter().map(|b| format!("{b:02x}")).collect();
+    let got = rf_core::uri::hex(&hash.finalize());
     if got != want || (asset.size > 0 && done != asset.size) {
         let _ = std::fs::remove_file(&part);
         bail!("the download of {} is damaged (checksum doesn't match): not installing it", asset.name);
@@ -278,8 +335,8 @@ mod tests {
         let r = parse_release(SAMPLE).unwrap();
         assert_eq!(r.version, "0.8.0");
         assert_eq!(r.assets.len(), 7);
-        assert_eq!(r.assets[0].sha256.as_deref(), Some("abcd"));
-        assert_eq!(r.assets[1].sha256, None);
+        // GitHub's digest isn't trusted: only verify_signed fills it in
+        assert!(r.assets.iter().all(|a| a.sha256.is_none()));
     }
 
     #[test]
@@ -331,6 +388,34 @@ mod tests {
         let a = Asset { name: "rfiles_0.8.0-1_amd64.deb".into(), url: "https://invalid.invalid/x".into(), size: 1, sha256: None };
         let dir = std::env::temp_dir().join(format!("rf-update-{}", std::process::id()));
         let e = download(&a, &dir, &|_, _| {}, &|| false).unwrap_err();
-        assert!(e.to_string().contains("no checksum"), "{e}");
+        assert!(e.to_string().contains("signed checksums"), "{e}");
+    }
+
+    #[test]
+    fn signed_sums() {
+        use ring::signature::{Ed25519KeyPair, KeyPair};
+        let rng = ring::rand::SystemRandom::new();
+        let pkcs8 = Ed25519KeyPair::generate_pkcs8(&rng).unwrap();
+        let pair = Ed25519KeyPair::from_pkcs8(pkcs8.as_ref()).unwrap();
+        let key: [u8; 32] = pair.public_key().as_ref().try_into().unwrap();
+        let sums = format!("{}  rfiles_0.9.1-1_amd64.deb\n{}  rfiles-0.9.1.x86_64.flatpak\n", "ab".repeat(32), "CD".repeat(32));
+        let sig = pair.sign(sums.as_bytes());
+        let got = check_sums(sums.as_bytes(), sig.as_ref(), &key).unwrap();
+        assert_eq!(got["rfiles_0.9.1-1_amd64.deb"], "ab".repeat(32));
+        assert_eq!(got["rfiles-0.9.1.x86_64.flatpak"], "cd".repeat(32));
+        // a changed list, or another key: refused
+        let swapped = sums.replace("ab", "ef");
+        assert!(check_sums(swapped.as_bytes(), sig.as_ref(), &key).is_err());
+        assert!(check_sums(sums.as_bytes(), sig.as_ref(), &RELEASE_KEY).is_err());
+    }
+
+    /// The built-in key is the one in packaging/linux/release-key.pub.pem (CI checks its
+    /// signatures against that file).
+    #[test]
+    fn built_in_key_matches_the_pem() {
+        let pem = concat!(env!("CARGO_MANIFEST_DIR"), "/../../packaging/linux/release-key.pub.pem");
+        let Ok(out) = Command::new("openssl").args(["pkey", "-pubin", "-in", pem, "-outform", "DER"]).output() else { return };
+        assert!(out.status.success());
+        assert_eq!(out.stdout[out.stdout.len() - 32..], RELEASE_KEY);
     }
 }

@@ -38,23 +38,7 @@ const MAX_CHANNELS: u32 = 8;
 /// other tools); `--watch-bus` ends it with flatpak-spawn, so dropping a [`Proc`] stops it
 /// there too.
 fn tool(prog: &str) -> Command {
-    let on_host = |p: &str| {
-        static SEEN: std::sync::Mutex<Vec<(String, bool)>> = std::sync::Mutex::new(Vec::new());
-        let mut seen = SEEN.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some((_, known)) = seen.iter().find(|(q, _)| q == p) {
-            return *known;
-        }
-        let found = Command::new("flatpak-spawn")
-            .args(["--host", "sh", "-c", "command -v -- \"$1\" >/dev/null", "sh", p])
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
-            .is_ok_and(|s| s.success());
-        seen.push((p.to_string(), found));
-        found
-    };
-    if Path::new("/.flatpak-info").exists() && on_host(prog) {
+    if Path::new("/.flatpak-info").exists() && rf_core::host::has(prog) {
         let mut c = Command::new("flatpak-spawn");
         c.args(["--host", "--watch-bus", prog]);
         return c;

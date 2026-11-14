@@ -36,7 +36,9 @@ Download the package for your system from the
 **Updates:** rfiles checks for a newer release shortly after it starts and then once a day.
 When there is one, the status bar and Settings → About say so; you can turn the automatic check
 off there. Clicking Install downloads the same kind of package you installed, checks its SHA-256
-against the one on GitHub, and installs it. The .deb, .rpm and Arch packages go through `pkexec`,
+against the release's `SHA256SUMS`, and installs it. That list is signed with rfiles' release key
+(`packaging/linux/release-key.pub.pem`, also built into rfiles), and a release whose signature
+doesn't match is refused. The .deb, .rpm and Arch packages go through `pkexec`,
 so your desktop asks for your password; the Flatpak goes through `flatpak install`. Restart then
 opens the new version. A copy built from source only gets a link to the release.
 
@@ -160,7 +162,7 @@ running and covers the folder, rfiles asks it: Baloo on KDE Plasma, Tracker (Loc
 GNOME. Both also search PDFs and office documents. Otherwise rfiles reads the files itself,
 which covers text files up to 64 MB and is slower in big folders.
 
-**Terminal.** "Open in terminal" (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>`</kbd>) opens your
+**Terminal.** "Open in terminal" (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>&#96;</kbd>) opens your
 terminal in the current folder. To run a command there, type `>` and the command in the address
 bar (`> make`), or use "Run command here…" from the folder's right-click menu or the command
 palette. When the command finishes, the terminal stays open with a shell. Settings →
@@ -266,8 +268,10 @@ flatpak-builder --user --install --force-clean build-flatpak packaging/flatpak/i
 
 **Releases:** in a PR, set the version in `Cargo.toml`, put its tag in
 `packaging/linux/RELEASE` (`v<version>`, like `v0.7.0`) and write the notes in
-`packaging/linux/release-notes.md`. Once it merges into `main`, CI tags it, builds every package
-and publishes the release.
+`packaging/linux/release-notes.md`. Once it merges into `main`, CI tags it, builds every package,
+signs their `SHA256SUMS` with the `RFILES_SIGNING_KEY` secret (an Ed25519 key in PEM form) and
+publishes the release. Without the secret, or with a key that doesn't match
+`packaging/linux/release-key.pub.pem`, nothing is published.
 
 **rustyfiles:** rfiles no longer merges upstream, but a cross-platform fix can still be
 cherry-picked (`git remote add upstream https://github.com/gelenmedya/rustyfiles`).

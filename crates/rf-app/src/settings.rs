@@ -380,6 +380,8 @@ pub struct Settings {
     pub copy_speed_limit: u32,
     /// Double-clicking a ZIP/7z/tar opens it like a folder (read-only).
     pub browse_archives: bool,
+    /// After extracting an archive into a new folder, that folder opens in a tab.
+    pub open_after_extract: bool,
     /// Our own name index of the local drives: searching in subfolders takes milliseconds.
     pub name_index: bool,
     /// Folders left out of the name index (searching inside them walks the disk).
@@ -485,6 +487,7 @@ impl Default for Settings {
             copy_verify: CopyVerify::Off,
             copy_speed_limit: 0,
             browse_archives: true,
+            open_after_extract: false,
             name_index: true,
             index_excluded: Vec::new(),
             ide_button: IdePref::GitRepos,

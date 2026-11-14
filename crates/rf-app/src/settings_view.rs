@@ -1067,6 +1067,13 @@ fn files(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
         Some(t!("Double-click a ZIP, 7z or tar file to browse it; files you open inside are extracted to a temporary folder")),
         sw("browse-arc", p, s.browse_archives, |s, v| s.browse_archives = v),
     ));
+    v.push(card(
+        p,
+        L::FolderOutput,
+        t!("Open the folder after extracting"),
+        Some(t!("When an archive is extracted into a new folder, that folder opens in a new tab")),
+        sw("open-extracted", p, s.open_after_extract, |s, v| s.open_after_extract = v),
+    ));
     // the name index covers NTFS/ReFS drives (Linux: the home folder and local data disks)
     v.push(card(
         p,

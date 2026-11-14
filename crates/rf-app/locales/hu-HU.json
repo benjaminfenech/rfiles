@@ -1293,5 +1293,11 @@
  "6d1f5156": "Mentendő fájlok",
  "ac00cfc8": "A deb, rpm vagy Arch csomag szükséges (ez telepíti az asztali portál rfiles.portal fájlját); a Flatpak nem tud portál-háttérprogramot hozzáadni.",
  "c01651ec": "Azok az alkalmazások, amelyek fájlpárbeszédet kérnek az asztali portáltól (Firefox, Chromium, GTK-, Qt- és Electron-alkalmazások), az rfiles-t kapják. Kikapcsolva visszatér a korábbi párbeszédablak.",
- "de824b35": "Az rfiles használata a Megnyitás és Mentés párbeszédablakokhoz"
+ "de824b35": "Az rfiles használata a Megnyitás és Mentés párbeszédablakokhoz",
+ "4822d6ae": "Kicsomagolás külön mappákba",
+ "3a5aa560": "Kicsomagolás okosan",
+ "c1030759": "Kicsomagolás ide…",
+ "318f3dab": "Mappa megnyitása kicsomagolás után",
+ "9024d7b4": "Ha egy archívum új mappába lett kicsomagolva, a mappa új lapon nyílik meg",
+ "d2386650": "Kicsomagolás célmappája"
 }

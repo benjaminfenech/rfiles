@@ -1293,5 +1293,11 @@
  "6d1f5156": "Mga file na ise-save",
  "ac00cfc8": "Kailangan ang deb, rpm o Arch package (ini-install nito ang rfiles.portal ng desktop portal); hindi makapagdagdag ng portal backend ang Flatpak.",
  "c01651ec": "Ang mga app na humihingi ng file dialog sa desktop portal (Firefox, Chromium, mga GTK, Qt at Electron app) ay makakakuha ng rfiles. Ang pag-off nito ay ibinabalik ang dating dialog.",
- "de824b35": "Gamitin ang rfiles para sa mga Open at Save dialog"
+ "de824b35": "Gamitin ang rfiles para sa mga Open at Save dialog",
+ "4822d6ae": "I-extract ang bawat isa sa sarili nitong folder",
+ "3a5aa560": "Matalinong pag-extract",
+ "c1030759": "I-extract sa…",
+ "318f3dab": "Buksan ang folder pagkatapos mag-extract",
+ "9024d7b4": "Kapag na-extract ang archive sa bagong folder, bubukas ang folder na iyon sa bagong tab",
+ "d2386650": "Folder na pag-e-extract-an"
 }

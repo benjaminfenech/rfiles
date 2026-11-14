@@ -198,15 +198,7 @@ pub fn parse(kind: Kind, app_id: String, parent_window: String, title: String, o
 /// A path as a `file://` URI (each byte outside the unreserved set escaped).
 pub fn file_uri(p: &Path) -> String {
     use std::os::unix::ffi::OsStrExt;
-    let mut out = String::from("file://");
-    for &b in p.as_os_str().as_bytes() {
-        if b.is_ascii_alphanumeric() || b"/-._~".contains(&b) {
-            out.push(b as char);
-        } else {
-            out.push_str(&format!("%{b:02X}"));
-        }
-    }
-    out
+    format!("file://{}", rf_core::uri::encode(p.as_os_str().as_bytes(), b"/-._~"))
 }
 
 /// The call's answer: (response, results). 0 = done, 1 = cancelled.
