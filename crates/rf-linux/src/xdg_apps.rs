@@ -61,7 +61,7 @@ fn desktop_entry(text: &str) -> HashMap<String, String> {
 }
 
 /// Desktop Entry string escapes: `\s \n \t \r \\`.
-fn unescape_value(v: &str) -> String {
+pub(crate) fn unescape_value(v: &str) -> String {
     let mut out = String::with_capacity(v.len());
     let mut chars = v.chars();
     while let Some(c) = chars.next() {
@@ -87,7 +87,7 @@ fn unescape_value(v: &str) -> String {
 }
 
 /// `Name[en_GB]`, `Name[en]`, then `Name`, for the user's `LC_MESSAGES` / `LANG`.
-fn localized(e: &HashMap<String, String>, key: &str) -> Option<String> {
+pub(crate) fn localized(e: &HashMap<String, String>, key: &str) -> Option<String> {
     let lang = ["LC_ALL", "LC_MESSAGES", "LANG"].iter().find_map(|v| std::env::var(v).ok().filter(|s| !s.is_empty())).unwrap_or_default();
     let base = lang.split(['.', '@']).next().unwrap_or("");
     let short = base.split('_').next().unwrap_or("");
@@ -383,6 +383,11 @@ fn exec_words(exec: &str) -> Vec<String> {
         words.push(cur);
     }
     words
+}
+
+/// [`exec_words`], for other modules here.
+pub(crate) fn exec_words_pub(exec: &str) -> Vec<String> {
+    exec_words(exec)
 }
 
 /// The command lines to run `app` on `files`: one per file when it takes a single file (`%f`,

@@ -63,6 +63,7 @@ pub mod sandbox;
 pub mod props;
 pub mod recycle;
 pub mod search;
+pub mod servicemenus;
 pub mod shell;
 pub mod single_instance;
 pub mod sta;
