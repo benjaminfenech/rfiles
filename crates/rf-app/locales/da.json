@@ -1293,5 +1293,8 @@
  "6d1f5156": "Filer, der skal gemmes",
  "ac00cfc8": "Kræver deb-, rpm- eller Arch-pakken (den installerer skrivebordsportalens rfiles.portal); Flatpak kan ikke tilføje en portalbackend.",
  "c01651ec": "Apps, der beder skrivebordsportalen om en fildialog (Firefox, Chromium, GTK-, Qt- og Electron-apps), får rfiles. Slås det fra, kommer den tidligere dialog tilbage.",
- "de824b35": "Brug rfiles til dialogerne Åbn og Gem"
+ "de824b35": "Brug rfiles til dialogerne Åbn og Gem",
+ "c0ae2136": "Søg i indstillinger",
+ "59b807bf": "Ingen indstilling matcher",
+ "94f50c43": "Søgeresultater"
 }

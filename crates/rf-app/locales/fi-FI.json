@@ -1293,5 +1293,8 @@
  "6d1f5156": "Tallennettavat tiedostot",
  "ac00cfc8": "Vaatii deb-, rpm- tai Arch-paketin (se asentaa työpöytäportaalin rfiles.portal-tiedoston); Flatpak ei voi lisätä portaalin taustaosaa.",
  "c01651ec": "Sovellukset, jotka pyytävät työpöytäportaalilta tiedostoikkunaa (Firefox, Chromium, GTK-, Qt- ja Electron-sovellukset), saavat rfilesin. Poistaminen käytöstä palauttaa aiemman ikkunan.",
- "de824b35": "Käytä rfilesiä Avaa- ja Tallenna-ikkunoissa"
+ "de824b35": "Käytä rfilesiä Avaa- ja Tallenna-ikkunoissa",
+ "c0ae2136": "Etsi asetuksista",
+ "59b807bf": "Mikään asetus ei vastaa hakua",
+ "94f50c43": "Hakutulokset"
 }

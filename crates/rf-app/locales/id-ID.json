@@ -1293,5 +1293,8 @@
  "6d1f5156": "File yang akan disimpan",
  "ac00cfc8": "Memerlukan paket deb, rpm, atau Arch (paket itu memasang rfiles.portal milik portal desktop); Flatpak tidak dapat menambahkan backend portal.",
  "c01651ec": "Aplikasi yang meminta dialog file ke portal desktop (Firefox, Chromium, aplikasi GTK, Qt, dan Electron) mendapatkan rfiles. Menonaktifkannya mengembalikan dialog sebelumnya.",
- "de824b35": "Gunakan rfiles untuk dialog Buka dan Simpan"
+ "de824b35": "Gunakan rfiles untuk dialog Buka dan Simpan",
+ "c0ae2136": "Cari pengaturan",
+ "59b807bf": "Tidak ada pengaturan yang cocok",
+ "94f50c43": "Hasil pencarian"
 }

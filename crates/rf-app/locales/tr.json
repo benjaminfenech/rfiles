@@ -1293,5 +1293,8 @@
  "6d1f5156": "Kaydedilecek dosyalar",
  "ac00cfc8": "deb, rpm veya Arch paketi gerekir (masaüstü portalının rfiles.portal dosyasını kurar); Flatpak portal arka ucu ekleyemez.",
  "c01651ec": "Masaüstü portalından dosya penceresi isteyen uygulamalar (Firefox, Chromium, GTK, Qt ve Electron uygulamaları) rfiles'ı görür. Kapatınca eski pencere geri gelir.",
- "de824b35": "Aç ve Kaydet pencereleri için rfiles'ı kullan"
+ "de824b35": "Aç ve Kaydet pencereleri için rfiles'ı kullan",
+ "c0ae2136": "Ayarlarda ara",
+ "59b807bf": "Eşleşen ayar yok",
+ "94f50c43": "Arama sonuçları"
 }

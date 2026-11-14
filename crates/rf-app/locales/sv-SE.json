@@ -1293,5 +1293,8 @@
  "6d1f5156": "Filer att spara",
  "ac00cfc8": "Kräver deb-, rpm- eller Arch-paketet (det installerar skrivbordsportalens rfiles.portal); Flatpak kan inte lägga till en portalbakände.",
  "c01651ec": "Appar som ber skrivbordsportalen om en fildialog (Firefox, Chromium, GTK-, Qt- och Electron-appar) får rfiles. Att stänga av det ger tillbaka den tidigare dialogen.",
- "de824b35": "Använd rfiles för dialogrutorna Öppna och Spara"
+ "de824b35": "Använd rfiles för dialogrutorna Öppna och Spara",
+ "c0ae2136": "Sök i inställningar",
+ "59b807bf": "Ingen inställning matchar",
+ "94f50c43": "Sökresultat"
 }

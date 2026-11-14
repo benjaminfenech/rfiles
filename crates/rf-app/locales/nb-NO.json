@@ -1293,5 +1293,8 @@
  "6d1f5156": "Filer som skal lagres",
  "ac00cfc8": "Krever deb-, rpm- eller Arch-pakken (den installerer skrivebordsportalens rfiles.portal); Flatpak kan ikke legge til en portalbakende.",
  "c01651ec": "Apper som ber skrivebordsportalen om en fildialog (Firefox, Chromium, GTK-, Qt- og Electron-apper), får rfiles. Slås det av, kommer den forrige dialogen tilbake.",
- "de824b35": "Bruk rfiles til dialogene Åpne og Lagre"
+ "de824b35": "Bruk rfiles til dialogene Åpne og Lagre",
+ "c0ae2136": "Søk i innstillinger",
+ "59b807bf": "Ingen innstillinger samsvarer",
+ "94f50c43": "Søkeresultater"
 }

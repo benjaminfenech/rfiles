@@ -1293,5 +1293,8 @@
  "6d1f5156": "File da salvare",
  "ac00cfc8": "Richiede il pacchetto deb, rpm o Arch (installa il file rfiles.portal del portale del desktop); il Flatpak non può aggiungere un backend del portale.",
  "c01651ec": "Le app che chiedono una finestra dei file al portale del desktop (Firefox, Chromium, app GTK, Qt ed Electron) ottengono rfiles. Disattivandolo torna la finestra precedente.",
- "de824b35": "Usa rfiles per le finestre Apri e Salva"
+ "de824b35": "Usa rfiles per le finestre Apri e Salva",
+ "c0ae2136": "Cerca nelle impostazioni",
+ "59b807bf": "Nessuna impostazione corrisponde",
+ "94f50c43": "Risultati della ricerca"
 }

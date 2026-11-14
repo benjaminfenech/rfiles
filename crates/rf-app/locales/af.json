@@ -1293,5 +1293,8 @@
  "6d1f5156": "Lêers om te stoor",
  "ac00cfc8": "Benodig die deb-, rpm- of Arch-pakket (dit installeer die werkskermportaal se rfiles.portal); die Flatpak kan nie 'n portaal-agterkant byvoeg nie.",
  "c01651ec": "Toeps wat die werkskermportaal vir 'n lêerdialoog vra (Firefox, Chromium, GTK-, Qt- en Electron-toeps) kry rfiles. Afskakel bring die vorige dialoog terug.",
- "de824b35": "Gebruik rfiles vir Maak oop- en Stoor-dialoë"
+ "de824b35": "Gebruik rfiles vir Maak oop- en Stoor-dialoë",
+ "c0ae2136": "Soek instellings",
+ "59b807bf": "Geen instelling stem ooreen nie",
+ "94f50c43": "Soekresultate"
 }

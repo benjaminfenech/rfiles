@@ -5161,6 +5161,18 @@
   "en": "Use rfiles for Open and Save dialogs"
  },
  {
+  "id": "c0ae2136",
+  "en": "Search settings"
+ },
+ {
+  "id": "59b807bf",
+  "en": "No setting matches"
+ },
+ {
+  "id": "94f50c43",
+  "en": "Search results"
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"

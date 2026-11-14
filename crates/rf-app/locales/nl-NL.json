@@ -1293,5 +1293,8 @@
  "6d1f5156": "Op te slaan bestanden",
  "ac00cfc8": "Vereist het deb-, rpm- of Arch-pakket (dat installeert het bestand rfiles.portal van het bureaubladportaal); de Flatpak kan geen portaalbackend toevoegen.",
  "c01651ec": "Apps die het bureaubladportaal om een bestandsdialoog vragen (Firefox, Chromium, GTK-, Qt- en Electron-apps) krijgen rfiles. Uitzetten brengt de oude dialoog terug.",
- "de824b35": "rfiles gebruiken voor Openen- en Opslaan-dialogen"
+ "de824b35": "rfiles gebruiken voor Openen- en Opslaan-dialogen",
+ "c0ae2136": "Instellingen zoeken",
+ "59b807bf": "Geen instelling gevonden",
+ "94f50c43": "Zoekresultaten"
 }

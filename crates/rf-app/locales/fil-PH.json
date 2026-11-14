@@ -1293,5 +1293,8 @@
  "6d1f5156": "Mga file na ise-save",
  "ac00cfc8": "Kailangan ang deb, rpm o Arch package (ini-install nito ang rfiles.portal ng desktop portal); hindi makapagdagdag ng portal backend ang Flatpak.",
  "c01651ec": "Ang mga app na humihingi ng file dialog sa desktop portal (Firefox, Chromium, mga GTK, Qt at Electron app) ay makakakuha ng rfiles. Ang pag-off nito ay ibinabalik ang dating dialog.",
- "de824b35": "Gamitin ang rfiles para sa mga Open at Save dialog"
+ "de824b35": "Gamitin ang rfiles para sa mga Open at Save dialog",
+ "c0ae2136": "Maghanap sa mga setting",
+ "59b807bf": "Walang tugmang setting",
+ "94f50c43": "Mga resulta ng paghahanap"
 }
