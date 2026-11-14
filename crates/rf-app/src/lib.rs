@@ -44,6 +44,7 @@ mod recycle_view;
 mod theme;
 mod workspace;
 mod sys;
+mod search_filters;
 
 use std::path::PathBuf;
 

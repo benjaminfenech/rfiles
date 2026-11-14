@@ -1281,6 +1281,13 @@ impl FolderView {
                 .ok();
         } else if let Location::Search { root, query } = self.location().clone() {
             let include_hidden = self.filter.show_hidden;
+            // "size:>10M", "modified:7d", "type:image": filters, taken out of what is searched for
+            let (query, filters) = crate::search_filters::parse(&query, chrono::Local::now());
+            let filters = Arc::new(filters);
+            let keep = {
+                let f = filters.clone();
+                move |e: &Entry| f.is_empty() || f.keep(e)
+            };
             // "content:budget": files with the text inside them
             let contents = rf_linux::content_search::content_query(&query).map(str::to_string);
             // "tag:Kırmızı" / "etiket:kırmızı": tagged items under this folder (Files' tag: query)
@@ -1315,7 +1322,11 @@ impl FolderView {
                             };
                             let kind = if m.is_dir() { rf_core::EntryKind::Dir } else { rf_core::EntryKind::File };
                             let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-                            es.push(Entry::new(&name, kind, if m.is_dir() { 0 } else { m.len() }, ms(m.modified()), ms(m.created()), crate::sys::file_attributes(&p, &m)));
+                            let e = Entry::new(&name, kind, if m.is_dir() { 0 } else { m.len() }, ms(m.modified()), ms(m.created()), crate::sys::file_attributes(&p, &m));
+                            if !keep(&e) {
+                                continue;
+                            }
+                            es.push(e);
                             ps.push(p.parent().unwrap_or(&p).into());
                         }
                         let n = es.len();
@@ -1327,7 +1338,7 @@ impl FolderView {
                     if let Some(text) = &contents {
                         // 1. the desktop's index (Baloo, Tracker) when it covers this folder
                         if let Some((source, paths)) = rf_linux::content_search::indexed(&root, text, 50_000) {
-                            let found = send_index_hits(&paths, &tx, &cancel);
+                            let found = send_index_hits(&paths, &tx, &cancel, &keep);
                             log::info!("search: {} found \"{text}\" inside {found} files in {} ({:?})", source.name(), root.display(), t_index.elapsed());
                             let _ = tx.unbounded_send(Msg::Done(Ok(found)));
                             return;
@@ -1335,9 +1346,10 @@ impl FolderView {
                         log::info!("search: no desktop index covers {}; reading the files", root.display());
                     }
                     // 1. our name index (milliseconds) when it covers this folder
-                    if let Some(paths) = contents.is_none().then(|| rf_linux::indexer::search(&query, &root, include_hidden, 50_000)).flatten() {
+                    // (filters alone: walk, the index answers names)
+                    if let Some(paths) = (contents.is_none() && !query.trim().is_empty()).then(|| rf_linux::indexer::search(&query, &root, include_hidden, 50_000)).flatten() {
                         let looked_up = t_index.elapsed();
-                        let found = send_index_hits(&paths, &tx, &cancel);
+                        let found = send_index_hits(&paths, &tx, &cancel, &keep);
                         log::info!("search: the index answered \"{query}\" in {} with {} hits ({looked_up:?} to find, {:?} with details)", root.display(), found, t_index.elapsed());
                         let _ = tx.unbounded_send(Msg::Done(Ok(found)));
                         return;
@@ -1349,17 +1361,19 @@ impl FolderView {
                     };
                     let q = rf_linux::search::SearchQuery { root, pattern, include_hidden, max_results: 50_000 };
                     let tx2 = tx.clone();
+                    let mut kept = 0usize;
                     let r = walk(&q, &|| cancel.load(Ordering::Relaxed), &mut |hits| {
                         let mut es = Vec::with_capacity(hits.len());
                         let mut ps = Vec::with_capacity(hits.len());
-                        for h in hits {
+                        for h in hits.into_iter().filter(|h| keep(&h.entry)) {
+                            kept += 1;
                             let parent: Arc<std::path::Path> = h.path.parent().unwrap_or(&h.path).into();
                             ps.push(parent);
                             es.push(h.entry);
                         }
                         let _ = tx2.unbounded_send(Msg::Hits(es, ps));
                     });
-                    let _ = tx.unbounded_send(Msg::Done(r.map(|s| s.hits as usize).map_err(|e| e.to_string())));
+                    let _ = tx.unbounded_send(Msg::Done(r.map(|_| kept).map_err(|e| e.to_string())));
                 })
                 .ok();
         } else {
@@ -4357,7 +4371,7 @@ mod known_kind_tests {
 /// Name-index hits to rows: each path is looked up (size, dates, attributes) on 8 threads, 2 000
 /// at a time, and sent in order; paths gone since they were indexed are left out. Returns how
 /// many were sent.
-fn send_index_hits(paths: &[PathBuf], tx: &mpsc::UnboundedSender<Msg>, cancel: &AtomicBool) -> usize {
+fn send_index_hits(paths: &[PathBuf], tx: &mpsc::UnboundedSender<Msg>, cancel: &AtomicBool, keep: &(dyn Fn(&Entry) -> bool + Sync)) -> usize {
     let ms = |t: std::io::Result<std::time::SystemTime>| t.ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map_or(0, |d| d.as_millis() as i64);
     let row = |p: &PathBuf| -> Option<(Entry, Arc<std::path::Path>)> {
         let m = std::fs::symlink_metadata(p).ok()?;
@@ -4373,7 +4387,7 @@ fn send_index_hits(paths: &[PathBuf], tx: &mpsc::UnboundedSender<Msg>, cancel: &
         }
         let per = batch.len().div_ceil(8).max(1);
         let parts: Vec<Vec<(Entry, Arc<std::path::Path>)>> = std::thread::scope(|s| {
-            let handles: Vec<_> = batch.chunks(per).map(|c| s.spawn(move || c.iter().filter_map(row).collect::<Vec<_>>())).collect();
+            let handles: Vec<_> = batch.chunks(per).map(|c| s.spawn(move || c.iter().filter_map(row).filter(|(e, _)| keep(e)).collect::<Vec<_>>())).collect();
             handles.into_iter().map(|h| h.join().unwrap_or_default()).collect()
         });
         let (es, ps): (Vec<Entry>, Vec<Arc<std::path::Path>>) = parts.into_iter().flatten().unzip();
