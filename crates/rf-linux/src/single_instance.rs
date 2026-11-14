@@ -17,8 +17,11 @@ fn socket_for(app: &str) -> PathBuf {
         }
         None => String::new(),
     };
-    let dir = dirs::runtime_dir().unwrap_or_else(std::env::temp_dir);
-    // without XDG_RUNTIME_DIR the temp dir is shared: keep users apart
+    // without XDG_RUNTIME_DIR, a folder only you can enter (never the shared /tmp, where
+    // another user could take the name first and receive the paths sent to rfiles)
+    let dir = dirs::runtime_dir()
+        .or_else(|| crate::private_tmp::root_dir().ok())
+        .unwrap_or_else(crate::private_tmp::root);
     let user = std::env::var("USER").unwrap_or_else(|_| "user".into());
     dir.join(format!("{app}-{user}{suffix}.sock"))
 }

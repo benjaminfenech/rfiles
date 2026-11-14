@@ -35,13 +35,15 @@ jobs:
             nfpm_arch: arm64
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ inputs.ref }}
           # the version counts commits
           fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - name: System libraries
         run: |
           retry() { for i in 1 2 3; do "$@" && return 0; echo "attempt $i of 3 failed: $*"; [ $i = 3 ] || sleep 15; done; return 1; }
@@ -73,7 +75,7 @@ jobs:
             retry dnf install -y -q --setopt=retries=5 /dist/*.rpm
             if ldd /usr/lib/rfiles/rfiles /usr/lib/rfiles/directlook | grep "not found"; then exit 1; fi
             test -L /usr/bin/rfiles && test -f /usr/share/applications/rfiles.desktop'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: rfiles-${{ matrix.nfpm_arch }}
           path: dist/*
@@ -87,7 +89,7 @@ jobs:
         run: |
           retry() { for i in 1 2 3; do "$@" && return 0; echo "attempt $i of 3 failed: $*"; [ $i = 3 ] || sleep 15; done; return 1; }
           retry pacman -Syu --noconfirm --needed git
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -107,7 +109,7 @@ jobs:
           if ldd /usr/lib/rfiles/rfiles /usr/lib/rfiles/directlook | grep "not found"; then exit 1; fi
           test -L /usr/bin/rfiles && test -f /usr/share/applications/rfiles.desktop
           mkdir dist && cp packaging/arch/rfiles-git-[0-9]*.pkg.tar.zst dist/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: rfiles-arch-x86_64
           path: dist/*
@@ -127,7 +129,7 @@ jobs:
       # flatpak-builder's sandbox (bubblewrap) needs it
       options: --privileged
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -146,7 +148,7 @@ jobs:
           flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
             repo "dist/rfiles-$version.${{ matrix.arch }}.flatpak" io.github.benjaminfenech.rfiles
           ls -l dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: rfiles-flatpak-${{ matrix.arch }}
           path: dist/*

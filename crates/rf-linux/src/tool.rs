@@ -61,21 +61,78 @@ pub fn run(mut cmd: Command, timeout: Duration) -> anyhow::Result<Ran> {
     };
     let out = reader(child.stdout.take().map(|s| Box::new(s) as _));
     let err = reader(child.stderr.take().map(|s| Box::new(s) as _));
-    let started = Instant::now();
-    let status = loop {
-        match child.try_wait()? {
-            Some(s) => break s,
-            None if started.elapsed() > timeout => {
-                let _ = child.kill();
-                let _ = child.wait();
-                anyhow::bail!("{prog} took longer than {timeout:?}");
-            }
-            None => std::thread::sleep(Duration::from_millis(5)),
-        }
+    let Some(status) = wait_timeout(&mut child, timeout)? else {
+        let _ = child.kill();
+        let _ = child.wait();
+        anyhow::bail!("{prog} took longer than {timeout:?}");
     };
     Ok(Ran {
         ok: status.success(),
         stdout: out.join().unwrap_or_default(),
         stderr: err.join().unwrap_or_default(),
     })
+}
+
+/// Waits for `child` to exit, up to `timeout`; `None` when it's still running then (the
+/// caller decides whether to kill it). Sleeps in the kernel on a pidfd (Linux 5.3+) instead of
+/// waking up to poll; falls back to polling where pidfds aren't available.
+pub fn wait_timeout(child: &mut std::process::Child, timeout: Duration) -> std::io::Result<Option<std::process::ExitStatus>> {
+    use std::os::fd::{FromRawFd, OwnedFd, AsRawFd};
+    let deadline = Instant::now() + timeout;
+    // SAFETY: pidfd_open takes a pid and flags and returns a new fd or -1
+    let fd = unsafe { libc::syscall(libc::SYS_pidfd_open, child.id() as libc::pid_t, 0) };
+    if fd >= 0 {
+        // SAFETY: a fresh fd we own
+        let fd = unsafe { OwnedFd::from_raw_fd(fd as i32) };
+        loop {
+            if let Some(s) = child.try_wait()? {
+                return Ok(Some(s));
+            }
+            let left = deadline.saturating_duration_since(Instant::now());
+            if left.is_zero() {
+                return Ok(None);
+            }
+            let mut p = libc::pollfd { fd: fd.as_raw_fd(), events: libc::POLLIN, revents: 0 };
+            let ms = left.as_millis().clamp(1, i32::MAX as u128) as i32;
+            // SAFETY: one valid pollfd
+            if unsafe { libc::poll(&mut p, 1, ms) } < 0 {
+                let e = std::io::Error::last_os_error();
+                if e.kind() != std::io::ErrorKind::Interrupted {
+                    return Err(e);
+                }
+            }
+        }
+    }
+    let mut nap = Duration::from_millis(1);
+    loop {
+        if let Some(s) = child.try_wait()? {
+            return Ok(Some(s));
+        }
+        if Instant::now() >= deadline {
+            return Ok(None);
+        }
+        std::thread::sleep(nap.min(deadline.saturating_duration_since(Instant::now())));
+        nap = (nap * 2).min(Duration::from_millis(50));
+    }
+}
+
+#[cfg(test)]
+mod wait_tests {
+    use super::*;
+
+    #[test]
+    fn exits_and_times_out() {
+        let mut c = Command::new("sh").args(["-c", "exit 3"]).spawn().unwrap();
+        let t = Instant::now();
+        let s = wait_timeout(&mut c, Duration::from_secs(5)).unwrap().unwrap();
+        assert_eq!(s.code(), Some(3));
+        assert!(t.elapsed() < Duration::from_secs(2));
+
+        let mut c = Command::new("sleep").arg("5").spawn().unwrap();
+        let t = Instant::now();
+        assert!(wait_timeout(&mut c, Duration::from_millis(200)).unwrap().is_none());
+        assert!(t.elapsed() >= Duration::from_millis(200) && t.elapsed() < Duration::from_secs(2));
+        let _ = c.kill();
+        let _ = c.wait();
+    }
 }

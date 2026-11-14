@@ -282,9 +282,10 @@ pub fn list_inside(archive: &Path, inner: &Path) -> anyhow::Result<Vec<Entry>> {
     Ok(out.into_values().collect())
 }
 
-/// Where items opened or copied out of archives are extracted.
-pub(crate) fn temp_root() -> PathBuf {
-    std::env::temp_dir().join("rfiles-arsiv")
+/// Where items opened or copied out of archives are extracted: a folder only you can read
+/// (they may come from password-protected archives).
+pub(crate) fn temp_root() -> std::io::Result<PathBuf> {
+    rf_linux::private_tmp::dir("archives")
 }
 
 /// Extracts the given items (paths inside archives) into a new temp folder per archive and
@@ -312,7 +313,7 @@ pub fn extract_items(paths: &[PathBuf], cancelled: &dyn Fn() -> bool, progress: 
         let stem = archive.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
         let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
         let n = SERIAL.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let dir = temp_root().join(format!("{stem}-{stamp:x}{n}"));
+        let dir = temp_root()?.join(format!("{stem}-{stamp:x}{n}"));
         let mut opts = options(&archive);
         opts.only = inners.iter().map(|p| p.to_string_lossy().replace('\\', "/")).collect();
         if let Err(e) = rf_archive::extract_with(&archive, &dir, &opts, progress, cancelled) {
@@ -333,7 +334,13 @@ pub fn extract_items(paths: &[PathBuf], cancelled: &dyn Fn() -> bool, progress: 
 
 /// Deletes extraction folders older than two days (an app may still have a newer one open).
 pub fn clean_temp() {
-    let Ok(rd) = std::fs::read_dir(temp_root()) else { return };
+    // rfiles up to 0.9.0 extracted into the shared /tmp/rfiles-arsiv: remove ours
+    let old_root = std::env::temp_dir().join("rfiles-arsiv");
+    if rf_linux::private_tmp::is_own_dir(&old_root) {
+        let _ = std::fs::remove_dir_all(&old_root);
+    }
+    let Ok(root) = temp_root() else { return };
+    let Ok(rd) = std::fs::read_dir(root) else { return };
     let old = std::time::Duration::from_secs(2 * 24 * 3600);
     for e in rd.flatten() {
         let Ok(m) = e.metadata() else { continue };

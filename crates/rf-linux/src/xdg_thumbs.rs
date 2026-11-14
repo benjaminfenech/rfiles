@@ -15,7 +15,7 @@ use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::time::{Duration, Instant, UNIX_EPOCH};
+use std::time::{Duration, UNIX_EPOCH};
 
 use anyhow::{Context, Result, bail};
 use image::RgbaImage;
@@ -196,7 +196,8 @@ fn exec_args(exec: &str, input: &Path, uri: &str, out: &Path, px: u32) -> Vec<St
 fn external(path: &Path, uri: &str, mime: &str, px: u32) -> Result<RgbaImage, NoThumb> {
     let Some(exec) = thumbnailers().get(mime) else { return Err(NoThumb::Unsupported) };
     static N: AtomicU32 = AtomicU32::new(0);
-    let out = std::env::temp_dir().join(format!("rfiles-thumb-{}-{}.png", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+    let dir = crate::private_tmp::dir("thumbs").map_err(|e| NoThumb::Failed(e.into()))?;
+    let out = dir.join(format!("{}-{}.png", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
     let args = exec_args(exec, path, uri, &out, px);
     let Some((prog, rest)) = args.split_first() else { return Err(NoThumb::Unsupported) };
     let fail = |e: anyhow::Error| NoThumb::Failed(e);
@@ -207,19 +208,15 @@ fn external(path: &Path, uri: &str, mime: &str, px: u32) -> Result<RgbaImage, No
         .stderr(std::process::Stdio::null())
         .spawn()
         .map_err(|e| fail(anyhow::anyhow!("{prog}: {e}")))?;
-    let started = Instant::now();
-    let status = loop {
-        match child.try_wait() {
-            Ok(Some(s)) => break s,
-            Ok(None) if started.elapsed() > TIMEOUT => {
-                let _ = child.kill();
-                let _ = child.wait();
-                let _ = std::fs::remove_file(&out);
-                return Err(fail(anyhow::anyhow!("{prog} took longer than {TIMEOUT:?}")));
-            }
-            Ok(None) => std::thread::sleep(Duration::from_millis(20)),
-            Err(e) => return Err(fail(e.into())),
+    let status = match crate::tool::wait_timeout(&mut child, TIMEOUT) {
+        Ok(Some(s)) => s,
+        Ok(None) => {
+            let _ = child.kill();
+            let _ = child.wait();
+            let _ = std::fs::remove_file(&out);
+            return Err(fail(anyhow::anyhow!("{prog} took longer than {TIMEOUT:?}")));
         }
+        Err(e) => return Err(fail(e.into())),
     };
     let img = image::open(&out);
     let _ = std::fs::remove_file(&out);
