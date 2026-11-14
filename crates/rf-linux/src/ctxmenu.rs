@@ -94,8 +94,17 @@ pub struct ShellItem {
     pub separator: bool,
     pub children: Vec<ShellItem>,
 }
-/// The live menu's commands: id - 1 → (app ID, files).
-static LIVE: std::sync::Mutex<Option<(u64, Vec<(String, Vec<PathBuf>)>)>> = std::sync::Mutex::new(None);
+/// What a menu row runs.
+#[derive(Debug, Clone)]
+enum Command {
+    /// An app (by desktop file ID) on the files.
+    App(String),
+    /// A service-menu action or script.
+    Action(crate::servicemenus::Action),
+}
+
+/// The live menu's commands: id - 1 → (command, files).
+static LIVE: std::sync::Mutex<Option<(u64, Vec<(Command, Vec<PathBuf>)>)>> = std::sync::Mutex::new(None);
 static NEXT_SESSION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 
 /// An app's icon for a menu row (cached per app).
@@ -128,9 +137,17 @@ pub fn build(_owner: crate::Opaque, target: &ShellTarget, _extended: bool) -> an
         ShellTarget::One(p) => vec![p.clone()],
         ShellTarget::Background(_) => Vec::new(),
     };
+    let mut commands: Vec<(Command, Vec<PathBuf>)> = Vec::new();
+    // the user's actions (Dolphin service menus, Nautilus scripts); a folder's background gets
+    // the ones for the folder itself
+    let action_files = match target {
+        ShellTarget::Background(d) => vec![d.clone()],
+        _ => files.clone(),
+    };
+    let actions = action_rows(&action_files, &mut commands);
     if files.is_empty() {
-        *LIVE.lock().unwrap() = Some((session, Vec::new()));
-        return Ok((session, Vec::new()));
+        *LIVE.lock().unwrap() = Some((session, commands));
+        return Ok((session, actions));
     }
     // apps that suit every selected item, in the first item's order
     let mut types: Vec<String> = files.iter().map(|f| crate::xdg_apps::mime_for_path(f)).collect();
@@ -140,9 +157,8 @@ pub fn build(_owner: crate::Opaque, target: &ShellTarget, _extended: bool) -> an
         let other = crate::xdg_apps::apps_for(t);
         suits.retain(|a| other.iter().any(|o| o.id == a.id));
     }
-    let mut commands: Vec<(String, Vec<PathBuf>)> = Vec::new();
-    let row = |app: &crate::xdg_apps::App, commands: &mut Vec<(String, Vec<PathBuf>)>| {
-        commands.push((app.id.clone(), files.clone()));
+    let row = |app: &crate::xdg_apps::App, commands: &mut Vec<(Command, Vec<PathBuf>)>| {
+        commands.push((Command::App(app.id.clone()), files.clone()));
         ShellItem { id: commands.len() as u32, label: app.name.clone(), hint: None, verb: String::new(), icon: app_icon(app), enabled: true, separator: false, children: Vec::new() }
     };
     let mut children: Vec<ShellItem> = suits.iter().map(|a| row(a, &mut commands)).collect();
@@ -157,7 +173,34 @@ pub fn build(_owner: crate::Opaque, target: &ShellTarget, _extended: bool) -> an
     }
     *LIVE.lock().unwrap() = Some((session, commands));
     let open_with = ShellItem { id: 0, label: "Open with".into(), hint: None, verb: String::new(), icon: None, enabled: true, separator: false, children };
-    Ok((session, vec![open_with]))
+    let mut out = vec![open_with];
+    out.extend(actions);
+    Ok((session, out))
+}
+
+/// Menu rows for the user's actions on `files`: each in its submenu (in the order the
+/// submenus first appear), the rest at the top level.
+fn action_rows(files: &[PathBuf], commands: &mut Vec<(Command, Vec<PathBuf>)>) -> Vec<ShellItem> {
+    let mut top: Vec<ShellItem> = Vec::new();
+    let mut subs: Vec<(String, Vec<ShellItem>)> = Vec::new();
+    for a in crate::servicemenus::actions_for(files) {
+        let icon = a.icon.as_ref().and_then(|i| {
+            let b = if i.starts_with('/') { crate::xdg_icons::render_file(Path::new(i), 32) } else { crate::xdg_icons::render_first(std::slice::from_ref(i), 32) };
+            b.map(|b| ShellIcon { width: b.width, height: b.height, bgra: b.data })
+        });
+        let submenu = a.submenu.clone();
+        commands.push((Command::Action(a.clone()), files.to_vec()));
+        let item = ShellItem { id: commands.len() as u32, label: a.name, hint: None, verb: String::new(), icon, enabled: true, separator: false, children: Vec::new() };
+        match submenu {
+            Some(s) => match subs.iter_mut().find(|(n, _)| *n == s) {
+                Some((_, v)) => v.push(item),
+                None => subs.push((s, vec![item])),
+            },
+            None => top.push(item),
+        }
+    }
+    top.extend(subs.into_iter().map(|(label, children)| ShellItem { id: 0, label, hint: None, verb: String::new(), icon: None, enabled: true, separator: false, children }));
+    top
 }
 
 /// Runs command `id` of session `session` (from [`build`]): launches that app on the files.
@@ -167,7 +210,14 @@ pub fn invoke(_owner: crate::Opaque, session: u64, id: u32, _screen: (i32, i32))
         let Some((_s, cmds)) = live.as_ref().filter(|(s, _)| *s == session) else { anyhow::bail!("the menu is gone") };
         cmds.get((id as usize).wrapping_sub(1)).cloned()
     };
-    let Some((app_id, files)) = cmd else { anyhow::bail!("no such command") };
+    let (app_id, files) = match cmd {
+        Some((Command::App(id), files)) => (id, files),
+        Some((Command::Action(a), files)) => {
+            crate::servicemenus::run(&a, &files)?;
+            return Ok(MenuOutcome::Invoked(String::new()));
+        }
+        None => anyhow::bail!("no such command"),
+    };
     let app = crate::xdg_apps::all_apps()
         .into_iter()
         .chain(crate::xdg_apps::apps_for(&crate::xdg_apps::mime_for_path(files.first().map(PathBuf::as_path).unwrap_or(Path::new("")))))

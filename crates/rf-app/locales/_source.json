@@ -5389,6 +5389,98 @@
   "en": "Couldn't mount the disk image"
  },
  {
+  "id": "cbf2ee3b",
+  "en": "Scripts"
+ },
+ {
+  "id": "e2634545",
+  "en": "Your actions"
+ },
+ {
+  "id": "71081f12",
+  "en": "Your own commands in the right-click menu. They're saved as Dolphin service menus, so Dolphin shows them too."
+ },
+ {
+  "id": "c721a08e",
+  "en": "Add action"
+ },
+ {
+  "id": "c2c76cb1",
+  "en": "Edit"
+ },
+ {
+  "id": "a35517f0",
+  "en": "Show actions in a submenu"
+ },
+ {
+  "id": "2b268d89",
+  "en": "Off: listed at the bottom of the menu"
+ },
+ {
+  "id": "73154494",
+  "en": "Service menus folder"
+ },
+ {
+  "id": "492e4c5b",
+  "en": "Actions installed for Dolphin, and Nautilus scripts, show in the menu too"
+ },
+ {
+  "id": "0f7e1b30",
+  "en": "For"
+ },
+ {
+  "id": "75afe364",
+  "en": "All"
+ },
+ {
+  "id": "e71d1b30",
+  "en": "Files"
+ },
+ {
+  "id": "17ec53cb",
+  "en": "Images"
+ },
+ {
+  "id": "d10fcaa3",
+  "en": "Media"
+ },
+ {
+  "id": "e036382f",
+  "en": "Items"
+ },
+ {
+  "id": "8eb61aed",
+  "en": "Any"
+ },
+ {
+  "id": "1cb1b18f",
+  "en": "One"
+ },
+ {
+  "id": "20af1fc9",
+  "en": "Two"
+ },
+ {
+  "id": "dd67cc31",
+  "en": "Edit action"
+ },
+ {
+  "id": "d8d555f9",
+  "en": "Name in the menu"
+ },
+ {
+  "id": "6eeff2a7",
+  "en": "Enter a command"
+ },
+ {
+  "id": "c67c8f52",
+  "en": "Command"
+ },
+ {
+  "id": "b7c8a38d",
+  "en": "%f is an item (the command runs once for each), %F all of them. Without either, the items go at the end. Example: meld %F"
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"

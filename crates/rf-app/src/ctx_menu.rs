@@ -88,7 +88,9 @@ impl FolderView {
                         (Pending::Failed, Pending::Failed, Pending::Failed)
                     }
                 };
-                let inline = !cx.global::<crate::settings::Settings>().menu.shell_submenu;
+                // no actions apply (or they couldn't be read): no empty submenu either
+                let none = !matches!(&more, Pending::Ready(v) if !v.is_empty());
+                let inline = none || !cx.global::<crate::settings::Settings>().menu.shell_submenu;
                 if let Some(m) = menu_weak.upgrade() {
                     m.update(cx, |m, cx| {
                         m.set_pending("more", more, cx);
@@ -330,6 +332,11 @@ impl FolderView {
             v.push(Item::action(t!("Copy to other pane"), icon(L::CopyPlus), act(me, move |_, _, cx| cx.emit(FolderEvent::ToOtherPane(Transfer::Copy, c.clone())))));
             v.push(Item::action(t!("Move to other pane"), icon(L::MoveRight), act(me, move |_, _, cx| cx.emit(FolderEvent::ToOtherPane(Transfer::Move, m.clone())))));
         }
+        // the user's actions (Dolphin service menus, Nautilus scripts), filled in once read;
+        // dropped when none apply
+        if crate::archive_view::split_inside(&items[0]).is_none_or(|(_, inner)| inner.as_os_str().is_empty()) {
+            v.push(Item::Sub { label: t!("Actions").into(), icon: icon(L::Zap), items: Sub::Pending { key: "more", fallback: None } });
+        }
         if single_dir && mp.terminal {
             v.push(Item::Separator);
             let d = target_dir.clone();
@@ -378,6 +385,11 @@ impl FolderView {
             let (m, d) = (me.clone(), dir.to_path_buf());
             git_items.push(Item::action(t!("Clone repository…"), icon(L::GitFork), move |w, cx| crate::git_ui::clone_dialog(m.clone(), d.clone(), w, cx)));
             v.push(Item::sub("Git", icon(L::GitBranch), git_items));
+        }
+        // the user's actions (Dolphin service menus, Nautilus scripts), filled in once read;
+        // dropped when none apply
+        if crate::archive_view::split_inside(dir).is_none_or(|(_, inner)| inner.as_os_str().is_empty()) {
+            v.push(Item::Sub { label: t!("Actions").into(), icon: icon(L::Zap), items: Sub::Pending { key: "more", fallback: None } });
         }
         Menu { quick: self.quick_clipboard(me, false), items: v }
     }
@@ -837,7 +849,9 @@ fn to_items(me: &Me, session: u64, items: &[ShellItem], cx: &mut App) -> Vec<Ite
             }
             let icon = it.icon.as_ref().and_then(|i| fluent_menu::shell_icon(i, cx)).map(MenuIcon::Image).unwrap_or(MenuIcon::None);
             if !it.children.is_empty() {
-                return Item::Sub { label: crate::i18n::td(&it.label).into(), icon, items: Sub::Items(Rc::new(to_items(me, session, &tidy(it.children.clone()), cx))) };
+                // rf-linux's submenu of Nautilus scripts
+                let label = if it.label == "Scripts" { t!("Scripts").to_string() } else { crate::i18n::td(&it.label) };
+                return Item::Sub { label: label.into(), icon, items: Sub::Items(Rc::new(to_items(me, session, &tidy(it.children.clone()), cx))) };
             }
             let (id, me) = (it.id, me.clone());
             // Windows hands labels over translated; Linux uses the app's source texts
