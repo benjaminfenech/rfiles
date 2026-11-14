@@ -1373,5 +1373,7 @@
  "d8d555f9": "Nimi valikossa",
  "6eeff2a7": "Kirjoita komento",
  "c67c8f52": "Komento",
- "b7c8a38d": "%f on yksi kohde (komento ajetaan kullekin erikseen), %F kaikki. Ilman niitä kohteet lisätään loppuun. Esimerkki: meld %F"
+ "b7c8a38d": "%f on yksi kohde (komento ajetaan kullekin erikseen), %F kaikki. Ilman niitä kohteet lisätään loppuun. Esimerkki: meld %F",
+ "fb2049ab": "Kansiopuu",
+ "b31f262d": "Kiinnitetyt kansiot ja asemat avautuvat alikansioihinsa"
 }

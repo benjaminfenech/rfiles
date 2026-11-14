@@ -1373,5 +1373,7 @@
  "d8d555f9": "Menüdeki adı",
  "6eeff2a7": "Bir komut girin",
  "c67c8f52": "Komut",
- "b7c8a38d": "%f bir öğedir (komut her biri için çalışır), %F hepsidir. İkisi de yoksa öğeler sona eklenir. Örnek: meld %F"
+ "b7c8a38d": "%f bir öğedir (komut her biri için çalışır), %F hepsidir. İkisi de yoksa öğeler sona eklenir. Örnek: meld %F",
+ "fb2049ab": "Klasör ağacı",
+ "b31f262d": "Sabitlenen klasörler ve sürücüler alt klasörlerine açılır"
 }

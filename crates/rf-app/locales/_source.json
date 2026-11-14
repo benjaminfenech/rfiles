@@ -5481,6 +5481,14 @@
   "en": "%f is an item (the command runs once for each), %F all of them. Without either, the items go at the end. Example: meld %F"
  },
  {
+  "id": "fb2049ab",
+  "en": "Folder tree"
+ },
+ {
+  "id": "b31f262d",
+  "en": "Pinned folders and drives open into their subfolders"
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"

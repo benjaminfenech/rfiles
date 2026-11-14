@@ -1373,5 +1373,7 @@
  "d8d555f9": "Nombre en el menú",
  "6eeff2a7": "Escribe una orden",
  "c67c8f52": "Orden",
- "b7c8a38d": "%f es un elemento (la orden se ejecuta para cada uno), %F todos. Sin ninguno, los elementos van al final. Ejemplo: meld %F"
+ "b7c8a38d": "%f es un elemento (la orden se ejecuta para cada uno), %F todos. Sin ninguno, los elementos van al final. Ejemplo: meld %F",
+ "fb2049ab": "Árbol de carpetas",
+ "b31f262d": "Las carpetas ancladas y las unidades se despliegan en sus subcarpetas"
 }

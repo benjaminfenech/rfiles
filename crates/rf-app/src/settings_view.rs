@@ -1061,6 +1061,7 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
     v.push(card(p, L::PanelBottom, t!("Show status bar"), None, sw("statusbar", p, s.show_statusbar, |s, v| s.show_statusbar = v)));
     v.push(card(p, L::PanelRight, t!("Preview pane"), Some("Alt+P"), sw("preview", p, s.preview_open, |s, v| s.preview_open = v)));
     let hidden = s.sidebar_hidden.clone();
+    let tree = s.sidebar_tree;
     let pp = *p;
     v.push(expander(
         "sidebar",
@@ -1087,6 +1088,9 @@ fn appearance(p: &Palette, s: &Settings, cx: &mut App) -> Vec<AnyElement> {
                 sub(&pp, t!("Tags"), None, switch("sb-tags", &pp, shown("tags"), {
                     let on = shown("tags");
                     move |_, cx| settings::update(cx, |s| show_section(s, "tags", !on))
+                })),
+                sub(&pp, t!("Folder tree"), Some(t!("Pinned folders and drives open into their subfolders")), switch("sb-tree", &pp, tree, move |_, cx| {
+                    settings::update(cx, |s| s.sidebar_tree = !tree)
                 })),
             ]
         },

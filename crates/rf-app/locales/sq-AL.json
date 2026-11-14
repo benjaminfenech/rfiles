@@ -1373,5 +1373,7 @@
  "d8d555f9": "Emri në meny",
  "6eeff2a7": "Jepni një komandë",
  "c67c8f52": "Komandë",
- "b7c8a38d": "%f është një element (komanda ekzekutohet për secilin), %F të gjithë. Pa asnjërin, elementet shtohen në fund. Shembull: meld %F"
+ "b7c8a38d": "%f është një element (komanda ekzekutohet për secilin), %F të gjithë. Pa asnjërin, elementet shtohen në fund. Shembull: meld %F",
+ "fb2049ab": "Pema e dosjeve",
+ "b31f262d": "Dosjet e fiksuara dhe disqet hapen në nëndosjet e tyre"
 }

@@ -1373,5 +1373,7 @@
  "d8d555f9": "Nama di menu",
  "6eeff2a7": "Masukkan perintah",
  "c67c8f52": "Perintah",
- "b7c8a38d": "%f adalah satu butir (perintah dijalankan untuk masing-masing), %F semuanya. Tanpa keduanya, butir ditambahkan di akhir. Contoh: meld %F"
+ "b7c8a38d": "%f adalah satu butir (perintah dijalankan untuk masing-masing), %F semuanya. Tanpa keduanya, butir ditambahkan di akhir. Contoh: meld %F",
+ "fb2049ab": "Pohon folder",
+ "b31f262d": "Folder dan drive yang disematkan dapat dibuka ke subfoldernya"
 }

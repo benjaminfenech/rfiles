@@ -1373,5 +1373,7 @@
  "d8d555f9": "Nome nel menu",
  "6eeff2a7": "Inserisci un comando",
  "c67c8f52": "Comando",
- "b7c8a38d": "%f è un elemento (il comando viene eseguito per ciascuno), %F tutti. Senza nessuno dei due, gli elementi vanno in fondo. Esempio: meld %F"
+ "b7c8a38d": "%f è un elemento (il comando viene eseguito per ciascuno), %F tutti. Senza nessuno dei due, gli elementi vanno in fondo. Esempio: meld %F",
+ "fb2049ab": "Albero delle cartelle",
+ "b31f262d": "Le cartelle fissate e le unità si espandono nelle loro sottocartelle"
 }

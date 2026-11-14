@@ -1373,5 +1373,7 @@
  "d8d555f9": "Nom dans le menu",
  "6eeff2a7": "Saisissez une commande",
  "c67c8f52": "Commande",
- "b7c8a38d": "%f est un élément (la commande s'exécute pour chacun), %F tous. Sans l'un ou l'autre, les éléments sont ajoutés à la fin. Exemple : meld %F"
+ "b7c8a38d": "%f est un élément (la commande s'exécute pour chacun), %F tous. Sans l'un ou l'autre, les éléments sont ajoutés à la fin. Exemple : meld %F",
+ "fb2049ab": "Arborescence des dossiers",
+ "b31f262d": "Les dossiers épinglés et les lecteurs se déplient sur leurs sous-dossiers"
 }

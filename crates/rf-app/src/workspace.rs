@@ -156,6 +156,8 @@ pub struct Workspace {
     drag_hover_tab: Option<(usize, u64)>,
     /// Files are being dragged over the window: the sidebar shows its "drop here to pin" row.
     sidebar_ext_drag: bool,
+    /// The sidebar's folder tree (Settings → Sidebar sections → Folder tree).
+    tree: crate::sidebar_tree::Tree,
     /// Window width from the last frame (breadcrumb collapsing).
     viewport_w: f32,
     last_session: Vec<String>,
@@ -497,6 +499,7 @@ impl Workspace {
             sidebar_w: prefs.sidebar_width.clamp(SIDEBAR_MIN, SIDEBAR_MAX),
             sidebar_rail: prefs.sidebar_rail,
             rail_peek: [false; 2],
+            tree: Default::default(),
             rail_peek_bg: None,
             preview_w: prefs.preview_width.clamp(PREVIEW_MIN, PREVIEW_MAX),
             _width_save: None,
@@ -2260,6 +2263,86 @@ impl Workspace {
         row
     }
 
+    /// Opens or closes `path` in the sidebar's folder tree.
+    fn toggle_tree(&mut self, path: PathBuf, cx: &mut Context<Self>) {
+        if self.tree.open.remove(&path) {
+            cx.notify();
+            return;
+        }
+        self.tree.open.insert(path.clone());
+        self.load_tree(vec![path], cx);
+    }
+
+    /// Reads the subfolders of opened tree folders (a slow network folder must not hold up
+    /// the sidebar).
+    fn load_tree(&mut self, dirs: Vec<PathBuf>, cx: &mut Context<Self>) {
+        if dirs.is_empty() {
+            return;
+        }
+        let hidden = cx.global::<crate::settings::Settings>().show_hidden;
+        let work = cx.background_spawn(async move { dirs.into_iter().map(|d| (crate::sidebar_tree::subfolders(&d, hidden), d)).collect::<Vec<_>>() });
+        cx.spawn(async move |this, cx| {
+            let found = work.await;
+            let _ = this.update(cx, |ws, cx| {
+                for (kids, dir) in found {
+                    if ws.tree.open.contains(&dir) && ws.tree.kids.get(&dir) != Some(&kids) {
+                        ws.tree.kids.insert(dir, kids);
+                        cx.notify();
+                    }
+                }
+            });
+        })
+        .detach();
+    }
+
+    /// The arrow that opens or closes `path` in the folder tree, laid over a sidebar row's
+    /// end (`right` from it).
+    fn tree_toggle(&self, path: &Path, right: f32, p: &Palette, cx: &mut Context<Self>) -> AnyElement {
+        let open = self.tree.is_open(path);
+        let path = path.to_path_buf();
+        div()
+            .absolute()
+            .right(px(right))
+            .top_0()
+            .bottom_0()
+            .flex()
+            .items_center()
+            .child(
+                div()
+                    .id(ElementId::Name(format!("sbt-arrow:{}", path.display()).into()))
+                    .size(px(20.))
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .rounded(theme::RADIUS_SM)
+                    .text_color(p.text_tertiary)
+                    .hover(|s| s.bg(p.pressed).text_color(p.text))
+                    .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        cx.stop_propagation();
+                        this.toggle_tree(path.clone(), cx);
+                    }))
+                    .child(Icon::new(if open { L::ChevronDown } else { L::ChevronRight }).size(px(14.))),
+            )
+            .into_any_element()
+    }
+
+    /// The rows under an opened tree folder, and under its opened subfolders in turn.
+    fn tree_rows(&self, dir: &Path, depth: usize, cur: &Location, out: &mut Vec<AnyElement>, p: &Palette, cx: &mut Context<Self>) {
+        if depth > 32 || !self.tree.is_open(dir) {
+            return;
+        }
+        let Some(kids) = self.tree.kids.get(dir).cloned() else { return };
+        for k in kids {
+            let loc = Location::Path(k.clone());
+            let active = *cur == loc;
+            let name = k.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            let item = self.sidebar_item(ElementId::Name(format!("sbt:{}", k.display()).into()), L::Folder, p.accent, name, loc, active, None, p, cx);
+            out.push(div().relative().pl(px(14. * depth as f32)).child(item).child(self.tree_toggle(&k, 4., p, cx)).into_any_element());
+            self.tree_rows(&k, depth + 1, cur, out, p, cx);
+        }
+    }
+
     fn sidebar_item(
         &self,
         id: ElementId,
@@ -2367,6 +2450,13 @@ impl Workspace {
         let pinned = places.pinned.clone();
         let drives = places.drives.clone();
         let rail = self.sidebar_rail;
+        let tree = cx.global::<crate::settings::Settings>().sidebar_tree && !rail;
+        // the current folder moved: the opened tree folders holding it are read again
+        if tree && cur.path() != self.tree.seen.as_deref() {
+            self.tree.seen = cur.path().map(Path::to_path_buf);
+            let dirs = self.tree.seen.as_deref().map(|c| self.tree.holding(c)).unwrap_or_default();
+            self.load_tree(dirs, cx);
+        }
         let header = |t: &'static str| {
             if rail {
                 return div().mx_2().my_2().h(px(1.)).bg(p.divider);
@@ -2429,6 +2519,12 @@ impl Workspace {
             let drag = PinDrag { ix: i, path: f.path.clone(), title: title.clone().into() };
             let target_path = f.path.clone();
             let item = self.sidebar_item(("sb-pin", i).into(), f.icon, p.accent, title, loc, active, None, p, cx);
+            // a pin on a network location is a URL until it's opened: no tree for it
+            let toggle = (tree && !rf_linux::remote::is_remote(&f.path)).then(|| self.tree_toggle(&f.path, 4., p, cx));
+            let mut rows = Vec::new();
+            if tree {
+                self.tree_rows(&f.path, 1, &cur, &mut rows, p, cx);
+            }
             // drag a pin onto another to reorder
             col = col.child(
                 div()
@@ -2439,8 +2535,11 @@ impl Workspace {
                         if d.ix < i { s.border_b_2().border_color(accent) } else { s.border_t_2().border_color(accent) }
                     })
                     .on_drop(cx.listener(move |this, d: &PinDrag, _, cx| this.move_pin(&d.path, &target_path, cx)))
-                    .child(item),
+                    .relative()
+                    .child(item)
+                    .children(toggle),
             );
+            col = col.children(rows);
         }
         if ext_drag {
             col = col.child(
@@ -2489,7 +2588,12 @@ impl Workspace {
             // a mounted stick, card or disc: an eject button at the row's end ("safely remove")
             let ejectable = !rail && !places::unmounted(&d) && matches!(d.kind, rf_linux::DriveKind::Removable | rf_linux::DriveKind::Optical);
             let root = d.root.clone();
-            col = col.child(div().relative().child(item).when(ejectable, |row| {
+            let toggle = (tree && !places::unmounted(&d)).then(|| self.tree_toggle(&d.root, if ejectable { 28. } else { 4. }, p, cx));
+            let mut rows = Vec::new();
+            if tree {
+                self.tree_rows(&d.root, 1, &cur, &mut rows, p, cx);
+            }
+            col = col.child(div().relative().child(item).children(toggle).when(ejectable, |row| {
                 row.child(
                     div().absolute().right(px(4.)).top_0().bottom_0().flex().items_center().child(
                         div()
@@ -2511,6 +2615,7 @@ impl Workspace {
                     ),
                 )
             }));
+            col = col.children(rows);
         }
         let cloud = self.places.read(cx).cloud.clone();
         if !cloud.is_empty() && shown("cloud") {

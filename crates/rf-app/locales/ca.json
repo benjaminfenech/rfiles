@@ -1373,5 +1373,7 @@
  "d8d555f9": "Nom al menú",
  "6eeff2a7": "Escriviu una ordre",
  "c67c8f52": "Ordre",
- "b7c8a38d": "%f és un element (l'ordre s'executa per a cadascun), %F tots. Sense cap dels dos, els elements van al final. Exemple: meld %F"
+ "b7c8a38d": "%f és un element (l'ordre s'executa per a cadascun), %F tots. Sense cap dels dos, els elements van al final. Exemple: meld %F",
+ "fb2049ab": "Arbre de carpetes",
+ "b31f262d": "Les carpetes fixades i les unitats es despleguen en les seves subcarpetes"
 }

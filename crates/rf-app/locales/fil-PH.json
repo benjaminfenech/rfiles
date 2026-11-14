@@ -1373,5 +1373,7 @@
  "d8d555f9": "Pangalan sa menu",
  "6eeff2a7": "Maglagay ng utos",
  "c67c8f52": "Utos",
- "b7c8a38d": "Ang %f ay isang item (tatakbo ang utos para sa bawat isa), ang %F ay lahat. Kung wala ang alinman, idadagdag sa dulo ang mga item. Halimbawa: meld %F"
+ "b7c8a38d": "Ang %f ay isang item (tatakbo ang utos para sa bawat isa), ang %F ay lahat. Kung wala ang alinman, idadagdag sa dulo ang mga item. Halimbawa: meld %F",
+ "fb2049ab": "Puno ng folder",
+ "b31f262d": "Nabubuksan ang mga naka-pin na folder at drive sa kanilang mga subfolder"
 }

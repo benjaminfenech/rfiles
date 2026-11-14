@@ -1373,5 +1373,7 @@
  "d8d555f9": "Nama dalam menu",
  "6eeff2a7": "Masukkan arahan",
  "c67c8f52": "Arahan",
- "b7c8a38d": "%f ialah satu item (arahan dijalankan untuk setiap satu), %F semuanya. Tanpa kedua-duanya, item ditambah di hujung. Contoh: meld %F"
+ "b7c8a38d": "%f ialah satu item (arahan dijalankan untuk setiap satu), %F semuanya. Tanpa kedua-duanya, item ditambah di hujung. Contoh: meld %F",
+ "fb2049ab": "Pepohon folder",
+ "b31f262d": "Folder dan pemacu yang disematkan boleh dibuka ke subfoldernya"
 }

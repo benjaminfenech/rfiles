@@ -1373,5 +1373,7 @@
  "d8d555f9": "Tên trong menu",
  "6eeff2a7": "Nhập lệnh",
  "c67c8f52": "Lệnh",
- "b7c8a38d": "%f là một mục (lệnh chạy cho từng mục), %F là tất cả. Không có cả hai thì các mục được thêm vào cuối. Ví dụ: meld %F"
+ "b7c8a38d": "%f là một mục (lệnh chạy cho từng mục), %F là tất cả. Không có cả hai thì các mục được thêm vào cuối. Ví dụ: meld %F",
+ "fb2049ab": "Cây thư mục",
+ "b31f262d": "Thư mục và ổ đĩa đã ghim mở ra các thư mục con"
 }
