@@ -5517,6 +5517,18 @@
   "en": "Allow guests (no password)"
  },
  {
+  "id": "1463a002",
+  "en": "Open in Disks"
+ },
+ {
+  "id": "d08848e1",
+  "en": "Open in Partition Manager"
+ },
+ {
+  "id": "993df11d",
+  "en": "Open in GParted"
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"

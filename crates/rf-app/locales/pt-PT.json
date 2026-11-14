@@ -1382,5 +1382,8 @@
  "a7182f08": "Partilhar esta pasta na rede",
  "f6635c0b": "Nome da partilha",
  "a5972166": "Outros podem adicionar, alterar e eliminar ficheiros",
- "5ccb1948": "Permitir convidados (sem palavra-passe)"
+ "5ccb1948": "Permitir convidados (sem palavra-passe)",
+ "1463a002": "Abrir nos Discos",
+ "d08848e1": "Abrir no Gestor de partições",
+ "993df11d": "Abrir no GParted"
 }

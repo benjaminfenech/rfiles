@@ -1382,5 +1382,8 @@
  "a7182f08": "Diesen Ordner im Netzwerk freigeben",
  "f6635c0b": "Freigabename",
  "a5972166": "Andere dürfen Dateien hinzufügen, ändern und löschen",
- "5ccb1948": "Gäste zulassen (ohne Passwort)"
+ "5ccb1948": "Gäste zulassen (ohne Passwort)",
+ "1463a002": "In Laufwerke öffnen",
+ "d08848e1": "In Partitionsverwaltung öffnen",
+ "993df11d": "In GParted öffnen"
 }

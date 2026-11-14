@@ -488,3 +488,39 @@ mod tests {
         assert_eq!(unescape(r"/a\\b"), r"/a\\b");
     }
 }
+
+/// A program to manage drives with (format, partition, check), when one is installed. rfiles
+/// doesn't format drives itself: a slip there destroys data, and these tools ask the right
+/// questions and show what's on the disk first.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DiskTool {
+    /// GNOME Disks (`gnome-disks`), opened at the drive.
+    Disks,
+    /// KDE Partition Manager.
+    PartitionManager,
+    GParted,
+}
+
+impl DiskTool {
+    fn program(self) -> &'static str {
+        match self {
+            DiskTool::Disks => "gnome-disks",
+            DiskTool::PartitionManager => "partitionmanager",
+            DiskTool::GParted => "gparted",
+        }
+    }
+}
+
+/// The installed disk tool, GNOME Disks first (it can open at a given drive).
+pub fn disk_tool() -> Option<DiskTool> {
+    [DiskTool::Disks, DiskTool::PartitionManager, DiskTool::GParted].into_iter().find(|t| crate::sandbox::in_path(t.program()))
+}
+
+/// Opens `tool`, at `device` (`/dev/sdb1`) where it can be told one.
+pub fn open_disk_tool(tool: DiskTool, device: &str) -> anyhow::Result<()> {
+    let mut c = crate::sandbox::launch(tool.program());
+    if tool == DiskTool::Disks && device.starts_with("/dev/") {
+        c.args(["--block-device", device]);
+    }
+    crate::shell::spawn_detached(&mut c).map_err(|e| anyhow::anyhow!("{}: {e}", tool.program()))
+}
