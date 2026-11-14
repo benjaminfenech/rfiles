@@ -2,13 +2,13 @@
 
 > [!NOTE]
 > rfiles is a file manager for Linux, written in Rust. It began as the Linux port of
-> [rustyfiles](https://github.com/gelenmedya/rustyfiles) by Özer Güzel, and took its own name
-> when it stopped following it: the last upstream release merged was rustyfiles 0.6.0. For
+> [rustyfiles](https://github.com/gelenmedya/rustyfiles) by Özer Güzel and got its own name
+> when it stopped following upstream. The last rustyfiles release merged was 0.6.0. For
 > Windows, use [rustyfiles' releases](https://github.com/gelenmedya/rustyfiles/releases).
-> [docs/LINUX_PORT.md](docs/LINUX_PORT.md) keeps the history of the port.
+> The history of the port is in [docs/LINUX_PORT.md](docs/LINUX_PORT.md).
 
 rfiles has tabs, dual panes, archives you open like folders, and **DirectLook**, a
-Quick Look–style previewer on <kbd>Space</kbd>. The window never waits on the disk: listing,
+Quick Look-style previewer on <kbd>Space</kbd>. The window never waits on the disk: listing,
 icons, thumbnails and every file operation run off the UI thread, so a slow network share or
 a folder with 100,000 files can't freeze it. It runs on Wayland and X11.
 
@@ -33,12 +33,12 @@ Download the package for your system from the
 | Arch, CachyOS, Manjaro | `rfiles-git-…-x86_64.pkg.tar.zst` | `sudo pacman -U ./rfiles-git-*.pkg.tar.zst` |
 | Any distribution | `rfiles-….x86_64.flatpak` / `.aarch64.flatpak` | `flatpak install --user ./rfiles-*.flatpak` |
 
-**Updates:** rfiles looks for a newer release soon after it starts and then once a day, and
-says so in the status bar and in Settings → About (where the automatic check can be turned off).
-Install there takes the same kind of package you installed, checks its SHA-256 against GitHub's,
-and installs it: .deb, .rpm and Arch packages through `pkexec` (your desktop asks for your
-password), the Flatpak with `flatpak install`. Then Restart runs the new version. A copy built
-from source only gets a link to the release.
+**Updates:** rfiles checks for a newer release shortly after it starts and then once a day.
+When there is one, the status bar and Settings → About say so; you can turn the automatic check
+off there. Clicking Install downloads the same kind of package you installed, checks its SHA-256
+against the one on GitHub, and installs it. The .deb, .rpm and Arch packages go through `pkexec`,
+so your desktop asks for your password; the Flatpak goes through `flatpak install`. Restart then
+opens the new version. A copy built from source only gets a link to the release.
 
 **Arch from source:** `packaging/arch/PKGBUILD` builds `rfiles-git` from the latest
 commit. Run `makepkg -si` there again to update.
@@ -49,19 +49,19 @@ cd rfiles/packaging/arch
 makepkg -si
 ```
 
-**Flatpak:** installing the bundle fetches the runtime from Flathub. A file manager can't
-live in a tight sandbox, so the Flatpak sees your whole filesystem and runs your apps,
-terminals and tools on the host. It behaves like the native packages and uses the same
-settings.
+**Flatpak:** installing the bundle fetches the runtime from Flathub. A file manager doesn't
+work in a tight sandbox, so the Flatpak can see your whole filesystem and runs your apps,
+terminals and tools on the host. Otherwise it behaves like the native packages and shares
+their settings.
 
-**Between releases:** every commit to `main` builds the same packages. Download them from
-the latest [Linux packages](https://github.com/benjaminfenech/rfiles/actions/workflows/linux-packages.yml)
-run (needs a GitHub login).
+**Between releases:** CI builds the same packages for every commit to `main`. You can
+download them from the latest [Linux packages](https://github.com/benjaminfenech/rfiles/actions/workflows/linux-packages.yml)
+run if you're logged in to GitHub.
 
 ### Optional extras
 
-Some features use tools you may already have. The .deb and .rpm recommend or suggest them,
-and `pacman -Qi rfiles-git` lists them as optional dependencies.
+Some features rely on tools you may already have installed. The .deb and .rpm recommend or
+suggest them, and `pacman -Qi rfiles-git` lists them as optional dependencies.
 
 | For | Arch | Debian / Ubuntu | Fedora |
 | --- | --- | --- | --- |
@@ -102,7 +102,7 @@ and `pacman -Qi rfiles-git` lists them as optional dependencies.
   - Git status, and hashes.
   - "Open with", listing the apps for the type with your default first.
   - "Open in terminal", "Run command here" (or `>` and a command in the address bar), and "Open in editor".
-- **Archives:** ZIP, 7z, RAR, the tar family and ISO open like folders, password-protected ones included. Add, delete and rename inside ZIP, 7z and tar, and create ZIP, 7z and tar.zst. Reading is done by [rarchive](https://github.com/gelenmedya/rarchive), rustyfiles' pure-Rust engine.
+- **Archives:** ZIP, 7z, RAR, the tar family and ISO open like folders, password-protected ones included. Add, delete and rename inside ZIP, 7z and tar, and create ZIP, 7z and tar.zst. [rarchive](https://github.com/gelenmedya/rarchive), rustyfiles' pure-Rust engine, does the reading.
 - **DirectLook:** previews of images (JPEG XL built in, AVIF and HEIC through the tools above), SVG, PDF, video and audio with sound, text and code, archives, and a details card for everything else.
 - **Properties window:** General, Details, Hashes, and a drive's page with its space and file system.
 - **Desktop integration:**
@@ -112,15 +112,15 @@ and `pacman -Qi rfiles-git` lists them as optional dependencies.
   - Desktop notifications when long copies finish.
   - The desktop's own file chooser for rfiles' file pickers.
 - **Network locations:** `smb://`, `sftp://`, `ftp://`, WebDAV, and `\\server\share` in the address bar, through kio-fuse (KDE) or GVfs (GNOME), with a login prompt when the server asks for one.
-- **Languages:** 46 of them, following your `LANG` (or pick one in Settings → General).
+- **Languages:** English and 47 others. rfiles follows your `LANG`, or you can pick one in Settings → General.
 
 ## Setting up
 
-**DirectLook and the Open/Save dialog on tiling window managers.** DirectLook is its own
-window, like Quick Look, and so is the Open/Save dialog. A Wayland app can't float or place
-its own window, so tiling compositors tile them unless a rule floats them. Their app ids are
-`directlook` and `rfiles-dialog`; the main window's is `rfiles`
-(`io.github.benjaminfenech.rfiles` in the Flatpak).
+**DirectLook and the Open/Save dialog on tiling window managers.** DirectLook and the
+Open/Save dialog each open in their own window. A Wayland app can't float or position its
+windows itself, so a tiling compositor tiles them unless you add a rule. Their app ids are
+`directlook` and `rfiles-dialog`. The main window is `rfiles`, or
+`io.github.benjaminfenech.rfiles` in the Flatpak.
 
 ```lua
 -- Hyprland, Lua config (hyprland.lua)
@@ -134,87 +134,91 @@ for_window [app_id="^(directlook|rfiles-dialog)$"] floating enable
 for_window [class="^(directlook|rfiles-dialog)$"] floating enable
 ```
 
-For Hyprland's classic `hyprland.conf`, add a rule that floats (and centers) classes
-`directlook` and `rfiles-dialog`. The syntax depends on your Hyprland version
-([window rules](https://wiki.hypr.land/Configuring/Basics/Window-Rules/)).
+With Hyprland's classic `hyprland.conf`, add a rule that floats and centers the classes
+`directlook` and `rfiles-dialog`. The syntax depends on your Hyprland version (see
+[window rules](https://wiki.hypr.land/Configuring/Basics/Window-Rules/)). Some setups already
+float the Open/Save dialog, since it opens as a modal dialog.
 
-**Quick search shortcut.** Turn on Settings → Quick search → "Global shortcut": rfiles
+**Quick search shortcut.** Turn on Settings → Quick search → "Global shortcut" and rfiles
 asks your desktop for a shortcut through the desktop portal. KDE Plasma and GNOME 48+ ask you
-to confirm the key (Alt+Space is suggested); Hyprland binds it in its config, under the name
-`hyprctl globalshortcuts` lists for it:
+to confirm the key, with Alt+Space suggested. On Hyprland you bind it in your config, using
+the name that `hyprctl globalshortcuts` shows:
 
 ```bash
 bind = ALT, SPACE, global, rfiles:quick-search
 ```
 
-It works while rfiles runs (Settings → Advanced → run in the background keeps it running with
-no window open). Without the portal, bind a key to `rfiles --quick-search` instead (Flatpak:
-`flatpak run io.github.benjaminfenech.rfiles --quick-search`). On Wayland the quick search
-opens as an overlay, so tiling compositors don't tile it.
+The shortcut works while rfiles is running. To keep it running with no window open, turn on
+Settings → Advanced → "Keep running in the background". Without the portal, bind a key to
+`rfiles --quick-search` instead (in the Flatpak,
+`flatpak run io.github.benjaminfenech.rfiles --quick-search`). On Wayland quick search opens
+as an overlay, so tiling compositors leave it alone.
 
 **Searching inside files.** Start a search with `content:` (`content:quarterly budget`), or
-press "Search inside files" when a name search finds nothing. rfiles asks your desktop's file
-index when it is running and covers the folder: Baloo on KDE Plasma, Tracker (LocalSearch) on
-GNOME. Both read PDFs and office documents too. Elsewhere rfiles reads the files itself: text
-files up to 64 MB, slower on big folders.
+press "Search inside files" when a name search finds nothing. If your desktop's file index is
+running and covers the folder, rfiles asks it: Baloo on KDE Plasma, Tracker (LocalSearch) on
+GNOME. Both also search PDFs and office documents. Otherwise rfiles reads the files itself,
+which covers text files up to 64 MB and is slower in big folders.
 
 **Terminal.** "Open in terminal" (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>`</kbd>) opens your
 terminal in the current folder. To run a command there, type `>` and the command in the address
 bar (`> make`), or use "Run command here…" from the folder's right-click menu or the command
-palette. The terminal stays open with a shell afterwards. Settings → Advanced → Terminal picks
-the terminal. Automatic uses `$TERMINAL`, `xdg-terminals.list`, KDE's or GNOME's setting,
-then the first common terminal installed.
+palette. When the command finishes, the terminal stays open with a shell. Settings →
+Advanced → Terminal picks which terminal to use. Automatic tries `$TERMINAL`,
+`xdg-terminals.list`, then KDE's or GNOME's setting, then the first common terminal it finds.
 
-**Open/Save dialog.** Settings → Advanced → "Use rfiles for Open and Save dialogs" makes
-other apps (Firefox, Chromium, GTK and Qt apps, Electron apps) show rfiles when they open or
-save a file, through the desktop portal. It names rfiles for FileChooser in your
-`~/.config/xdg-desktop-portal/portals.conf` (or your desktop's `<desktop>-portals.conf`) and
-restarts the portal; turning it off gives the dialog back. It needs the deb, rpm or Arch
-package, which install the portal's `rfiles.portal`. A Flatpak can't add a portal backend.
-Apps that draw their own dialog without the portal (some Qt and Java apps) keep theirs.
+**Open/Save dialog.** With Settings → Advanced → "Use rfiles for Open and Save dialogs" on,
+apps that use the desktop portal (Firefox, Chromium, GTK, Qt and Electron apps) show rfiles
+when they open or save a file. The switch sets rfiles as the FileChooser in
+`~/.config/xdg-desktop-portal/portals.conf`, or in your desktop's `<desktop>-portals.conf`,
+and restarts the portal. Turning it off brings the previous dialog back. This needs the deb,
+rpm or Arch package, which installs `rfiles.portal` for the portal; a Flatpak can't add a
+portal backend. Apps that draw their own dialog without the portal, such as some Qt and Java
+apps, keep it.
 
 **Default file manager.** Settings → Advanced → "Set as default file manager" makes folders,
 and "Show in folder" in browsers, open in rfiles, for your user only. Turning it off
 brings your previous file manager back.
 
-**Drives.** The eject button on a USB stick, SD card or disc in the sidebar removes it safely;
-right-click a drive to unmount it. Encrypted (LUKS) drives show with a lock and ask for
-their passphrase when opened. fstab network shares whose server can't be reached are marked
-offline. Mounting an internal disk may ask for an administrator password, which needs a
-polkit agent. KDE and GNOME start one; on Hyprland or Sway, start e.g. `hyprpolkitagent` or
-`polkit-kde-agent`. Settings → Files and folders → "Show drives as" picks how drives are
-named.
+**Drives.** The eject button next to a USB stick, SD card or disc in the sidebar removes it
+safely. Right-click a drive to unmount it. Encrypted (LUKS) drives have a lock icon and ask for
+their passphrase when you open them. Network shares from fstab whose server can't be reached
+are marked offline. Mounting an internal disk may ask for an administrator password, which
+needs a polkit agent. KDE and GNOME start one for you; on Hyprland or Sway, start one yourself,
+such as `hyprpolkitagent` or `polkit-kde-agent`. Settings → Files and folders → "Show drives
+as" sets how drives are named.
 
-**Network folders.** The address bar shows them by their address (`smb://server/share/…`).
-Settings → Files and folders → "Show network folders by their address" switches to where
-they are mounted (`/run/user/…`). Pinning a network folder pins its address.
+**Network folders.** The address bar shows network folders by their address
+(`smb://server/share/…`). Turn off Settings → Files and folders → "Show network folders by
+their address" to see where they are mounted instead (`/run/user/…`). Pinning a network folder
+pins its address.
 
-**Tray.** Settings → Advanced → "Keep running in the background" leaves an icon in the tray
-when the last window closes. KDE, Waybar, Noctalia and most bars show it; GNOME needs the
-AppIndicator extension.
+**Tray.** With Settings → Advanced → "Keep running in the background" on, rfiles stays in the
+tray after the last window closes. KDE, Waybar, Noctalia and most bars show the icon; GNOME
+needs the AppIndicator extension.
 
 **Copy and paste with other apps** works on X11 and on Wayland compositors with data-control
 (KDE, Hyprland, Sway). On GNOME's Wayland session it works inside rfiles only.
 
 ## Skipped: Windows-only
 
-These come from rustyfiles' Windows app and have no Linux counterpart, so rfiles doesn't
-have them:
+These features of rustyfiles' Windows app have no Linux counterpart, so rfiles leaves them
+out:
 
 - **Explorer integration:** DirectLook over Explorer and the desktop, the Explorer context menu and its shell extensions, `shell:` paths, Win+E.
-- **Windows shell features:** jump lists, the taskbar preview and taskbar progress, Libraries, Windows Search, OneDrive status, devices under This PC, preview handlers, rfiles as other apps' Open/Save dialog, `.lnk` shortcuts, the global hotkey, and the speed test against File Explorer.
+- **Windows shell features:** jump lists, the taskbar preview, Libraries, Windows Search, OneDrive status, devices under This PC, preview handlers, `.lnk` shortcuts, the global hotkey, and the speed test against File Explorer.
 - **Properties tabs:** Shortcut, Compatibility, Security (Windows ACLs), Digital signatures (Authenticode), Sharing, Customize (desktop.ini folder icons), Disk Cleanup, "Unblock", and the archive, indexing, compression and encryption attributes. Hidden is a dot name on Linux, and read-only is the write permission.
-- **Prompts:** upstream's strips asking for a GitHub star or a donation are gone. Settings → About still has the links.
+- **Prompts:** rfiles never asks for a GitHub star or a donation the way upstream does. The links are still in Settings → About.
 - **Platform plumbing:** Velopack install and auto-update (rfiles has its own updater for the Linux packages), Mica, the hybrid GPU/CPU renderer and its popup-window menus, protected system files, and upstream's Direct3D video engine (rustdecoder). Video plays through rf-player and FFmpeg.
 
 ## Pending
 
 Not done yet, roughly in order of how much they'd help:
 
-- **DirectLook outside rfiles.** Space over other apps needs a global hotkey, which Wayland doesn't give apps. rfiles now has portal global shortcuts (quick search uses one), but other apps don't say which file is selected, so DirectLook has nothing to show over them.
+- **DirectLook outside rfiles.** Pressing Space over other apps needs a global hotkey, which Wayland doesn't give apps directly. rfiles can register one through the portal (quick search does), but other apps don't report which file is selected, so DirectLook would have nothing to show.
 - **Distribution:** an AUR package (waiting for AUR account registration to reopen), an apt/dnf repository (COPR, OBS), and Flathub. Until then, install from [Releases](https://github.com/benjaminfenech/rfiles/releases); the built-in updater handles later versions.
-- **Translation review:** the texts added since the fork were translated by machine into all 47 languages; native speakers' corrections are welcome.
-- **Hand checks:** a few features are built and unit-tested but haven't been tried by hand on every desktop. [docs/LINUX_PORT.md](docs/LINUX_PORT.md#hand-checks) says which.
+- **Translation review:** the texts added since the fork were machine-translated into all 47 languages. Corrections from native speakers are welcome.
+- **Hand checks:** a few features have unit tests but haven't been tried by hand on every desktop. [docs/LINUX_PORT.md](docs/LINUX_PORT.md#hand-checks) lists them.
 
 ## Keyboard
 
@@ -232,8 +236,8 @@ Not done yet, roughly in order of how much they'd help:
 | <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> | Undo, redo |
 | <kbd>Ctrl</kbd>+<kbd>H</kbd> | Show hidden items |
 
-Every shortcut can be changed in Settings → Keyboard shortcuts: click a command, then press
-the new keys.
+To change a shortcut, open Settings → Keyboard shortcuts, click a command and press the new
+keys.
 
 ## Building and development
 
@@ -260,16 +264,17 @@ build (needs [nfpm](https://nfpm.goreleaser.com)). The Flatpak builds with:
 flatpak-builder --user --install --force-clean build-flatpak packaging/flatpak/io.github.benjaminfenech.rfiles.yml
 ```
 
-**Releases:** set the version in `Cargo.toml`, put its tag in `packaging/linux/RELEASE`
-(`v<version>`, like `v0.7.0`) and the notes in `packaging/linux/release-notes.md`, in a PR.
-When it lands on `main`, CI tags it, builds every package and publishes the release.
+**Releases:** in a PR, set the version in `Cargo.toml`, put its tag in
+`packaging/linux/RELEASE` (`v<version>`, like `v0.7.0`) and write the notes in
+`packaging/linux/release-notes.md`. Once it merges into `main`, CI tags it, builds every package
+and publishes the release.
 
-**rustyfiles:** rfiles no longer merges it. A cross-platform fix from there can still be
-cherry-picked (`git remote add upstream https://github.com/gelenmedya/rustyfiles`);
+**rustyfiles:** rfiles no longer merges upstream, but a cross-platform fix can still be
+cherry-picked (`git remote add upstream https://github.com/gelenmedya/rustyfiles`).
 [docs/LINUX_PORT.md](docs/LINUX_PORT.md) logs the merges up to 0.6.0.
 
-**Settings** live in `~/.config/rfiles/settings.toml`, DirectLook's in `directlook.toml`
-next to it.
+**Settings** are stored in `~/.config/rfiles/settings.toml`, and DirectLook's in
+`directlook.toml` next to it.
 
 | Variable | Effect |
 |---|---|
@@ -298,7 +303,7 @@ To Özer Güzel and everyone behind [rustyfiles](https://github.com/gelenmedya/r
 which rfiles grew out of. rustyfiles credits [Files](https://github.com/files-community/Files),
 [GPUI](https://gpui.rs) and [Zed](https://github.com/zed-industries/zed),
 [gpui-kit](https://github.com/longbridge/gpui-kit), [QuickLook](https://github.com/QL-Win/QuickLook),
-UnRAR's source, and many crates. On Linux, rfiles also leans on
+UnRAR's source, and many crates. On Linux, rfiles also uses
 [ksni](https://github.com/iovxw/ksni), [ashpd](https://github.com/bilelmoussaoui/ashpd),
 [zbus](https://github.com/dbus2/zbus), [notify](https://github.com/notify-rs/notify),
 [jxl-oxide](https://github.com/tirr-c/jxl-oxide), poppler, libavif, libheif, FFmpeg, UDisks2,
@@ -306,4 +311,4 @@ kio-fuse and GVfs.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). It keeps rustyfiles' copyright notice next to rfiles' own.
+MIT, see [LICENSE](LICENSE). The file keeps rustyfiles' copyright notice next to rfiles' own.
