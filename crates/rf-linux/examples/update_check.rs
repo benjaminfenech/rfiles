@@ -1,10 +1,20 @@
 //! The updater by hand: `cargo run -p rf-linux --example update_check -- [--download]`.
 //! Prints the latest release, how this copy counts as installed, and the file it would take;
-//! `--download` also downloads and checks that file (into a temporary folder, not installed).
+//! `--download` also downloads and checks that file against the signed checksums (into a temporary folder, not installed).
 
 fn main() -> anyhow::Result<()> {
     use rf_linux::update;
     let r = update::latest()?;
+    let r = match update::verify_signed(&r) {
+        Ok(signed) => {
+            println!("signature: good");
+            signed
+        }
+        Err(e) => {
+            println!("signature: {e:#}");
+            r
+        }
+    };
     let kind = update::install_kind();
     let arch = std::env::consts::ARCH;
     println!("latest {} ({}), {} files", r.version, r.url, r.assets.len());

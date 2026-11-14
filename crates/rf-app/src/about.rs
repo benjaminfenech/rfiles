@@ -81,7 +81,12 @@ pub fn check(manual: bool) {
 pub fn install_available() {
     let UpdateState::Available(r) = update_state() else { return };
     let kind = update::install_kind();
-    let Some(asset) = update::pick_asset(&r, kind, std::env::consts::ARCH).cloned() else {
+    // the checksums come from the release's signed list, never from GitHub alone
+    let signed = match update::verify_signed(&r) {
+        Ok(s) => s,
+        Err(e) => return set(UpdateState::Failed(format!("{e:#}"))),
+    };
+    let Some(asset) = update::pick_asset(&signed, kind, std::env::consts::ARCH).cloned() else {
         set(UpdateState::Failed(format!("no {kind:?} package for this computer in {}", r.version)));
         return;
     };

@@ -46,4 +46,6 @@ wl-clipboard-rs = "0.9"
 x11rb = "0.13"
 sha1.workspace = true
 sha2.workspace = true
+# Ed25519 for the release signature (already in the tree through rustls)
+ring = "0.17"
 crc32fast.workspace = true
