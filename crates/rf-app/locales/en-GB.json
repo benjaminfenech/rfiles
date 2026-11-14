@@ -1329,5 +1329,13 @@
  "ecf21807": "October",
  "3ea53a3f": "November",
  "662dcc9e": "December",
- "33c7776e": "No tag"
+ "33c7776e": "No tag",
+ "0cd5e716": "Various",
+ "0574902c": "Group",
+ "26c0a538": "Execute",
+ "69bad712": "Others",
+ "426ef10c": "Allow running as a program",
+ "3f5c57bb": "Apply to everything inside",
+ "2d9081dd": "Files inside keep their own execute permission.",
+ "b2e1978a": "Only the owner can change these."
 }

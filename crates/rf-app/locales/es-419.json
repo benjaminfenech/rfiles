@@ -1329,5 +1329,13 @@
  "ecf21807": "Octubre",
  "3ea53a3f": "Noviembre",
  "662dcc9e": "Diciembre",
- "33c7776e": "Sin etiqueta"
+ "33c7776e": "Sin etiqueta",
+ "0cd5e716": "Varios",
+ "0574902c": "Grupo",
+ "26c0a538": "Ejecutar",
+ "69bad712": "Otros",
+ "426ef10c": "Permitir ejecutar como programa",
+ "3f5c57bb": "Aplicar a todo el contenido",
+ "2d9081dd": "Los archivos de adentro conservan su propio permiso de ejecución.",
+ "b2e1978a": "Solo el propietario puede cambiarlos."
 }

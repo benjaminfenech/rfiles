@@ -1329,5 +1329,13 @@
  "ecf21807": "Lokakuu",
  "3ea53a3f": "Marraskuu",
  "662dcc9e": "Joulukuu",
- "33c7776e": "Ei tunnistetta"
+ "33c7776e": "Ei tunnistetta",
+ "0cd5e716": "Vaihtelee",
+ "0574902c": "Ryhmä",
+ "26c0a538": "Suoritus",
+ "69bad712": "Muut",
+ "426ef10c": "Salli suorittaminen ohjelmana",
+ "3f5c57bb": "Käytä kaikkeen sisältöön",
+ "2d9081dd": "Sisällä olevat tiedostot säilyttävät oman suoritusoikeutensa.",
+ "b2e1978a": "Vain omistaja voi muuttaa näitä."
 }
