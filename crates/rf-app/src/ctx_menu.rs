@@ -106,7 +106,8 @@ impl FolderView {
     }
 
     fn quick_clipboard(&self, me: &Me, with_items: bool) -> Vec<Quick> {
-        let paste_ok = rf_linux::clipboard::has_files();
+        // files, or an image or text that pastes as a new file
+        let paste_ok = rf_linux::clipboard::has_files() || rf_linux::clipboard::has_content();
         if !with_items {
             return vec![
                 Quick::new(L::ClipboardPaste, t!("Paste  (Ctrl+V)"), paste_ok, act(me, |v, w, cx| v.paste(w, cx))),

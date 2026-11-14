@@ -5373,6 +5373,14 @@
   "en": "Deselect"
  },
  {
+  "id": "0e130889",
+  "en": "Pasted image"
+ },
+ {
+  "id": "9e8d3e6b",
+  "en": "Pasted text"
+ },
+ {
   "id": "53c990b2",
   "key": "@items_one",
   "en": "{n} item"

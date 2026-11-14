@@ -391,6 +391,50 @@ pub fn get_files(owner: crate::Opaque) -> anyhow::Result<Option<(Vec<PathBuf>, T
     }
 }
 
+/// Something on the clipboard that isn't files, to paste as a new file.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Content {
+    /// An image, with the extension its type gets (`png`).
+    Image { ext: &'static str, bytes: Vec<u8> },
+    Text(String),
+}
+
+/// Image types in the order we prefer them, and their extensions.
+const IMAGES: [(&str, &str); 7] =
+    [("image/png", "png"), ("image/jpeg", "jpg"), ("image/webp", "webp"), ("image/avif", "avif"), ("image/gif", "gif"), ("image/bmp", "bmp"), ("image/tiff", "tiff")];
+/// Plain-text types (Wayland's and X11's names).
+const TEXTS: [&str; 4] = ["text/plain;charset=utf-8", "UTF8_STRING", "text/plain", "STRING"];
+
+/// The image or text on the clipboard (an image first: apps that copy one often offer some
+/// text too), when it holds no files.
+fn content_from(types: &[String], read: &dyn Fn(&str) -> anyhow::Result<Vec<u8>>) -> anyhow::Result<Option<Content>> {
+    let has = |t: &str| types.iter().any(|x| x == t);
+    if let Some((mime, ext)) = IMAGES.iter().find(|(m, _)| has(m)) {
+        let bytes = read(mime)?;
+        if !bytes.is_empty() {
+            return Ok(Some(Content::Image { ext, bytes }));
+        }
+    }
+    if let Some(mime) = TEXTS.iter().find(|m| has(m)) {
+        let text = String::from_utf8_lossy(&read(mime)?).into_owned();
+        if !text.trim().is_empty() {
+            return Ok(Some(Content::Text(text)));
+        }
+    }
+    Ok(None)
+}
+
+/// Whether the clipboard holds an image or text (types only, cheap enough for a menu).
+pub fn has_content() -> bool {
+    types().is_ok_and(|t| t.iter().any(|t| IMAGES.iter().any(|(m, _)| m == t) || TEXTS.contains(&t.as_str())))
+}
+
+/// The image or text on the clipboard, for pasting as a new file. Call when [`get_files`] found
+/// no files.
+pub fn get_content() -> anyhow::Result<Option<Content>> {
+    content_from(&types()?, &read)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -409,6 +453,23 @@ mod tests {
         assert_eq!(parse_uri_list(b"# comment\r\nfile://localhost/x\r\nhttps://example.com/\r\nfile:///y\r\n"), vec![PathBuf::from("/x"), PathBuf::from("/y")]);
         assert_eq!(parse_gnome(b"copy\nfile:///z"), Some((vec![PathBuf::from("/z")], Transfer::Copy)));
         assert_eq!(parse_gnome(b"hello"), None);
+    }
+
+    #[test]
+    fn content_prefers_an_image() {
+        let read = |m: &str| -> anyhow::Result<Vec<u8>> {
+            Ok(match m {
+                "image/jpeg" => b"JPG".to_vec(),
+                "UTF8_STRING" => b"hello".to_vec(),
+                "text/plain" => b"  \n".to_vec(),
+                _ => anyhow::bail!("no"),
+            })
+        };
+        let ts = |v: &[&str]| v.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        assert_eq!(content_from(&ts(&["UTF8_STRING", "image/jpeg"]), &read).unwrap(), Some(Content::Image { ext: "jpg", bytes: b"JPG".to_vec() }));
+        assert_eq!(content_from(&ts(&["TARGETS", "UTF8_STRING"]), &read).unwrap(), Some(Content::Text("hello".into())));
+        assert_eq!(content_from(&ts(&["text/plain"]), &read).unwrap(), None, "only blanks");
+        assert_eq!(content_from(&ts(&["application/x-thing"]), &read).unwrap(), None);
     }
 
     #[test]

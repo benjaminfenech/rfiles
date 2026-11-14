@@ -234,12 +234,48 @@ impl FolderView {
 
     fn paste_to(&mut self, dir: PathBuf, _window: &mut Window, cx: &mut Context<Self>) {
         // GetClipboardData can block on a slow source app (delayed rendering).
+        enum Got {
+            Files(Vec<PathBuf>, Transfer),
+            Content(rf_linux::clipboard::Content),
+        }
         let (tx, rx) = oneshot::channel();
+        // no files: an image or text becomes a new file (not inside archives)
+        let content_ok = crate::archive_view::split(&dir).is_none();
         rf_linux::sta::run(move |owner| {
-            let _ = tx.send(rf_linux::clipboard::get_files(owner).map_err(|e| log::warn!("paste: {e:#}")).ok().flatten());
+            let files = rf_linux::clipboard::get_files(owner).map_err(|e| log::warn!("paste: {e:#}")).ok().flatten();
+            let got = match files {
+                Some((p, k)) => Some(Got::Files(p, k)),
+                None if content_ok => rf_linux::clipboard::get_content().map_err(|e| log::warn!("paste: {e:#}")).ok().flatten().map(Got::Content),
+                None => None,
+            };
+            let _ = tx.send(got);
         });
         cx.spawn(async move |this, cx| {
-            if let Ok(Some((paths, kind))) = rx.await {
+            let got = rx.await.ok().flatten();
+            if let Some(Got::Content(content)) = got {
+                let (stem, ext) = match &content {
+                    rf_linux::clipboard::Content::Image { ext, .. } => (t!("Pasted image"), format!(".{ext}")),
+                    rf_linux::clipboard::Content::Text(_) => (t!("Pasted text"), ".txt".to_string()),
+                };
+                let task = cx.background_spawn(async move {
+                    let path = fileops::unique_name(&dir, stem, &ext);
+                    let bytes = match content {
+                        rf_linux::clipboard::Content::Image { bytes, .. } => bytes,
+                        rf_linux::clipboard::Content::Text(t) => t.into_bytes(),
+                    };
+                    std::fs::OpenOptions::new().write(true).create_new(true).open(&path).and_then(|mut f| std::io::Write::write_all(&mut f, &bytes)).map(|_| path)
+                });
+                match task.await {
+                    Ok(path) => {
+                        crate::undo::push(crate::undo::UndoOp::Created { path: path.clone() });
+                        let name = path.file_name().map(|n| n.to_string_lossy().into_owned());
+                        let _ = this.update(cx, |v, cx| v.expect_new_item(name, cx));
+                    }
+                    Err(e) => log::warn!("paste as a file: {e}"),
+                }
+                return;
+            }
+            if let Some(Got::Files(paths, kind)) = got {
                 let _ = cx.update(|cx| {
                     let here = dir.clone();
                     crate::status_center::transfer_then(cx, kind, paths, dir, move |arrived, cx| {

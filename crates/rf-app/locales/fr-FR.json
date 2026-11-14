@@ -1346,5 +1346,7 @@
  "51148674": "Sélectionner par motif",
  "777c4aba": "Désélectionner",
  "84f7d8e1": "Saisissez un nom ou un motif comme *.jpg",
- "7c6364fa": "Des noms comme *.jpg ou report-??.pdf ; séparez-en plusieurs par ;. Un mot sans * ni ? correspond n'importe où dans le nom."
+ "7c6364fa": "Des noms comme *.jpg ou report-??.pdf ; séparez-en plusieurs par ;. Un mot sans * ni ? correspond n'importe où dans le nom.",
+ "0e130889": "Image collée",
+ "9e8d3e6b": "Texte collé"
 }

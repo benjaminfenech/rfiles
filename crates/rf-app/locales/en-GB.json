@@ -1346,5 +1346,7 @@
  "51148674": "Select by pattern",
  "777c4aba": "Deselect",
  "84f7d8e1": "Type a name or a pattern such as *.jpg",
- "7c6364fa": "Names like *.jpg or report-??.pdf; separate several with ;. A word without * or ? matches anywhere in the name."
+ "7c6364fa": "Names like *.jpg or report-??.pdf; separate several with ;. A word without * or ? matches anywhere in the name.",
+ "0e130889": "Pasted image",
+ "9e8d3e6b": "Pasted text"
 }
