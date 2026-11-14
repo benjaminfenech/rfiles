@@ -2656,9 +2656,21 @@ impl Workspace {
             for (i, sv) in servers.into_iter().enumerate() {
                 let loc = Location::Path(PathBuf::from(&sv.url));
                 let active = cur == loc;
+                // the protocol as a small tag at the row's end, on the name's line
                 let scheme = sv.url.split_once("://").map_or("", |(s, _)| s).to_ascii_uppercase();
-                let note = div().text_xs().text_color(p.text_tertiary).child(scheme).into_any_element();
-                col = col.child(self.sidebar_item(("sb-server", i).into(), L::Server, p.text_secondary, sv.name, loc, active, Some(note), p, cx));
+                let item = self.sidebar_item(("sb-server", i).into(), L::Server, p.text_secondary, sv.name, loc, active, None, p, cx);
+                col = col.child(div().relative().child(item).when(!rail, |row| {
+                    row.child(
+                        div()
+                            .absolute()
+                            .right(px(8.))
+                            .top_0()
+                            .bottom_0()
+                            .flex()
+                            .items_center()
+                            .child(div().px(px(5.)).rounded(px(4.)).bg(p.sidebar_bg).text_size(px(10.)).text_color(p.text_tertiary).child(scheme)),
+                    )
+                }));
             }
         }
         let tag_defs = if shown("tags") { cx.global::<crate::tags::Tags>().0.defs.clone() } else { Vec::new() };
